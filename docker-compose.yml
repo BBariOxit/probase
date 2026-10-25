@@ -1,0 +1,121 @@
+﻿services:
+  # Database: PostgreSQL
+  postgres:
+    image: postgres:17-alpine
+    container_name: probase-db
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-probase}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-probase123}
+      POSTGRES_DB: ${POSTGRES_DB:-probase}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - probase-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-probase} -d ${POSTGRES_DB:-probase}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Cache: Redis
+  redis:
+    image: redis:7-alpine
+    container_name: probase-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - probase-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend: NestJS API
+  api:
+    build:
+      context: ./probase-api
+      dockerfile: Dockerfile
+      target: development
+    container_name: probase-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-3001}:3001"
+    env_file:
+      - ./probase-api/.env
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-probase}:${POSTGRES_PASSWORD:-probase123}@postgres:5432/${POSTGRES_DB:-probase}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - TRUST_PROXY_HOPS=1
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./probase-api:/app
+      - /app/node_modules
+    networks:
+      - probase-network
+    command: sh -c "npx prisma generate && npx prisma migrate deploy && npm run start:dev"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Frontend: Next.js App
+  app:
+    build:
+      context: ./probase-app
+      dockerfile: Dockerfile
+      target: development
+    container_name: probase-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./probase-app:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - probase-network
+    command: npm run dev -- -H 0.0.0.0
+    depends_on:
+      - api
+
+  # Reverse Proxy: Nginx
+  nginx:
+    image: nginx:alpine
+    container_name: probase-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - probase-network
+    depends_on:
+      - api
+      - app
+
+networks:
+  probase-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
