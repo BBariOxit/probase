@@ -1,57 +1,81 @@
 ﻿# ProBase
 
-Hệ thống quản lý đề tài và đồ án tốt nghiệp sinh viên (ProBase).
+A comprehensive capstone project and thesis management system for universities.
 
-## 🏗 Kiến trúc dự án (Monorepo)
+## 🏗 Architecture (Monorepo)
 
-- **Frontend (`probase-app/`)**: Next.js 16 (App Router), React 19, TailwindCSS, Base-UI / Shadcn, React Query.
-- **Backend (`probase-api/`)**: NestJS 11, Prisma 7, PostgreSQL, JWT Authentication, Socket.io.
-- **Reverse Proxy (`nginx/`)**: Nginx Alpine điều phối cổng 80 cho cả Frontend và Backend API.
-- **Database & Cache**: PostgreSQL 17 và Redis 7.
+- **Frontend (`probase-app/`)**: Next.js 16 (App Router), React 19, Tailwind CSS, Base-UI / Shadcn UI, TanStack React Query.
+- **Backend (`probase-api/`)**: NestJS 11, Prisma 7 ORM, PostgreSQL 17, JWT Authentication, Socket.io.
+- **Reverse Proxy (`nginx/`)**: Nginx Alpine acting as the unified gateway on port 80.
+- **Database & Cache**: PostgreSQL 17 and Redis 7.
 
 ---
 
-## 🚀 Khởi chạy với Docker Compose
+## 🚀 Getting Started with Docker Compose
 
-### 1. Chuẩn bị môi trường
-Tạo file cấu hình môi trường từ mẫu:
+### 1. Prerequisites
+- [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/)
+- Node.js 22+ (if running services locally without Docker)
+
+### 2. Environment Setup
+Copy the sample environment configuration:
 ```bash
 cp .env.example .env
 ```
 
-### 2. Khởi động toàn bộ hệ thống
+### 3. Launch Services
+Start all 5 services with live code mounting and hot reload:
 ```bash
 docker compose up --build
 ```
-*(Thêm cờ `-d` nếu muốn chạy nền: `docker compose up -d --build`)*
+*(Add the `-d` flag to run in background: `docker compose up -d --build`)*
 
-Hệ thống sẽ tự động:
-1. Chờ PostgreSQL và Redis sẵn sàng (`healthcheck`).
-2. Tự động chạy Prisma migrations để tạo toàn bộ bảng database.
-3. Kích hoạt tính năng **Hot Reload & Bind Mount** cho cả BE và FE khi sửa code.
+The system automatically:
+1. Waits for PostgreSQL and Redis to be fully healthy (`healthcheck`).
+2. Runs Prisma migrations (`npx prisma migrate deploy`) to prepare all database tables.
+3. Enables **Hot Reload & Bind Mount** for instantaneous frontend and backend code synchronization.
 
-### 3. Nạp dữ liệu mẫu (Seed Data)
-Mở một terminal mới tại thư mục gốc và chạy:
+### 4. Seed Initial Data
+Once the containers are running, populate the database with demo accounts, topics, and master data:
 ```bash
 docker compose exec api npx prisma db seed
 ```
 
 ---
 
-## 🌐 Danh sách cổng truy cập
+## 🌐 Port Mapping & Endpoints
 
-| Dịch vụ | Địa chỉ truy cập | Ghi chú |
+| Service | Endpoint | Description |
 | :--- | :--- | :--- |
-| **Nginx (Cổng chính)** | `http://localhost` | Proxy toàn bộ FE và BE, hỗ trợ WebSocket |
-| **Frontend (Next.js)** | `http://localhost:3000` | Giao diện người dùng |
-| **Backend API (NestJS)** | `http://localhost:3001` | API và Socket.io |
-| **PostgreSQL** | `localhost:5432` | DBeaver, TablePlus, DataGrip |
-| **Redis** | `localhost:6379` | RedisInsight, redis-cli |
+| **Nginx (Main Gateway)** | `http://localhost` | Unified gateway (`/` -> Frontend, `/api/` -> Backend), WebSocket enabled |
+| **Frontend (Next.js)** | `http://localhost:3000` | User interface (Direct access) |
+| **Backend API (NestJS)** | `http://localhost:3001` | REST API & Socket.io (Direct access) |
+| **PostgreSQL** | `localhost:5432` | Accessible via GUI tools (DBeaver, TablePlus, DataGrip) |
+| **Redis** | `localhost:6379` | Accessible via RedisInsight or redis-cli |
 
 ---
 
-## 🔑 Tài khoản mẫu (Sau khi chạy Seed)
+## 🔑 Demo Accounts (After Seeding)
 
-- **Admin**: `admin@probase.dev` / `Admin@12345`
-- **Giảng viên**: `gv001@probase.dev` / `Lecturer@123`
-- **Sinh viên**: `2266666@dlu.edu.vn` / `Bao2648@`
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| **Admin** | `admin@probase.dev` | `Admin@12345` |
+| **Lecturer** | `gv001@probase.dev` | `Lecturer@123` |
+| **Lecturer** | `gv002@probase.dev` | `Lecturer@123` |
+| **Student** | `2266666@dlu.edu.vn` | `Bao2648@` |
+| **Student** | `2277777@dlu.edu.vn` | `Bao2648@` |
+
+---
+
+## 🛠 Useful Commands
+
+```bash
+# View container logs in real time
+docker compose logs -f
+
+# Stop all services
+docker compose down
+
+# Stop and wipe database/cache volumes
+docker compose down -v
+```
