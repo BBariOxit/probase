@@ -88,10 +88,15 @@ enum TopicProposalStatus {
 
 enum TopicStatus {
   PENDING
+  PENDING_DEPARTMENT // Chờ Tổ trưởng Bộ môn (TTBM) thẩm định chuyên môn
+  PENDING_FACULTY    // TTBM đã duyệt, chờ Ban Chủ nhiệm Khoa phê duyệt
+  APPROVED_OPEN      // Đã phê duyệt, mở cổng cho SV đăng ký
   APPROVED
   OPEN
-  IN_PROGRESS
-  COMPLETED
+  ASSIGNED           // Đã có nhóm nhận hoặc được Khoa phân công
+  IN_PROGRESS        // Đang thực hiện (đã nộp đề cương M03)
+  COMPLETED          // Đã hoàn thành bảo vệ và lưu trữ
+  REJECTED           // Bị từ chối
 }
 
 enum RegistrationGroupStatus {
@@ -225,8 +230,9 @@ model User {
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
 
-  roundsFinalised RegistrationRound[]       @relation("RoundFinalisedBy")
-  membersAssigned RegistrationGroupMember[] @relation("GroupMemberAssignedBy")
+  roundsFinalised          RegistrationRound[]       @relation("RoundFinalisedBy")
+  membersAssigned          RegistrationGroupMember[] @relation("GroupMemberAssignedBy")
+  topicAssignmentsAssigned TopicAssignment[]         @relation("TopicAssignmentAssignedBy")
 
   @@map("users")
 }
@@ -255,6 +261,7 @@ model StudentProfile {
   groupsLed        RegistrationGroup[]
   groupMemberships RegistrationGroupMember[]
   councilGrades    CouncilTopicGrade[]
+  studentGrades    StudentGrade[]
   submissions      Submission[]              @relation("SubmissionAuthor")
 
   @@map("student_profiles")
@@ -273,20 +280,24 @@ model LecturerProfile {
   maxMentoringQuota Int? // Null = no limit
 
   // Các cờ chức vụ kiêm nhiệm theo đúng cơ cấu Khoa CNTT - DLU
-  isHeadOfDepartment Boolean @default(false) // Tổ trưởng Bộ môn (TTBM)
-  isFacultyBoard     Boolean @default(false) // Ban Chủ nhiệm Khoa (BCN Khoa)
+  isHeadOfDepartment  Boolean @default(false) // Tổ trưởng Bộ môn (TTBM)
+  isFacultyBoard      Boolean @default(false) // Ban Chủ nhiệm Khoa (BCN Khoa)
   isAcademicAssistant Boolean @default(false) // Trợ lý Giáo vụ Khoa (TLGV)
 
   // Relations
   user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   major Major? @relation(fields: [majorId], references: [id], onDelete: SetNull)
 
-  requestedProposals TopicProposal[] @relation("ProposalRequestedLecturer")
-  acceptedProposals  TopicProposal[] @relation("ProposalAcceptedLecturer")
-  topics             Topic[]
-  councilMembers     CouncilMember[]
-  reviewedTopics     CouncilTopic[]
-  topicReviews       TopicReview[]
+  requestedProposals       TopicProposal[]   @relation("ProposalRequestedLecturer")
+  acceptedProposals        TopicProposal[]   @relation("ProposalAcceptedLecturer")
+  topics                   Topic[]
+  departmentReviewedTopics Topic[]           @relation("TopicDepartmentReviewer")
+  facultyApprovedTopics    Topic[]           @relation("TopicFacultyApprover")
+  supervisorAssignments    TopicAssignment[] @relation("TopicAssignmentSupervisor")
+  reviewerAssignments      TopicAssignment[] @relation("TopicAssignmentReviewer")
+  councilMembers           CouncilMember[]
+  reviewedTopics           CouncilTopic[]
+  topicReviews             TopicReview[]
 
   @@map("lecturer_profiles")
 }
@@ -299,9 +310,10 @@ model LecturerProfile {
 // 1. Công nghệ phần mềm (CNPM)
 // 2. Mạng máy tính (MMT)
 model Major {
-  id   Int    @id @default(autoincrement())
-  name String
-  code String @unique
+  id          Int     @id @default(autoincrement())
+  name        String
+  code        String  @unique // 'CNPM' | 'MMT'
+  description String? @db.Text
 
   // Relations
   students  StudentProfile[]
@@ -320,11 +332,14 @@ model Semester {
   gradeSubmissionDeadline DateTime? // After this, grades are locked
   isActive                Boolean   @default(false)
 
-  // Trọng số điểm chuẩn của Khoa CNTT - DLU:
+  // Trọng số điểm chuẩn của Khoa CNTT - DLU (20% - 30% - 50%):
   // Điểm TK = (20% * TĐ1) + (30% * TĐ2) + (50% * BV)
-  mentorWeight   Float @default(0.2) // Tiến độ 1 (GVHD chấm)
-  reviewerWeight Float @default(0.3) // Tiến độ 2 (GVHD + GVPB cùng chấm)
-  councilWeight  Float @default(0.5) // Điểm Bảo vệ Hội đồng / Tiểu ban
+  mentorWeight    Float @default(0.2) // Tiến độ 1 (GVHD chấm)
+  reviewerWeight  Float @default(0.3) // Tiến độ 2 (GVHD + GVPB cùng chấm)
+  councilWeight   Float @default(0.5) // Điểm Bảo vệ Hội đồng / Tiểu ban
+  progress1Weight Float @default(0.2) // Trọng số Tiến độ 1
+  progress2Weight Float @default(0.3) // Trọng số Tiến độ 2
+  defenseWeight   Float @default(0.5) // Trọng số Bảo vệ
 
   // The registration window, the phase and the finalisation live on
   // RegistrationRound, not here. A faculty opens Cơ sở, Chuyên ngành and Tốt
@@ -377,6 +392,17 @@ model RegistrationRound {
 
   allocationMode AllocationMode @default(FIRST_COME)
 
+  // Timeline 7 mốc thời gian tự động chuẩn Khoa CNTT - DLU (BR-01)
+  topicSubmissionStart       DateTime? // Hạn GV nộp đề tài
+  topicSubmissionEnd         DateTime? // Hạn TTBM & Khoa duyệt đề tài
+  outlineDeadline            DateTime? // Hạn nộp Đề cương chi tiết M03
+  progress1Deadline          DateTime? // Hạn nộp & chấm Tiến độ 1 (20%)
+  reviewerAssignmentDeadline DateTime? // Hạn TTBM phân công GVPB
+  progress2Deadline          DateTime? // Hạn nộp & chấm Tiến độ 2 (30%)
+  finalSubmissionDeadline    DateTime? // Hạn nộp báo cáo cuối kỳ & nhận xét M02/M05
+  defenseStartDate           DateTime? // Thời gian tổ chức Hội đồng bảo vệ (50%)
+  defenseEndDate             DateTime?
+  archiveDeadline            DateTime? // Hạn nộp gói lưu trữ 3 thư mục
 
   /// Who ended the RECONCILING phase and when. Finalising turns every group's
   /// membership into the official record, so it is an event with an author
@@ -483,34 +509,51 @@ model Topic {
   id               Int         @id @default(autoincrement())
   semesterId       Int
   lecturerId       Int
-  majorId          Int?        // Chuyên ngành: CNPM hoặc MMT
+  majorId          Int?        // Chuyên ngành / Tổ chuyên môn: CNPM hoặc MMT
   // The round is the semester and the kind of project at once, so a topic can
   // only exist in a round the faculty has actually opened.
   roundId          Int
   sourceProposalId Int?        @unique // Set only if topic originated from a student proposal
-  title            String
+  title            String      // Tiêu đề hiển thị mặc định
+  titleVi          String?     // Tên đề tài tiếng Việt
+  titleEn          String?     // Tên đề tài tiếng Anh
   description      String      @db.Text
-  expectedOutcomes String      @db.Text
+  objectives       String?     @db.Text // Mục tiêu cần đạt được
+  expectedOutcomes String      @db.Text // Sản phẩm dự kiến hoàn thành
+  techStack        String?     // Công nghệ, công cụ dự kiến (React, NestJS, Docker...)
   maxStudents      Int         @default(3) // Tối đa 1 đến 3 SV
   status           TopicStatus @default(PENDING)
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+
+  // Quy trình xét duyệt 2 cấp: Cấp Bộ môn (TTBM) & Cấp Khoa (BCN Khoa) (BR-05)
+  departmentReviewerId Int?    // TTBM thẩm định chuyên môn
+  departmentFeedback   String? @db.Text
+  facultyApproverId    Int?    // Đại diện BCN Khoa ký duyệt
+  facultyFeedback      String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  semester       Semester          @relation(fields: [semesterId], references: [id], onDelete: Restrict)
-  lecturer       LecturerProfile   @relation(fields: [lecturerId], references: [id], onDelete: Restrict)
-  major          Major?            @relation(fields: [majorId], references: [id], onDelete: SetNull)
+  semester           Semester        @relation(fields: [semesterId], references: [id], onDelete: Restrict)
+  lecturer           LecturerProfile @relation(fields: [lecturerId], references: [id], onDelete: Restrict)
+  major              Major?          @relation(fields: [majorId], references: [id], onDelete: SetNull)
+  departmentReviewer LecturerProfile? @relation("TopicDepartmentReviewer", fields: [departmentReviewerId], references: [id], onDelete: SetNull)
+  facultyApprover    LecturerProfile? @relation("TopicFacultyApprover", fields: [facultyApproverId], references: [id], onDelete: SetNull)
+
   // Composite, so a topic cannot end up in a round that belongs to a different
   // semester than the one it claims.
   round          RegistrationRound @relation(fields: [roundId, semesterId], references: [id, semesterId], onDelete: Restrict)
   sourceProposal TopicProposal?    @relation(fields: [sourceProposalId], references: [id], onDelete: SetNull)
 
-  registrationGroups RegistrationGroup[]
-  submissions        Submission[]
-  councilTopic       CouncilTopic?
-  outlines           TopicOutline[]
-  archives           TopicArchive[]
-  changeRequests     TopicChangeRequest[]
+  registrationGroups      RegistrationGroup[]
+  submissions             Submission[]
+  councilTopic            CouncilTopic?
+  outlines                TopicOutline[]
+  archives                TopicArchive[]
+  changeRequests          TopicChangeRequest[]
+  similarityChecksSource  TopicSimilarityCheck[] @relation("SourceTopicSimilarity")
+  similarityChecksMatched TopicSimilarityCheck[] @relation("MatchedTopicSimilarity")
+  assignments             TopicAssignment[]
 
   // Lets RegistrationGroup carry a denormalised semesterId that a composite
   // foreign key pins to this topic's own semester, so the two cannot drift.
@@ -551,13 +594,17 @@ model RegistrationGroup {
   semester Semester       @relation(fields: [semesterId], references: [id], onDelete: Restrict)
   leader   StudentProfile @relation(fields: [leaderId], references: [id], onDelete: Restrict)
 
-  members        RegistrationGroupMember[]
-  submissions    Submission[]
-  councilTopic   CouncilTopic?
-  outline        TopicOutline?
-  reviews        TopicReview[]
-  archive        TopicArchive?
-  changeRequests TopicChangeRequest[]
+  members         RegistrationGroupMember[]
+  submissions     Submission[]
+  councilTopic    CouncilTopic?
+  outline         TopicOutline?
+  reviews         TopicReview[]
+  archive         TopicArchive?
+  changeRequests  TopicChangeRequest[]
+  weeklyLogs      WeeklyLog[]
+  progressReports ProgressReport[]
+  assignment      TopicAssignment?
+  studentGrades   StudentGrade[]
 
   // Targets for the composite keys on members, submissions and council topics.
   @@unique([id, topicId])
@@ -986,4 +1033,110 @@ model TopicChangeRequest {
 
   @@map("topic_change_requests")
 }
+
+// ─────────────────────────────────────────────────────────
+// GROUP 11: DLU TIẾN ĐỘ, PHẢN BIỆN, ĐIỂM SỐ & CHỐNG TRÙNG LẶP
+// ─────────────────────────────────────────────────────────
+
+/// Kiểm tra tương đồng văn bản chống trùng lặp đề tài (BR-04).
+model TopicSimilarityCheck {
+  id              Int      @id @default(autoincrement())
+  topicId         Int
+  matchedTopicId  Int
+  similarityScore Float    // Tỷ lệ tương đồng (0.00 – 1.00)
+  matchedFields   Json?    // Chi tiết trường trùng lặp
+  createdAt       DateTime @default(now())
+
+  topic        Topic @relation("SourceTopicSimilarity", fields: [topicId], references: [id], onDelete: Cascade)
+  matchedTopic Topic @relation("MatchedTopicSimilarity", fields: [matchedTopicId], references: [id], onDelete: Cascade)
+
+  @@index([topicId])
+  @@map("topic_similarity_checks")
+}
+
+/// Nhật ký làm việc và theo dõi task hàng tuần giữa SV và GVHD (BR-11).
+model WeeklyLog {
+  id                   Int       @id @default(autoincrement())
+  groupId              Int
+  weekNumber           Int       // Tuần thứ mấy (Tuần 1 – 15)
+  completionPercentage Int       @default(0) // Tiến độ hoàn thành (0 – 100%)
+  gitCommitUrl         String?   // Link commit mã nguồn minh chứng
+  summaryNotes         String    @db.Text // Các việc đã làm trong tuần
+  blockers             String?   @db.Text // Khó khăn vướng mắc
+  lecturerComment      String?   @db.Text // Phản hồi của GVHD
+  feedbackAt           DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  group RegistrationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, weekNumber])
+  @@map("weekly_logs")
+}
+
+/// Bài nộp và kết quả đánh giá 2 đợt tiến độ: TĐ1 (20%) và TĐ2 (30%) (BR-12, BR-14).
+model ProgressReport {
+  id                 Int       @id @default(autoincrement())
+  groupId            Int
+  stage              String    // "STAGE_1" (Tiến độ 1 - 20%) | "STAGE_2" (Tiến độ 2 - 30%)
+  reportFileUrl      String?   // File báo cáo .pdf/.docx
+  sourceCodeUrl      String?   // Link repository mã nguồn
+  submittedAt        DateTime  @default(now())
+  supervisorGrade    Float?    // Điểm do GVHD chấm (thang 10)
+  supervisorFeedback String?   @db.Text
+  reviewerGrade      Float?    // Điểm do GVPB chấm (Tiến độ 2, thang 10)
+  reviewerFeedback   String?   @db.Text
+  finalStageGrade    Float?    // Điểm chốt giai đoạn (TĐ1 = GVHD; TĐ2 = TB cộng)
+  finalisedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  group RegistrationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, stage])
+  @@map("progress_reports")
+}
+
+/// Phân công Giảng viên phản biện (GVPB) do TTBM thực hiện trước TĐ2 (BR-13).
+model TopicAssignment {
+  id           Int      @id @default(autoincrement())
+  groupId      Int      @unique
+  topicId      Int
+  supervisorId Int
+  reviewerId   Int      // GVPB (cùng chuyên ngành CNPM/MMT, khác GVHD)
+  assignedById Int      // TTBM / BCN Khoa phân công
+  assignedAt   DateTime @default(now())
+
+  group      RegistrationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  topic      Topic             @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  supervisor LecturerProfile   @relation("TopicAssignmentSupervisor", fields: [supervisorId], references: [id], onDelete: Restrict)
+  reviewer   LecturerProfile   @relation("TopicAssignmentReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
+  assignedBy User              @relation("TopicAssignmentAssignedBy", fields: [assignedById], references: [id], onDelete: Restrict)
+
+  @@map("topic_assignments")
+}
+
+/// Bảng điểm tổng hợp chính thức của từng sinh viên theo công thức chuẩn DLU (BR-18).
+/// Điểm TK = (20% * TĐ1) + (30% * TĐ2) + (50% * BV)
+model StudentGrade {
+  id               Int      @id @default(autoincrement())
+  groupId          Int
+  studentId        Int
+  progress1Grade   Float?   // Điểm Tiến độ 1 (20% - GVHD)
+  progress2Grade   Float?   // Điểm Tiến độ 2 (30% - GVHD + GVPB)
+  defenseGrade     Float?   // Điểm Bảo vệ Hội đồng (50%)
+  finalGradeNum    Float?   // Điểm tổng kết hệ 10
+  finalGradeLetter String?  // Điểm chữ (A, B+, B, C+, C, D+, D, F)
+  note             String?  @db.Text
+  isLocked         Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  group   RegistrationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  student StudentProfile    @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@unique([groupId, studentId])
+  @@map("student_grades")
+}
+
 
