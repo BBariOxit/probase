@@ -7,6 +7,7 @@ import { Toaster } from 'sonner';
 import { ApiError } from '@/lib/api/client';
 import { useSessionBootstrap } from '@/lib/auth/use-session-bootstrap';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { GoogleAuthProvider } from '@/components/auth/google-auth-provider';
 
 function SessionBootstrap() {
   useSessionBootstrap();
@@ -57,7 +58,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             provider has to sit above every signed-in screen. */}
         <TooltipProvider delay={300}>
           <SessionBootstrap />
-          {children}
+          <GoogleAuthProvider>{children}</GoogleAuthProvider>
         </TooltipProvider>
       </QueryClientProvider>
       <ThemeToaster />
