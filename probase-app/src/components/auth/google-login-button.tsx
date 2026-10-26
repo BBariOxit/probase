@@ -50,7 +50,7 @@ export function GoogleLoginButton({
       disabled={disabled || isLoading}
       className={cn(
         'group relative flex w-full h-10 items-center justify-center gap-2.5 rounded-lg',
-        'bg-white text-neutral-900 hover:bg-neutral-100 shadow-sm border border-neutral-200/80 dark:border-transparent',
+        'bg-white text-neutral-900 hover:bg-neutral-50 shadow-xs hover:shadow-sm border border-neutral-300 hover:border-neutral-400 dark:border-neutral-700/50',
         'text-sm font-medium transition-all duration-200 active:scale-[0.99]',
         'disabled:pointer-events-none disabled:opacity-60 cursor-pointer select-none',
         className,
@@ -86,7 +86,7 @@ export function GoogleLoginButton({
             />
           </svg>
           <span className="font-medium tracking-tight text-neutral-900">
-            Đăng nhập với Google
+            Đăng nhập với Gmail dlu
           </span>
         </>
       )}
