@@ -181,16 +181,7 @@ function LoginForm() {
         </Button>
       </form>
 
-      {/* Đường phân cách thanh lịch */}
-      <div className="relative my-4 flex items-center justify-center">
-        <div className="w-full border-t border-border/50" />
-        <span className="absolute bg-card px-2 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-          hoặc
-        </span>
-      </div>
-
-      {/* Nút Đăng nhập với Google đặt ở dưới nút Đăng nhập */}
-      <div>
+      <div className="mt-3">
         <GoogleLoginButton
           disabled={isSubmitting}
           isLoading={isGoogleLoading}
