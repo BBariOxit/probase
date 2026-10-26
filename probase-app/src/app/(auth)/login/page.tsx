@@ -9,7 +9,6 @@ import { z } from 'zod';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Brand } from '@/components/layout/brand';
 import { GoogleLoginButton } from '@/components/auth/google-login-button';
-import { LoginDivider } from '@/components/auth/login-divider';
 import { api, ApiError } from '@/lib/api/client';
 import type { LoginResponse, Role } from '@/lib/api/types';
 import { useGoogleSso } from '@/lib/auth/google-auth';
@@ -106,11 +105,8 @@ function LoginForm() {
 
   return (
     <Card className="px-6 py-8 border-none shadow-xl bg-card/95 backdrop-blur-sm">
-      <div className="mb-6 flex flex-col items-center text-center">
+      <div className="mb-6 flex justify-center">
         <Brand className="text-4xl tracking-tight" />
-        <p className="mt-1 text-xs text-muted-foreground">
-          Cổng thông tin quản lý Đồ án — Khoa Công nghệ Thông tin DLU
-        </p>
       </div>
 
       {formError && (
@@ -121,32 +117,10 @@ function LoginForm() {
               <p className="font-medium text-xs sm:text-sm leading-relaxed">
                 {formError}
               </p>
-              {(formError.includes('Khoa') ||
-                formError.includes('Giáo vụ') ||
-                formError.includes('danh sách')) && (
-                <p className="text-[11px] text-muted-foreground leading-normal">
-                  Chỉ sinh viên và giảng viên thuộc danh sách được Nhà trường / Khoa
-                  cấp phép mới có thể đăng nhập vào hệ thống.
-                </p>
-              )}
             </div>
           </div>
         </div>
       )}
-
-      {/* Đăng nhập bằng Google DLU */}
-      <div className="space-y-3">
-        <GoogleLoginButton
-          isLoading={isGoogleLoading}
-          onSuccess={(credential) => {
-            setFormError(null);
-            handleGoogleCredential(credential);
-          }}
-          onError={(err) => setFormError(err)}
-        />
-      </div>
-
-      <LoginDivider label="hoặc bằng tài khoản & mật khẩu" />
 
       {/* Form đăng nhập email/mật khẩu truyền thống */}
       <form
@@ -157,7 +131,7 @@ function LoginForm() {
       >
         <div className="space-y-1.5">
           <Label htmlFor="email" className="text-xs font-medium">
-            Email DLU
+            Email
           </Label>
           <Input
             id="email"
@@ -206,6 +180,27 @@ function LoginForm() {
           Đăng nhập
         </Button>
       </form>
+
+      {/* Đường phân cách thanh lịch */}
+      <div className="relative my-4 flex items-center justify-center">
+        <div className="w-full border-t border-border/50" />
+        <span className="absolute bg-card px-2 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+          hoặc
+        </span>
+      </div>
+
+      {/* Nút Đăng nhập với Google đặt ở dưới nút Đăng nhập */}
+      <div>
+        <GoogleLoginButton
+          disabled={isSubmitting}
+          isLoading={isGoogleLoading}
+          onSuccess={(token) => {
+            setFormError(null);
+            handleGoogleCredential(token);
+          }}
+          onError={(err) => setFormError(err)}
+        />
+      </div>
     </Card>
   );
 }

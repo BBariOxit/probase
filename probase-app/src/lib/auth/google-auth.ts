@@ -29,8 +29,8 @@ export function useGoogleSso(options?: UseGoogleSsoOptions) {
     return next ?? homePathFor(signedIn.role);
   }
 
-  async function handleGoogleCredential(credential: string) {
-    if (!credential) {
+  async function handleGoogleCredential(token: string) {
+    if (!token) {
       const msg = 'Không nhận được mã xác thực từ Google. Vui lòng thử lại.';
       setError(msg);
       options?.onError?.(msg);
@@ -41,9 +41,10 @@ export function useGoogleSso(options?: UseGoogleSsoOptions) {
     setError(null);
 
     try {
+      const isAccessToken = token.startsWith('ya29.');
       const result = await api<LoginResponse>('/auth/google', {
         method: 'POST',
-        body: { credential },
+        body: isAccessToken ? { accessToken: token } : { credential: token },
         anonymous: true,
       });
 

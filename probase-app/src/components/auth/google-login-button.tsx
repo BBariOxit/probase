@@ -1,16 +1,16 @@
 'use client';
 
 import React from 'react';
-import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
-import { useTheme } from 'next-themes';
-import { Loader2, ShieldCheck } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
+import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface GoogleLoginButtonProps {
-  onSuccess: (credential: string) => void;
+  onSuccess: (token: string) => void;
   onError: (errorMsg: string) => void;
   isLoading?: boolean;
   className?: string;
+  disabled?: boolean;
 }
 
 export function GoogleLoginButton({
@@ -18,57 +18,81 @@ export function GoogleLoginButton({
   onError,
   isLoading = false,
   className,
+  disabled = false,
 }: GoogleLoginButtonProps) {
-  const { resolvedTheme } = useTheme();
   const hasClientId = Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
+
+  const loginWithGoogle = useGoogleLogin({
+    onSuccess: (tokenResponse) => {
+      if (tokenResponse?.access_token) {
+        onSuccess(tokenResponse.access_token);
+      } else {
+        onError('Không nhận được mã truy cập từ Google');
+      }
+    },
+    onError: () => {
+      onError('Đăng nhập Google thất bại hoặc cửa sổ đăng nhập đã bị đóng.');
+    },
+  });
 
   if (!hasClientId) {
     return (
-      <div className="rounded-lg border border-dashed border-amber-500/40 bg-amber-500/10 p-3 text-center text-xs text-amber-600 dark:text-amber-400">
-        Google Client ID chưa được cấu hình trong <code>.env</code>
+      <div className="rounded-lg border border-dashed border-amber-500/40 bg-amber-500/10 p-2.5 text-center text-xs text-amber-600 dark:text-amber-400">
+        Google Client ID chưa được cấu hình
       </div>
     );
   }
 
-  const handleSuccess = (credentialResponse: CredentialResponse) => {
-    if (credentialResponse.credential) {
-      onSuccess(credentialResponse.credential);
-    } else {
-      onError('Không lấy được thông tin xác thực từ Google');
-    }
-  };
-
-  const handleFailure = () => {
-    onError('Đăng nhập Google bị gián đoạn hoặc cửa sổ đăng nhập đã bị đóng.');
-  };
-
   return (
-    <div className={cn('relative flex flex-col items-center gap-2', className)}>
-      <div className="relative w-full flex justify-center min-h-[44px]">
-        {isLoading ? (
-          <div className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-muted/60 text-sm font-medium text-muted-foreground animate-pulse">
-            <Loader2 className="size-4 animate-spin text-primary" />
-            <span>Đang xác thực tài khoản DLU...</span>
-          </div>
-        ) : (
-          <div className="w-full flex justify-center overflow-hidden rounded-lg shadow-sm transition-all hover:shadow-md">
-            <GoogleLogin
-              onSuccess={handleSuccess}
-              onError={handleFailure}
-              theme={resolvedTheme === 'dark' ? 'filled_black' : 'outline'}
-              size="large"
-              shape="rectangular"
-              text="continue_with"
-              width="340"
-            />
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/90">
-        <ShieldCheck className="size-3.5 text-primary shrink-0" />
-        <span>Chỉ áp dụng cho email sinh viên & giảng viên Đại học Đà Lạt</span>
-      </div>
-    </div>
+    <button
+      type="button"
+      onClick={() => loginWithGoogle()}
+      disabled={disabled || isLoading}
+      className={cn(
+        'group relative flex w-full h-10 items-center justify-center gap-3 rounded-lg',
+        'bg-primary px-3 text-sm font-medium text-primary-foreground shadow-sm',
+        'transition-all duration-200 hover:bg-primary/90 hover:shadow active:scale-[0.99]',
+        'disabled:pointer-events-none disabled:opacity-60 cursor-pointer select-none',
+        className,
+      )}
+    >
+      {isLoading ? (
+        <>
+          <Loader2 className="size-4 animate-spin shrink-0" />
+          <span>Đang đăng nhập...</span>
+        </>
+      ) : (
+        <>
+          {/* Khối nền trắng bo tròn chứa Logo Google chữ G đa màu */}
+          <span className="flex size-6 items-center justify-center rounded bg-white shadow-xs shrink-0 transition-transform group-hover:scale-105">
+            <svg
+              viewBox="0 0 24 24"
+              className="size-4 shrink-0"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+              />
+            </svg>
+          </span>
+          <span className="font-medium tracking-tight">
+            Đăng nhập với Google
+          </span>
+        </>
+      )}
+    </button>
   );
 }

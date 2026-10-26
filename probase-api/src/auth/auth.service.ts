@@ -170,7 +170,7 @@ export class AuthService {
    * - Ràng buộc BR-01: Tài khoản phải được Khoa tạo/import trước trong CSDL
    */
   async googleLogin(dto: GoogleLoginDto) {
-    const rawToken = dto.idToken || dto.credential;
+    const rawToken = dto.idToken || dto.credential || dto.accessToken;
     if (!rawToken) {
       throw new BadRequestException('Mã xác thực Google không hợp lệ');
     }
@@ -184,9 +184,15 @@ export class AuthService {
     };
 
     try {
-      const response = await fetch(
-        `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(rawToken)}`,
-      );
+      // Hỗ trợ cả ID Token (JWT) và Access Token (từ Google OAuth popup flow)
+      const isAccessToken = Boolean(dto.accessToken) || rawToken.startsWith('ya29.');
+      const verifyUrl = isAccessToken
+        ? 'https://www.googleapis.com/oauth2/v3/userinfo'
+        : `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(rawToken)}`;
+
+      const response = await fetch(verifyUrl, {
+        headers: isAccessToken ? { Authorization: `Bearer ${rawToken}` } : {},
+      });
 
       if (!response.ok) {
         throw new Error('Google token không hợp lệ hoặc đã hết hạn');
@@ -208,7 +214,7 @@ export class AuthService {
       throw new UnauthorizedException('Email Google chưa được xác thực bởi nhà cung cấp');
     }
 
-    if (this.googleClientId && googlePayload.aud !== this.googleClientId) {
+    if (this.googleClientId && googlePayload.aud && googlePayload.aud !== this.googleClientId) {
       throw new UnauthorizedException('Mã xác thực Google không thuộc ứng dụng này');
     }
 
