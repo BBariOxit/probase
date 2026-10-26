@@ -47,10 +47,8 @@ function LoginForm() {
   const next = safeNextPath(searchParams.get('next'));
 
   function destinationFor(signedIn: {
-    mustChangePassword: boolean;
     role: Role;
   }) {
-    if (signedIn.mustChangePassword) return '/change-password';
     return next ?? homePathFor(signedIn.role);
   }
 
@@ -137,7 +135,7 @@ function LoginForm() {
             id="email"
             type="email"
             autoComplete="new-password"
-            placeholder="sinhvien@st.dlu.edu.vn"
+            placeholder="2212345@dlu.edu.vn"
             aria-invalid={!!errors.email}
             {...register('email')}
           />

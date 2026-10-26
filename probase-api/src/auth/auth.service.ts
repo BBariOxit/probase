@@ -185,20 +185,52 @@ export class AuthService {
 
     try {
       // Hỗ trợ cả ID Token (JWT) và Access Token (từ Google OAuth popup flow)
-      const isAccessToken = Boolean(dto.accessToken) || rawToken.startsWith('ya29.');
-      const verifyUrl = isAccessToken
-        ? 'https://www.googleapis.com/oauth2/v3/userinfo'
-        : `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(rawToken)}`;
+      const isAccessToken =
+        Boolean(dto.accessToken) || rawToken.startsWith('ya29.');
 
-      const response = await fetch(verifyUrl, {
-        headers: isAccessToken ? { Authorization: `Bearer ${rawToken}` } : {},
-      });
+      if (isAccessToken) {
+        // Với Google Access Token: Xác thực audience & thông tin qua tokeninfo và userinfo
+        const [tokenInfoRes, userInfoRes] = await Promise.all([
+          fetch(
+            `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(rawToken)}`,
+          ),
+          fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${rawToken}` },
+          }),
+        ]);
 
-      if (!response.ok) {
-        throw new Error('Google token không hợp lệ hoặc đã hết hạn');
+        if (!tokenInfoRes.ok) {
+          throw new Error('Google token không hợp lệ hoặc đã hết hạn');
+        }
+
+        const tokenInfo = (await tokenInfoRes.json()) as {
+          aud?: string;
+          azp?: string;
+          email?: string;
+          email_verified?: string | boolean;
+        };
+        const userInfo = userInfoRes.ok
+          ? ((await userInfoRes.json()) as { name?: string; picture?: string })
+          : {};
+
+        googlePayload = {
+          email: tokenInfo.email,
+          email_verified: tokenInfo.email_verified,
+          aud: tokenInfo.aud || tokenInfo.azp,
+          name: userInfo.name,
+          picture: userInfo.picture,
+        };
+      } else {
+        const response = await fetch(
+          `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(rawToken)}`,
+        );
+
+        if (!response.ok) {
+          throw new Error('Google token không hợp lệ hoặc đã hết hạn');
+        }
+
+        googlePayload = (await response.json()) as typeof googlePayload;
       }
-
-      googlePayload = (await response.json()) as typeof googlePayload;
     } catch {
       throw new UnauthorizedException(
         'Xác thực tài khoản Google thất bại hoặc mã token đã hết hạn',
@@ -211,11 +243,19 @@ export class AuthService {
       googlePayload.email_verified === true;
 
     if (!email || !isEmailVerified) {
-      throw new UnauthorizedException('Email Google chưa được xác thực bởi nhà cung cấp');
+      throw new UnauthorizedException(
+        'Email Google chưa được xác thực bởi nhà cung cấp',
+      );
     }
 
-    if (this.googleClientId && googlePayload.aud && googlePayload.aud !== this.googleClientId) {
-      throw new UnauthorizedException('Mã xác thực Google không thuộc ứng dụng này');
+    if (
+      this.googleClientId &&
+      googlePayload.aud &&
+      googlePayload.aud !== this.googleClientId
+    ) {
+      throw new UnauthorizedException(
+        'Mã xác thực Google không thuộc ứng dụng này',
+      );
     }
 
     // Ràng buộc bảo mật DLU: Chỉ chấp nhận đuôi trường DLU (@dlu.edu.vn hoặc @st.dlu.edu.vn)
@@ -227,34 +267,50 @@ export class AuthService {
       );
     }
 
-    // BR-01: Tài khoản phải được Khoa import trước trong hệ thống
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-      include: {
-        studentProfile: {
-          select: {
-            id: true,
-            studentCode: true,
-            fullName: true,
-            majorId: true,
-            class: true,
-            cohort: true,
-          },
-        },
-        lecturerProfile: {
-          select: {
-            id: true,
-            lecturerCode: true,
-            fullName: true,
-            academicTitle: true,
-            majorId: true,
-            isHeadOfDepartment: true,
-            isFacultyBoard: true,
-            isAcademicAssistant: true,
-          },
+    // BR-01: Tài khoản phải được Khoa import trước trong hệ thống.
+    // Hỗ trợ tìm kiếm theo cả @dlu.edu.vn và @st.dlu.edu.vn phòng trường hợp lệch domain
+    const candidateEmail = email.endsWith('@st.dlu.edu.vn')
+      ? email.replace('@st.dlu.edu.vn', '@dlu.edu.vn')
+      : email.endsWith('@dlu.edu.vn')
+        ? email.replace('@dlu.edu.vn', '@st.dlu.edu.vn')
+        : undefined;
+
+    const includeProfiles = {
+      studentProfile: {
+        select: {
+          id: true,
+          studentCode: true,
+          fullName: true,
+          majorId: true,
+          class: true,
+          cohort: true,
         },
       },
+      lecturerProfile: {
+        select: {
+          id: true,
+          lecturerCode: true,
+          fullName: true,
+          academicTitle: true,
+          majorId: true,
+          isHeadOfDepartment: true,
+          isFacultyBoard: true,
+          isAcademicAssistant: true,
+        },
+      },
+    };
+
+    let user = await this.prisma.user.findUnique({
+      where: { email },
+      include: includeProfiles,
     });
+
+    if (!user && candidateEmail) {
+      user = await this.prisma.user.findUnique({
+        where: { email: candidateEmail },
+        include: includeProfiles,
+      });
+    }
 
     if (!user) {
       throw new ForbiddenException(
@@ -264,6 +320,17 @@ export class AuthService {
 
     if (!user.isActive) {
       throw new UnauthorizedException('Tài khoản đã bị vô hiệu hoá');
+    }
+
+    // Đăng nhập qua Google SSO: Không bắt buộc đổi mật khẩu
+    if (user.mustChangePassword) {
+      await this.prisma.user
+        .update({
+          where: { id: user.id },
+          data: { mustChangePassword: false },
+        })
+        .catch(() => undefined);
+      user.mustChangePassword = false;
     }
 
     // Tự động cập nhật avatar nếu tài khoản chưa có và Google có ảnh đại diện

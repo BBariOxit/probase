@@ -40,10 +40,7 @@ export default function ChangePasswordPage() {
   const { status, user, setAccessToken, patchUser } = useSession();
   const [formError, setFormError] = useState<string | null>(null);
 
-  const [forced, setForced] = useState(false);
-  if (user?.mustChangePassword && !forced) {
-    setForced(true);
-  }
+  const forced = false;
 
   const {
     register,
@@ -76,7 +73,7 @@ export default function ChangePasswordPage() {
       setAccessToken(result.accessToken);
       patchUser({ mustChangePassword: false });
 
-      if (user) router.replace(forced ? homePathFor(user.role) : '/profile');
+      if (user) router.replace('/profile');
     } catch (err) {
       setFormError(
         err instanceof ApiError ? err.message : 'Không kết nối được máy chủ',
@@ -94,11 +91,9 @@ export default function ChangePasswordPage() {
         <h1 className="font-heading text-2xl font-semibold tracking-tight text-primary">
           Đổi mật khẩu
         </h1>
-        {forced && (
-          <p className="text-sm text-muted-foreground">
-            Vui lòng tạo mật khẩu mới để tiếp tục.
-          </p>
-        )}
+        <p className="text-sm text-muted-foreground">
+          Cập nhật mật khẩu bảo vệ tài khoản của bạn.
+        </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>

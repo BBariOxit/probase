@@ -22,10 +22,8 @@ export function useGoogleSso(options?: UseGoogleSsoOptions) {
   const next = safeNextPath(options?.nextParam ?? null);
 
   function destinationFor(signedIn: {
-    mustChangePassword: boolean;
     role: Role;
   }) {
-    if (signedIn.mustChangePassword) return '/change-password';
     return next ?? homePathFor(signedIn.role);
   }
 

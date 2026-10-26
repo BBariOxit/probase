@@ -24,8 +24,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.replace(`/login${nextParam(pathname)}`);
-    } else if (status === 'authenticated' && user?.mustChangePassword) {
-      router.replace('/change-password');
     }
   }, [status, user, router, pathname]);
 
@@ -35,7 +33,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     router.replace('/login');
   }
 
-  if (status !== 'authenticated' || !user || user.mustChangePassword) {
+  if (status !== 'authenticated' || !user) {
     return (
       <div className="flex min-h-svh flex-1 bg-sidebar">
         <div className="hidden w-64 shrink-0 md:block" />

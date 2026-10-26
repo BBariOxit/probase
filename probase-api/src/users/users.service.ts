@@ -570,7 +570,7 @@ export class UsersService {
 
         await this.prisma.user.update({
           where: { id: user.id },
-          data: { password: passwordHash, mustChangePassword: true },
+          data: { password: passwordHash, mustChangePassword: false },
         });
 
         const fullName =
@@ -858,7 +858,7 @@ export class UsersService {
     await this.prisma.$transaction(async (tx) => {
       await tx.user.update({
         where: { id },
-        data: { password: passwordHash, mustChangePassword: true },
+        data: { password: passwordHash, mustChangePassword: false },
       });
 
       // Revoke all refresh tokens so the user must re-login
@@ -872,7 +872,7 @@ export class UsersService {
         action: 'RESET_USER_PASSWORD',
         targetTable: 'users',
         targetId: id,
-        newValue: { email: user.email, mustChangePassword: true },
+        newValue: { email: user.email, mustChangePassword: false },
       });
     });
 
@@ -1022,7 +1022,7 @@ export class UsersService {
           email: dto.email,
           password: passwordHash,
           role: dto.role,
-          mustChangePassword: true,
+          mustChangePassword: false,
         },
         select: USER_SELECT,
       });
@@ -1217,7 +1217,7 @@ export class UsersService {
           email: data.email,
           password: passwordHash,
           role: data.role,
-          mustChangePassword: true,
+          mustChangePassword: false,
         },
       });
 
@@ -1265,7 +1265,7 @@ export class UsersService {
           email: data.email,
           password: passwordHash,
           role: data.role,
-          mustChangePassword: true,
+          mustChangePassword: false,
         },
         select: { id: true },
       });
