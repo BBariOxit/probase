@@ -78,8 +78,28 @@ export class AuthService {
       // could have had here is a header that renders an address for a second and
       // then swaps it for a name.
       include: {
-        studentProfile: { select: { fullName: true } },
-        lecturerProfile: { select: { fullName: true } },
+        studentProfile: {
+          select: {
+            id: true,
+            studentCode: true,
+            fullName: true,
+            majorId: true,
+            class: true,
+            cohort: true,
+          },
+        },
+        lecturerProfile: {
+          select: {
+            id: true,
+            lecturerCode: true,
+            fullName: true,
+            academicTitle: true,
+            majorId: true,
+            isHeadOfDepartment: true,
+            isFacultyBoard: true,
+            isAcademicAssistant: true,
+          },
+        },
       },
     });
 
@@ -134,6 +154,8 @@ export class AuthService {
           account.lecturerProfile?.fullName ??
           null,
         avatarUrl: account.avatarUrl,
+        studentProfile: account.studentProfile,
+        lecturerProfile: account.lecturerProfile,
       },
     };
   }
@@ -210,8 +232,28 @@ export class AuthService {
         avatarUrl: true,
         createdAt: true,
         updatedAt: true,
-        studentProfile: { select: { fullName: true, studentCode: true } },
-        lecturerProfile: { select: { fullName: true, lecturerCode: true } },
+        studentProfile: {
+          select: {
+            id: true,
+            studentCode: true,
+            fullName: true,
+            majorId: true,
+            class: true,
+            cohort: true,
+          },
+        },
+        lecturerProfile: {
+          select: {
+            id: true,
+            lecturerCode: true,
+            fullName: true,
+            academicTitle: true,
+            majorId: true,
+            isHeadOfDepartment: true,
+            isFacultyBoard: true,
+            isAcademicAssistant: true,
+          },
+        },
       },
     });
 
