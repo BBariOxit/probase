@@ -14,9 +14,7 @@ export default function RootPage() {
       router.replace('/login');
       return;
     }
-    router.replace(
-      user.mustChangePassword ? '/change-password' : homePathFor(user.role),
-    );
+    router.replace(homePathFor(user.role));
   }, [status, user, router]);
 
   return (

@@ -372,6 +372,94 @@ describe('AuthService password backoff', () => {
       expect(result.user.email).toBe('2266666@dlu.edu.vn');
       expect(result.user.studentProfile?.studentCode).toBe('2266666');
     });
+
+    it('authenticates with Google Access Token (ya29.) using tokeninfo and userinfo', async () => {
+      global.fetch = jest.fn().mockImplementation((url: string) => {
+        if (url.includes('tokeninfo')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              email: '2212345@dlu.edu.vn',
+              email_verified: true,
+              aud: 'client-app-id',
+            }),
+          } as Response);
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            name: 'Trần Văn B',
+            picture: 'https://avatar.google.com/b.jpg',
+          }),
+        } as Response);
+      });
+
+      findUnique.mockResolvedValue({
+        id: 11,
+        email: '2212345@dlu.edu.vn',
+        role: 'STUDENT',
+        isActive: true,
+        mustChangePassword: true,
+        avatarUrl: null,
+        studentProfile: {
+          id: 2,
+          studentCode: '2212345',
+          fullName: 'Trần Văn B',
+          majorId: 1,
+          class: 'CTK46PM',
+          cohort: '2022',
+        },
+        lecturerProfile: null,
+      });
+
+      const result = await service.googleLogin({
+        accessToken: 'ya29.sample-token',
+      });
+      expect(result).toHaveProperty('accessToken');
+      expect(result.user.email).toBe('2212345@dlu.edu.vn');
+      expect(result.user.mustChangePassword).toBe(false);
+    });
+
+    it('matches student account when Google returns @st.dlu.edu.vn and DB stores @dlu.edu.vn', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          email: '2212345@st.dlu.edu.vn',
+          email_verified: 'true',
+          name: 'Trần Văn B',
+        }),
+      } as unknown as Response);
+
+      // First call for @st.dlu.edu.vn returns null, candidate @dlu.edu.vn returns user
+      findUnique.mockImplementation(
+        ({ where }: { where: { email: string } }) => {
+          if (where.email === '2212345@dlu.edu.vn') {
+            return Promise.resolve({
+              id: 11,
+              email: '2212345@dlu.edu.vn',
+              role: 'STUDENT',
+              isActive: true,
+              mustChangePassword: false,
+              avatarUrl: null,
+              studentProfile: {
+                id: 2,
+                studentCode: '2212345',
+                fullName: 'Trần Văn B',
+                majorId: 1,
+                class: 'CTK46PM',
+                cohort: '2022',
+              },
+              lecturerProfile: null,
+            });
+          }
+          return Promise.resolve(null);
+        },
+      );
+
+      const result = await service.googleLogin({ idToken: 'valid-token' });
+      expect(result).toHaveProperty('accessToken');
+      expect(result.user.email).toBe('2212345@dlu.edu.vn');
+    });
   });
 });
 
