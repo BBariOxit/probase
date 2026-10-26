@@ -7,98 +7,131 @@ import { cohortFromStudentCode } from '../src/users/student-code.util';
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error('DATABASE_URL is not set');
 
-// Same driver adapter PrismaService uses — Prisma 7 has no implicit datasource.
+// Driver adapter Prisma Client
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString }),
 });
 
-// Every account here is admin-provisioned, matching how real accounts are
-// created — there is no self-registration path for ADMIN, so without this seed
-// the API has no way to produce its own first administrator.
-const ADMIN_EMAIL = (
-  process.env.SEED_ADMIN_EMAIL ?? 'admin@probase.dev'
-).toLowerCase();
-const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? 'Admin@12345';
+// Mật khẩu chung cực kỳ đơn giản để dễ nhớ và demo
+const DEFAULT_PASSWORD = '123456';
 
-// A fixture for building the forced-password-change screen. Bulk import mails
-// a random temp password, which is useless while developing a UI — this account
-// carries mustChangePassword with a password you already know.
-// The address is the student code plus the domain, as it is at the university:
-// cohort is derived from those first two digits, so a fixture like sv001@ would
-// not survive its own validation rules.
+// ─────────────────────────────────────────────────────────
+// 1. DANH SÁCH SINH VIÊN (CTK46 - KHÓA 2022)
+// ─────────────────────────────────────────────────────────
 const DEMO_STUDENTS = [
   {
     code: '2266666',
     email: '2266666@dlu.edu.vn',
-    password: 'Bao2648@',
     name: 'Nguyễn Văn A',
+    class: 'CTK46PM',
+    majorCode: 'CNPM',
   },
   {
     code: '2277777',
     email: '2277777@dlu.edu.vn',
-    password: 'Bao2648@',
     name: 'Phạm Thị B',
+    class: 'CTK46PM',
+    majorCode: 'CNPM',
   },
   {
     code: '2288888',
     email: '2288888@dlu.edu.vn',
-    password: 'Bao2648@',
     name: 'Lê Văn C',
-  },
-  {
-    code: '2299999',
-    email: '2299999@dlu.edu.vn',
-    password: 'Bao2648@',
-    name: 'Trần Văn D',
+    class: 'CTK46MMT',
+    majorCode: 'MMT',
   },
 ];
 
-// Two lecturers, not one. A single lecturer cannot exercise the rule that
-// matters most on topics — that owning a topic, rather than merely holding the
-// LECTURER role, is what permits editing it — and the council and reviewer
-// features later need more than one lecturer to assign anyway.
-const DEMO_LECTURER_PASSWORD =
-  process.env.SEED_LECTURER_PASSWORD ?? 'Lecturer@123';
-const DEMO_LECTURERS = [
+// ─────────────────────────────────────────────────────────
+// 2. DANH SÁCH GIẢNG VIÊN & CÁN BỘ KHOA CNTT - DLU
+// Đầy đủ cờ các chức vụ: TLGV, BCN Khoa, TTBM CNPM, TTBM MMT, GVHD/GVPB
+// ─────────────────────────────────────────────────────────
+const DEMO_STAFF = [
   {
-    email: 'gv001@probase.dev',
-    lecturerCode: 'GV001',
-    fullName: 'Trần Thị B',
-    academicTitle: 'TS',
-    researchInterests: 'Kỹ thuật phần mềm, kiểm thử tự động',
-  },
-  {
-    email: 'gv002@probase.dev',
-    lecturerCode: 'GV002',
-    fullName: 'Lê Văn C',
+    email: 'gvgvk@dlu.edu.vn',
+    role: 'ADMIN' as const,
+    lecturerCode: 'GVGVK',
+    fullName: 'ThS. Nguyễn Thị GVK (Trợ lý Giáo vụ Khoa)',
     academicTitle: 'ThS',
-    researchInterests: 'Hệ thống thông tin, cơ sở dữ liệu',
+    majorCode: 'CNPM',
+    researchInterests: 'Quản lý đào tạo, Cơ sở dữ liệu',
+    isAcademicAssistant: true, // Trợ lý Giáo vụ Khoa (TLGV)
+    isFacultyBoard: false,
+    isHeadOfDepartment: false,
+  },
+  {
+    email: 'gvcnk@dlu.edu.vn',
+    role: 'LECTURER' as const,
+    lecturerCode: 'GVCNK',
+    fullName: 'TS. Trần Văn CNK (Ban Chủ nhiệm Khoa)',
+    academicTitle: 'TS',
+    majorCode: 'CNPM',
+    researchInterests: 'Trí tuệ nhân tạo, Khai phá dữ liệu',
+    isAcademicAssistant: false,
+    isFacultyBoard: true, // Ban Chủ nhiệm Khoa (BCN Khoa)
+    isHeadOfDepartment: false,
+  },
+  {
+    email: 'gvab@dlu.edu.vn',
+    role: 'LECTURER' as const,
+    lecturerCode: 'GVAB',
+    fullName: 'TS. An Bình (Tổ trưởng BM Phần mềm)',
+    academicTitle: 'TS',
+    majorCode: 'CNPM',
+    researchInterests: 'Kỹ thuật phần mềm, Kiến trúc hệ thống phân tán',
+    isAcademicAssistant: false,
+    isFacultyBoard: false,
+    isHeadOfDepartment: true, // Tổ trưởng Bộ môn (TTBM) Công nghệ phần mềm
+  },
+  {
+    email: 'gvcd@dlu.edu.vn',
+    role: 'LECTURER' as const,
+    lecturerCode: 'GVCD',
+    fullName: 'ThS. Chu Đình (Tổ trưởng BM Mạng máy tính)',
+    academicTitle: 'ThS',
+    majorCode: 'MMT',
+    researchInterests: 'Mạng máy tính, An toàn và Bảo mật thông tin, IoT',
+    isAcademicAssistant: false,
+    isFacultyBoard: false,
+    isHeadOfDepartment: true, // Tổ trưởng Bộ môn (TTBM) Mạng máy tính
+  },
+  {
+    email: 'gvpb@dlu.edu.vn',
+    role: 'LECTURER' as const,
+    lecturerCode: 'GVPB',
+    fullName: 'ThS. Phan Bửu (Giảng viên Hướng dẫn & Phản biện)',
+    academicTitle: 'ThS',
+    majorCode: 'CNPM',
+    researchInterests: 'Kỹ thuật phần mềm, Phát triển ứng dụng Web & Mobile',
+    isAcademicAssistant: false,
+    isFacultyBoard: false,
+    isHeadOfDepartment: false, // Giảng viên hướng dẫn & phản biện chính
   },
 ];
 
-// Chuyên ngành — a flat list. Swap these for your faculty's real ones.
+// ─────────────────────────────────────────────────────────
+// 3. DANH MỤC CHUYÊN NGÀNH CHUẨN KHOA CNTT - DLU
+// ─────────────────────────────────────────────────────────
 const MAJORS = [
-  { code: 'KTPM', name: 'Kỹ thuật Phần mềm' },
-  { code: 'HTTT', name: 'Hệ thống Thông tin' },
-  { code: 'KHMT', name: 'Khoa học Máy tính' },
-  { code: 'TTNT', name: 'Trí tuệ Nhân tạo' },
-  { code: 'MMT', name: 'Mạng máy tính và Truyền thông' },
-  { code: 'ATTT', name: 'An toàn Thông tin' },
+  { code: 'CNPM', name: 'Công nghệ phần mềm' },
+  { code: 'MMT', name: 'Mạng máy tính' },
 ];
 
 const PROJECT_TYPES = [
-  { code: 'DACS', name: 'Đồ án Cơ sở' },
-  { code: 'DACN', name: 'Đồ án Chuyên ngành' },
-  { code: 'DATN', name: 'Đồ án Tốt nghiệp' },
+  { code: 'DACS', name: 'Đồ án cơ sở' },
+  { code: 'DACN', name: 'Đồ án chuyên ngành' },
+  { code: 'DATN', name: 'Khóa luận tốt nghiệp' },
 ];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const daysFromNow = (n: number) => new Date(Date.now() + n * DAY_MS);
 
 async function main() {
-  console.log('Seeding…');
+  console.log('Seeding ProBase DLU database…');
 
-  // Master data first — bulk import resolves majorCode against this table.
+  const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+
+  // 1. Seed Chuyên ngành (Majors)
   const majorIdByCode = new Map<string, number>();
   for (const major of MAJORS) {
     const saved = await prisma.major.upsert({
@@ -108,8 +141,9 @@ async function main() {
     });
     majorIdByCode.set(saved.code, saved.id);
   }
-  console.log(`  majors: ${MAJORS.length}`);
+  console.log(`  [✓] Chuyên ngành: ${MAJORS.length} (CNPM, MMT)`);
 
+  // 2. Seed Loại đồ án (Project Types)
   for (const type of PROJECT_TYPES) {
     await prisma.projectType.upsert({
       where: { code: type.code },
@@ -117,49 +151,43 @@ async function main() {
       update: { name: type.name },
     });
   }
-  console.log(`  project types: ${PROJECT_TYPES.length}`);
+  console.log(`  [✓] Loại đồ án: ${PROJECT_TYPES.length} (DACS, DACN, DATN)`);
 
-  // Dates are relative to the run so the registration window is open right
-  // now — a seeded semester that closed last month tests nothing.
-  const month = new Date().getMonth();
-  const academicYear =
-    month >= 7 ? new Date().getFullYear() : new Date().getFullYear() - 1;
-  const semesterCode = `HK1-${academicYear}-${academicYear + 1}`;
+  // 3. Seed Học kỳ hiện tại
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const semesterCode = `HK1-${currentYear}-${currentYear + 1}`;
 
   const semester = await prisma.semester.upsert({
     where: { code: semesterCode },
     create: {
       code: semesterCode,
-      name: `Học kỳ 1 năm học ${academicYear}-${academicYear + 1}`,
+      name: `Học kỳ 1 năm học ${currentYear}-${currentYear + 1}`,
       startDate: daysFromNow(-30),
       endDate: daysFromNow(120),
       gradeSubmissionDeadline: daysFromNow(110),
       isActive: true,
+      mentorWeight: 0.2,   // Tiến độ 1: 20%
+      reviewerWeight: 0.3, // Tiến độ 2: 30%
+      councilWeight: 0.5,  // Bảo vệ: 50%
     },
-    update: { isActive: true },
+    update: {
+      isActive: true,
+      mentorWeight: 0.2,
+      reviewerWeight: 0.3,
+      councilWeight: 0.5,
+    },
   });
-  console.log(`  semester: ${semesterCode}`);
+  console.log(`  [✓] Học kỳ: ${semesterCode} (Trọng số DLU: 20% - 30% - 50%)`);
 
-  // One round per kind of project, which is the announcement the faculty
-  // actually puts out: Cơ sở to the third-years, Chuyên ngành to the fourth,
-  // Tốt nghiệp to the fifth, counted back from the academic year so the fixture
-  // stays right whenever it is run. The demo student's code puts them in the
-  // Chuyên ngành cohort.
-  //
-  // Phase is set explicitly rather than left to its PREP default: the windows
-  // below are deliberately open right now, and a round sitting in PREP would
-  // refuse every registration while claiming to be open. The two have to agree,
-  // and only one of them can be the default.
-  const ROUNDS: { code: string; yearsBack: number; closesInDays: number }[] = [
-    { code: 'DACS', yearsBack: 3, closesInDays: 21 },
-    { code: 'DACN', yearsBack: 4, closesInDays: 21 },
-    // Deliberately on its own schedule. Final-year projects run to a different
-    // calendar in real faculties, and a fixture where all three rounds close on
-    // the same day would never exercise the reason rounds exist.
-    { code: 'DATN', yearsBack: 5, closesInDays: 14 },
+  // 4. Seed các Đợt đồ án (Registration Rounds)
+  const ROUNDS = [
+    { code: 'DACS', cohort: '2024', closesInDays: 21 }, // Năm 2 (CTK48) làm ĐACS
+    { code: 'DACN', cohort: '2023', closesInDays: 21 }, // Năm 3 (CTK47) làm ĐACN
+    { code: 'DATN', cohort: '2022', closesInDays: 30 }, // Năm 4 (CTK46) làm KLTN
   ];
 
-  for (const { code, yearsBack, closesInDays } of ROUNDS) {
+  for (const { code, cohort, closesInDays } of ROUNDS) {
     const projectType = await prisma.projectType.findUniqueOrThrow({
       where: { code },
     });
@@ -178,246 +206,224 @@ async function main() {
         registrationEnd: daysFromNow(closesInDays),
         phase: 'OPEN',
       },
-      // Reseeding a round that has already moved on would otherwise drag it back
-      // to OPEN and unlock allocation work someone had finished.
       update: {},
     });
 
     await prisma.roundEligibility.deleteMany({ where: { roundId: round.id } });
     await prisma.roundEligibility.create({
-      data: { roundId: round.id, cohort: String(academicYear - yearsBack + 1) },
+      data: { roundId: round.id, cohort },
     });
   }
-  console.log(`  rounds: ${ROUNDS.length} (one per kind of project)`);
+  console.log(`  [✓] Đợt đồ án: ${ROUNDS.length} đợt (Khóa CTK46 làm KLTN)`);
 
-  const admin = await prisma.user.upsert({
-    where: { email: ADMIN_EMAIL },
-    create: {
-      email: ADMIN_EMAIL,
-      password: await bcrypt.hash(ADMIN_PASSWORD, 10),
-      role: 'ADMIN',
-      // The bootstrap admin is the one account nobody can hand a temp
-      // password to, so it starts ready to use.
-      mustChangePassword: false,
-    },
-    update: {},
-  });
-  console.log(`  admin: ${admin.email}`);
+  // 5. Seed Giảng viên & Cán bộ Khoa CNTT - DLU
+  for (const staff of DEMO_STAFF) {
+    const { email, role, lecturerCode, fullName, academicTitle, majorCode, researchInterests, isAcademicAssistant, isFacultyBoard, isHeadOfDepartment } = staff;
+    const majorId = majorCode ? majorIdByCode.get(majorCode) : null;
 
-  // Created the same way UsersService does it: account and profile together,
-  // never a profile-less User.
-  for (const student of DEMO_STUDENTS) {
-    await prisma.user.upsert({
-      where: { email: student.email },
-      create: {
-        email: student.email,
-        password: await bcrypt.hash(student.password, 10),
-        role: 'STUDENT',
-        mustChangePassword: true,
-        studentProfile: {
-          create: {
-            studentCode: student.code,
-            fullName: student.name,
-            class: 'CTK46',
-            // Derived from the code, exactly as the import and create paths do
-            // it — the seed must not be the one place that sets it by hand.
-            cohort: cohortFromStudentCode(student.code)!,
-            majorId: majorIdByCode.get('KTPM'),
-          },
-        },
-      },
-      update: {},
-    });
-    console.log(`  demo student: ${student.email} (mustChangePassword)`);
-  }
-
-  // Ready to use rather than mustChangePassword: these exist to drive the
-  // topic screens, and a forced password change on every reseed only gets in
-  // the way of that.
-  const lecturerPassword = await bcrypt.hash(DEMO_LECTURER_PASSWORD, 10);
-  for (const lecturer of DEMO_LECTURERS) {
-    const { email, ...profile } = lecturer;
-    await prisma.user.upsert({
+    const user = await prisma.user.upsert({
       where: { email },
       create: {
         email,
-        password: lecturerPassword,
-        role: 'LECTURER',
+        password: hashedPassword,
+        role,
+        mustChangePassword: false, // Dùng ngay không cần đổi mật khẩu
+      },
+      update: {
+        password: hashedPassword,
+        role,
         mustChangePassword: false,
-        lecturerProfile: { create: profile },
-      },
-      update: {},
-    });
-  }
-  console.log(`  demo lecturers: ${DEMO_LECTURERS.length}`);
-
-  // Seed topics for lecturer gv001@probase.dev (Trần Thị B)
-  const lecturerUser = await prisma.user.findUnique({
-    where: { email: 'gv001@probase.dev' },
-    include: { lecturerProfile: true },
-  });
-
-  if (lecturerUser?.lecturerProfile) {
-    const existingTopicsCount = await prisma.topic.count({
-      where: {
-        lecturerId: lecturerUser.lecturerProfile.id,
-        semesterId: semester.id,
       },
     });
 
-    let topicCount = existingTopicsCount;
+    await prisma.lecturerProfile.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        lecturerCode,
+        fullName,
+        academicTitle,
+        majorId,
+        researchInterests,
+        isAcademicAssistant,
+        isFacultyBoard,
+        isHeadOfDepartment,
+        maxMentoringQuota: 5,
+      },
+      update: {
+        lecturerCode,
+        fullName,
+        academicTitle,
+        majorId,
+        researchInterests,
+        isAcademicAssistant,
+        isFacultyBoard,
+        isHeadOfDepartment,
+      },
+    });
 
-    if (existingTopicsCount === 0) {
-      const rounds = await prisma.registrationRound.findMany({
-        where: { semesterId: semester.id },
-        include: { projectType: true },
-      });
-
-      const topicDataByRound: Record<
-        string,
-        Array<{ title: string; description: string; expectedOutcomes: string }>
-      > = {
-        DACS: [
-          {
-            title: 'Xây dựng website quản lý thư viện cá nhân',
-            description:
-              'Sinh viên sẽ xây dựng một website cơ bản cho phép người dùng thêm, sửa, xóa và tìm kiếm sách trong thư viện cá nhân của họ. Yêu cầu giao diện thân thiện và dễ sử dụng.',
-            expectedOutcomes:
-              'Source code website, báo cáo quá trình thực hiện và các chức năng cơ bản hoạt động tốt.',
-          },
-          {
-            title: 'Phát triển ứng dụng di động ghi chú công việc (To-do app)',
-            description:
-              'Ứng dụng di động đơn giản giúp người dùng quản lý các công việc hàng ngày, đặt lịch nhắc nhở và đánh dấu hoàn thành. Phù hợp để làm quen với lập trình di động.',
-            expectedOutcomes:
-              'File cài đặt ứng dụng (APK hoặc tương đương), mã nguồn và tài liệu mô tả.',
-          },
-        ],
-        DACN: [
-          {
-            title: 'Hệ thống gợi ý sản phẩm dựa trên hành vi người dùng',
-            description:
-              'Nghiên cứu và áp dụng các thuật toán Machine Learning cơ bản để xây dựng hệ thống gợi ý sản phẩm cho một trang thương mại điện tử mô phỏng.',
-            expectedOutcomes:
-              'Báo cáo nghiên cứu thuật toán, API hệ thống gợi ý và demo tích hợp trên web.',
-          },
-          {
-            title: 'Ứng dụng điểm danh sinh viên bằng nhận diện khuôn mặt',
-            description:
-              'Phát triển một ứng dụng hỗ trợ điểm danh tự động thông qua camera, sử dụng các thư viện nhận diện khuôn mặt (Computer Vision).',
-            expectedOutcomes:
-              'Hệ thống điểm danh hoàn chỉnh, báo cáo đánh giá độ chính xác của mô hình.',
-          },
-        ],
-        DATN: [
-          {
-            title: 'Nền tảng học trực tuyến tích hợp AI đánh giá năng lực',
-            description:
-              'Xây dựng một nền tảng E-learning toàn diện. Tích hợp thêm AI để tự động phân tích và đưa ra lộ trình học tập cá nhân hóa dựa trên kết quả bài test của học viên.',
-            expectedOutcomes:
-              'Hệ thống web/app hoàn chỉnh (Frontend & Backend), mô hình AI phân tích, báo cáo đồ án tốt nghiệp.',
-          },
-          {
-            title:
-              'Hệ thống quản lý chuỗi cung ứng thông minh sử dụng Blockchain',
-            description:
-              'Nghiên cứu ứng dụng công nghệ Blockchain (Smart Contracts) vào việc truy xuất nguồn gốc và quản lý chuỗi cung ứng hàng hóa một cách minh bạch và an toàn.',
-            expectedOutcomes:
-              'Smart contract đã deploy trên testnet, DApp giao diện người dùng, báo cáo nghiên cứu chuyên sâu.',
-          },
-        ],
-      };
-
-      for (const round of rounds) {
-        const typeCode = round.projectType.code;
-        const tDataList = topicDataByRound[typeCode] || [];
-
-        for (const tData of tDataList) {
-          await prisma.topic.create({
-            data: {
-              title: tData.title,
-              description: tData.description,
-              expectedOutcomes: tData.expectedOutcomes,
-              maxStudents: typeCode === 'DATN' ? 2 : 3,
-              status: 'PENDING',
-              semesterId: semester.id,
-              roundId: round.id,
-              lecturerId: lecturerUser.lecturerProfile.id,
-            },
-          });
-          topicCount++;
-        }
-        // End of topic creation loop
-      }
-    }
-    console.log(
-      `  demo topics: ${topicCount} (by ${lecturerUser.lecturerProfile.fullName})`,
-    );
+    console.log(`  [✓] Cán bộ/GV: ${email} (${fullName}) [${role}]`);
   }
 
-  // Seed topic proposals for demo students
-  const targetLecturer = await prisma.user.findUnique({
-    where: { email: 'gv001@probase.dev' },
+  // 6. Seed Sinh viên Demo (2266666, 2277777, 2288888)
+  for (const student of DEMO_STUDENTS) {
+    const user = await prisma.user.upsert({
+      where: { email: student.email },
+      create: {
+        email: student.email,
+        password: hashedPassword,
+        role: 'STUDENT',
+        mustChangePassword: false,
+      },
+      update: {
+        password: hashedPassword,
+        role: 'STUDENT',
+        mustChangePassword: false,
+      },
+    });
+
+    const majorId = majorIdByCode.get(student.majorCode);
+    const cohort = cohortFromStudentCode(student.code) ?? '2022';
+
+    await prisma.studentProfile.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        studentCode: student.code,
+        fullName: student.name,
+        class: student.class,
+        cohort,
+        majorId,
+      },
+      update: {
+        studentCode: student.code,
+        fullName: student.name,
+        class: student.class,
+        cohort,
+        majorId,
+      },
+    });
+
+    console.log(`  [✓] Sinh viên: ${student.email} (${student.name} - Lớp ${student.class})`);
+  }
+
+  // 7. Seed Đề tài mẫu cho Khoa CNTT - DLU
+  const pbUser = await prisma.user.findUnique({
+    where: { email: 'gvpb@dlu.edu.vn' },
     include: { lecturerProfile: true },
   });
 
-  const proposalTitles = [
-    'Ứng dụng học từ vựng tiếng Nhật',
-    'Website đánh giá phim ảnh',
-    'Phần mềm hỗ trợ quản lý nhà trọ',
-    'Hệ thống giám sát sinh viên bằng thẻ từ',
-  ];
+  const abUser = await prisma.user.findUnique({
+    where: { email: 'gvab@dlu.edu.vn' },
+    include: { lecturerProfile: true },
+  });
 
-  if (targetLecturer?.lecturerProfile) {
-    await prisma.topicProposal.deleteMany({
+  const cdUser = await prisma.user.findUnique({
+    where: { email: 'gvcd@dlu.edu.vn' },
+    include: { lecturerProfile: true },
+  });
+
+  const datnRound = await prisma.registrationRound.findFirst({
+    where: {
+      semesterId: semester.id,
+      projectType: { code: 'DATN' },
+    },
+  });
+
+  if (datnRound && pbUser?.lecturerProfile && abUser?.lecturerProfile && cdUser?.lecturerProfile) {
+    // Làm mới đề tài mẫu để luôn liên kết đúng với giảng viên seed hiện tại
+    await prisma.topic.deleteMany({
       where: { semesterId: semester.id },
     });
 
-    let proposalCount = 0;
+    const sampleTopics = [
+      {
+        title: 'Hệ thống Quản lý Đồ án Tốt nghiệp cho Khoa CNTT - Đại học Đà Lạt',
+        description: 'Xây dựng hệ thống web toàn diện phục vụ quản lý đồ án từ khâu ra đề, duyệt đề cương M03, theo dõi tiến độ 20%-30% đến chấm bảo vệ 50% và nộp gói lưu trữ số hóa 3 thư mục.',
+        expectedOutcomes: 'Hệ thống web hoàn chỉnh (Frontend Next.js, Backend NestJS), CSDL PostgreSQL, tài liệu thuyết minh và báo cáo.',
+        lecturerId: pbUser.lecturerProfile.id,
+        majorId: majorIdByCode.get('CNPM'),
+        maxStudents: 3,
+      },
+      {
+        title: 'Ứng dụng Di động Hỗ trợ Học tập Cá nhân hóa Tích hợp Trí tuệ Nhân tạo',
+        description: 'Phát triển ứng dụng di động cho sinh viên theo dõi lịch học, tài liệu và gợi ý bài tập theo năng lực dựa trên mô hình học máy.',
+        expectedOutcomes: 'Source code ứng dụng di động React Native/Flutter, Backend API và tài liệu kiểm thử.',
+        lecturerId: abUser.lecturerProfile.id,
+        majorId: majorIdByCode.get('CNPM'),
+        maxStudents: 3,
+      },
+      {
+        title: 'Thiết kế và Triển khai Hệ thống Giám sát & Phát hiện Xâm nhập Mạng (NIDS)',
+        description: 'Nghiên cứu kiến trúc mạng an toàn, triển khai hệ thống phát hiện xâm nhập mã nguồn mở (Snort/Suricata) kết hợp phân tích lưu lượng bất thường.',
+        expectedOutcomes: 'Mô hình mạng thử nghiệm, cấu hình NIDS, kịch bản tấn công/phòng thủ và báo cáo đánh giá hiệu năng.',
+        lecturerId: cdUser.lecturerProfile.id,
+        majorId: majorIdByCode.get('MMT'),
+        maxStudents: 3,
+      },
+    ];
 
-    let baseProjectType = await prisma.projectType.findUnique({
-      where: { code: 'DATN' },
-    });
-    if (!baseProjectType) {
-      baseProjectType = (await prisma.projectType.findFirst())!;
-    }
-
-    for (let i = 0; i < DEMO_STUDENTS.length; i++) {
-      const studentEmail = DEMO_STUDENTS[i].email;
-      const studentUser = await prisma.user.findUnique({
-        where: { email: studentEmail },
-        include: { studentProfile: true },
+    for (const t of sampleTopics) {
+      await prisma.topic.create({
+        data: {
+          title: t.title,
+          description: t.description,
+          expectedOutcomes: t.expectedOutcomes,
+          maxStudents: t.maxStudents,
+          status: 'OPEN',
+          semesterId: semester.id,
+          roundId: datnRound.id,
+          lecturerId: t.lecturerId,
+          majorId: t.majorId,
+        },
       });
-
-      if (studentUser?.studentProfile) {
-        await prisma.topicProposal.create({
-          data: {
-            title: proposalTitles[i % proposalTitles.length],
-            description: `Em có ý tưởng làm về ${proposalTitles[i % proposalTitles.length]}. Đã tìm hiểu các công nghệ web cơ bản như React và Node.js. Mong thầy hướng dẫn thêm.`,
-            expectedOutcomes: 'Hoàn thiện ứng dụng và báo cáo chi tiết.',
-            semesterId: semester.id,
-            studentId: studentUser.studentProfile.id,
-            projectTypeId: baseProjectType.id,
-            requestedLecturerId: targetLecturer.lecturerProfile.id,
-            status: 'PENDING',
-          },
-        });
-        proposalCount++;
-      }
     }
-    console.log(
-      `  demo proposals: ${proposalCount} (requested to ${targetLecturer.lecturerProfile.fullName})`,
-    );
+    console.log(`  [✓] Đề tài mẫu KLTN: Đã tạo ${sampleTopics.length} đề tài`);
   }
 
-  console.log('\nLogin with:');
-  console.log(`  ADMIN     ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
-  for (const student of DEMO_STUDENTS) {
-    console.log(`  STUDENT   ${student.email} / ${student.password}`);
+  // 8. Seed Đề xuất mẫu từ sinh viên 2266666 gửi Thầy Phan Bửu (gvpb)
+  const studentA = await prisma.user.findUnique({
+    where: { email: '2266666@dlu.edu.vn' },
+    include: { studentProfile: true },
+  });
+
+  const datnType = await prisma.projectType.findUnique({ where: { code: 'DATN' } });
+
+  if (studentA?.studentProfile && pbUser?.lecturerProfile && datnType) {
+    await prisma.topicProposal.deleteMany({ where: { semesterId: semester.id } });
+
+    await prisma.topicProposal.create({
+      data: {
+        title: 'Nghiên cứu ứng dụng Computer Vision trong nhận diện khuôn mặt sinh viên tại giảng đường DLU',
+        description: 'Đề tài nhằm tự động hóa quy trình điểm danh bằng camera nhận diện gương mặt. Nhóm em đã tìm hiểu thư viện OpenCV và mô hình YOLO.',
+        expectedOutcomes: 'Ứng dụng điểm danh chạy thử nghiệm, báo cáo độ chính xác nhận diện.',
+        semesterId: semester.id,
+        studentId: studentA.studentProfile.id,
+        projectTypeId: datnType.id,
+        requestedLecturerId: pbUser.lecturerProfile.id,
+        status: 'PENDING',
+      },
+    });
+    console.log(`  [✓] Đề xuất mẫu: Sinh viên 2266666 gửi GVHD (gvpb@dlu.edu.vn)`);
   }
-  for (const { email } of DEMO_LECTURERS) {
-    console.log(`  LECTURER  ${email} / ${DEMO_LECTURER_PASSWORD}`);
-  }
+
+  console.log('\n============================================================');
+  console.log('🎉 SEED DỮ LIỆU CHUẨN KHOA CNTT - ĐẠI HỌC ĐÀ LẠT HOÀN TẤT!');
+  console.log('============================================================');
+  console.log(`MẬT KHẨU CHUNG CHO TẤT CẢ TÀI KHOẢN: ${DEFAULT_PASSWORD}\n`);
+
+  console.log('1. DANH SÁCH GIẢNG VIÊN & CÁN BỘ:');
+  console.log('   - gvgvk@dlu.edu.vn   | Vai trò: Trợ lý Giáo vụ Khoa (TLGV / ADMIN)');
+  console.log('   - gvcnk@dlu.edu.vn   | Vai trò: Ban Chủ nhiệm Khoa (BCN Khoa)');
+  console.log('   - gvab@dlu.edu.vn    | Vai trò: Tổ trưởng BM Phần mềm (TTBM CNPM)');
+  console.log('   - gvcd@dlu.edu.vn    | Vai trò: Tổ trưởng BM Mạng máy tính (TTBM MMT)');
+  console.log('   - gvpb@dlu.edu.vn    | Vai trò: Giảng viên Hướng dẫn & Phản biện\n');
+
+  console.log('2. DANH SÁCH SINH VIÊN (CTK46 - Năm cuối làm KLTN):');
+  console.log('   - 2266666@dlu.edu.vn | Nguyễn Văn A (Lớp CTK46PM - Chuyên ngành Phần mềm)');
+  console.log('   - 2277777@dlu.edu.vn | Phạm Thị B   (Lớp CTK46PM - Chuyên ngành Phần mềm)');
+  console.log('   - 2288888@dlu.edu.vn | Lê Văn C     (Lớp CTK46MMT - Chuyên ngành Mạng)');
+  console.log('============================================================\n');
 }
 
 main()

@@ -35,6 +35,28 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         role: true,
         isActive: true,
         mustChangePassword: true,
+        lecturerProfile: {
+          select: {
+            id: true,
+            lecturerCode: true,
+            fullName: true,
+            academicTitle: true,
+            majorId: true,
+            isHeadOfDepartment: true,
+            isFacultyBoard: true,
+            isAcademicAssistant: true,
+          },
+        },
+        studentProfile: {
+          select: {
+            id: true,
+            studentCode: true,
+            fullName: true,
+            majorId: true,
+            class: true,
+            cohort: true,
+          },
+        },
       },
     });
 
@@ -43,3 +65,4 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return user; // This gets attached to req.user
   }
 }
+

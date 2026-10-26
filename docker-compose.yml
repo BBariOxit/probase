@@ -1,4 +1,4 @@
-﻿services:
+services:
   # Database: PostgreSQL
   postgres:
     image: postgres:17-alpine
@@ -80,11 +80,14 @@
     restart: unless-stopped
     ports:
       - "${APP_PORT:-3000}:3000"
+    env_file:
+      - ./probase-app/.env
     environment:
       - NODE_ENV=development
       - PORT=3000
       - HOSTNAME=0.0.0.0
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
       - WATCHPACK_POLLING=true
       - CHOKIDAR_USEPOLLING=true
     volumes:

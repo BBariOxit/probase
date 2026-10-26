@@ -89,7 +89,10 @@ describe('AuthService password backoff', () => {
           provide: ConfigService,
           useValue: {
             getOrThrow: () => 'test-refresh-secret',
-            get: (_key: string, fallback?: string) => fallback ?? '30d',
+            get: (key: string, fallback?: string) => {
+              if (key === 'GOOGLE_CLIENT_ID') return undefined;
+              return fallback ?? '30d';
+            },
           },
         },
       ],
@@ -294,4 +297,81 @@ describe('AuthService password backoff', () => {
       expect(compare.mock.calls[0][1]).not.toBe(PASSWORD_HASH);
     });
   });
+
+  describe('googleLogin', () => {
+    const originalFetch = global.fetch;
+
+    afterEach(() => {
+      global.fetch = originalFetch;
+    });
+
+    it('rejects emails outside DLU domains (@dlu.edu.vn / @st.dlu.edu.vn)', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          email: 'student@gmail.com',
+          email_verified: 'true',
+          name: 'Student Gmail',
+        }),
+      } as unknown as Response);
+
+      await expect(
+        service.googleLogin({ idToken: 'fake-token' }),
+      ).rejects.toThrow('Hệ thống ProBase chỉ chấp nhận email do Trường Đại học Đà Lạt cấp');
+    });
+
+    it('rejects DLU email not registered in the system (BR-01)', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          email: 'unregistered@st.dlu.edu.vn',
+          email_verified: 'true',
+          name: 'Unregistered Student',
+        }),
+      } as unknown as Response);
+
+      findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.googleLogin({ idToken: 'fake-token' }),
+      ).rejects.toThrow('chưa được cập nhật vào danh sách của Khoa CNTT');
+    });
+
+    it('successfully logs in an existing DLU user', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          email: '2266666@dlu.edu.vn',
+          email_verified: 'true',
+          name: 'Nguyễn Văn A',
+          picture: 'https://avatar.google.com/a.jpg',
+        }),
+      } as unknown as Response);
+
+      findUnique.mockResolvedValue({
+        id: 10,
+        email: '2266666@dlu.edu.vn',
+        role: 'STUDENT',
+        isActive: true,
+        mustChangePassword: false,
+        avatarUrl: null,
+        studentProfile: {
+          id: 1,
+          studentCode: '2266666',
+          fullName: 'Nguyễn Văn A',
+          majorId: 1,
+          class: 'CTK46PM',
+          cohort: '2022',
+        },
+        lecturerProfile: null,
+      });
+
+      const result = await service.googleLogin({ idToken: 'valid-token' });
+      expect(result).toHaveProperty('accessToken');
+      expect(result).toHaveProperty('refreshToken');
+      expect(result.user.email).toBe('2266666@dlu.edu.vn');
+      expect(result.user.studentProfile?.studentCode).toBe('2266666');
+    });
+  });
 });
+
