@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -13,6 +14,7 @@ import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
 import { LoginDto } from './dto/login.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
@@ -58,6 +60,7 @@ export class AuthService {
   private readonly refreshSecret: string;
   private readonly refreshExpiresIn: string;
   private readonly frontendUrl: string;
+  private readonly googleClientId?: string;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -68,6 +71,7 @@ export class AuthService {
     this.refreshSecret = config.getOrThrow<string>('JWT_REFRESH_SECRET');
     this.refreshExpiresIn = config.get('JWT_REFRESH_EXPIRES_IN', '30d');
     this.frontendUrl = config.get('FRONTEND_URL', 'http://localhost:3000');
+    this.googleClientId = config.get<string>('GOOGLE_CLIENT_ID');
   }
 
   async login(dto: LoginDto) {
@@ -156,6 +160,140 @@ export class AuthService {
         avatarUrl: account.avatarUrl,
         studentProfile: account.studentProfile,
         lecturerProfile: account.lecturerProfile,
+      },
+    };
+  }
+
+  /**
+   * Đăng nhập thông qua Google SSO của Trường Đại học Đà Lạt
+   * - Hỗ trợ cả sinh viên (@st.dlu.edu.vn / @dlu.edu.vn) và giảng viên (@dlu.edu.vn)
+   * - Ràng buộc BR-01: Tài khoản phải được Khoa tạo/import trước trong CSDL
+   */
+  async googleLogin(dto: GoogleLoginDto) {
+    const rawToken = dto.idToken || dto.credential;
+    if (!rawToken) {
+      throw new BadRequestException('Mã xác thực Google không hợp lệ');
+    }
+
+    let googlePayload: {
+      email?: string;
+      email_verified?: string | boolean;
+      name?: string;
+      picture?: string;
+      aud?: string;
+    };
+
+    try {
+      const response = await fetch(
+        `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(rawToken)}`,
+      );
+
+      if (!response.ok) {
+        throw new Error('Google token không hợp lệ hoặc đã hết hạn');
+      }
+
+      googlePayload = (await response.json()) as typeof googlePayload;
+    } catch {
+      throw new UnauthorizedException(
+        'Xác thực tài khoản Google thất bại hoặc mã token đã hết hạn',
+      );
+    }
+
+    const email = googlePayload.email?.toLowerCase();
+    const isEmailVerified =
+      googlePayload.email_verified === 'true' ||
+      googlePayload.email_verified === true;
+
+    if (!email || !isEmailVerified) {
+      throw new UnauthorizedException('Email Google chưa được xác thực bởi nhà cung cấp');
+    }
+
+    if (this.googleClientId && googlePayload.aud !== this.googleClientId) {
+      throw new UnauthorizedException('Mã xác thực Google không thuộc ứng dụng này');
+    }
+
+    // Ràng buộc bảo mật DLU: Chỉ chấp nhận đuôi trường DLU (@dlu.edu.vn hoặc @st.dlu.edu.vn)
+    const isDluEmail =
+      email.endsWith('@dlu.edu.vn') || email.endsWith('@st.dlu.edu.vn');
+    if (!isDluEmail) {
+      throw new BadRequestException(
+        `Hệ thống ProBase chỉ chấp nhận email do Trường Đại học Đà Lạt cấp (@dlu.edu.vn hoặc @st.dlu.edu.vn). Địa chỉ "${email}" không được phép đăng nhập.`,
+      );
+    }
+
+    // BR-01: Tài khoản phải được Khoa import trước trong hệ thống
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: {
+        studentProfile: {
+          select: {
+            id: true,
+            studentCode: true,
+            fullName: true,
+            majorId: true,
+            class: true,
+            cohort: true,
+          },
+        },
+        lecturerProfile: {
+          select: {
+            id: true,
+            lecturerCode: true,
+            fullName: true,
+            academicTitle: true,
+            majorId: true,
+            isHeadOfDepartment: true,
+            isFacultyBoard: true,
+            isAcademicAssistant: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new ForbiddenException(
+        `Email "${email}" chưa được cập nhật vào danh sách của Khoa CNTT. Vui lòng liên hệ Trợ lý Giáo vụ Khoa để được cấp tài khoản.`,
+      );
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('Tài khoản đã bị vô hiệu hoá');
+    }
+
+    // Tự động cập nhật avatar nếu tài khoản chưa có và Google có ảnh đại diện
+    if (!user.avatarUrl && googlePayload.picture) {
+      await this.prisma.user
+        .update({
+          where: { id: user.id },
+          data: { avatarUrl: googlePayload.picture },
+        })
+        .catch(() => undefined);
+      user.avatarUrl = googlePayload.picture;
+    }
+
+    await this.clearFailedPasswords(user);
+
+    const tokens = await this.generateTokenPair(
+      user.id,
+      user.email,
+      user.role,
+    );
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        mustChangePassword: user.mustChangePassword,
+        fullName:
+          user.studentProfile?.fullName ??
+          user.lecturerProfile?.fullName ??
+          googlePayload.name ??
+          null,
+        avatarUrl: user.avatarUrl,
+        studentProfile: user.studentProfile,
+        lecturerProfile: user.lecturerProfile,
       },
     };
   }

@@ -19,6 +19,7 @@ import { GetUser } from './decorators/get-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -43,6 +44,20 @@ export class AuthController {
     this.setRefreshTokenCookie(res, refreshToken);
     return result;
   }
+
+  @Public()
+  @Throttle(CREDENTIAL_IP_CEILING)
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  async googleLogin(
+    @Body() dto: GoogleLoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { refreshToken, ...result } = await this.authService.googleLogin(dto);
+    this.setRefreshTokenCookie(res, refreshToken);
+    return result;
+  }
+
 
   @Public()
   @Post('refresh')
