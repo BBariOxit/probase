@@ -181,7 +181,14 @@ function LoginForm() {
         </Button>
       </form>
 
-      <div className="mt-3">
+      <div className="relative my-4 flex items-center justify-center">
+        <div className="w-full border-t border-border/70" />
+        <span className="absolute bg-card px-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          hoặc
+        </span>
+      </div>
+
+      <div>
         <GoogleLoginButton
           disabled={isSubmitting}
           isLoading={isGoogleLoading}
