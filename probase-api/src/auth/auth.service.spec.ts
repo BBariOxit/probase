@@ -89,7 +89,10 @@ describe('AuthService password backoff', () => {
           provide: ConfigService,
           useValue: {
             getOrThrow: () => 'test-refresh-secret',
-            get: (_key: string, fallback?: string) => fallback ?? '30d',
+            get: (key: string, fallback?: string) => {
+              if (key === 'GOOGLE_CLIENT_ID') return undefined;
+              return fallback ?? '30d';
+            },
           },
         },
       ],
