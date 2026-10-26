@@ -266,19 +266,27 @@ model LecturerProfile {
   lecturerCode      String  @unique
   fullName          String
   academicTitle     String?
+  majorId           Int?    // Chuyên ngành / Tổ chuyên môn: CNPM hoặc MMT
   phone             String?
   bio               String?
   researchInterests String?
   maxMentoringQuota Int? // Null = no limit
 
+  // Các cờ chức vụ kiêm nhiệm theo đúng cơ cấu Khoa CNTT - DLU
+  isHeadOfDepartment Boolean @default(false) // Tổ trưởng Bộ môn (TTBM)
+  isFacultyBoard     Boolean @default(false) // Ban Chủ nhiệm Khoa (BCN Khoa)
+  isAcademicAssistant Boolean @default(false) // Trợ lý Giáo vụ Khoa (TLGV)
+
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  major Major? @relation(fields: [majorId], references: [id], onDelete: SetNull)
 
   requestedProposals TopicProposal[] @relation("ProposalRequestedLecturer")
   acceptedProposals  TopicProposal[] @relation("ProposalAcceptedLecturer")
   topics             Topic[]
   councilMembers     CouncilMember[]
   reviewedTopics     CouncilTopic[]
+  topicReviews       TopicReview[]
 
   @@map("lecturer_profiles")
 }
@@ -287,17 +295,18 @@ model LecturerProfile {
 // GROUP 2: MASTER DATA
 // ─────────────────────────────────────────────────────────
 
-// Chuyên ngành. There is deliberately no bộ môn (department) table above this:
-// the system serves one faculty, no business rule ever depended on the grouping,
-// and the single report that wanted it (SV per bộ môn) was dropped from scope.
-// A flat list of majors is the whole hierarchy.
+// Chuyên ngành (Tổ chuyên môn). Gồm 2 chuyên ngành đào tạo chính thức của Khoa CNTT - DLU:
+// 1. Công nghệ phần mềm (CNPM)
+// 2. Mạng máy tính (MMT)
 model Major {
   id   Int    @id @default(autoincrement())
   name String
   code String @unique
 
   // Relations
-  students StudentProfile[]
+  students  StudentProfile[]
+  lecturers LecturerProfile[]
+  topics    Topic[]
 
   @@map("majors")
 }
@@ -311,12 +320,11 @@ model Semester {
   gradeSubmissionDeadline DateTime? // After this, grades are locked
   isActive                Boolean   @default(false)
 
-  // The final-grade formula is data, not code: a faculty that reweights
-  // mentor/reviewer/council between intakes must not silently recompute the
-  // grades of semesters already closed. Expected to sum to 1.
-  mentorWeight   Float @default(0.4)
-  reviewerWeight Float @default(0.3)
-  councilWeight  Float @default(0.3)
+  // Trọng số điểm chuẩn của Khoa CNTT - DLU:
+  // Điểm TK = (20% * TĐ1) + (30% * TĐ2) + (50% * BV)
+  mentorWeight   Float @default(0.2) // Tiến độ 1 (GVHD chấm)
+  reviewerWeight Float @default(0.3) // Tiến độ 2 (GVHD + GVPB cùng chấm)
+  councilWeight  Float @default(0.5) // Điểm Bảo vệ Hội đồng / Tiểu ban
 
   // The registration window, the phase and the finalisation live on
   // RegistrationRound, not here. A faculty opens Cơ sở, Chuyên ngành and Tốt
@@ -475,6 +483,7 @@ model Topic {
   id               Int         @id @default(autoincrement())
   semesterId       Int
   lecturerId       Int
+  majorId          Int?        // Chuyên ngành: CNPM hoặc MMT
   // The round is the semester and the kind of project at once, so a topic can
   // only exist in a round the faculty has actually opened.
   roundId          Int
@@ -482,7 +491,7 @@ model Topic {
   title            String
   description      String      @db.Text
   expectedOutcomes String      @db.Text
-  maxStudents      Int         @default(1)
+  maxStudents      Int         @default(3) // Tối đa 1 đến 3 SV
   status           TopicStatus @default(PENDING)
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
@@ -490,6 +499,7 @@ model Topic {
   // Relations
   semester       Semester          @relation(fields: [semesterId], references: [id], onDelete: Restrict)
   lecturer       LecturerProfile   @relation(fields: [lecturerId], references: [id], onDelete: Restrict)
+  major          Major?            @relation(fields: [majorId], references: [id], onDelete: SetNull)
   // Composite, so a topic cannot end up in a round that belongs to a different
   // semester than the one it claims.
   round          RegistrationRound @relation(fields: [roundId, semesterId], references: [id, semesterId], onDelete: Restrict)
@@ -498,6 +508,9 @@ model Topic {
   registrationGroups RegistrationGroup[]
   submissions        Submission[]
   councilTopic       CouncilTopic?
+  outlines           TopicOutline[]
+  archives           TopicArchive[]
+  changeRequests     TopicChangeRequest[]
 
   // Lets RegistrationGroup carry a denormalised semesterId that a composite
   // foreign key pins to this topic's own semester, so the two cannot drift.
@@ -518,37 +531,15 @@ model RegistrationGroup {
   lecturerFeedback String?                 @db.Text
 
   /// Whether the group is still willing to take anyone else.
-  ///
-  /// Open by default: free joining is the model, and a group that fills up is
-  /// closed by `maxStudents` rather than by this flag. The leader turns it off
-  /// to mean "we are going with two, do not send us a third" — at which point
-  /// the topic reads as taken however many seats sit unused, because offering a
-  /// seat the group will not accept is the interface telling a lie.
-  ///
-  /// Note this is only half the answer: during the hold window below, a group
-  /// is open in principle but reachable only through its join link.
   openForJoin Boolean @default(true)
 
-  /// How many students the leader said they intend to bring, if they said.
-  ///
-  /// Null means they did not, and the seats were never held at all.
+  /// How many students the leader said they intend to bring (1 - 3).
   declaredSize Int?
 
-  /// When the held seats stop being held. Null, or a time already past, means
-  /// the remaining seats are open to anyone.
-  ///
-  /// A deadline rather than a state, deliberately: it expires by itself, so no
-  /// cancellation path — a member leaving, a group disbanding, an account being
-  /// locked — has to remember to undo it. Everything that frees a seat reopens
-  /// the topic without a line of code recalling that it should.
+  /// When the held seats stop being held.
   holdUntil DateTime?
 
   /// The secret in the group's join link.
-  ///
-  /// Cryptographically random, because a guessable one would let a stranger
-  /// walk into exactly the seat being held for a friend. Kept after the hold
-  /// expires so an old link still resolves to the right group rather than
-  /// 404ing — by then it grants nothing the topic page does not.
   joinCode String? @unique
 
   createdAt DateTime @default(now())
@@ -560,9 +551,13 @@ model RegistrationGroup {
   semester Semester       @relation(fields: [semesterId], references: [id], onDelete: Restrict)
   leader   StudentProfile @relation(fields: [leaderId], references: [id], onDelete: Restrict)
 
-  members      RegistrationGroupMember[]
-  submissions  Submission[]
-  councilTopic CouncilTopic?
+  members        RegistrationGroupMember[]
+  submissions    Submission[]
+  councilTopic   CouncilTopic?
+  outline        TopicOutline?
+  reviews        TopicReview[]
+  archive        TopicArchive?
+  changeRequests TopicChangeRequest[]
 
   // Targets for the composite keys on members, submissions and council topics.
   @@unique([id, topicId])
@@ -898,3 +893,97 @@ model PasswordResetToken {
   @@index([userId])
   @@map("password_reset_tokens")
 }
+
+// ─────────────────────────────────────────────────────────
+// GROUP 10: DLU BIỂU MẪU & QUY TRÌNH HÀNH CHÍNH (M03, M02/M05, ARCHIVE)
+// ─────────────────────────────────────────────────────────
+
+/// Số hóa Đề cương thực hiện đồ án (Mẫu M03) chuẩn Khoa CNTT - DLU (BR-08, BR-09).
+model TopicOutline {
+  id               Int       @id @default(autoincrement())
+  groupId          Int       @unique
+  topicId          Int
+  objectives       String    @db.Text
+  scopeAndContent  String    @db.Text
+  toolsAndTech     String    @db.Text
+  expectedResults  String    @db.Text
+  weeklyPlans      Json      // Bảng kế hoạch tuần [{ week, fromDate, toDate, task, deliverable }]
+  references       String?   @db.Text
+  attachmentUrl    String?   // File đính kèm .docx/.pdf nếu có
+  status           String    @default("DRAFT") // DRAFT, SUBMITTED, APPROVED_BY_LECTURER, REJECTED
+  lecturerFeedback String?   @db.Text
+  approvedAt       DateTime?
+  pdfExportUrl     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  group RegistrationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  topic Topic             @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@map("topic_outlines")
+}
+
+/// Trang nhận xét chính thức: Mẫu M02/M04 (GVHD) và Mẫu M05 (GVPB) (BR-17).
+model TopicReview {
+  id                 Int       @id @default(autoincrement())
+  groupId            Int
+  lecturerId         Int
+  reviewerType       String    // "SUPERVISOR" (GVHD) | "REVIEWER" (GVPB)
+  templateCode       String    // "M02" (Đồ án GVHD) | "M04" (KLTN GVHD) | "M05" (GVPB)
+  evaluationCriteria Json?     // Tiêu chí chấm theo barem
+  generalComment     String    @db.Text
+  isDefenseAllowed   Boolean   @default(true) // Được phép bảo vệ
+  pdfExportUrl       String?
+  signedAt           DateTime  @default(now())
+
+  group    RegistrationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  lecturer LecturerProfile   @relation(fields: [lecturerId], references: [id], onDelete: Restrict)
+
+  @@unique([groupId, reviewerType])
+  @@map("topic_reviews")
+}
+
+/// Gói lưu trữ số hóa 3 thành phần bắt buộc của Khoa CNTT - DLU (BR-19, BR-20).
+model TopicArchive {
+  id                     Int       @id @default(autoincrement())
+  groupId                Int       @unique
+  topicId                Int
+  sourceUrl              String    // Thư mục SOURCE: toàn bộ mã nguồn và config
+  databaseUrl            String    // Thư mục DATABASE: script tạo bảng hoặc backup CSDL
+  thesisUrl              String    // Thư mục THESIS: báo cáo PDF hoàn chỉnh lồng M03, M02/M05 đã ký + HDSD
+  abstractVi             String?   @db.Text
+  abstractEn             String?   @db.Text
+  keywords               String?
+  isVerifiedBySupervisor Boolean   @default(false)
+  isVerifiedByAcademic   Boolean   @default(false)
+  archivedAt             DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  group RegistrationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  topic Topic             @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@map("topic_archives")
+}
+
+/// Xử lý các yêu cầu thay đổi trong quá trình thực hiện đồ án (BR-15).
+model TopicChangeRequest {
+  id                Int       @id @default(autoincrement())
+  groupId           Int
+  topicId           Int
+  requestType       String    // "CHANGE_TITLE" | "CHANGE_MEMBER" | "EXTEND_DEADLINE" | "CANCEL_TOPIC"
+  reason            String    @db.Text
+  oldValue          String?   @db.Text
+  newValue          String?   @db.Text
+  status            String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  supervisorComment String?   @db.Text
+  facultyComment    String?   @db.Text
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  group RegistrationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  topic Topic             @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@map("topic_change_requests")
+}
+

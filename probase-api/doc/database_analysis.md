@@ -1,363 +1,410 @@
 # Phân tích Thiết kế Cơ sở dữ liệu: Hệ thống Quản lý Đồ án CNTT
+## Khoa Công nghệ Thông tin – Trường Đại học Đà Lạt (DLU)
 
-Hệ thống quản lý đồ án cho sinh viên Công nghệ Thông tin (bao gồm Đồ án cơ sở, Đồ án chuyên ngành, Đồ án tốt nghiệp) là một hệ thống mang tính học thuật, yêu cầu quy trình chặt chẽ từ khâu ra đề, đăng ký, thực hiện, báo cáo đến chấm điểm.
-
----
-
-## 1. Phân tích Các Tính Năng Cốt Lõi (Dựa trên Role)
-
-### 🧑‍🎓 Sinh viên (Student)
-
-- **Quản lý đồ án**: Xem danh sách các đề tài đang mở, xem chi tiết đề tài.
-- **Đăng ký**: Đăng ký đề tài (nhóm được tạo ngay trên đề tài đó) hoặc **tham gia** nhóm đang còn ghế bằng một cú click; giữ chỗ cho bạn bằng **link tham gia**. Không còn bước mời theo mã SV, và không còn bước GV duyệt từng nhóm — xem FR_STU_03a.
-- **Đề xuất đề tài**: Sinh viên tự đề xuất đề tài dựa trên ý tưởng cá nhân, gửi yêu cầu cho giảng viên mong muốn hướng dẫn.
-- **Thực hiện**: Quản lý tiến độ, task list, nộp báo cáo định kỳ/cuối kỳ (hỗ trợ nộp nhiều lần), nộp source code.
-- **Kết quả**: Xem nhận xét của giảng viên, xem điểm, lịch bảo vệ hội đồng.
-
-### 👨‍🏫 Giảng viên (Lecturer)
-
-- **Quản lý đề tài**: Đề xuất đề tài mới, xem nhóm đã nhận đề tài của mình. **Không duyệt từng nhóm** — việc rà soát diễn ra một lần cho cả khoa ở pha `RECONCILING`, do **giáo vụ (Admin)** thực hiện; giảng viên chỉ được thông báo khi có SV được xếp vào đề tài của mình.
-- **Duyệt đề xuất của Sinh viên**: Xem xét các đề tài do sinh viên tự đề xuất, chấp nhận làm giảng viên hướng dẫn hoặc từ chối kèm lý do.
-- **Hướng dẫn**: Giao task, theo dõi tiến độ của sinh viên, tải và xem báo cáo các phiên bản.
-- **Đánh giá**: Chấm điểm quá trình, nhận xét, chấm điểm phản biện/hội đồng.
-
-### 👨‍💻 Quản trị viên (Admin)
-
-- **Quản lý hệ thống**: Quản lý tài khoản, cấp quyền.
-- **Quản lý danh mục**: Quản lý đợt/học kỳ, loại đồ án (Cơ sở, Chuyên ngành, Tốt nghiệp), chuyên ngành.
-- **Quản lý quy trình**: Mở/đóng đợt đăng ký theo năm pha của **từng đợt** (một đợt = một cặp học kỳ × loại đồ án), gia hạn khi còn nhiều sinh viên chưa có nhóm, duyệt đề tài của giảng viên (nếu cần), phân công hội đồng bảo vệ.
-- **Phân bổ cuối đợt**: Sau khi cổng đóng, xếp sinh viên chưa có nhóm vào các đề tài còn chỗ rồi **chốt đợt** đó. Mỗi đợt chốt độc lập — Tốt nghiệp không phải đợi Cơ sở. Cùng loại việc với phân bổ nhóm vào hội đồng bảo vệ — đều cắt ngang toàn khoa, nên đều thuộc vai này.
-- **Danh sách sinh viên toàn khoa**: một bảng duy nhất (mã SV, tên, lớp, chuyên ngành, khóa, nhóm, đề tài, GV, ghi chú) — dùng chung cho cả bàn phân bổ.
-- **Báo cáo & Thống kê**: Thống kê số lượng sinh viên làm đồ án, tỉ lệ qua/trượt, danh sách điểm.
+Tài liệu này định nghĩa chi tiết kiến trúc cơ sở dữ liệu quan hệ (PostgreSQL / Prisma ORM) được chuẩn hóa theo đúng thực tế hoạt động, cơ cấu tổ chức và 23 yêu cầu nghiệp vụ (BR-01 đến BR-23) của Khoa Công nghệ Thông tin – Trường Đại học Đà Lạt.
 
 ---
 
-## 2. Thiết kế Cấu trúc Database
+## 1. NGUYÊN TẮC THIẾT KẾ DỮ LIỆU CỐT LÕI (DLU DOMAIN RULES)
 
-### Nhóm 1: Quản lý Người dùng & Phân quyền (Authentication & Profiles)
+1. **Ngành đào tạo & Hai Chuyên ngành thực tế:**
+   - Trường chỉ tuyển sinh một ngành: **Công nghệ Thông tin**.
+   - Đến năm thứ 3, sinh viên phân vào đúng **2 Chuyên ngành (hướng chuyên sâu)**:
+     - `CNPM`: **Công nghệ phần mềm** (mã lớp ví dụ `CTK46PM`).
+     - `MMT`: **Mạng máy tính** (mã lớp ví dụ `CTK46MMT`).
+   - Hai chuyên ngành này cũng là hai **Tổ chuyên môn** quản lý đề tài và phân công giảng viên.
 
-- **`users`**: `id`, `email`, `password_hash`, `role` (ADMIN, LECTURER, STUDENT), `is_active`, `created_at`, `updated_at`.
-- **`student_profiles`**: `id`, `user_id` (FK), `student_code`, `full_name`, `class`, `major_id` (FK → `majors`), `cohort`, `phone`, `bio`, `note` (Text, Nullable).
-  > _(cập nhật: thêm `note` — ô ghi tay tự do của giáo vụ ("bảo lưu HK1", "đã gọi điện chưa phản hồi"), hiển thị trong danh sách sinh viên toàn khoa ở FR_ADM_06. Mọi hệ thống hành chính thật đều cần một ô như vậy; không có nó thì thông tin ấy chạy sang một file Excel riêng và biến mất khỏi hệ thống.)_
-  > _(cập nhật: **`class` phải được kiểm chéo lúc import, không nhận làm text tự do.** Mã lớp mang khuôn `CT` + `K{số khóa}` + `{mã ngành}` (`CTK46PM`, `CTK46MMT`), nên nó mã hoá lại đúng hai dữ kiện đã có nguồn khác: khóa (suy từ `student_code`) và chuyên ngành (`major_id`). Ba nguồn cho hai dữ kiện. Mã lớp **đúng khuôn nhưng mâu thuẫn** với hai nguồn kia → **từ chối dòng**, giống cách một dòng có email lệch mã SV đang bị từ chối; mã lớp **không khớp khuôn** (lớp chất lượng cao, lớp ghép) → nhận nhưng cảnh báo. Xem FR_ADM_01.)_
-  > _(cập nhật: `student_code` gồm **2 chữ số năm nhập học + 5 chữ số thứ tự** (`2212345`) và trùng đúng phần trước `@` của email trường. `cohort` vì vậy **được suy ra từ mã**, lưu dạng năm nhập học `"2022"`, không lấy từ ô nhập tay trong file import — cột gõ tay sẽ có cả `"2021"`, `"K45"`, `"21"` lẫn ô trống, và mọi quy tắc dựa trên nó sẽ hỏng âm thầm. Import phải từ chối dòng có email và mã lệch nhau. Số khóa chỉ là cách hiển thị: `khóa = năm nhập học − 1976`.)_
-  > _(cập nhật: thêm `phone`, `bio`, `major_id` FK thay cho string cứng; hỗ trợ FR_STU_01)_
-- **`lecturer_profiles`**: `id`, `user_id` (FK), `lecturer_code`, `full_name`, `academic_title`, `phone`, `bio`, `research_interests`, `max_mentoring_quota` (Int - Số nhóm tối đa được hướng dẫn trong một học kỳ, Nullable — nếu Null thì không giới hạn).
-  > _(cập nhật: thêm `phone`, `bio`, `research_interests`, `max_mentoring_quota`; hỗ trợ FR_LEC_01)_
-  > _(cập nhật: **bỏ `department_id`** — xem ghi chú ở `majors` bên dưới. Giảng viên tìm theo `research_interests`, không theo đơn vị.)_
+2. **Cơ cấu Giảng viên & 6 Tác nhân (Actors):**
+   - Không tạo các bảng role rời rạc gây phân mảnh. Hệ thống sử dụng bảng `lecturer_profiles` có các cờ chức vụ kiêm nhiệm trong Khoa:
+     - `is_head_of_department` (Tổ trưởng Bộ môn - TTBM phụ trách Tổ CNPM hoặc Tổ MMT).
+     - `is_faculty_board` (Ban Chủ nhiệm Khoa - BCN Khoa).
+     - `is_academic_assistant` (Trợ lý Giáo vụ Khoa - TLGV).
+     - Đồng thời mỗi giảng viên đều có thể đóng vai trò `GVHD` (hướng dẫn) hoặc `GVPB` (phản biện) tùy theo từng đề tài.
 
-### Nhóm 2: Quản lý Danh mục (Master Data)
+3. **Cơ cấu điểm 3 cột chuẩn DLU:**
+   $$\text{Điểm TK} = (20\% \times \text{Điểm TĐ1}) + (30\% \times \text{Điểm TĐ2}) + (50\% \times \text{Điểm BV})$$
+   - Tiến độ 1 (20%): Do GVHD chấm.
+   - Tiến độ 2 (30%): Do GVHD và GVPB cùng đánh giá.
+   - Bảo vệ cuối kỳ (50%): Do Hội đồng hoặc Tiểu ban chấm.
 
-- **`semesters`**: `id`, `name`, `code`, `start_date`, `end_date`, `grade_submission_deadline` (Deadline chốt điểm — sau mốc này điểm bị khóa), `is_active`, `mentor_weight`, `reviewer_weight`, `council_weight` (Float — trọng số tính điểm tổng kết, mặc định 0.4/0.3/0.3, tổng bằng 1).
-  > _(cập nhật: **`registration_start`, `registration_end`, `phase`, `allocation_mode`, `finalised_at` và `finalised_by_id` đã chuyển xuống `registration_rounds`** — xem bảng đó và mục 1.0 của tài liệu FR. Học kỳ chỉ giữ lại những gì thật sự thuộc về cả kỳ: lịch học kỳ, deadline chốt điểm và ba trọng số điểm. Cửa sổ đăng ký và pha thì không: cùng một kỳ, Đồ án Tốt nghiệp và Đồ án Cơ sở là hai đợt riêng, mở và chốt độc lập nhau.)_
-  >
-  > _Không có cột `coordinator_id`, và **không có role thứ tư**: việc xếp sinh viên thuộc về vai **ADMIN (giáo vụ khoa)** đã có sẵn. Lý do là quyền hạn, không phải năng lực — một em chưa có nhóm gần như luôn phải xếp vào đề tài của thầy khác, nên không giảng viên nào nên có quyền đó. Đây cũng đúng loại việc ADMIN đã làm khi phân bổ nhóm vào hội đồng bảo vệ.)_
-  > _(cập nhật: thêm 3 trọng số điểm — công thức tính điểm tổng kết là **dữ liệu theo học kỳ**, không hardcode trong code, để đổi trọng số kỳ sau không tính lại điểm các kỳ đã đóng)_
-- **`project_types`**: `id`, `name`, `code`.
-- **`registration_rounds`**: Một **đợt đăng ký** = một cặp (học kỳ × loại đồ án). _(bảng mới; hỗ trợ mục 1.0 và FR_ADM_03)_
-  - `id` (PK), `semester_id` (FK), `project_type_id` (FK), `registration_start`, `registration_end`, `extended_until` (DateTime, Nullable — hạn của lần gia hạn đang chạy), `phase` (PREP, OPEN, RECONCILING, EXTENDED, FINALIZED), `allocation_mode` (FIRST_COME, PREFERENCE_ROUND), `finalised_at` (Nullable), `finalised_by_id` (FK → `users`, Nullable).
-  - `UNIQUE(semester_id, project_type_id)` — mỗi loại đồ án nhiều nhất một đợt trong một kỳ. Cộng `UNIQUE(id, semester_id)` để `topics` ghim được đợt và học kỳ bằng một khoá ngoại ghép, đúng thủ thuật `topics`/`registration_groups` đang dùng.
-  > _(Vì sao đợt chứ không phải học kỳ: Cơ sở, Chuyên ngành và Tốt nghiệp trong cùng một kỳ **không dùng chung ghế nào** — eligibility phân hoạch cả sinh viên lẫn đề tài theo loại. Hỏi "còn bao nhiêu ghế trống" ở mức học kỳ cho ra tổng của những con số không cộng được với nhau: thiếu 30 chỗ Cơ sở cộng thừa 40 ghế Tốt nghiệp ra "thừa 10", và bàn phân bổ ở FR_ADM_07 sẽ nói với giáo vụ rằng không cần mở thêm đề tài.)_
-  >
-  > _`phase` là **cột thật, không phải phép so sánh ngày**. Suy pha thuần từ `registration_end` thì pha `RECONCILING` không bao giờ kết thúc được: không có chỗ nào ghi nhận việc phân bổ đã xong. Ngày tháng là mốc kích hoạt, cột này là sự thật. `PREP → OPEN`, `OPEN → RECONCILING` và `EXTENDED → RECONCILING` được đẩy **lúc đọc** (lazy) nên không cần scheduler; `RECONCILING → FINALIZED` bắt buộc là một sự kiện có người bấm, và `finalised_by_id` + `finalised_at` là dấu vết của nó._
-  >
-  > _`EXTENDED` là pha gia hạn: sinh viên **chưa có nhóm** đăng ký tiếp được, sinh viên **đã có nhóm** không rời được. Bất đối xứng có chủ ý — cấm rời nhóm là để kết quả phân bổ không vỡ sau lưng người vừa dựng nó, mà một em chưa có nhóm thì không nằm trong kết quả nào cả. Giáo vụ **không xếp tay ở pha này**: cổng còn mở thì danh sách chưa có nhóm còn đổi dưới tay người đang xếp. Bàn phân bổ chỉ chạy ở `RECONCILING`._
-- **`round_eligibilities`**: Khóa nào được làm đợt nào. _(bảng mới, thay cho `semester_eligibilities`; hỗ trợ FR_ADM_03)_
-  - `id` (PK), `round_id` (FK), `cohort` (String — năm nhập học, `"2022"`).
-  - `UNIQUE(round_id, cohort)`, cộng index `(round_id)` cho câu hỏi nóng nhất: "kỳ này khóa này được làm những đợt nào".
-  > _(Đợt đã biết loại đồ án nên dòng này chỉ còn khai khóa — bớt một cột so với việc lặp `project_type_id` ở mỗi dòng. Khai eligibility cho một loại đồ án chưa có đợt trong kỳ thì **đợt được tạo cùng lúc**: giáo vụ khai một việc, không phải hai.)_
-  > _(Quy tắc này là **dữ liệu do giáo vụ khai**, không suy ra từ năm học của sinh viên — suy ra sẽ sai ngay với sinh viên học chậm, học vượt, bảo lưu hoặc học lại, mà nhóm đó không hề hiếm. Mô hình chịu được cả trường hợp một khóa được mở hai loại đồ án trong cùng kỳ: hai dòng ở hai đợt khác nhau. Nhưng đó là **hai lựa chọn, không phải hai suất** — partial unique index `(student_id, semester_id) WHERE status = 'ACCEPTED'` vẫn ở mức học kỳ, nên em ấy chỉ vào được một nhóm. Nó phục vụ hai chiều: lọc mặc định danh sách đề tài cho sinh viên (FR_STU_02) và **chặn ở API** khi sinh viên đăng ký đề tài không thuộc diện của khóa mình (FR_STU_03), kể cả khi giáo vụ xếp tay ở pha `RECONCILING` (FR_ADM_07).)_
-- **`majors`**: `id`, `name`, `code`. Danh sách chuyên ngành **phẳng**, không phân cấp. _(bảng mới: tách riêng Chuyên ngành; hỗ trợ FR_ADM_02)_
-  > _(cập nhật: **đã bỏ hẳn bảng `departments`** (bộ môn). Nó từng gom giảng viên và chuyên ngành thành nhóm, nhưng không một quy tắc nghiệp vụ nào đọc tới: đăng ký đề tài, đề xuất và chấm điểm đều mở trong toàn khoa — chính tài liệu này ghi "GV nào trong khoa cũng có thể nhận". Người dùng duy nhất của nó là báo cáo "SV theo bộ môn", đã đưa ra khỏi phạm vi. Giữ lại chỉ tạo thêm một cấp phân cấp phải bảo trì mà không đổi lấy được luật ràng buộc nào.)_
-
-### Nhóm 3: Đề xuất Đề tài (Tính năng Sinh viên tự đề xuất)
-
-Để giữ cho bảng đề tài chính thức được "sạch", chúng ta tách riêng các ý tưởng/đề xuất của sinh viên sang một bảng độc lập. Quá trình này như một bước "thương lượng".
-
-- **`topic_proposals`**: Sinh viên đề xuất đề tài.
-  - `id` (PK)
-  - `semester_id` (FK) — Đề xuất thuộc học kỳ nào.
-  - `student_id` (FK) — Người đề xuất.
-  - `title`, `description`, `expected_outcomes`
-  - `project_type_id` (FK)
-  - `requested_lecturer_id` (FK - Nullable) — GV mà sinh viên mong muốn hướng dẫn (nếu để trống, GV nào trong khoa cũng có thể nhận).
-  - `accepted_by_lecturer_id` (FK - Nullable) — GV chính thức duyệt và nhận hướng dẫn.
-  - `status` (PENDING, ACCEPTED, REJECTED)
-  - `lecturer_feedback` — Nhận xét của GV khi từ chối.
-  - _Luồng xử lý_: Khi GV duyệt (`ACCEPTED`), hệ thống **tự động copy** dữ liệu tạo thành 1 record trong `topics` và tạo một `registration_groups` với chỉ **một** thành viên là sinh viên đó (trưởng nhóm).
-  > _(cập nhật: nhóm sinh ra từ đề xuất **không** ở trạng thái `APPROVED` nữa. Trong mô hình mới `APPROVED` chỉ có nghĩa "đã chốt ở cuối pha `RECONCILING`", nên đặt sẵn `APPROVED` ở đây sẽ cho nhóm này vượt qua cả quy trình phân bổ mà không ai rà. Nhóm vào `FORMING` như mọi nhóm khác — sinh viên vẫn rủ thêm bạn được nếu `max_students` cho phép — rồi được chốt cùng cả khoa. Đề tài từ đề xuất cũng chiếm một suất trên bảng cân đối ghế ở FR_ADM_07, đúng như thực tế.)_
-
-### Nhóm 4: Quản lý Đề tài & Đăng ký (Topics & Registration)
-
-- **`topics`**: Danh sách đề tài chính thức (được GV đề xuất hoặc GV đã duyệt từ đề xuất của SV).
-  - `id` (PK), `title`, `description`, `expected_outcomes`, `round_id` (FK → `registration_rounds`), `semester_id` (FK), `lecturer_id` (FK - GV Hướng dẫn), `max_students`, `status` (PENDING, APPROVED, OPEN, IN_PROGRESS, COMPLETED), `source_proposal_id` (FK - Nullable, liên kết ngược lại đề xuất gốc nếu có).
-  > _(cập nhật: **`project_type_id` được thay bằng `round_id`.** Đợt đã mang loại đồ án, nên giữ cả hai là hai nguồn cho cùng một dữ kiện — đúng thứ tài liệu này từ chối ở chỗ mã lớp. Lọc đề tài theo loại đồ án đi qua `registration_rounds`, bảng chỉ vài dòng mỗi kỳ._
-  >
-  > _`semester_id` **vẫn giữ**, vì `registration_groups` đang ghim học kỳ của nó vào đề tài bằng khoá ngoại ghép. Để nó không lệch với học kỳ của đợt, khoá ngoại là `(round_id, semester_id)` → `registration_rounds(id, semester_id)`, cùng thủ thuật đang dùng giữa `registration_groups` và `topics`.)_
-- **`registration_groups`**: Nhóm đăng ký đề tài (thay thế hoàn toàn `topic_registrations`).
-  - `id` (PK)
-  - `topic_id` (FK) — Đề tài muốn đăng ký.
-  - `semester_id` (FK) — Học kỳ đăng ký.
-  - `leader_id` (FK → `student_profiles`) — Trưởng nhóm (người tạo nhóm).
-  - `name` (Nullable) — Tên nhóm tự đặt.
-  - `status` (FORMING → SUBMITTED → APPROVED / REJECTED) — **ý nghĩa đã đổi**, xem ghi chú cuối mục này.
-  - `lecturer_feedback` (Nullable) — Lý do khi nhóm bị huỷ ở pha phân bổ.
-  - `open_for_join` (Boolean, mặc định **`true`**) — Nhóm có nhận thêm người lạ hay không. Trưởng nhóm tắt để tuyên bố "nhóm đi ít người, đủ rồi"; khi đó đề tài hiển thị "Đã có nhóm nhận" thay vì "còn chỗ", để không mời gọi một chỗ mà nhóm không định nhận.
-  - `declared_size` (Int, Nullable) — Số lượng dự kiến trưởng nhóm khai lúc đăng ký. Không khai thì ghế mở tự do ngay.
-  - `hold_until` (DateTime, Nullable) — Hết mốc này thì ghế còn lại mở cho mọi người. Mặc định `now() + 24h` khi có khai `declared_size`.
-  - `join_code` (String, UNIQUE, Nullable) — Mã trong link tham gia. Trong thời gian giữ chỗ, chỉ ai có link mới vào được nhóm.
-  - `topic_id` là **NOT NULL**: nhóm luôn sinh ra trên một đề tài, không tồn tại nhóm đi tìm đề tài.
-  > _(cập nhật: `(topic_id, semester_id)` là **khóa ngoại tổ hợp** trỏ tới `topics(id, semester_id)`, nên học kỳ của nhóm luôn khớp học kỳ của đề tài.)_
-  > _(cập nhật lần 2 — đổi theo cơ chế phân bổ ở FR_STU_03a: partial unique index nới từ `(topic_id) WHERE status = 'APPROVED'` thành **`(topic_id) WHERE status <> 'REJECTED'`**. Bản cũ chỉ chặn ở bước duyệt nên nhiều nhóm vẫn chen vào được trước đó; bản mới cho **nhóm đầu tiên nhận đề tài là chủ**, nhóm thứ hai bị database từ chối ngay — không cần đếm, không cần khoá, đúng kể cả khi hàng nghìn sinh viên bấm cùng lúc lúc mở cổng. `REJECTED` nằm ngoài index nên nhóm huỷ hoặc bị từ chối tự động nhả đề tài lại cho người khác, mà vẫn giữ được dấu vết.)_
-  > _(cập nhật lần 3 — **đăng ký tự do, giữ chỗ bằng link**: bỏ hẳn cơ chế mời theo mã SV. Người đến sau **tham gia chính nhóm đang có** bằng một cú click, nên `INVITED` không còn ai dùng và toàn bộ hệ đếm ghế treo / cap số lời mời / hạn lời mời 48 giờ đều biến mất. Thay vào đó là ba cột `declared_size`, `hold_until`, `join_code`: trưởng nhóm khai số lượng thì ghế còn lại được giữ 24 giờ cho ai có link, hết hạn thì mở tự do._
-  >
-  > _Quan trọng: cách này **không phá nguyên tắc "không lưu is_full"**. `hold_until` là một **thời hạn**, không phải trạng thái — nó tự hết, không cần đường huỷ nào nhớ lật lại. Độ mở vẫn tính lúc đọc: `người_lạ_vào_được = open_for_join ∧ now() > hold_until ∧ số_thành_viên < max_students`. Thành viên rời nhóm, nhóm giải tán, admin khoá tài khoản — mọi đường đều tự mở lại đề tài._
-  >
-  > _Bốn trạng thái đổi ý nghĩa nhưng **enum giữ nguyên, không cần migration**: `FORMING` = còn ghế trống; `SUBMITTED` = **tự động** khi đủ sức chứa, không còn nút Submit cho sinh viên bấm; `APPROVED` = kết quả của lệnh **chốt đợt** ở cuối pha `RECONCILING`, không phải của một lần duyệt riêng; `REJECTED` = tự giải tán hoặc bị huỷ._
-  >
-  > _**Nhóm chuyển `REJECTED` phải hạ toàn bộ thành viên trong cùng transaction.** Hai partial unique index không biết nhau: index trên thành viên chỉ nhìn `status = 'ACCEPTED'`, không nhìn nhóm còn sống hay đã chết. Bỏ qua bước này thì đề tài về lại thị trường nhưng cả nhóm cũ không ai đăng ký lại được — một bug âm thầm và rất khó lần ra.)_
-- **`registration_group_members`**: Thành viên của nhóm đăng ký.
-  - `id` (PK)
-  - `group_id` (FK → `registration_groups`)
-  - `semester_id` — Lấy xuống từ nhóm, ràng buộc bằng **khóa ngoại tổ hợp** `(group_id, semester_id)` → `registration_groups(id, semester_id)` nên không thể lệch với học kỳ của nhóm. Tồn tại chỉ để dựng được unique index bên dưới, vì unique index không thể trải qua hai bảng.
-  - `student_id` (FK → `student_profiles`)
-  - `status` (INVITED → ACCEPTED / DECLINED) — với đăng ký tự do thì **chỉ còn `ACCEPTED` được dùng**: một sinh viên hoặc ở trong nhóm, hoặc không. `INVITED` giữ trong enum cho tương thích lịch sử, không sinh thêm bản ghi mới.
-  - `join_source` (Enum: SELF, LINK, ASSIGNED) — Vào nhóm bằng đường nào: tự bấm đăng ký/tham gia, qua link giữ chỗ, hay được giáo vụ xếp tay ở pha `RECONCILING`.
-  - `assigned_by_id` (FK → `users`, Nullable) và `assigned_at` (DateTime, Nullable) — Chỉ có giá trị khi `join_source = ASSIGNED`. Trỏ tới `users` chứ không phải `lecturer_profiles`, vì người xếp là tài khoản ADMIN.
-  - `mentor_grade` (Float, Nullable) — Điểm hướng dẫn (chấm riêng từng người).
-  - `mentor_comment` (Text, Nullable) — Nhận xét của GV hướng dẫn.
-  - `joined_at` (DateTime, Nullable) — Thời điểm vào nhóm.
-  > _(cập nhật: **partial unique index** `(student_id, semester_id) WHERE status = 'ACCEPTED'` — một SV được mời vào bao nhiêu nhóm cũng được, nhưng chỉ tham gia được **một** nhóm mỗi học kỳ. Khóa `(group_id, student_id)` cũ chỉ chặn vào trùng **cùng một** nhóm, vẫn cho phép SV được nhận vào 5 đề tài khác nhau cùng lúc.)_
-  > _(cập nhật: thêm `join_source`, `assigned_by_id`, `assigned_at`. Không có `join_source` thì sang kỳ sau không trả lời được câu "vừa rồi phải xếp tay bao nhiêu em" — con số khoa sẽ hỏi mỗi năm, và cũng là thước đo duy nhất cho biết cơ chế đăng ký tự do có đang làm đúng việc của nó hay không (FR_ADM_05). `assigned_by_id` là dấu vết của một hành động **ghi đè lựa chọn cá nhân của sinh viên**: khi em ấy hỏi "sao em lại vào đề tài này", đây là chỗ có câu trả lời. Nó cũng là thứ cho giảng viên chủ đề tài thấy thành viên nào tự đăng ký và thành viên nào được xếp vào (FR_LEC_GRP_03).)_
-
-### Nhóm 5: Quản lý Báo cáo (Submissions)
-
-> _(Bảng `tasks` đã bị loại khỏi scope v1 — tính năng giao việc/task không cần thiết, SV/GV tự quản lý bằng công cụ ngoài.)_
-
-- **`submissions`**: Lịch sử nộp file / báo cáo (nộp theo nhóm).
-  - `id` (PK), `topic_id` (FK), `group_id` (FK → `registration_groups` - nhóm nộp bài), `submission_type` (MIDTERM, FINAL, SOURCE_CODE), `file_url` (Nullable - đường dẫn file upload), `submission_url` (Nullable - link GitHub/Drive...), `file_name`, `file_size`, `version` (Int - quản lý số lần nộp lại), `submitted_at`, `lecturer_feedback`.
-  > _(cập nhật: đổi `student_id` → `group_id` — nộp bài theo nhóm, không phải cá nhân; hỗ trợ FR_STU_06, FR_LEC_04)_
-  > _(cập nhật: giữ `topic_id` để truy vấn trực tiếp, nhưng ràng thêm **khóa ngoại tổ hợp** `(group_id, topic_id)` → `registration_groups(id, topic_id)`. Trước đó hai cột này độc lập nhau, ghi sai một lần là bài nộp trỏ vào đề tài khác với đề tài của chính nhóm mình, không gì phát hiện được.)_
-
-### Nhóm 6: Hội đồng bảo vệ (Councils)
-
-- **`councils`**: `id`, `name`, `semester_id` (FK), `location`, `defense_date`.
-- **`council_members`**: `id`, `council_id` (FK), `lecturer_id` (FK), `council_role` (PRESIDENT, SECRETARY, MEMBER).
-  > _(cập nhật: **bỏ giá trị `REVIEWER`**. Phản biện được phân theo **từng đề tài** qua `council_topics.reviewer_id`, đó là nguồn sự thật duy nhất — để cả hai chỗ cùng biểu diễn "phản biện" thì sẽ có lúc chúng mâu thuẫn nhau.)_
-- **`council_topics`**: Phân công nhóm vào hội đồng bảo vệ.
-  - `id` (PK), `council_id` (FK), `topic_id` (FK), `group_id` (FK → `registration_groups`), `reviewer_id` (FK → `lecturer_profiles` — GV Phản biện phụ trách đề tài này), `time_slot`.
-  > _(cập nhật: thêm `group_id`, `reviewer_id`; tách điểm ra bảng riêng để chấm cá nhân)_
-  > _(cập nhật: **khóa ngoại tổ hợp** `(group_id, topic_id)` → `registration_groups(id, topic_id)` — nhóm ra bảo vệ và đề tài được bảo vệ bắt buộc phải khớp nhau.)_
-- **`council_topic_grades`**: Điểm bảo vệ riêng cho từng sinh viên trong nhóm. _(bảng mới)_
-  - `id` (PK), `council_topic_id` (FK → `council_topics`), `student_id` (FK → `student_profiles`), `council_grade` (Float, Nullable — Điểm Hội đồng), `reviewer_grade` (Float, Nullable — Điểm Phản biện), `final_grade` (Float, Nullable), `finalised_at` (DateTime, Nullable).
-  > _(cập nhật: thêm `final_grade` + `finalised_at` — điểm tổng kết được **chốt cứng** tại thời điểm hết hạn chốt điểm, tính theo trọng số của chính học kỳ đó. Lưu lại thay vì tính động, để bảng điểm đã công bố không đổi khi khoa chỉnh trọng số ở kỳ sau.)_
-
-### Nhóm 7: Thông báo hệ thống (Notifications)
-
-- **`notifications`**: Thông báo trạng thái (có người tham gia nhóm, được GV xếp vào nhóm, sắp đóng cổng mà chưa có nhóm, báo cáo có nhận xét mới, deadline sắp tới...).
-  - `id` (PK), `user_id` (FK), `type` (Enum), `title`, `content`, `target_id` (Int, Nullable), `is_read`, `created_at`.
-  - `type`: `PROPOSAL_ACCEPTED`, `PROPOSAL_REJECTED`, `GROUP_MEMBER_JOINED`, `GROUP_MEMBER_REMOVED`, `GROUP_DISBANDED`, `REGISTRATION_CLOSING_NO_GROUP`, `GROUP_ASSIGNED_BY_ADMIN`, `TOPIC_MEMBER_ASSIGNED`, `TOPIC_CAPACITY_RAISED`, `ALLOCATION_FINALIZED`, `SUBMISSION_FEEDBACK`, `GRADE_PUBLISHED`, `DEADLINE_REMINDER` — đúng các trường hợp FR_SYS_01 liệt kê.
-  > _(cập nhật: bỏ `GROUP_INVITATION` (không còn cơ chế mời) và `GROUP_APPROVED`/`GROUP_REJECTED` (không còn duyệt từng nhóm). Thêm những loại mà mô hình mới bắt buộc phải có:_
-  >
-  > - _`REGISTRATION_CLOSING_NO_GROUP` — thông báo giá trị nhất trong hệ thống, vì nó là loại duy nhất còn kịp để sinh viên tự xử lý._
-  > - _`GROUP_ASSIGNED_BY_ADMIN` (gửi sinh viên) — em ấy không tự chọn đề tài này nên không thể để tự phát hiện ra._
-  > - _`TOPIC_MEMBER_ASSIGNED` và `TOPIC_CAPACITY_RAISED` (gửi giảng viên chủ đề tài) — hai thay đổi trên đề tài của thầy do người khác quyết. Thầy không có quyền phủ quyết, nhưng **được biết**; đây là cái van làm cho việc "giáo vụ xếp thẳng" chấp nhận được về mặt tổ chức._
-  > - _`ALLOCATION_FINALIZED`.)_
-  >   _(cập nhật: thêm `type` + `target_id`. Chỉ có `title`/`content` dạng chuỗi thì client không lọc được theo loại, và bấm vào thông báo cũng không biết điều hướng đi đâu — `type` cho biết thuộc bảng nào, `target_id` cho biết bản ghi nào.)_
-
-### Nhóm 8: Audit Log (Lịch sử thao tác nhạy cảm)
-
-_(bảng mới: hỗ trợ NFR - Maintainability, yêu cầu ghi log các hành động nhạy cảm)_
-
-- **`audit_logs`**: Ghi lại mọi hành động quan trọng của Admin và GV.
-  - `id` (PK), `user_id` (FK - Ai thực hiện), `action` (Tên hành động: UPDATE_GRADE, DELETE_TOPIC...), `target_table` (Bảng bị tác động), `target_id` (ID của bản ghi bị tác động), `old_value` (JSON - Giá trị cũ), `new_value` (JSON - Giá trị mới), `created_at`.
+4. **Số hóa trọn vẹn các Biểu mẫu hành chính của Khoa:**
+   - Bảng `topic_outlines`: Lưu trữ nội dung **Đề cương Mẫu M03**.
+   - Bảng `topic_reviews`: Lưu trữ nội dung **Nhận xét GVHD (Mẫu M02/M04)** và **Nhận xét GVPB (Mẫu M05)**.
+   - Bảng `topic_archives`: Quản lý **Gói nộp lưu trữ 3 thư mục** (`SOURCE`, `DATABASE`, `THESIS`).
 
 ---
 
-## 3. Sơ đồ Thực thể Liên kết (ER Diagram)
+## 2. CHI TIẾT CÁC BẢNG DỮ LIỆU (DATABASE SCHEMA)
 
-```mermaid
-erDiagram
-    %% Auth & Profiles
-    USER ||--o| STUDENT_PROFILE : "has"
-    USER ||--o| LECTURER_PROFILE : "has"
-    USER ||--o{ NOTIFICATION : "receives"
-    USER ||--o{ AUDIT_LOG : "performs"
+### NHÓM 1: Người dùng, Hồ sơ & Phân quyền (Authentication & Profiles)
 
-    %% Master Data (Majors)
-    MAJOR ||--o{ STUDENT_PROFILE : "belongs to"
+#### 1. `users`
+Tài khoản đăng nhập hệ thống, hỗ trợ Google OAuth 2.0 theo 2 domain trường DLU và cơ chế dự phòng cho môi trường kiểm thử.
+- `id` (INT, PK, Auto Increment)
+- `email` (VARCHAR(100), Unique, Not Null):
+  - Sinh viên: định dạng `<MSSV>@st.dlu.edu.vn` (VD: `2212345@st.dlu.edu.vn`).
+  - Giảng viên / Cán bộ: định dạng `<Ten><ChuCaiDauHoDem>@dlu.edu.vn` (VD: `linhttp@dlu.edu.vn`).
+- **Luồng xử lý SSO Google Workspace:**
+  - Google trả về thông tin (Email, Họ tên, Avatar).
+  - Tách Role theo đuôi domain:
+    - `@st.dlu.edu.vn` ➔ Map vào `Role.STUDENT` (`student_profiles`).
+    - `@dlu.edu.vn` ➔ Map vào `Role.LECTURER` (`lecturer_profiles`) và các cờ kiêm nhiệm.
+  - Kiểm tra email đã có trong danh sách import/khai báo ➔ Cấp cặp mã JWT Token (Access & Refresh Token).
+- `password_hash` (VARCHAR(255), Not Null): Băm bằng Bcrypt/Argon2 (dùng cho tài khoản quản trị hệ thống và kiểm thử).
+- `role` (ENUM: `'ADMIN'`, `'LECTURER'`, `'STUDENT'`): Phân loại người dùng cơ sở.
+- `is_active` (BOOLEAN, Default: true): Khóa/mở khóa tài khoản.
+- `must_change_password` (BOOLEAN, Default: false): Bắt buộc đổi mật khẩu lần đầu (nếu dùng mật khẩu cấp sẵn).
+- `created_at`, `updated_at` (TIMESTAMP)
 
-    %% Categories
-    SEMESTER ||--o{ REGISTRATION_ROUND : "opens rounds"
-    PROJECT_TYPE ||--o{ REGISTRATION_ROUND : "typed as"
-    REGISTRATION_ROUND ||--o{ ROUND_ELIGIBILITY : "declares cohort rules"
-    REGISTRATION_ROUND ||--o{ TOPIC : "contains"
-    SEMESTER ||--o{ TOPIC : "contains"
-    SEMESTER ||--o{ TOPIC_PROPOSAL : "contains"
-    SEMESTER ||--o{ COUNCIL : "has"
-    PROJECT_TYPE ||--o{ TOPIC_PROPOSAL : "categorizes"
+#### 2. `specializations`
+Danh mục 2 Chuyên ngành đào tạo cố định của Khoa CNTT - DLU.
+- `id` (INT, PK, Auto Increment)
+- `name` (VARCHAR(100), Not Null): *"Công nghệ phần mềm"* hoặc *"Mạng máy tính"*.
+- `code` (VARCHAR(20), Unique, Not Null): `'CNPM'` hoặc `'MMT'`.
+- `description` (TEXT, Nullable)
 
-    %% Proposals (Student proposes topic)
-    STUDENT_PROFILE ||--o{ TOPIC_PROPOSAL : "proposes"
-    LECTURER_PROFILE ||--o{ TOPIC_PROPOSAL : "requests/accepts"
-    TOPIC_PROPOSAL ||--o| TOPIC : "converted to (when accepted)"
+#### 3. `student_profiles`
+Hồ sơ sinh viên do Giáo vụ Khoa (TLGV) import từ file Excel đầu kỳ.
+- `id` (INT, PK, Auto Increment)
+- `user_id` (INT, FK → `users.id`, Unique, Cascade Delete)
+- `student_code` (VARCHAR(20), Unique, Not Null): 7 chữ số (VD: `2212345`).
+- `full_name` (VARCHAR(100), Not Null)
+- `class` (VARCHAR(50), Not Null): Tên lớp sinh hoạt (VD: `CTK46PM`, `CTK46MMT`).
+- `specialization_id` (INT, FK → `specializations.id`, Nullable): Tự động map từ mã lớp.
+- `cohort` (VARCHAR(10), Not Null): Năm nhập học (VD: `"2022"` cho CTK46).
+- `phone` (VARCHAR(20), Nullable)
+- `bio` (TEXT, Nullable)
+- `note` (TEXT, Nullable): Ghi chú riêng của Giáo vụ ("bảo lưu", "đã nộp đơn").
 
-    %% Core Project Flow (Group Registration)
-    LECTURER_PROFILE ||--o{ TOPIC : "proposes/mentors"
-    TOPIC ||--o{ REGISTRATION_GROUP : "receives registration"
-    SEMESTER ||--o{ REGISTRATION_GROUP : "contains"
-    STUDENT_PROFILE ||--o{ REGISTRATION_GROUP : "leads"
-    REGISTRATION_GROUP ||--o{ REGISTRATION_GROUP_MEMBER : "has members"
-    STUDENT_PROFILE ||--o{ REGISTRATION_GROUP_MEMBER : "joins as"
+#### 4. `lecturer_profiles`
+Hồ sơ cán bộ giảng viên thuộc Khoa CNTT - DLU.
+- `id` (INT, PK, Auto Increment)
+- `user_id` (INT, FK → `users.id`, Unique, Cascade Delete)
+- `lecturer_code` (VARCHAR(20), Unique, Not Null): Mã giảng viên (VD: `GV012`).
+- `full_name` (VARCHAR(100), Not Null): Họ và tên giảng viên.
+- `academic_title` (VARCHAR(50), Nullable): Học hàm, học vị (ThS., TS., PGS.TS.).
+- `specialization_id` (INT, FK → `specializations.id`, Nullable): Tổ chuyên môn phụ trách (CNPM hoặc MMT).
+- `phone` (VARCHAR(20), Nullable)
+- `bio` (TEXT, Nullable)
+- `research_interests` (TEXT, Nullable): Hướng nghiên cứu để SV tìm kiếm.
+- `max_mentoring_quota` (INT, Default: 5): Hạn mức số lượng đề tài tối đa nhận hướng dẫn trong kỳ.
+- **Cờ chức vụ kiêm nhiệm (Role Flags):**
+  - `is_head_of_department` (BOOLEAN, Default: false): Là **Tổ trưởng Bộ môn (TTBM)**.
+  - `is_faculty_board` (BOOLEAN, Default: false): Là **Ban Chủ nhiệm Khoa (BCN Khoa)**.
+  - `is_academic_assistant` (BOOLEAN, Default: false): Là **Trợ lý Giáo vụ Khoa (TLGV)**.
 
-    %% Submissions
-    TOPIC ||--o{ SUBMISSION : "receives"
-    REGISTRATION_GROUP ||--o{ SUBMISSION : "submits"
+---
 
-    %% Council Defense
-    COUNCIL ||--o{ COUNCIL_MEMBER : "consists of"
-    LECTURER_PROFILE ||--o{ COUNCIL_MEMBER : "acts as"
-    COUNCIL ||--o{ COUNCIL_TOPIC : "evaluates"
-    TOPIC ||--o| COUNCIL_TOPIC : "is evaluated by"
-    REGISTRATION_GROUP ||--o| COUNCIL_TOPIC : "presents at"
-    LECTURER_PROFILE ||--o{ COUNCIL_TOPIC : "reviews"
-    COUNCIL_TOPIC ||--o{ COUNCIL_TOPIC_GRADE : "grades per student"
-    STUDENT_PROFILE ||--o{ COUNCIL_TOPIC_GRADE : "receives grade"
+### NHÓM 2: Quản lý Danh mục & Đợt làm đồ án (Master Data & Timeline)
 
-    %% Snapshot of Entity Attributes
-    MAJOR {
-        int id PK
-        string name
-        string code
-    }
-    STUDENT_PROFILE {
-        int id PK
-        int user_id FK
-        int major_id FK
-        string student_code
-        string class "CTK46PM - kiểm chéo lúc import"
-        string cohort "suy từ student_code"
-        string phone
-        string bio
-        string note "ghi chú của giáo vụ"
-    }
-    LECTURER_PROFILE {
-        int id PK
-        int user_id FK
-        string phone
-        string bio
-        string research_interests
-        int max_mentoring_quota
-    }
-    SEMESTER {
-        int id PK
-        string name
-        date grade_submission_deadline
-        date start_date
-        date end_date
-        float mentor_weight
-        float reviewer_weight
-        float council_weight
-    }
-    REGISTRATION_ROUND {
-        int id PK
-        int semester_id FK
-        int project_type_id FK
-        string phase "PREP, OPEN, RECONCILING, EXTENDED, FINALIZED"
-        string allocation_mode "FIRST_COME, PREFERENCE_ROUND"
-        date registration_start
-        date registration_end
-        date extended_until
-        date finalised_at
-        int finalised_by_id FK
-    }
-    ROUND_ELIGIBILITY {
-        int id PK
-        int round_id FK
-        string cohort "năm nhập học, unique cùng round"
-    }
-    TOPIC_PROPOSAL {
-        int id PK
-        int semester_id FK
-        int student_id FK
-        int requested_lecturer_id FK
-        int accepted_by_lecturer_id FK
-        string status "PENDING, ACCEPTED, REJECTED"
-    }
-    TOPIC {
-        int id PK
-        int round_id FK
-        int source_proposal_id FK
-        int lecturer_id FK
-        string status
-    }
-    REGISTRATION_GROUP {
-        int id PK
-        int topic_id FK "unique where status <> REJECTED"
-        int semester_id FK
-        int leader_id FK
-        string status "FORMING, SUBMITTED, APPROVED, REJECTED"
-        boolean open_for_join "mặc định true"
-        int declared_size
-        date hold_until "hết hạn thì ghế mở tự do"
-        string join_code "link tham gia"
-        string lecturer_feedback
-    }
-    REGISTRATION_GROUP_MEMBER {
-        int id PK
-        int group_id FK
-        int semester_id FK "unique with student_id where ACCEPTED"
-        int student_id FK
-        string status "chỉ dùng ACCEPTED"
-        string join_source "SELF, LINK, ASSIGNED"
-        int assigned_by_id FK
-        date assigned_at
-        float mentor_grade
-        string mentor_comment
-    }
-    SUBMISSION {
-        int id PK
-        int group_id FK
-        string file_url
-        string submission_url
-        string file_name
-        int file_size
-        int version
-        string submission_type
-    }
-    COUNCIL_TOPIC {
-        int id PK
-        int council_id FK
-        int topic_id FK
-        int group_id FK
-        int reviewer_id FK
-        string time_slot
-    }
-    COUNCIL_TOPIC_GRADE {
-        int id PK
-        int council_topic_id FK
-        int student_id FK
-        float council_grade
-        float reviewer_grade
-        float final_grade
-        date finalised_at
-    }
-    NOTIFICATION {
-        int id PK
-        int user_id FK
-        string type
-        string title
-        string content
-        int target_id
-        boolean is_read
-    }
-    AUDIT_LOG {
-        int id PK
-        int user_id FK
-        string action
-        string target_table
-        int target_id
-        json old_value
-        json new_value
-    }
-```
+#### 5. `semesters`
+Học kỳ đào tạo của trường.
+- `id` (INT, PK, Auto Increment)
+- `name` (VARCHAR(100), Not Null): Tên học kỳ (VD: *"Học kỳ 1 năm học 2026-2027"*).
+- `code` (VARCHAR(50), Unique, Not Null): Mã học kỳ (VD: `"HK1_2026_2027"`).
+- `start_date`, `end_date` (DATE, Not Null)
+- `grade_submission_deadline` (TIMESTAMP, Nullable): Hạn chót khóa bảng điểm toàn kỳ.
+- `is_active` (BOOLEAN, Default: false): Học kỳ đang diễn ra.
+- **Trọng số điểm mặc định của Khoa:**
+  - `progress1_weight` (FLOAT, Default: 0.2): Trọng số Tiến độ 1 (**20%**).
+  - `progress2_weight` (FLOAT, Default: 0.3): Trọng số Tiến độ 2 (**30%**).
+  - `defense_weight` (FLOAT, Default: 0.5): Trọng số Bảo vệ (**50%**).
+
+#### 6. `project_types`
+Ba loại đồ án đào tạo tại Khoa CNTT - DLU.
+- `id` (INT, PK, Auto Increment)
+- `name` (VARCHAR(100), Not Null): *"Đồ án cơ sở"*, *"Đồ án chuyên ngành"*, *"Khóa luận tốt nghiệp"*.
+- `code` (VARCHAR(20), Unique, Not Null): `'DACS'`, `'DACN'`, `'KLTN'`.
+
+#### 7. `registration_rounds`
+Một đợt làm đồ án cụ thể = Cặp (Học kỳ × Loại đồ án).
+- `id` (INT, PK, Auto Increment)
+- `semester_id` (INT, FK → `semesters.id`, Not Null)
+- `project_type_id` (INT, FK → `project_types.id`, Not Null)
+- `phase` (ENUM: `'PREP'`, `'OPEN'`, `'RECONCILING'`, `'EXTENDED'`, `'FINALIZED'`): 5 pha trạng thái đợt đăng ký.
+- **Timeline 7 mốc thời gian tự động (BR-01):**
+  - `topic_submission_start`, `topic_submission_end` (TIMESTAMP): Hạn GV nộp & TTBM duyệt đề tài.
+  - `registration_start`, `registration_end` (TIMESTAMP): Cửa sổ SV chọn đề tài & lập nhóm.
+  - `outline_deadline` (TIMESTAMP): Hạn nộp Đề cương chi tiết M03.
+  - `progress1_deadline` (TIMESTAMP): Hạn nộp & chấm Tiến độ 1 (20%).
+  - `reviewer_assignment_deadline` (TIMESTAMP): Hạn TTBM phân công GVPB.
+  - `progress2_deadline` (TIMESTAMP): Hạn nộp & chấm Tiến độ 2 (30%).
+  - `final_submission_deadline` (TIMESTAMP): Hạn nộp báo cáo cuối kỳ & nhận xét M02/M05.
+  - `defense_start_date`, `defense_end_date` (TIMESTAMP): Thời gian tổ chức Hội đồng bảo vệ (50%).
+  - `archive_deadline` (TIMESTAMP): Hạn nộp gói lưu trữ 3 thư mục.
+- `finalised_at` (TIMESTAMP, Nullable)
+- `finalised_by_id` (INT, FK → `users.id`, Nullable)
+- `UNIQUE(semester_id, project_type_id)`
+
+#### 8. `round_eligibilities`
+Quy định Khóa sinh viên được tham gia đợt đồ án nào (BR-02).
+- `id` (INT, PK, Auto Increment)
+- `round_id` (INT, FK → `registration_rounds.id`, Cascade Delete)
+- `cohort` (VARCHAR(10), Not Null): Năm nhập học (VD: `"2022"` cho CTK46).
+- `UNIQUE(round_id, cohort)`
+
+---
+
+### NHÓM 3: Đề tài & Quy trình Xét duyệt 2 cấp (Topics & Approval)
+
+#### 9. `topics`
+Ngân hàng đề tài đồ án của Khoa.
+- `id` (INT, PK, Auto Increment)
+- `semester_id` (INT, FK → `semesters.id`, Not Null)
+- `round_id` (INT, FK → `registration_rounds.id`, Not Null)
+- `lecturer_id` (INT, FK → `lecturer_profiles.id`, Not Null): Giảng viên đề xuất / GVHD.
+- `specialization_id` (INT, FK → `specializations.id`, Not Null): Thuộc Chuyên ngành CNPM hoặc MMT.
+- `title_vi` (VARCHAR(255), Not Null): Tên đề tài tiếng Việt.
+- `title_en` (VARCHAR(255), Nullable): Tên đề tài tiếng Anh.
+- `description` (TEXT, Not Null): Mô tả nội dung yêu cầu.
+- `objectives` (TEXT, Not Null): Mục tiêu cần đạt được.
+- `expected_outcomes` (TEXT, Not Null): Sản phẩm dự kiến hoàn thành.
+- `tech_stack` (VARCHAR(255), Nullable): Công nghệ, công cụ dự kiến (VD: React, NestJS, Docker).
+- `max_students` (INT, Default: 3): Tối đa từ 1 đến 3 sinh viên.
+- `status` (ENUM):
+  - `'PENDING_DEPARTMENT'`: Chờ Tổ trưởng Bộ môn (TTBM) thẩm định chuyên môn.
+  - `'PENDING_FACULTY'`: TTBM đã duyệt, chờ BCN Khoa phê duyệt.
+  - `'APPROVED_OPEN'`: Đã phê duyệt, mở cổng cho SV đăng ký.
+  - `'ASSIGNED'`: Đã có nhóm nhận hoặc được Khoa phân công.
+  - `'IN_PROGRESS'`: Đang thực hiện (đã nộp đề cương M03).
+  - `'COMPLETED'`: Đã hoàn thành bảo vệ và lưu trữ.
+  - `'REJECTED'`: Bị từ chối.
+- **Thông tin thẩm định cấp Bộ môn & Khoa (BR-05):**
+  - `department_reviewer_id` (INT, FK → `lecturer_profiles.id`, Nullable): TTBM thẩm định.
+  - `department_feedback` (TEXT, Nullable): Ý kiến chuyên môn của TTBM.
+  - `faculty_approver_id` (INT, FK → `lecturer_profiles.id`, Nullable): Đại diện BCN Khoa ký duyệt.
+  - `faculty_feedback` (TEXT, Nullable)
+- `source_proposal_id` (INT, Nullable, Unique): Trỏ về đề xuất gốc nếu bắt nguồn từ ý tưởng của SV.
+- `created_at`, `updated_at` (TIMESTAMP)
+
+#### 10. `topic_similarity_checks`
+Bảng lưu kết quả kiểm tra tương đồng văn bản để chống trùng lặp đề tài (BR-04).
+- `id` (INT, PK, Auto Increment)
+- `topic_id` (INT, FK → `topics.id`, Cascade Delete)
+- `matched_topic_id` (INT, FK → `topics.id`, Cascade Delete): Đề tài cũ bị trùng.
+- `similarity_score` (FLOAT, Not Null): Tỷ lệ tương đồng (0.00 – 1.00).
+- `matched_fields` (JSON, Nullable): Chi tiết trùng tên hay trùng mục tiêu/nội dung.
+- `created_at` (TIMESTAMP, Default: now())
+
+---
+
+### NHÓM 4: Sinh viên Đề xuất & Nhóm đăng ký (Proposals & Groups)
+
+#### 11. `topic_proposals`
+Bảng tiếp nhận các đề tài do Sinh viên tự đề xuất (BR-06).
+- `id` (INT, PK, Auto Increment)
+- `round_id` (INT, FK → `registration_rounds.id`, Not Null)
+- `student_id` (INT, FK → `student_profiles.id`, Not Null): Sinh viên đề xuất.
+- `specialization_id` (INT, FK → `specializations.id`, Not Null): CNPM hoặc MMT.
+- `title` (VARCHAR(255), Not Null)
+- `description`, `objectives`, `expected_outcomes` (TEXT, Not Null)
+- `requested_lecturer_id` (INT, FK → `lecturer_profiles.id`, Nullable): GVHD mong muốn.
+- `accepted_by_lecturer_id` (INT, FK → `lecturer_profiles.id`, Nullable): GVHD chính thức nhận.
+- `status` (ENUM: `'PENDING'`, `'ACCEPTED'`, `'REJECTED'`)
+- `lecturer_feedback` (TEXT, Nullable)
+- `created_at`, `updated_at` (TIMESTAMP)
+
+#### 12. `registration_groups`
+Nhóm sinh viên thực hiện đề tài (BR-06).
+- `id` (INT, PK, Auto Increment)
+- `topic_id` (INT, FK → `topics.id`, Not Null, Unique): Mỗi đề tài chỉ gắn với 1 nhóm sống.
+- `semester_id` (INT, FK → `semesters.id`, Not Null)
+- `leader_id` (INT, FK → `student_profiles.id`, Not Null): Trưởng nhóm.
+- `max_size` (INT, Default: 3): Tối đa từ 1 đến 3 SV.
+- `status` (ENUM: `'FORMING'`, `'PENDING_APPROVAL'`, `'APPROVED'`, `'REJECTED'`)
+- `join_code` (VARCHAR(50), Unique, Nullable): Mã mời thành viên trong nhóm.
+- `hold_until` (TIMESTAMP, Nullable): Giữ chỗ 24h cho các thành viên còn lại.
+- `created_at`, `updated_at` (TIMESTAMP)
+
+#### 13. `registration_group_members`
+Thành viên trong nhóm đề tài.
+- `id` (INT, PK, Auto Increment)
+- `group_id` (INT, FK → `registration_groups.id`, Cascade Delete)
+- `semester_id` (INT, FK → `semesters.id`, Not Null)
+- `student_id` (INT, FK → `student_profiles.id`, Not Null)
+- `join_source` (ENUM: `'SELF'`, `'LINK'`, `'ASSIGNED'`): Tự đăng ký, qua link mời hay do Giáo vụ gán.
+- `joined_at` (TIMESTAMP, Default: now())
+- `UNIQUE(student_id, semester_id)`: **Quy tắc cứng: 1 SV chỉ tham gia duy nhất 1 nhóm trong 1 học kỳ**.
+
+---
+
+### NHÓM 5: Đề cương chi tiết Mẫu M03 (Topic Outline M03)
+
+#### 14. `topic_outlines`
+Số hóa biểu mẫu **Đề cương thực hiện đồ án (Mẫu M03)** theo chuẩn Khoa CNTT - DLU (BR-08, BR-09).
+- `id` (INT, PK, Auto Increment)
+- `group_id` (INT, FK → `registration_groups.id`, Cascade Delete, Unique)
+- `topic_id` (INT, FK → `topics.id`, Not Null)
+- **Nội dung 6 mục chuẩn Mẫu M03:**
+  - `objectives` (TEXT, Not Null): Mục tiêu đề tài.
+  - `scope_and_content` (TEXT, Not Null): Nội dung và phạm vi đề tài.
+  - `tools_and_tech` (TEXT, Not Null): Phần mềm và công cụ sử dụng.
+  - `expected_results` (TEXT, Not Null): Dự kiến kết quả đạt được.
+  - `weekly_plans` (JSON, Not Null): Bảng kế hoạch tuần `[{ week: 1, fromDate, toDate, task, deliverable }]`.
+  - `references` (TEXT, Nullable): Tài liệu tham khảo.
+- `attachment_url` (VARCHAR(255), Nullable): Link file đính kèm nếu có (.docx/.pdf).
+- `status` (ENUM: `'DRAFT'`, `'SUBMITTED'`, `'APPROVED_BY_LECTURER'`, `'REJECTED'`):
+- `lecturer_feedback` (TEXT, Nullable): Nhận xét góp ý của GVHD.
+- `approved_at` (TIMESTAMP, Nullable): Thời điểm GVHD bấm phê duyệt.
+- `pdf_export_url` (VARCHAR(255), Nullable): Đường dẫn file PDF M03 tự động xuất có chữ ký/xác nhận điện tử.
+
+---
+
+### NHÓM 6: Tiến độ & Đánh giá định kỳ 20% - 30% (Progress & Interim Evaluations)
+
+#### 15. `weekly_logs`
+Nhật ký làm việc và theo dõi task hàng tuần giữa SV và GVHD (BR-11).
+- `id` (INT, PK, Auto Increment)
+- `group_id` (INT, FK → `registration_groups.id`, Cascade Delete)
+- `week_number` (INT, Not Null): Tuần thứ mấy (Tuần 1 – 15).
+- `completion_percentage` (INT, Default: 0): Tiến độ hoàn thành (0 – 100%).
+- `git_commit_url` (VARCHAR(255), Nullable): Link commit mã nguồn minh chứng.
+- `summary_notes` (TEXT, Not Null): Các việc đã làm trong tuần.
+- `blockers` (TEXT, Nullable): Khó khăn vướng mắc cần GVHD hỗ trợ.
+- `lecturer_comment` (TEXT, Nullable): Phản hồi của GVHD.
+- `feedback_at` (TIMESTAMP, Nullable)
+
+#### 16. `progress_reports`
+Lưu trữ bài nộp và kết quả đánh giá 2 đợt tiến độ: TĐ1 (20%) và TĐ2 (30%) (BR-12, BR-14).
+- `id` (INT, PK, Auto Increment)
+- `group_id` (INT, FK → `registration_groups.id`, Cascade Delete)
+- `stage` (ENUM: `'STAGE_1'`, `'STAGE_2'`): Tiến độ 1 hoặc Tiến độ 2.
+- `report_file_url` (VARCHAR(255), Nullable): File báo cáo (.pdf/.docx).
+- `source_code_url` (VARCHAR(255), Nullable): Link repository mã nguồn.
+- `submitted_at` (TIMESTAMP, Default: now())
+- **Đánh giá Tiến độ 1 (Trọng số 20% - Chỉ GVHD chấm):**
+  - `supervisor_grade` (FLOAT, Nullable): Điểm do GVHD chấm (thang 10).
+  - `supervisor_feedback` (TEXT, Nullable): Nhận xét của GVHD.
+- **Đánh giá Tiến độ 2 (Trọng số 30% - GVHD + GVPB cùng chấm):**
+  - `reviewer_grade` (FLOAT, Nullable): Điểm do GVPB chấm (thang 10).
+  - `reviewer_feedback` (TEXT, Nullable): Nhận xét của GVPB.
+- `final_stage_grade` (FLOAT, Nullable): Điểm chốt của giai đoạn (TĐ1 = GVHD; TĐ2 = trung bình GVHD và GVPB).
+- `finalised_at` (TIMESTAMP, Nullable)
+- `UNIQUE(group_id, stage)`
+
+---
+
+### NHÓM 7: Phản biện, Nhận xét M02/M05 & Hội đồng Bảo vệ 50% (Defense & Reviews)
+
+#### 17. `topic_assignments`
+Bảng ghi nhận phân công Giảng viên phản biện (GVPB) do TTBM thực hiện trước TĐ2 (BR-13).
+- `id` (INT, PK, Auto Increment)
+- `group_id` (INT, FK → `registration_groups.id`, Cascade Delete, Unique)
+- `topic_id` (INT, FK → `topics.id`, Not Null)
+- `supervisor_id` (INT, FK → `lecturer_profiles.id`, Not Null): GVHD.
+- `reviewer_id` (INT, FK → `lecturer_profiles.id`, Not Null): GVPB (khác GVHD, cùng Chuyên ngành CNPM/MMT).
+- `assigned_by_id` (INT, FK → `users.id`, Not Null): TTBM/BCN phân công.
+- `assigned_at` (TIMESTAMP, Default: now())
+
+#### 18. `topic_reviews`
+Biểu mẫu nhận xét chính thức: **Mẫu M02/M04 (GVHD)** và **Mẫu M05 (GVPB)** trước khi ra Hội đồng (BR-17).
+- `id` (INT, PK, Auto Increment)
+- `group_id` (INT, FK → `registration_groups.id`, Cascade Delete)
+- `reviewer_type` (ENUM: `'SUPERVISOR'`, `'REVIEWER'`): Nhận xét của GVHD hay GVPB.
+- `lecturer_id` (INT, FK → `lecturer_profiles.id`, Not Null)
+- `template_code` (VARCHAR(20), Not Null): `'M02'` (Đồ án GVHD), `'M04'` (KLTN GVHD), `'M05'` (GVPB).
+- `evaluation_criteria` (JSON, Not Null): Đánh giá theo barem chuẩn (Ý thức, Nội dung, Tính ứng dụng, Báo cáo).
+- `general_comment` (TEXT, Not Null): Nhận xét chung.
+- `is_defense_allowed` (BOOLEAN, Not Null): **"Được phép bảo vệ"** (true) hoặc **"Không được bảo vệ"** (false).
+- `pdf_export_url` (VARCHAR(255), Nullable): Link file PDF trang nhận xét hoàn chỉnh xuất tự động.
+- `signed_at` (TIMESTAMP, Default: now())
+- `UNIQUE(group_id, reviewer_type)`
+
+#### 19. `councils` & `council_members`
+Hội đồng bảo vệ đồ án tốt nghiệp / Tiểu ban chấm bảo vệ (BR-18).
+- **`councils`**:
+  - `id` (INT, PK, Auto Increment)
+  - `semester_id` (INT, FK → `semesters.id`, Not Null)
+  - `specialization_id` (INT, FK → `specializations.id`, Not Null): Hội đồng Chuyên ngành CNPM hoặc MMT.
+  - `name` (VARCHAR(100), Not Null): Tên hội đồng (VD: *"Hội đồng KLTN 01 - Chuyên ngành Phần mềm"*).
+  - `location` (VARCHAR(100), Nullable): Phòng bảo vệ (VD: *"Phòng A11.204"*).
+  - `defense_date` (TIMESTAMP, Not Null): Ngày giờ bảo vệ.
+- **`council_members`**:
+  - `id` (INT, PK, Auto Increment)
+  - `council_id` (INT, FK → `councils.id`, Cascade Delete)
+  - `lecturer_id` (INT, FK → `lecturer_profiles.id`, Not Null)
+  - `role` (ENUM: `'PRESIDENT'`, `'SECRETARY'`, `'REVIEWER'`, `'MEMBER'`)
+  - `UNIQUE(council_id, lecturer_id)`
+
+#### 20. `council_topics`
+Danh sách đề tài được xếp lịch bảo vệ trong hội đồng (BR-18).
+- `id` (INT, PK, Auto Increment)
+- `council_id` (INT, FK → `councils.id`, Cascade Delete)
+- `group_id` (INT, FK → `registration_groups.id`, Unique, Not Null)
+- `topic_id` (INT, FK → `topics.id`, Not Null)
+- `time_slot` (VARCHAR(50), Nullable): Ca bảo vệ (VD: *"08:00 - 08:45"*).
+- `defense_order` (INT, Default: 1): Thứ tự bảo vệ trong buổi.
+
+#### 21. `student_grades`
+Bảng điểm tổng hợp chính thức của từng sinh viên theo công thức chuẩn DLU (BR-18).
+- `id` (INT, PK, Auto Increment)
+- `group_id` (INT, FK → `registration_groups.id`, Cascade Delete)
+- `student_id` (INT, FK → `student_profiles.id`, Not Null)
+- **3 cột điểm thành phần:**
+  - `progress1_grade` (FLOAT, Nullable): Điểm Tiến độ 1 (**20%**).
+  - `progress2_grade` (FLOAT, Nullable): Điểm Tiến độ 2 (**30%**).
+  - `defense_grade` (FLOAT, Nullable): Điểm Hội đồng bảo vệ (**50%**).
+- **Điểm tổng kết (Final Grade):**
+  - `final_grade_num` (FLOAT, Nullable): $0.2 \times \text{TĐ1} + 0.3 \times \text{TĐ2} + 0.5 \times \text{BV}$ (Thang điểm 10).
+  - `final_grade_letter` (VARCHAR(5), Nullable): Điểm chữ (A, B+, B, C+, C, D+, D, F).
+- `note` (TEXT, Nullable)
+- `is_locked` (BOOLEAN, Default: false): Đóng băng khi hết hạn chốt điểm.
+- `UNIQUE(group_id, student_id)`
+
+---
+
+### NHÓM 8: Gói lưu trữ số 3 thành phần & Quản lý thay đổi (Archive & Change Requests)
+
+#### 22. `topic_archives`
+Số hóa gói nộp lưu trữ 3 thành phần chuẩn Khoa CNTT - DLU sau khi bảo vệ (BR-19, BR-20).
+- `id` (INT, PK, Auto Increment)
+- `group_id` (INT, FK → `registration_groups.id`, Cascade Delete, Unique)
+- `topic_id` (INT, FK → `topics.id`, Not Null)
+- **Ba thành phần bắt buộc:**
+  - `source_url` (VARCHAR(255), Not Null): Đường dẫn thư mục `SOURCE` (Mã nguồn hoàn chỉnh, cấu hình).
+  - `database_url` (VARCHAR(255), Not Null): Đường dẫn thư mục `DATABASE` (Script SQL, file sao lưu CSDL).
+  - `thesis_url` (VARCHAR(255), Not Null): Đường dẫn thư mục `THESIS` (Báo cáo PDF hoàn chỉnh lồng M03, M02/M05 đã ký + HDSD).
+- `abstract_vi`, `abstract_en` (TEXT, Nullable): Tóm tắt đồ án phục vụ tra cứu số.
+- `keywords` (VARCHAR(255), Nullable): Từ khóa tìm kiếm.
+- `is_verified_by_supervisor` (BOOLEAN, Default: false): GVHD xác nhận đủ 3 thành phần.
+- `is_verified_by_academic` (BOOLEAN, Default: false): TLGV xác nhận đóng băng học phần.
+- `archived_at` (TIMESTAMP, Nullable)
+
+#### 23. `topic_change_requests`
+Xử lý các phát sinh điều chỉnh đề tài trong quá trình thực hiện (BR-15).
+- `id` (INT, PK, Auto Increment)
+- `group_id` (INT, FK → `registration_groups.id`, Cascade Delete)
+- `request_type` (ENUM: `'CHANGE_TITLE'`, `'CHANGE_MEMBER'`, `'EXTEND_DEADLINE'`, `'CANCEL_TOPIC'`)
+- `reason` (TEXT, Not Null): Lý do xin thay đổi.
+- `old_value` (TEXT, Nullable): Giá trị cũ (tên đề tài cũ, thành viên cũ).
+- `new_value` (TEXT, Nullable): Giá trị mới mong muốn.
+- `status` (ENUM: `'PENDING_SUPERVISOR'`, `'PENDING_FACULTY'`, `'APPROVED'`, `'REJECTED'`)
+- `supervisor_comment` (TEXT, Nullable)
+- `faculty_comment` (TEXT, Nullable)
+- `created_at`, `updated_at` (TIMESTAMP)
+
+---
+
+### NHÓM 9: Thông báo & Nhật ký kiểm toán (Notifications & Audit Logs)
+
+#### 24. `notifications`
+Thông báo in-app và đẩy email theo mốc Timeline (BR-23).
+- `id` (INT, PK, Auto Increment)
+- `user_id` (INT, FK → `users.id`, Cascade Delete)
+- `type` (VARCHAR(50), Not Null): Mã loại thông báo (VD: `TOPIC_APPROVED`, `SUBMISSION_DUE_SOON`, `M03_APPROVED`, `GRADE_PUBLISHED`).
+- `title` (VARCHAR(255), Not Null)
+- `content` (TEXT, Not Null)
+- `target_url` (VARCHAR(255), Nullable): Đường dẫn trang khi click vào.
+- `is_read` (BOOLEAN, Default: false)
+- `created_at` (TIMESTAMP, Default: now())
+
+#### 25. `audit_logs`
+Ghi vết lịch sử thao tác hành chính và dữ liệu nhạy cảm (Sửa điểm, Duyệt đề tài, Thay đổi thành viên).
+- `id` (INT, PK, Auto Increment)
+- `user_id` (INT, FK → `users.id`, Restrict Delete)
+- `action` (VARCHAR(50), Not Null): Hành động (VD: `UPDATE_GRADE`, `APPROVE_M03`, `LOCK_SEMESTER`).
+- `target_table` (VARCHAR(50), Not Null)
+- `target_id` (VARCHAR(50), Not Null)
+- `old_value` (JSON, Nullable): Dữ liệu trước thay đổi.
+- `new_value` (JSON, Nullable): Dữ liệu sau thay đổi.
+- `created_at` (TIMESTAMP, Default: now())
