@@ -333,7 +333,7 @@ export class ProposalsService {
           description: proposal.description,
           expectedOutcomes: proposal.expectedOutcomes,
           maxStudents: dto.maxStudents,
-          status: TopicStatus.PENDING,
+          status: TopicStatus.DRAFT,
         },
         select: { id: true, title: true },
       });
@@ -354,7 +354,7 @@ export class ProposalsService {
         userId: proposal.student.userId,
         type: 'PROPOSAL_ACCEPTED',
         title: 'Đề xuất của bạn đã được nhận',
-        content: `${lecturerName(lecturer)} nhận hướng dẫn đề tài "${topic.title}". Đề tài đang chờ khoa phê duyệt, sau đó bạn đăng ký để giữ chỗ.`,
+        content: `${lecturerName(lecturer)} nhận hướng dẫn đề tài "${topic.title}". Đề tài đã được lưu vào danh sách của GV và sẽ được gửi duyệt Khoa/Bộ môn.`,
         targetId: topic.id,
       },
     ]);

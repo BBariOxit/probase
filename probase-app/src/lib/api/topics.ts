@@ -125,7 +125,7 @@ export function useDeleteTopic() {
   });
 }
 
-export type TopicTransition = 'approve' | 'open' | 'close';
+export type TopicTransition = 'submit' | 'approve' | 'open' | 'close';
 
 export function useTopicTransition() {
   const queryClient = useQueryClient();
@@ -137,6 +137,19 @@ export function useTopicTransition() {
       queryClient.setQueryData(topicKeys.detail(topic.id), topic);
       return queryClient.invalidateQueries({ queryKey: topicKeys.lists() });
     },
+  });
+}
+
+export function useSubmitDraftTopics() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (topicIds?: number[]) =>
+      api<{ count: number; message: string }>('/topics/submit-drafts', {
+        method: 'POST',
+        body: { topicIds },
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: topicKeys.all }),
   });
 }
 

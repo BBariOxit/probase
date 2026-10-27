@@ -11,11 +11,14 @@ import {
   Pencil,
   Plus,
   Search,
+  Send,
   Trash2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import type { TopicListItem, TopicStatus } from '@/lib/api/types';
 import {
   useDeleteTopic,
+  useSubmitDraftTopics,
   useTopicTransition,
   useTopics,
 } from '@/lib/api/topics';
@@ -54,6 +57,7 @@ const PAGE_SIZE = 10;
 
 const STATUS_FILTERS: { value: string; label: string }[] = [
   { value: 'ALL', label: 'Mọi trạng thái' },
+  { value: 'DRAFT', label: 'Bản nháp (Chưa gửi duyệt)' },
   { value: 'PENDING', label: 'Chờ duyệt' },
   { value: 'APPROVED', label: 'Đã duyệt' },
   { value: 'OPEN', label: 'Đang mở' },
@@ -72,39 +76,77 @@ function RowActions({ topic }: { topic: TopicListItem }) {
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button variant="ghost" size="icon-sm" aria-label="Hành động">
-              {transition.isPending ? (
-                <Loader2 className="animate-spin" />
-              ) : (
-                <MoreHorizontal />
-              )}
-            </Button>
-          }
-        />
-        <DropdownMenuContent align="end">
-          {canEdit && (
-            <DropdownMenuItem
-              render={<Link href={`/lecturer/topics/${topic.id}`} />}
-            >
-              <Pencil />
-              Sửa
-            </DropdownMenuItem>
-          )}
+      <div className="flex items-center gap-1.5 justify-end">
+        {topic.status === 'DRAFT' && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 gap-1 text-xs border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+            disabled={transition.isPending}
+            onClick={(e) => {
+              e.stopPropagation();
+              transition
+                .mutateAsync({ id: topic.id, to: 'submit' })
+                .then(() => toast.success('Đã gửi đề tài lên Bộ môn thẩm định.'))
+                .catch(() => toast.error('Không thể gửi duyệt đề tài.'));
+            }}
+          >
+            {transition.isPending && transition.variables?.id === topic.id ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              <Send className="size-3" />
+            )}
+            Gửi duyệt
+          </Button>
+        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="ghost" size="icon-sm" aria-label="Hành động">
+                {transition.isPending && transition.variables?.id === topic.id ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <MoreHorizontal />
+                )}
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end">
+            {topic.status === 'DRAFT' && (
+              <DropdownMenuItem
+                onClick={() => {
+                  transition
+                    .mutateAsync({ id: topic.id, to: 'submit' })
+                    .then(() => toast.success('Đã gửi đề tài lên Bộ môn thẩm định.'))
+                    .catch(() => toast.error('Không thể gửi duyệt đề tài.'));
+                }}
+              >
+                <Send />
+                Gửi duyệt Bộ môn
+              </DropdownMenuItem>
+            )}
 
-          {canDelete && (
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() => setConfirmingDelete(true)}
-            >
-              <Trash2 />
-              Xoá
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            {canEdit && (
+              <DropdownMenuItem
+                render={<Link href={`/lecturer/topics/${topic.id}`} />}
+              >
+                <Pencil />
+                Sửa
+              </DropdownMenuItem>
+            )}
+
+            {canDelete && (
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => setConfirmingDelete(true)}
+              >
+                <Trash2 />
+                Xoá
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <ConfirmDialog
         open={confirmingDelete}
@@ -133,6 +175,14 @@ export default function LecturerTopicsPage() {
     q: debouncedSearch || undefined,
     status: status === 'ALL' ? undefined : (status as TopicStatus),
   });
+
+  const { data: draftsData } = useTopics({
+    mine: true,
+    status: 'DRAFT',
+    limit: 100,
+  });
+  const submitDrafts = useSubmitDraftTopics();
+  const draftCount = draftsData?.total ?? 0;
 
   if (!allowed) return null;
 
@@ -163,7 +213,7 @@ export default function LecturerTopicsPage() {
             setPage(1);
           }}
         >
-          <SelectTrigger className="w-44" aria-label="Lọc theo trạng thái">
+          <SelectTrigger className="w-56" aria-label="Lọc theo trạng thái">
             <SelectValue>
               {(value) =>
                 STATUS_FILTERS.find((option) => option.value === value)?.label
@@ -184,6 +234,26 @@ export default function LecturerTopicsPage() {
             <span className="text-sm text-muted-foreground">
               {data.total} đề tài
             </span>
+          )}
+          {draftCount > 0 && (
+            <Button
+              variant="outline"
+              className="gap-1.5 border-primary/40 bg-primary/5 text-primary hover:bg-primary/10"
+              disabled={submitDrafts.isPending}
+              onClick={() => {
+                submitDrafts
+                  .mutateAsync(undefined)
+                  .then((res) => toast.success(res.message))
+                  .catch(() => toast.error('Không thể gửi duyệt đề tài'));
+              }}
+            >
+              {submitDrafts.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Send className="size-4" />
+              )}
+              Gửi duyệt cho Bộ môn ({draftCount})
+            </Button>
           )}
           <Button render={<Link href="/lecturer/topics/new" />}>
             <Plus />

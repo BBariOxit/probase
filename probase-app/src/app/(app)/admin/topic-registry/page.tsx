@@ -54,6 +54,7 @@ const STATUS_OPTIONS: { value: TopicStatus | 'ALL'; label: string }[] = [
 
 const STATUS_LABELS: Record<TopicStatus, { label: string; className: string }> =
   {
+    DRAFT: { label: 'Bản nháp', className: 'text-muted-foreground' },
     PENDING: { label: 'Chờ duyệt', className: 'text-muted-foreground' },
     APPROVED: {
       label: 'Đã duyệt',

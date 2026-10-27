@@ -17,6 +17,7 @@ import { QueryTopicLecturersDto } from './dto/query-topic-lecturers.dto';
 import { QueryTopicsDto } from './dto/query-topics.dto';
 import { UpdateTopicDto } from './dto/update-topic.dto';
 import { BulkOpenTopicsDto } from './dto/bulk-open-topics.dto';
+import { SubmitTopicsDto } from './dto/submit-topics.dto';
 import { TopicsService } from './topics.service';
 
 @Controller('topics')
@@ -63,6 +64,15 @@ export class TopicsController {
     return this.topicsService.bulkOpen(dto.semesterId);
   }
 
+  @Roles('LECTURER')
+  @Post('submit-drafts')
+  submitDrafts(
+    @Body() dto: SubmitTopicsDto,
+    @GetUser('id') userId: number,
+  ) {
+    return this.topicsService.submitDrafts(userId, dto.topicIds);
+  }
+
   @Roles('LECTURER', 'ADMIN')
   @Patch(':id')
   update(
@@ -98,6 +108,15 @@ export class TopicsController {
     @GetUser('role') role: Role,
   ) {
     return this.topicsService.open(id, userId, role);
+  }
+
+  @Roles('LECTURER')
+  @Patch(':id/submit')
+  submit(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser('id') userId: number,
+  ) {
+    return this.topicsService.submit(id, userId);
   }
 
   @Roles('ADMIN')

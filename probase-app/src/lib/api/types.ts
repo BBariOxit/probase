@@ -101,7 +101,12 @@ export interface ActiveGroup {
 }
 
 export type TopicStatus =
-  'PENDING' | 'APPROVED' | 'OPEN' | 'IN_PROGRESS' | 'COMPLETED';
+  | 'DRAFT'
+  | 'PENDING'
+  | 'APPROVED'
+  | 'OPEN'
+  | 'IN_PROGRESS'
+  | 'COMPLETED';
 
 export interface TopicAvailability {
   occupiedSeats: number;

@@ -94,6 +94,7 @@ enum AttachmentType {
 }
 
 enum TopicStatus {
+  DRAFT              // Bản nháp của Giảng viên, chưa gửi duyệt
   PENDING
   PENDING_DEPARTMENT // Chờ Tổ trưởng Bộ môn (TTBM) thẩm định chuyên môn
   PENDING_FACULTY    // TTBM đã duyệt, chờ Ban Chủ nhiệm Khoa phê duyệt
@@ -566,7 +567,7 @@ model Topic {
   expectedOutcomes String      @db.Text // Sản phẩm dự kiến hoàn thành
   techStack        String?     // Công nghệ, công cụ dự kiến (React, NestJS, Docker...)
   maxStudents      Int         @default(3) // Tối đa 1 đến 3 SV
-  status           TopicStatus @default(PENDING)
+  status           TopicStatus @default(DRAFT)
 
   // Quy trình xét duyệt 2 cấp: Cấp Bộ môn (TTBM) & Cấp Khoa (BCN Khoa) (BR-05)
   departmentReviewerId Int?    // TTBM thẩm định chuyên môn

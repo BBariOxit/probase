@@ -216,9 +216,7 @@ export class TopicsService {
   ) {}
 
   async findAll(query: QueryTopicsDto, userId: number, role: Role) {
-    const where: Prisma.TopicWhereInput = {
-      status: visibleStatusFilter(role, query.status),
-    };
+    const where: Prisma.TopicWhereInput = {};
 
     if (query.semesterId) where.semesterId = query.semesterId;
     // Still asked for by kind of project, which is what a reader picks from a
@@ -239,8 +237,14 @@ export class TopicsService {
         throw new ForbiddenException('Only lecturers own topics');
       }
       where.lecturerId = await this.requireLecturerProfileId(userId);
-    } else if (query.lecturerId) {
-      where.lecturerId = query.lecturerId;
+      if (query.status) {
+        where.status = { equals: query.status };
+      }
+    } else {
+      if (query.lecturerId) {
+        where.lecturerId = query.lecturerId;
+      }
+      where.status = visibleStatusFilter(role, query.status);
     }
 
     if (query.forMyCohort) {
@@ -387,10 +391,19 @@ export class TopicsService {
       include: DETAIL_INCLUDE,
     });
 
-    // Knowing the id is not a bypass. An unpublished topic answers 404 rather
-    // than 403 for a student, so the response cannot be used to map out which
-    // drafts exist.
-    if (!topic || !canSee(topic.status, role)) {
+    if (!topic) {
+      throw new NotFoundException('Topic not found');
+    }
+
+    if (topic.status === TopicStatus.DRAFT) {
+      if (role !== Role.LECTURER) {
+        throw new NotFoundException('Topic not found');
+      }
+      const lecturerId = await this.requireLecturerProfileId(userId);
+      if (topic.lecturerId !== lecturerId) {
+        throw new NotFoundException('Topic not found');
+      }
+    } else if (!canSee(topic.status, role)) {
       throw new NotFoundException('Topic not found');
     }
 
@@ -427,7 +440,13 @@ export class TopicsService {
     const round = await this.rounds.requireRoundFor(semesterId, projectTypeId);
 
     const topic = await this.prisma.topic.create({
-      data: { ...rest, semesterId, roundId: round.id, lecturerId },
+      data: {
+        ...rest,
+        semesterId,
+        roundId: round.id,
+        lecturerId,
+        status: TopicStatus.DRAFT,
+      },
       include: DETAIL_INCLUDE,
     });
 
@@ -527,6 +546,55 @@ export class TopicsService {
     return this.setStatus(id, TopicStatus.APPROVED);
   }
 
+  async submit(id: number, userId: number) {
+    const lecturerId = await this.requireLecturerProfileId(userId);
+    const topic = await this.requireTopic(id);
+
+    if (topic.lecturerId !== lecturerId) {
+      throw new ForbiddenException('Bạn không phải chủ sở hữu đề tài này');
+    }
+
+    if (topic.status !== TopicStatus.DRAFT) {
+      throw new ConflictException(
+        'Chỉ có thể gửi duyệt đề tài đang ở trạng thái bản nháp',
+      );
+    }
+
+    return this.setStatus(id, TopicStatus.PENDING);
+  }
+
+  async submitDrafts(userId: number, topicIds?: number[]) {
+    const lecturerId = await this.requireLecturerProfileId(userId);
+
+    const where: Prisma.TopicWhereInput = {
+      lecturerId,
+      status: TopicStatus.DRAFT,
+      ...(topicIds && topicIds.length > 0 && { id: { in: topicIds } }),
+    };
+
+    const draftTopics = await this.prisma.topic.findMany({
+      where,
+      select: { id: true, title: true },
+    });
+
+    if (draftTopics.length === 0) {
+      return {
+        count: 0,
+        message: 'Không có đề tài bản nháp nào cần gửi duyệt',
+      };
+    }
+
+    await this.prisma.topic.updateMany({
+      where: { id: { in: draftTopics.map((t) => t.id) } },
+      data: { status: TopicStatus.PENDING },
+    });
+
+    return {
+      count: draftTopics.length,
+      message: `Đã gửi duyệt thành công ${draftTopics.length} đề tài cho Bộ môn.`,
+    };
+  }
+
   private async setStatus(id: number, status: TopicStatus) {
     const topic = await this.prisma.topic.update({
       where: { id },
@@ -612,20 +680,28 @@ function visibleStatusFilter(
   role: Role,
   requested: TopicStatus | undefined,
 ): Prisma.EnumTopicStatusFilter | undefined {
-  if (role !== Role.STUDENT) {
-    return requested ? { equals: requested } : undefined;
+  if (role === Role.STUDENT) {
+    if (requested && !canSee(requested, role)) {
+      // Asking for drafts or unapproved topics as a student is answered with an empty page
+      return { in: [] };
+    }
+    return requested ? { equals: requested } : { in: [...PUBLISHED_STATUSES] };
   }
 
-  if (requested && !canSee(requested, role)) {
-    // Asking for drafts as a student is answered with an empty page, not an
-    // error: the filter is a view, and nothing here is worth confirming.
-    return { in: [] };
+  // Non-students (ADMIN or LECTURER browsing catalogue)
+  // DRAFT topics must NEVER be visible to others or in admin registry
+  if (requested) {
+    if (requested === TopicStatus.DRAFT) {
+      return { in: [] };
+    }
+    return { equals: requested };
   }
 
-  return requested ? { equals: requested } : { in: [...PUBLISHED_STATUSES] };
+  return { not: TopicStatus.DRAFT };
 }
 
 function canSee(status: TopicStatus, role: Role): boolean {
+  if (status === TopicStatus.DRAFT) return false;
   if (role !== Role.STUDENT) return true;
 
   return (PUBLISHED_STATUSES as readonly TopicStatus[]).includes(status);
