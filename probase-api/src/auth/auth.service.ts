@@ -76,11 +76,6 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     const email = dto.email.trim().toLowerCase();
-    const candidateEmail = email.endsWith('@st.dlu.edu.vn')
-      ? email.replace('@st.dlu.edu.vn', '@dlu.edu.vn')
-      : email.endsWith('@dlu.edu.vn')
-        ? email.replace('@dlu.edu.vn', '@st.dlu.edu.vn')
-        : undefined;
 
     const includeProfiles = {
       studentProfile: {
@@ -107,17 +102,10 @@ export class AuthService {
       },
     };
 
-    let user = await this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { email },
       include: includeProfiles,
     });
-
-    if (!user && candidateEmail) {
-      user = await this.prisma.user.findUnique({
-        where: { email: candidateEmail },
-        include: includeProfiles,
-      });
-    }
 
     const retryAfterMs = passwordRetryAfterMs(user);
     if (retryAfterMs > 0) {
@@ -178,7 +166,7 @@ export class AuthService {
 
   /**
    * Đăng nhập thông qua Google SSO của Trường Đại học Đà Lạt
-   * - Hỗ trợ cả sinh viên (@st.dlu.edu.vn / @dlu.edu.vn) và giảng viên (@dlu.edu.vn)
+   * - Định dạng email duy nhất: @dlu.edu.vn (Sinh viên: <MSSV>@dlu.edu.vn, Giảng viên: <tên>@dlu.edu.vn)
    * - Ràng buộc BR-01: Tài khoản phải được Khoa tạo/import trước trong CSDL
    */
   async googleLogin(dto: GoogleLoginDto) {
@@ -270,23 +258,14 @@ export class AuthService {
       );
     }
 
-    // Ràng buộc bảo mật DLU: Chỉ chấp nhận đuôi trường DLU (@dlu.edu.vn hoặc @st.dlu.edu.vn)
-    const isDluEmail =
-      email.endsWith('@dlu.edu.vn') || email.endsWith('@st.dlu.edu.vn');
-    if (!isDluEmail) {
+    // Ràng buộc bảo mật DLU: Chỉ chấp nhận duy nhất đuôi trường DLU (@dlu.edu.vn)
+    if (!email.endsWith('@dlu.edu.vn')) {
       throw new BadRequestException(
-        `Hệ thống ProBase chỉ chấp nhận email do Trường Đại học Đà Lạt cấp (@dlu.edu.vn hoặc @st.dlu.edu.vn). Địa chỉ "${email}" không được phép đăng nhập.`,
+        `Hệ thống ProBase chỉ chấp nhận email do Trường Đại học Đà Lạt cấp (@dlu.edu.vn). Địa chỉ "${email}" không được phép đăng nhập.`,
       );
     }
 
-    // BR-01: Tài khoản phải được Khoa import trước trong hệ thống.
-    // Hỗ trợ tìm kiếm theo cả @dlu.edu.vn và @st.dlu.edu.vn phòng trường hợp lệch domain
-    const candidateEmail = email.endsWith('@st.dlu.edu.vn')
-      ? email.replace('@st.dlu.edu.vn', '@dlu.edu.vn')
-      : email.endsWith('@dlu.edu.vn')
-        ? email.replace('@dlu.edu.vn', '@st.dlu.edu.vn')
-        : undefined;
-
+    // BR-01: Tài khoản phải được Khoa import trước trong hệ thống
     const includeProfiles = {
       studentProfile: {
         select: {
@@ -316,13 +295,6 @@ export class AuthService {
       where: { email },
       include: includeProfiles,
     });
-
-    if (!user && candidateEmail) {
-      user = await this.prisma.user.findUnique({
-        where: { email: candidateEmail },
-        include: includeProfiles,
-      });
-    }
 
     if (!user) {
       const localPart = email.split('@')[0];

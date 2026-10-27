@@ -251,23 +251,6 @@ describe('AuthService password backoff', () => {
 
       expect(update).not.toHaveBeenCalled();
     });
-
-    it('successfully logs in with candidate email domain fallback', async () => {
-      findUnique.mockImplementation(({ where }: { where: { email: string } }) => {
-        if (where.email === '2212345@dlu.edu.vn') {
-          return Promise.resolve(userRow({ email: '2212345@dlu.edu.vn' }));
-        }
-        return Promise.resolve(null);
-      });
-
-      const result = await service.login({
-        email: '2212345@st.dlu.edu.vn',
-        password: PASSWORD,
-      });
-
-      expect(result.user.email).toBe('2212345@dlu.edu.vn');
-      expect(result).toHaveProperty('accessToken');
-    });
   });
 
   describe('an address that holds no account', () => {
@@ -325,7 +308,7 @@ describe('AuthService password backoff', () => {
       global.fetch = originalFetch;
     });
 
-    it('rejects emails outside DLU domains (@dlu.edu.vn / @st.dlu.edu.vn)', async () => {
+    it('rejects emails outside DLU domain (@dlu.edu.vn)', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
@@ -340,11 +323,26 @@ describe('AuthService password backoff', () => {
       ).rejects.toThrow('Hệ thống ProBase chỉ chấp nhận email do Trường Đại học Đà Lạt cấp');
     });
 
+    it('rejects @st.dlu.edu.vn emails because only @dlu.edu.vn is accepted', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          email: '2212345@st.dlu.edu.vn',
+          email_verified: 'true',
+          name: 'Student St',
+        }),
+      } as unknown as Response);
+
+      await expect(
+        service.googleLogin({ idToken: 'fake-token' }),
+      ).rejects.toThrow('Hệ thống ProBase chỉ chấp nhận email do Trường Đại học Đà Lạt cấp (@dlu.edu.vn)');
+    });
+
     it('rejects DLU email not registered in the system (BR-01)', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
-          email: 'unregistered@st.dlu.edu.vn',
+          email: 'unregistered@dlu.edu.vn',
           email_verified: 'true',
           name: 'Unregistered Student',
         }),
@@ -440,47 +438,6 @@ describe('AuthService password backoff', () => {
       expect(result.user.mustChangePassword).toBe(false);
     });
 
-    it('matches student account when Google returns @st.dlu.edu.vn and DB stores @dlu.edu.vn', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          email: '2212345@st.dlu.edu.vn',
-          email_verified: 'true',
-          name: 'Trần Văn B',
-        }),
-      } as unknown as Response);
-
-      // First call for @st.dlu.edu.vn returns null, candidate @dlu.edu.vn returns user
-      findUnique.mockImplementation(
-        ({ where }: { where: { email: string } }) => {
-          if (where.email === '2212345@dlu.edu.vn') {
-            return Promise.resolve({
-              id: 11,
-              email: '2212345@dlu.edu.vn',
-              role: 'STUDENT',
-              isActive: true,
-              mustChangePassword: false,
-              avatarUrl: null,
-              studentProfile: {
-                id: 2,
-                studentCode: '2212345',
-                fullName: 'Trần Văn B',
-                majorId: 1,
-                class: 'CTK46PM',
-                cohort: '2022',
-              },
-              lecturerProfile: null,
-            });
-          }
-          return Promise.resolve(null);
-        },
-      );
-
-      const result = await service.googleLogin({ idToken: 'valid-token' });
-      expect(result).toHaveProperty('accessToken');
-      expect(result.user.email).toBe('2212345@dlu.edu.vn');
-    });
-
     it('matches student account by extracting 7-digit studentCode from email when emails mismatch', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
@@ -498,7 +455,7 @@ describe('AuthService password backoff', () => {
         fullName: 'Trần Văn B',
         user: {
           id: 11,
-          email: '2212345@st.dlu.edu.vn',
+          email: 'tranvanb@dlu.edu.vn',
           role: 'STUDENT',
           isActive: true,
           mustChangePassword: false,

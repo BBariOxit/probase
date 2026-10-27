@@ -58,7 +58,7 @@ Tài liệu này định nghĩa chi tiết toàn bộ yêu cầu nghiệp vụ, 
 #### BR-02: Quản lý danh sách SV đủ điều kiện & Định mức GV
 - **Tác nhân:** TLGV.
 - **Mô tả:**
-  - Import danh sách sinh viên đủ điều kiện làm đồ án trong kỳ từ file Excel của Phòng Đào tạo (chứa MSSV, Họ tên, Lớp, Email sinh viên `<MSSV>@dlu.edu.vn` ví dụ `2212345@dlu.edu.vn` hoặc `@st.dlu.edu.vn`).
+  - Import danh sách sinh viên đủ điều kiện làm đồ án trong kỳ từ file Excel của Phòng Đào tạo (chứa MSSV, Họ tên, Lớp, Email sinh viên <MSSV>@dlu.edu.vn ví dụ 2212345@dlu.edu.vn).
   - Kiểm tra mã lớp đối chiếu: lớp `CTK46PM` thuộc chuyên ngành CNPM, `CTK46MMT` thuộc chuyên ngành Mạng máy tính.
   - Cấu hình số lượng SV trên 1 đề tài: **từ 1 đến 3 sinh viên** (theo quy định Khoa CNTT).
   - Cấu hình định mức tải hướng dẫn tối đa của mỗi GV trong một học kỳ (hạn mức quota).
@@ -258,7 +258,7 @@ Tài liệu này định nghĩa chi tiết toàn bộ yêu cầu nghiệp vụ, 
   1. Sinh viên / Giảng viên bấm nút **"Đăng nhập bằng tài khoản Google DLU"**.
   2. Hệ thống nhận thông tin người dùng từ Google OAuth2 (Email, Họ tên, Avatar).
   3. **Kiểm tra và phân quyền tự động (Tách Role theo đuôi Domain):**
-     - Đuôi email `@st.dlu.edu.vn` (VD: `2212345@st.dlu.edu.vn`) ➔ Định tuyến vào bảng **Sinh viên** (`student_profiles`).
+     - Email sinh viên có 7 số MSSV dạng 2212345@dlu.edu.vn ➔ Định tuyến vào bảng **Sinh viên** (student_profiles).
      - Đuôi email `@dlu.edu.vn` (VD: `linhttp@dlu.edu.vn`) ➔ Định tuyến vào bảng **Giảng viên** (`lecturer_profiles`) và nạp các quyền chức vụ kiêm nhiệm (TTBM, BCN Khoa, TLGV).
      - Các domain email khác (Gmail thường `@gmail.com`, v.v.) bị từ chối truy cập ngay lập tức.
   4. **Kiểm tra hợp lệ & Cấp Token:**

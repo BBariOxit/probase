@@ -60,7 +60,7 @@ export function useGoogleSso(options?: UseGoogleSsoOptions) {
         } else if (err.status === 400) {
           friendlyMessage =
             err.message ||
-            'Hệ thống ProBase chỉ chấp nhận email trường Đại học Đà Lạt (@dlu.edu.vn hoặc @st.dlu.edu.vn).';
+            'Hệ thống ProBase chỉ chấp nhận email trường Đại học Đà Lạt (@dlu.edu.vn).';
         } else if (err.status === 401) {
           friendlyMessage =
             err.message || 'Xác thực tài khoản thất bại hoặc tài khoản đã bị vô hiệu hoá.';
