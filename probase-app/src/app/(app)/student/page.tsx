@@ -12,7 +12,7 @@ import {
 import { useMyGroup } from '@/lib/api/registration';
 import { useTopicLecturers, useTopics } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
-import { useDebouncedValue } from '@/lib/use-debounced-value';
+import { useDebounce, usePagination } from '@/hooks';
 import { EmptyState } from '@/components/shared/empty-state';
 import { MyGroupBanner } from '@/components/groups/my-group-banner';
 import { PaginationBar } from '@/components/shared/pagination-bar';
@@ -51,12 +51,14 @@ export default function StudentTopicsPage() {
   const { data: lecturers } = useTopicLecturers(activeSemester?.id);
   const { data: myGroup } = useMyGroup();
 
-  const [page, setPage] = useState(1);
+  const { page, setPage, resetPage } = usePagination({
+    initialPageSize: PAGE_SIZE,
+  });
   const [search, setSearch] = useState('');
   const [projectTypeId, setProjectTypeId] = useState(MY_COHORT);
   const [lecturerId, setLecturerId] = useState(ANY);
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
-  const debouncedSearch = useDebouncedValue(search);
+  const debouncedSearch = useDebounce(search);
 
   const { data, isPending, error } = useTopics(
     {
@@ -84,10 +86,6 @@ export default function StudentTopicsPage() {
     lecturerId !== ANY;
 
   const myCohortTypes = myTypes?.map((type) => type.name).join(', ');
-
-  function resetPage() {
-    setPage(1);
-  }
 
   return (
     <div className="space-y-4">

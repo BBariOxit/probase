@@ -4,28 +4,19 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
-import { api, ApiError } from '@/lib/api/client';
-import { passwordSchema } from '@/lib/auth/password';
+import { ApiError } from '@/lib/api/client';
 import { useSession } from '@/lib/auth/session';
+import { authService } from '@/services/auth.service';
+import {
+  ChangePasswordSchema,
+  type ChangePasswordValues,
+} from '@/validations/auth.validation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { FormError } from '@/components/shared/form-error';
 import { PasswordInput } from '@/components/shared/password-input';
-
-const ChangePasswordSchema = z
-  .object({
-    newPassword: passwordSchema,
-    confirmPassword: z.string().min(1, 'Vui lòng nhập lại mật khẩu mới'),
-  })
-  .refine((v) => v.newPassword === v.confirmPassword, {
-    message: 'Mật khẩu nhập lại không khớp',
-    path: ['confirmPassword'],
-  });
-
-type ChangePasswordValues = z.infer<typeof ChangePasswordSchema>;
 
 export default function ChangePasswordPage() {
   const router = useRouter();
@@ -49,15 +40,9 @@ export default function ChangePasswordPage() {
   async function onSubmit(values: ChangePasswordValues) {
     setFormError(null);
     try {
-      const result = await api<{ accessToken: string }>(
-        '/auth/change-password',
-        {
-          method: 'PATCH',
-          body: {
-            newPassword: values.newPassword,
-          },
-        },
-      );
+      const result = await authService.changePassword({
+        newPassword: values.newPassword,
+      });
 
       setAccessToken(result.accessToken);
       patchUser({ mustChangePassword: false });

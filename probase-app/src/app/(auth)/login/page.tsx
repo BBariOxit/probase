@@ -5,30 +5,21 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Brand } from '@/components/layout/brand';
 import { GoogleLoginButton } from '@/components/auth/google-login-button';
-import { api, ApiError } from '@/lib/api/client';
-import type { LoginResponse, Role } from '@/lib/api/types';
+import { ApiError } from '@/lib/api/client';
+import type { Role } from '@/lib/api/types';
 import { useGoogleSso } from '@/lib/auth/google-auth';
 import { safeNextPath } from '@/lib/auth/next-path';
 import { homePathFor, useSession } from '@/lib/auth/session';
+import { authService } from '@/services/auth.service';
+import { LoginSchema, type LoginValues } from '@/validations/auth.validation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PasswordInput } from '@/components/shared/password-input';
-
-const LoginSchema = z.object({
-  email: z
-    .string()
-    .min(1, 'Vui lòng nhập email')
-    .pipe(z.email('Email không hợp lệ')),
-  password: z.string().min(1, 'Vui lòng nhập mật khẩu'),
-});
-
-type LoginValues = z.infer<typeof LoginSchema>;
 
 export default function LoginPage() {
   return (
@@ -82,11 +73,7 @@ function LoginForm() {
     setFormError(null);
     setGoogleError(null);
     try {
-      const result = await api<LoginResponse>('/auth/login', {
-        method: 'POST',
-        body: values,
-        anonymous: true,
-      });
+      const result = await authService.login(values);
 
       signIn(result, result.user);
       router.replace(destinationFor(result.user));

@@ -4,23 +4,18 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { ArrowLeft, Loader2, MailCheck } from 'lucide-react';
-import { api, ApiError } from '@/lib/api/client';
+import { ApiError } from '@/lib/api/client';
+import { authService } from '@/services/auth.service';
+import {
+  ForgotPasswordSchema,
+  type ForgotPasswordValues,
+} from '@/validations/auth.validation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FormError } from '@/components/shared/form-error';
-
-const ForgotPasswordSchema = z.object({
-  email: z
-    .string()
-    .min(1, 'Vui lòng nhập email')
-    .pipe(z.email('Email không hợp lệ')),
-});
-
-type ForgotPasswordValues = z.infer<typeof ForgotPasswordSchema>;
 
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
@@ -39,11 +34,7 @@ export default function ForgotPasswordPage() {
   async function onSubmit(values: ForgotPasswordValues) {
     setFormError(null);
     try {
-      await api('/auth/forgot-password', {
-        method: 'POST',
-        body: values,
-        anonymous: true,
-      });
+      await authService.forgotPassword(values);
       setSent(true);
     } catch (err) {
       setFormError(

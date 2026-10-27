@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { api } from '@/lib/api/client';
 import { nextParam } from '@/lib/auth/next-path';
 import { useSession } from '@/lib/auth/session';
+import { authService } from '@/services/auth.service';
 import { BreadcrumbProvider } from '@/lib/breadcrumb-context';
 import { AppHeader } from '@/components/layout/app-header';
 import { AppSidebar } from '@/components/layout/app-sidebar';
@@ -28,7 +28,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [status, user, router, pathname]);
 
   async function handleSignOut() {
-    await api('/auth/logout', { method: 'POST' }).catch(() => undefined);
+    await authService.logout();
     signOut();
     router.replace('/login');
   }
