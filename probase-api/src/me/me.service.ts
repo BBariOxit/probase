@@ -33,6 +33,10 @@ const LECTURER_FIELDS = {
   bio: true,
   researchInterests: true,
   maxMentoringQuota: true,
+  isHeadOfDepartment: true,
+  isFacultyBoard: true,
+  isAcademicAssistant: true,
+  major: { select: { id: true, name: true, code: true } },
 } as const;
 
 type LecturerRow = Prisma.LecturerProfileGetPayload<{
@@ -91,6 +95,10 @@ export class MeService {
       phone: lecturer.phone,
       bio: lecturer.bio,
       researchInterests: lecturer.researchInterests,
+      isHeadOfDepartment: lecturer.isHeadOfDepartment,
+      isFacultyBoard: lecturer.isFacultyBoard,
+      isAcademicAssistant: lecturer.isAcademicAssistant,
+      major: lecturer.major,
       mentoring: await this.mentoring.loadForOne(lecturer, semesterId),
     };
   }

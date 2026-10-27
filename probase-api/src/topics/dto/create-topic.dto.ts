@@ -21,6 +21,9 @@ export const CreateTopicSchema = z.object({
     .max(3000, 'Yêu cầu đầu ra tối đa 3000 ký tự'),
   // Capped so a typo cannot turn one topic into a whole cohort.
   maxStudents: z.coerce.number().int().min(1).max(10).default(3),
+  majorId: z.coerce.number().int().positive().optional(),
+  objectives: z.string().trim().max(3000).optional(),
+  techStack: z.string().trim().max(255).optional(),
 });
 
 export class CreateTopicDto extends createZodDto(CreateTopicSchema) {}

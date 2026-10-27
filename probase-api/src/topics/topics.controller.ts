@@ -18,11 +18,19 @@ import { QueryTopicsDto } from './dto/query-topics.dto';
 import { UpdateTopicDto } from './dto/update-topic.dto';
 import { BulkOpenTopicsDto } from './dto/bulk-open-topics.dto';
 import { SubmitTopicsDto } from './dto/submit-topics.dto';
+import {
+  DepartmentReviewDto,
+  FacultyReviewDto,
+} from './dto/review-topic.dto';
+import { TopicSimilarityService } from './topic-similarity.service';
 import { TopicsService } from './topics.service';
 
 @Controller('topics')
 export class TopicsController {
-  constructor(private readonly topicsService: TopicsService) {}
+  constructor(
+    private readonly topicsService: TopicsService,
+    private readonly topicSimilarityService: TopicSimilarityService,
+  ) {}
 
   @Get()
   findAll(
@@ -127,5 +135,31 @@ export class TopicsController {
     @GetUser('role') role: Role,
   ) {
     return this.topicsService.close(id, userId, role);
+  }
+
+  @Roles('LECTURER', 'ADMIN')
+  @Patch(':id/department-review')
+  reviewDepartment(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: DepartmentReviewDto,
+    @GetUser() user: any,
+  ) {
+    return this.topicsService.reviewDepartment(id, dto, user);
+  }
+
+  @Roles('LECTURER', 'ADMIN')
+  @Patch(':id/faculty-review')
+  reviewFaculty(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: FacultyReviewDto,
+    @GetUser() user: any,
+  ) {
+    return this.topicsService.reviewFaculty(id, dto, user);
+  }
+
+  @Roles('LECTURER', 'ADMIN')
+  @Get(':id/similarity')
+  getSimilarity(@Param('id', ParseIntPipe) id: number) {
+    return this.topicSimilarityService.checkTopicSimilarity(id);
   }
 }
