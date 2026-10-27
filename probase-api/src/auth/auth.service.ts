@@ -313,6 +313,23 @@ export class AuthService {
     }
 
     if (!user) {
+      const localPart = email.split('@')[0];
+      if (/^\d{7}$/.test(localPart)) {
+        const student = await this.prisma.studentProfile.findUnique({
+          where: { studentCode: localPart },
+          include: {
+            user: {
+              include: includeProfiles,
+            },
+          },
+        });
+        if (student?.user) {
+          user = student.user;
+        }
+      }
+    }
+
+    if (!user) {
       throw new ForbiddenException(
         `Email "${email}" chưa được cập nhật vào danh sách của Khoa CNTT. Vui lòng liên hệ Trợ lý Giáo vụ Khoa để được cấp tài khoản.`,
       );

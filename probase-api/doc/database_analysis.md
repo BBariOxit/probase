@@ -42,14 +42,14 @@ Tài liệu này định nghĩa chi tiết kiến trúc cơ sở dữ liệu qua
 Tài khoản đăng nhập hệ thống, hỗ trợ Google OAuth 2.0 theo 2 domain trường DLU và cơ chế dự phòng cho môi trường kiểm thử.
 - `id` (INT, PK, Auto Increment)
 - `email` (VARCHAR(100), Unique, Not Null):
-  - Sinh viên: định dạng `<MSSV>@st.dlu.edu.vn` (VD: `2212345@st.dlu.edu.vn`).
+  - Sinh viên: định dạng `<MSSV>@dlu.edu.vn` (VD: `2212345@dlu.edu.vn`) hoặc `<MSSV>@st.dlu.edu.vn`.
   - Giảng viên / Cán bộ: định dạng `<Ten><ChuCaiDauHoDem>@dlu.edu.vn` (VD: `linhttp@dlu.edu.vn`).
 - **Luồng xử lý SSO Google Workspace:**
   - Google trả về thông tin (Email, Họ tên, Avatar).
-  - Tách Role theo đuôi domain:
-    - `@st.dlu.edu.vn` ➔ Map vào `Role.STUDENT` (`student_profiles`).
-    - `@dlu.edu.vn` ➔ Map vào `Role.LECTURER` (`lecturer_profiles`) và các cờ kiêm nhiệm.
-  - Kiểm tra email đã có trong danh sách import/khai báo ➔ Cấp cặp mã JWT Token (Access & Refresh Token).
+  - Tách Role theo định dạng email/domain:
+    - Bắt đầu bằng 7 số MSSV (VD: `2212345@dlu.edu.vn` hoặc `@st.dlu.edu.vn`) ➔ Map vào `Role.STUDENT` (`student_profiles`).
+    - Email giảng viên/cán bộ `@dlu.edu.vn` ➔ Map vào `Role.LECTURER` (`lecturer_profiles`) và các cờ kiêm nhiệm.
+  - Kiểm tra email/MSSV đã có trong danh sách import/khai báo ➔ Cấp cặp mã JWT Token (Access & Refresh Token).
 - `password_hash` (VARCHAR(255), Not Null): Băm bằng Bcrypt/Argon2 (dùng cho tài khoản quản trị hệ thống và kiểm thử).
 - `role` (ENUM: `'ADMIN'`, `'LECTURER'`, `'STUDENT'`): Phân loại người dùng cơ sở.
 - `is_active` (BOOLEAN, Default: true): Khóa/mở khóa tài khoản.

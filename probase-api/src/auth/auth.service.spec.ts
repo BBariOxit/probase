@@ -58,10 +58,12 @@ function userRow(overrides: Partial<UserRow> = {}): UserRow {
 describe('AuthService password backoff', () => {
   let service: AuthService;
   let findUnique: jest.Mock;
+  let studentProfileFindUnique: jest.Mock;
   let update: jest.Mock;
 
   beforeEach(async () => {
     findUnique = jest.fn();
+    studentProfileFindUnique = jest.fn();
     // Every `user.update` here stands in for one that returns the row, because
     // recordFailedPassword reads the incremented count back off it.
     update = jest.fn().mockResolvedValue({ failedPasswordCount: 1 });
@@ -74,6 +76,7 @@ describe('AuthService password backoff', () => {
           provide: PrismaService,
           useValue: {
             user: { findUnique, update },
+            studentProfile: { findUnique: studentProfileFindUnique },
             refreshToken: {
               create: jest.fn(),
               deleteMany: jest.fn(),
@@ -459,6 +462,45 @@ describe('AuthService password backoff', () => {
       const result = await service.googleLogin({ idToken: 'valid-token' });
       expect(result).toHaveProperty('accessToken');
       expect(result.user.email).toBe('2212345@dlu.edu.vn');
+    });
+
+    it('matches student account by extracting 7-digit studentCode from email when emails mismatch', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          email: '2212345@dlu.edu.vn',
+          email_verified: true,
+          name: 'Trần Văn B',
+        }),
+      } as unknown as Response);
+
+      findUnique.mockResolvedValue(null);
+      studentProfileFindUnique.mockResolvedValue({
+        id: 2,
+        studentCode: '2212345',
+        fullName: 'Trần Văn B',
+        user: {
+          id: 11,
+          email: '2212345@st.dlu.edu.vn',
+          role: 'STUDENT',
+          isActive: true,
+          mustChangePassword: false,
+          avatarUrl: null,
+          studentProfile: {
+            id: 2,
+            studentCode: '2212345',
+            fullName: 'Trần Văn B',
+            majorId: 1,
+            class: 'CTK46PM',
+            cohort: '2022',
+          },
+          lecturerProfile: null,
+        },
+      });
+
+      const result = await service.googleLogin({ idToken: 'valid-token' });
+      expect(result).toHaveProperty('accessToken');
+      expect(result.user.studentProfile?.studentCode).toBe('2212345');
     });
   });
 });

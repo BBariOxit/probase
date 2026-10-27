@@ -58,7 +58,7 @@ Tài liệu này định nghĩa chi tiết toàn bộ yêu cầu nghiệp vụ, 
 #### BR-02: Quản lý danh sách SV đủ điều kiện & Định mức GV
 - **Tác nhân:** TLGV.
 - **Mô tả:**
-  - Import danh sách sinh viên đủ điều kiện làm đồ án trong kỳ từ file Excel của Phòng Đào tạo (chứa MSSV, Họ tên, Lớp, Email sinh viên `@st.dlu.edu.vn`).
+  - Import danh sách sinh viên đủ điều kiện làm đồ án trong kỳ từ file Excel của Phòng Đào tạo (chứa MSSV, Họ tên, Lớp, Email sinh viên `<MSSV>@dlu.edu.vn` ví dụ `2212345@dlu.edu.vn` hoặc `@st.dlu.edu.vn`).
   - Kiểm tra mã lớp đối chiếu: lớp `CTK46PM` thuộc chuyên ngành CNPM, `CTK46MMT` thuộc chuyên ngành Mạng máy tính.
   - Cấu hình số lượng SV trên 1 đề tài: **từ 1 đến 3 sinh viên** (theo quy định Khoa CNTT).
   - Cấu hình định mức tải hướng dẫn tối đa của mỗi GV trong một học kỳ (hạn mức quota).
