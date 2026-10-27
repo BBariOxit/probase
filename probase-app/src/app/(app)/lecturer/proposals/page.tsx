@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Check, Inbox, Loader2, X } from 'lucide-react';
+import { Check, Inbox, Loader2, MessageSquareCode, X } from 'lucide-react';
 import { useMyProfile } from '@/lib/api/me';
 import { useProposals } from '@/lib/api/proposals';
 import type {
@@ -34,9 +34,9 @@ import {
 const PAGE_SIZE = 10;
 
 const STATUS_FILTERS: { value: ProposalStatus | 'ALL'; label: string }[] = [
-  { value: 'PENDING', label: 'Chờ trả lời' },
-  { value: 'ACCEPTED', label: 'Đã nhận' },
-  { value: 'REJECTED', label: 'Từ chối' },
+  { value: 'PENDING', label: 'Chờ duyệt / Đang trao đổi' },
+  { value: 'ACCEPTED', label: 'Đã nhận hướng dẫn' },
+  { value: 'REJECTED', label: 'Đã từ chối' },
   { value: 'ALL', label: 'Mọi trạng thái' },
 ];
 
@@ -201,11 +201,6 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
         proposal={proposal}
         onClick={() => setViewing(true)}
         counterparty={
-          /*
-            The person, not just a name. A lecturer's inbox is a queue of
-            students as much as of ideas, and the code and class are what tell
-            them whether this is somebody they have taught.
-          */
           <span className="inline-flex items-center gap-1.5">
             <UserAvatar
               name={student.fullName}
@@ -228,6 +223,14 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
                 Nhận hướng dẫn
               </Button>
               <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setViewing(true)}
+              >
+                <MessageSquareCode />
+                Xem & Nhận xét
+              </Button>
+              <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setAnswering('reject')}
@@ -240,11 +243,6 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
         }
       />
 
-      {/*
-        Mounted only while answering. Each dialog holds the lecturer's typing in
-        its own state, and one closed pair per card would keep ten drafts alive
-        for a decision nobody has started.
-      */}
       {answering === 'accept' && (
         <AcceptProposalDialog
           proposal={proposal}
@@ -303,11 +301,11 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
 }
 
 function Outcome({ proposal }: { proposal: TopicProposal }) {
-  if (proposal.status === 'REJECTED') {
+  if (proposal.status === 'REJECTED' && proposal.lecturerFeedback) {
     return (
       <section className="space-y-1 rounded-lg border bg-muted/40 px-3 py-2.5">
         <h3 className="text-xs font-medium text-muted-foreground">
-          Nhận xét bạn đã gửi
+          Lý do từ chối
         </h3>
         <p className="text-sm whitespace-pre-line break-words">
           {proposal.lecturerFeedback}

@@ -81,12 +81,20 @@ enum GroupJoinSource {
 }
 
 enum TopicProposalStatus {
+  DRAFT
   PENDING
+  NEEDS_REVISION
   ACCEPTED
   REJECTED
 }
 
+enum AttachmentType {
+  DOCUMENT
+  IMAGE
+}
+
 enum TopicStatus {
+  DRAFT              // Bản nháp của Giảng viên, chưa gửi duyệt
   PENDING
   PENDING_DEPARTMENT // Chờ Tổ trưởng Bộ môn (TTBM) thẩm định chuyên môn
   PENDING_FACULTY    // TTBM đã duyệt, chờ Ban Chủ nhiệm Khoa phê duyệt
@@ -136,7 +144,10 @@ enum NotificationType {
   /// an inbox nobody is told about is an inbox nobody opens, and the person kept
   /// waiting by that is a student who cannot register in the meantime.
   PROPOSAL_SUBMITTED
-
+  PROPOSAL_REVISION_REQUESTED
+  PROPOSAL_RESUBMITTED
+  PROPOSAL_COMMENTED
+  PROPOSAL_UPDATED
   PROPOSAL_ACCEPTED
   PROPOSAL_REJECTED
 
@@ -233,6 +244,7 @@ model User {
   roundsFinalised          RegistrationRound[]       @relation("RoundFinalisedBy")
   membersAssigned          RegistrationGroupMember[] @relation("GroupMemberAssignedBy")
   topicAssignmentsAssigned TopicAssignment[]         @relation("TopicAssignmentAssignedBy")
+  proposalComments         ProposalComment[]
 
   @@map("users")
 }
@@ -497,8 +509,41 @@ model TopicProposal {
 
   // Back-link to the official topic created from this proposal
   convertedTopic Topic?
+  attachments    ProposalAttachment[]
+  comments       ProposalComment[]
 
   @@map("topic_proposals")
+}
+
+model ProposalAttachment {
+  id           Int            @id @default(autoincrement())
+  proposalId   Int
+  fileUrl      String
+  filePublicId String
+  fileName     String
+  fileSize     Int
+  fileType     AttachmentType
+  createdAt    DateTime       @default(now())
+
+  proposal TopicProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId])
+  @@map("proposal_attachments")
+}
+
+model ProposalComment {
+  id         Int           @id @default(autoincrement())
+  proposalId Int
+  authorId   Int
+  content    String        @db.Text
+  createdAt  DateTime      @default(now())
+
+  proposal   TopicProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  author     User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId])
+  @@index([authorId])
+  @@map("proposal_comments")
 }
 
 // ─────────────────────────────────────────────────────────
@@ -522,7 +567,7 @@ model Topic {
   expectedOutcomes String      @db.Text // Sản phẩm dự kiến hoàn thành
   techStack        String?     // Công nghệ, công cụ dự kiến (React, NestJS, Docker...)
   maxStudents      Int         @default(3) // Tối đa 1 đến 3 SV
-  status           TopicStatus @default(PENDING)
+  status           TopicStatus @default(DRAFT)
 
   // Quy trình xét duyệt 2 cấp: Cấp Bộ môn (TTBM) & Cấp Khoa (BCN Khoa) (BR-05)
   departmentReviewerId Int?    // TTBM thẩm định chuyên môn

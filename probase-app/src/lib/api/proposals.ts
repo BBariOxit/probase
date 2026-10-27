@@ -3,7 +3,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 import { topicKeys } from '@/lib/api/topics';
-import type { Paginated, ProposalStatus, TopicProposal } from '@/lib/api/types';
+import type {
+  Paginated,
+  ProposalAttachment,
+  ProposalComment,
+  ProposalStatus,
+  TopicProposal,
+} from '@/lib/api/types';
 
 export interface ProposalQuery {
   status?: ProposalStatus;
@@ -66,6 +72,7 @@ export interface ProposalInput {
   title: string;
   description: string;
   expectedOutcomes: string;
+  isDraft?: boolean;
 }
 
 export function useCreateProposal() {
@@ -88,6 +95,16 @@ export function useUpdateProposal() {
   return useMutation({
     mutationFn: ({ id, ...patch }: ProposalPatch & { id: number }) =>
       api<TopicProposal>(`/proposals/${id}`, { method: 'PATCH', body: patch }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useSubmitProposal() {
+  const invalidate = useInvalidateProposals();
+
+  return useMutation({
+    mutationFn: (id: number) =>
+      api<TopicProposal>(`/proposals/${id}/submit`, { method: 'POST' }),
     onSuccess: invalidate,
   });
 }
@@ -124,6 +141,54 @@ export function useRejectProposal() {
         method: 'POST',
         body: { feedback },
       }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useCreateProposalComment() {
+  const invalidate = useInvalidateProposals();
+
+  return useMutation({
+    mutationFn: ({ id, content }: { id: number; content: string }) =>
+      api<ProposalComment>(`/proposals/${id}/comments`, {
+        method: 'POST',
+        body: { content },
+      }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUploadProposalAttachment() {
+  const invalidate = useInvalidateProposals();
+
+  return useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) => {
+      const form = new FormData();
+      form.append('file', file);
+      return api<ProposalAttachment>(`/proposals/${id}/attachments`, {
+        method: 'POST',
+        body: form,
+      });
+    },
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteProposalAttachment() {
+  const invalidate = useInvalidateProposals();
+
+  return useMutation({
+    mutationFn: ({
+      proposalId,
+      attachmentId,
+    }: {
+      proposalId: number;
+      attachmentId: number;
+    }) =>
+      api<{ message: string }>(
+        `/proposals/${proposalId}/attachments/${attachmentId}`,
+        { method: 'DELETE' },
+      ),
     onSuccess: invalidate,
   });
 }

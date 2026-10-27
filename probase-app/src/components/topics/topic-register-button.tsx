@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import {
   useJoinTopic,
   useMyGroup,
@@ -168,8 +169,11 @@ function Result() {
         )}
       </div>
 
-      {/* Just closes: the group panel is already on the page behind this. */}
-      <DialogFooter className="pt-2">
+      <DialogFooter className="flex-col gap-2 pt-2 sm:flex-row sm:justify-between">
+        <Button render={<Link href="/student/groups" />}>
+          Vào trang nhóm
+          <ArrowRight className="size-4" />
+        </Button>
         <DialogClose render={<Button variant="outline" />}>Xong</DialogClose>
       </DialogFooter>
     </>

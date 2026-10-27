@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { useActiveSemester } from '@/lib/api/master-data';
 import { useCreateTopic } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
@@ -23,12 +24,15 @@ export default function NewTopicPage() {
     <div className="mx-auto max-w-2xl space-y-5">
       <PageHeading
         title="Tạo đề tài"
-        description="Đề tài sẽ ở trạng thái chờ khoa duyệt sau khi lưu."
+        description="Đề tài sẽ được lưu dưới dạng Bản nháp. Bạn có thể kiểm tra và bấm Gửi duyệt cho Tổ trưởng Bộ môn khi sẵn sàng."
       />
       <TopicForm
         defaultValues={{ semesterId: activeSemester.id }}
         submitLabel="Lưu đề tài"
-        onSubmit={(values) => create.mutateAsync(values)}
+        onSubmit={async (values) => {
+          await create.mutateAsync(values);
+          toast.success('Đã lưu đề tài vào danh sách bản nháp!');
+        }}
         onCancel={() => router.push('/lecturer')}
       />
     </div>

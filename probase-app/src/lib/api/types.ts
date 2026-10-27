@@ -101,7 +101,12 @@ export interface ActiveGroup {
 }
 
 export type TopicStatus =
-  'PENDING' | 'APPROVED' | 'OPEN' | 'IN_PROGRESS' | 'COMPLETED';
+  | 'DRAFT'
+  | 'PENDING'
+  | 'APPROVED'
+  | 'OPEN'
+  | 'IN_PROGRESS'
+  | 'COMPLETED';
 
 export interface TopicAvailability {
   occupiedSeats: number;
@@ -124,6 +129,8 @@ export interface TopicAvailability {
 
 export type NotificationType =
   | 'PROPOSAL_SUBMITTED'
+  | 'PROPOSAL_REVISION_REQUESTED'
+  | 'PROPOSAL_RESUBMITTED'
   | 'PROPOSAL_ACCEPTED'
   | 'PROPOSAL_REJECTED'
   | 'GROUP_MEMBER_JOINED'
@@ -670,7 +677,36 @@ export interface Submission {
   isLate: boolean;
 }
 
-export type ProposalStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
+export type ProposalStatus =
+  | 'DRAFT'
+  | 'PENDING'
+  | 'ACCEPTED'
+  | 'REJECTED'
+  | 'NEEDS_REVISION';
+
+export interface ProposalComment {
+  id: number;
+  proposalId: number;
+  authorId: number;
+  content: string;
+  createdAt: string;
+  author: {
+    id: number;
+    fullName: string;
+    avatarUrl?: string | null;
+    role: string;
+  };
+}
+
+export interface ProposalAttachment {
+  id: number;
+  fileUrl: string;
+  filePublicId: string;
+  fileName: string;
+  fileSize: number;
+  fileType: 'IMAGE' | 'DOCUMENT';
+  createdAt: string;
+}
 
 export interface TopicProposal {
   id: number;
@@ -702,6 +738,9 @@ export interface TopicProposal {
     fullName: string;
     academicTitle: string | null;
   } | null;
+
+  attachments: ProposalAttachment[];
+  comments?: ProposalComment[];
 
   convertedTopic: { id: number; title: string; status: TopicStatus } | null;
 }

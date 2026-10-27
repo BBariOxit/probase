@@ -3,7 +3,10 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { ApiError } from '@/lib/api/client';
-import { useAcceptProposal, useRejectProposal } from '@/lib/api/proposals';
+import {
+  useAcceptProposal,
+  useRejectProposal,
+} from '@/lib/api/proposals';
 import type { TopicProposal } from '@/lib/api/types';
 import { toast } from 'sonner';
 import { FormError } from '@/components/shared/form-error';
@@ -152,15 +155,15 @@ export function RejectProposalDialog({
           <FormError message={error} />
 
           <div className="space-y-2">
-            <Label htmlFor="feedback">Nhận xét cho sinh viên</Label>
+            <Label htmlFor="feedback">Lý do từ chối</Label>
             <p className="-mt-1 text-xs text-muted-foreground">
-              Vài câu là đủ: vì sao từ chối, và sinh viên nên sửa hướng nào.
-              Sinh viên sẽ đọc được nguyên văn.
+              Vài câu ngắn gọn vì sao chưa thể nhận hướng dẫn đề tài này (ví dụ: đã hết chỉ tiêu, không đúng chuyên môn...).
             </p>
             <Textarea
               id="feedback"
               rows={4}
               maxLength={2000}
+              placeholder="Nhập lý do từ chối..."
               value={feedback}
               aria-invalid={trimmed === ''}
               onChange={(event) => setFeedback(event.target.value)}
@@ -182,7 +185,7 @@ export function RejectProposalDialog({
             onClick={submit}
           >
             {reject.isPending && <Loader2 className="animate-spin" />}
-            Gửi nhận xét
+            Xác nhận từ chối
           </Button>
         </DialogFooter>
       </DialogContent>

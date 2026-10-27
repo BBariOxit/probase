@@ -2,6 +2,7 @@ import type { ActiveGroup, TopicStatus } from '@/lib/api/types';
 import { StatusPill, type StatusLabel } from '@/components/shared/status-pill';
 
 const TOPIC_STATUS: Record<TopicStatus, StatusLabel> = {
+  DRAFT: { label: 'Bản nháp', tone: 'idle' },
   PENDING: { label: 'Chờ duyệt', tone: 'waiting' },
   APPROVED: { label: 'Đã duyệt', tone: 'success' },
   OPEN: { label: 'Đang mở', tone: 'success' },

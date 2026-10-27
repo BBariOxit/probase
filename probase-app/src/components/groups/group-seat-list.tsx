@@ -102,8 +102,9 @@ export function GroupSeatList({
           <MemberSeat
             key={member.id}
             member={member}
-            canRemove={canEdit && group.isLeader && !member.isLeader}
+            canManage={canEdit && group.isLeader && !member.isLeader}
             onRemove={() => removeMember.mutate(member.student.id)}
+            onTransferLeader={() => update.mutate({ leaderId: member.student.id })}
             busy={busy}
           />
         ))}
@@ -140,17 +141,20 @@ export function GroupSeatList({
 
 function MemberSeat({
   member,
-  canRemove,
+  canManage,
   onRemove,
+  onTransferLeader,
   busy,
 }: {
   member: GroupMember;
-  canRemove: boolean;
+  canManage: boolean;
   onRemove: () => void;
+  onTransferLeader: () => void;
   busy: boolean;
 }) {
   const { student } = member;
-  const [confirming, setConfirming] = useState(false);
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
+  const [confirmingTransfer, setConfirmingTransfer] = useState(false);
 
   return (
     <li className="flex items-center gap-3 px-3.5 py-3">
@@ -181,7 +185,7 @@ function MemberSeat({
         </p>
       </div>
 
-      {canRemove && (
+      {canManage && (
         <>
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -197,9 +201,12 @@ function MemberSeat({
               <MoreHorizontal />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setConfirmingTransfer(true)}>
+                Chuyển quyền trưởng nhóm
+              </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
-                onClick={() => setConfirming(true)}
+                onClick={() => setConfirmingRemove(true)}
               >
                 Xóa khỏi nhóm
               </DropdownMenuItem>
@@ -207,8 +214,17 @@ function MemberSeat({
           </DropdownMenu>
 
           <ConfirmDialog
-            open={confirming}
-            onOpenChange={setConfirming}
+            open={confirmingTransfer}
+            onOpenChange={setConfirmingTransfer}
+            title="Chuyển quyền trưởng nhóm"
+            description={`Bạn có chắc chắn muốn chuyển quyền trưởng nhóm cho ${student.fullName}? Sau khi chuyển, bạn sẽ trở thành thành viên thông thường trong nhóm.`}
+            confirmLabel="Xác nhận chuyển"
+            onConfirm={async () => onTransferLeader()}
+          />
+
+          <ConfirmDialog
+            open={confirmingRemove}
+            onOpenChange={setConfirmingRemove}
             title="Xóa thành viên"
             description={`Bạn có chắc chắn muốn xóa ${student.fullName} khỏi nhóm không? Họ sẽ bị mất đề tài và phải tìm nhóm khác.`}
             confirmLabel="Xóa khỏi nhóm"
