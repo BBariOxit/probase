@@ -1,6 +1,7 @@
 import {
   BookOpen,
   BookUser,
+  Building2,
   CalendarRange,
   ChartColumn,
   ClipboardCheck,
@@ -99,6 +100,12 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           href: '/lecturer/proposals',
           label: 'Đề xuất từ SV',
           icon: Lightbulb,
+          ready: true,
+        },
+        {
+          href: '/lecturer/reviews',
+          label: 'Thẩm định đề tài',
+          icon: Building2,
           ready: true,
         },
         {

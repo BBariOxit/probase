@@ -21,7 +21,7 @@ import { useDebouncedValue } from '@/lib/use-debounced-value';
 import type { Semester, TopicListItem, TopicStatus } from '@/lib/api/types';
 import { useSemesters } from '@/lib/api/master-data';
 import { BulkOpenDialog } from '@/components/admin/bulk-open-dialog';
-import { TopicReviewSheet } from '@/components/admin/topic-review-sheet';
+import { TopicReviewModal } from '@/components/topics/topic-review-modal';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { Button } from '@/components/ui/button';
@@ -395,10 +395,12 @@ export default function AdminTopicRegistryPage() {
         />
       )}
 
-      {/* ── Detail sheet ── */}
-      <TopicReviewSheet
+      {/* ── Detail review modal ── */}
+      <TopicReviewModal
         topicId={selectedTopicId}
         onClose={() => setSelectedTopicId(null)}
+        isAdmin={true}
+        stage="AUTO"
       />
 
       {/* ── Bulk open dialog ── */}

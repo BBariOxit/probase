@@ -381,6 +381,10 @@ export interface MyProfile {
     phone: string | null;
     bio: string | null;
     researchInterests: string | null;
+    isHeadOfDepartment?: boolean;
+    isFacultyBoard?: boolean;
+    isAcademicAssistant?: boolean;
+    major?: { id: number; name: string; code: string } | null;
     mentoring: MentoringLoad;
   } | null;
 }
