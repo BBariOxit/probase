@@ -72,6 +72,7 @@ export interface ProposalInput {
   title: string;
   description: string;
   expectedOutcomes: string;
+  isDraft?: boolean;
 }
 
 export function useCreateProposal() {
@@ -94,6 +95,16 @@ export function useUpdateProposal() {
   return useMutation({
     mutationFn: ({ id, ...patch }: ProposalPatch & { id: number }) =>
       api<TopicProposal>(`/proposals/${id}`, { method: 'PATCH', body: patch }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useSubmitProposal() {
+  const invalidate = useInvalidateProposals();
+
+  return useMutation({
+    mutationFn: (id: number) =>
+      api<TopicProposal>(`/proposals/${id}/submit`, { method: 'POST' }),
     onSuccess: invalidate,
   });
 }

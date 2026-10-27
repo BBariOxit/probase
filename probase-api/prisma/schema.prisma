@@ -81,6 +81,7 @@ enum GroupJoinSource {
 }
 
 enum TopicProposalStatus {
+  DRAFT
   PENDING
   NEEDS_REVISION
   ACCEPTED

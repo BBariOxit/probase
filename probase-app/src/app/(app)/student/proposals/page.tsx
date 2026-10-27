@@ -46,7 +46,7 @@ export default function StudentProposalsPage() {
 
   const proposals = data?.items ?? [];
   const pending = proposals.find(
-    (one) => one.status === 'PENDING',
+    (one) => one.status === 'PENDING' || one.status === 'DRAFT',
   );
 
   /*
@@ -64,7 +64,9 @@ export default function StudentProposalsPage() {
   const blocked = group
     ? 'Bạn đã có đề tài trong học kỳ này. Muốn đề xuất đề tài khác thì rời nhóm trước.'
     : pending
-      ? 'Bạn đang có một đề xuất đang chờ duyệt / trao đổi. Rút lại đề xuất đó nếu muốn gửi cái khác.'
+      ? pending.status === 'DRAFT'
+        ? 'Bạn đang có một bản nháp đề xuất. Hãy hoàn thiện và gửi hoặc xóa bản nháp trước khi tạo đề xuất mới.'
+        : 'Bạn đang có một đề xuất đang chờ duyệt. Rút lại đề xuất đó nếu muốn gửi cái khác.'
       : closedReason;
 
   return (
@@ -187,8 +189,8 @@ function SentProposal({
 }) {
   const withdraw = useWithdrawProposal();
   const [confirming, setConfirming] = useState(false);
-  const editable =
-    proposal.status === 'PENDING' || proposal.status === 'NEEDS_REVISION';
+  const isDraft = proposal.status === 'DRAFT';
+  const editable = proposal.status === 'PENDING' || isDraft;
 
   return (
     <>
@@ -215,12 +217,12 @@ function SentProposal({
           editable && (
             <>
               <Button
-                variant="outline"
+                variant={isDraft ? 'default' : 'outline'}
                 size="sm"
                 render={<Link href={`/student/proposals/${proposal.id}`} />}
               >
                 <Pencil />
-                Xem chi tiết & Sửa
+                {isDraft ? 'Chỉnh sửa & Gửi' : 'Xem chi tiết & Sửa'}
               </Button>
               <Button
                 variant="ghost"
@@ -228,7 +230,7 @@ function SentProposal({
                 onClick={() => setConfirming(true)}
               >
                 <Undo2 />
-                Rút lại
+                {isDraft ? 'Xoá nháp' : 'Rút lại'}
               </Button>
             </>
           )
@@ -238,9 +240,13 @@ function SentProposal({
       <ConfirmDialog
         open={confirming}
         onOpenChange={setConfirming}
-        title="Rút lại đề xuất?"
-        description={`"${proposal.title}" sẽ bị xoá và giảng viên không còn thấy nó nữa. Sau khi rút, bạn gửi được đề xuất mới.`}
-        confirmLabel="Rút lại"
+        title={isDraft ? 'Xoá bản nháp?' : 'Rút lại đề xuất?'}
+        description={
+          isDraft
+            ? `Bản nháp "${proposal.title}" sẽ bị xoá vĩnh viễn.`
+            : `"${proposal.title}" sẽ bị xoá và giảng viên không còn thấy nó nữa. Sau khi rút, bạn gửi được đề xuất mới.`
+        }
+        confirmLabel={isDraft ? 'Xoá nháp' : 'Rút lại'}
         onConfirm={() => withdraw.mutateAsync(proposal.id)}
       />
     </>

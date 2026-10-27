@@ -65,6 +65,15 @@ export class ProposalsController {
     return this.proposalsService.update(id, dto, userId);
   }
 
+  @Roles('STUDENT')
+  @Post(':id/submit')
+  submit(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser('id') userId: number,
+  ) {
+    return this.proposalsService.submit(id, userId);
+  }
+
   @Post(':id/comments')
   addComment(
     @Param('id', ParseIntPipe) id: number,

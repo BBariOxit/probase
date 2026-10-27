@@ -673,10 +673,11 @@ export interface Submission {
 }
 
 export type ProposalStatus =
+  | 'DRAFT'
   | 'PENDING'
-  | 'NEEDS_REVISION'
   | 'ACCEPTED'
-  | 'REJECTED';
+  | 'REJECTED'
+  | 'NEEDS_REVISION';
 
 export interface ProposalComment {
   id: number;

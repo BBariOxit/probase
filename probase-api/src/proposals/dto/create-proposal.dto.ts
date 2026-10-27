@@ -22,6 +22,7 @@ export const CreateProposalSchema = z.object({
     .trim()
     .min(1, 'Vui lòng nêu bạn định làm ra được gì')
     .max(3000, 'Yêu cầu đầu ra tối đa 3000 ký tự'),
+  isDraft: z.boolean().optional(),
 });
 
 export class CreateProposalDto extends createZodDto(CreateProposalSchema) {}

@@ -6,6 +6,7 @@ import { StatusPill, type StatusLabel } from '@/components/shared/status-pill';
 import { TextSection } from '@/components/shared/text-section';
 
 const PROPOSAL_STATUS: Record<ProposalStatus, StatusLabel> = {
+  DRAFT: { label: 'Bản nháp', tone: 'idle' },
   PENDING: { label: 'Chờ duyệt', tone: 'waiting' },
   NEEDS_REVISION: { label: 'Đang trao đổi', tone: 'active' },
   ACCEPTED: { label: 'Đã duyệt', tone: 'success' },

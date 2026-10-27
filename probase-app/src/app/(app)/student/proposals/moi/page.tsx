@@ -97,9 +97,10 @@ export default function NewProposalPage() {
       ) : (
         <ProposalForm
           projectTypes={projectTypes}
-          submitLabel="Gửi đề xuất"
-          onSubmit={async (values) => {
-            const created = await create.mutateAsync(values);
+          submitLabel="Gửi cho giảng viên"
+          draftLabel="Lưu bản nháp"
+          onSaveDraft={async (values) => {
+            const created = await create.mutateAsync({ ...values, isDraft: true });
             if (files.length > 0) {
               for (const file of files) {
                 try {
@@ -112,7 +113,24 @@ export default function NewProposalPage() {
                 }
               }
             }
-            toast.success('Đề xuất đã được gửi thành công.');
+            toast.success('Đã lưu bản nháp đề xuất.');
+            router.push('/student/proposals');
+          }}
+          onSubmit={async (values) => {
+            const created = await create.mutateAsync({ ...values, isDraft: false });
+            if (files.length > 0) {
+              for (const file of files) {
+                try {
+                  await uploadAttachment.mutateAsync({
+                    id: created.id,
+                    file,
+                  });
+                } catch {
+                  toast.error(`Không thể tải lên tệp: ${file.name}`);
+                }
+              }
+            }
+            toast.success('Đề xuất đã được gửi cho giảng viên.');
             router.push('/student/proposals');
           }}
           onCancel={() => router.push('/student/proposals')}

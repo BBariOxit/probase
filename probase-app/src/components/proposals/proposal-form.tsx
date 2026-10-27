@@ -81,16 +81,20 @@ export function ProposalForm({
   defaultValues,
   fixed,
   submitLabel,
+  draftLabel = 'Lưu bản nháp',
   children,
   onSubmit,
+  onSaveDraft,
   onCancel,
 }: {
   projectTypes: ProjectType[];
   defaultValues?: Partial<ProposalFormValues>;
   fixed?: { projectType: string; lecturer: string };
   submitLabel: string;
+  draftLabel?: string;
   children?: React.ReactNode;
   onSubmit: (values: ProposalInput) => Promise<unknown>;
+  onSaveDraft?: (values: ProposalFormValues) => Promise<unknown>;
   onCancel: () => void;
 }) {
   const [formError, setFormError] = useState<string | null>(null);
@@ -257,11 +261,30 @@ export function ProposalForm({
 
       {children}
 
-      <div className="flex items-center gap-2 pt-1">
+      <div className="flex flex-wrap items-center gap-2 pt-1">
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="animate-spin" />}
           {submitLabel}
         </Button>
+        {onSaveDraft && (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isSubmitting}
+            onClick={handleSubmit(async (values) => {
+              setFormError(null);
+              try {
+                await onSaveDraft(values);
+              } catch (err) {
+                setFormError(
+                  err instanceof ApiError ? err.message : 'Không kết nối được máy chủ',
+                );
+              }
+            })}
+          >
+            {draftLabel}
+          </Button>
+        )}
         <Button
           type="button"
           variant="ghost"

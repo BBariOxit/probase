@@ -128,6 +128,11 @@ export class ProposalsService {
 
     const lecturer = await this.requireLecturer(dto.requestedLecturerId);
 
+    const isDraft = Boolean(dto.isDraft);
+    const status = isDraft
+      ? TopicProposalStatus.DRAFT
+      : TopicProposalStatus.PENDING;
+
     const proposal = await this.prisma.topicProposal.create({
       data: {
         semesterId: semester.id,
@@ -137,19 +142,22 @@ export class ProposalsService {
         title: dto.title,
         description: dto.description,
         expectedOutcomes: dto.expectedOutcomes,
+        status,
       },
       select: PROPOSAL_SELECT,
     });
 
-    await this.notifications.notify([
-      {
-        userId: lecturer.userId,
-        type: 'PROPOSAL_SUBMITTED',
-        title: 'Có đề xuất đề tài mới',
-        content: `${student.fullName} đề xuất đề tài "${proposal.title}" và đang chờ bạn trả lời.`,
-        targetId: proposal.id,
-      },
-    ]);
+    if (!isDraft) {
+      await this.notifications.notify([
+        {
+          userId: lecturer.userId,
+          type: 'PROPOSAL_SUBMITTED',
+          title: 'Có đề xuất đề tài mới',
+          content: `${student.fullName} đề xuất đề tài "${proposal.title}" và đang chờ bạn trả lời.`,
+          targetId: proposal.id,
+        },
+      ]);
+    }
 
     return render(proposal);
   }
@@ -166,6 +174,12 @@ export class ProposalsService {
       where.requestedLecturerId = (
         await this.requireOwnLecturerProfile(userId)
       ).id;
+      // Lecturers never see drafts
+      where.status = query.status
+        ? query.status === TopicProposalStatus.DRAFT
+          ? { not: TopicProposalStatus.DRAFT }
+          : query.status
+        : { not: TopicProposalStatus.DRAFT };
     }
 
     const [items, total] = await Promise.all([
@@ -212,6 +226,27 @@ export class ProposalsService {
       select: PROPOSAL_SELECT,
     });
 
+    return render(updated);
+  }
+
+  async submit(id: number, userId: number) {
+    const student = await this.requireStudent(userId);
+    const proposal = await this.requireProposal(id);
+
+    if (proposal.studentId !== student.id) {
+      throw new NotFoundException('Không tìm thấy đề xuất');
+    }
+
+    if (proposal.status !== TopicProposalStatus.DRAFT) {
+      throw new ConflictException('Đề xuất này đã được gửi rồi');
+    }
+
+    const updated = await this.prisma.topicProposal.update({
+      where: { id },
+      data: { status: TopicProposalStatus.PENDING },
+      select: PROPOSAL_SELECT,
+    });
+
     if (updated.requestedLecturer) {
       const lecturer = await this.prisma.lecturerProfile.findUnique({
         where: { id: updated.requestedLecturer.id },
@@ -222,9 +257,9 @@ export class ProposalsService {
         await this.notifications.notify([
           {
             userId: lecturer.userId,
-            type: 'PROPOSAL_UPDATED',
-            title: 'Đề xuất đề tài vừa được cập nhật',
-            content: `${student.fullName} vừa cập nhật nội dung đề xuất "${updated.title}".`,
+            type: 'PROPOSAL_SUBMITTED',
+            title: 'Có đề xuất đề tài mới',
+            content: `${student.fullName} đề xuất đề tài "${updated.title}" và đang chờ bạn trả lời.`,
             targetId: updated.id,
           },
         ]);
@@ -599,7 +634,10 @@ export class ProposalsService {
         id,
         ...(role === Role.STUDENT
           ? { student: { userId } }
-          : { requestedLecturer: { userId } }),
+          : {
+              requestedLecturer: { userId },
+              status: { not: TopicProposalStatus.DRAFT },
+            }),
       },
       select: { id: true },
     });
@@ -619,7 +657,10 @@ export class ProposalsService {
 
     if (!owned) throw new NotFoundException('Không tìm thấy đề xuất');
 
-    if (status !== TopicProposalStatus.PENDING) {
+    if (
+      status !== TopicProposalStatus.PENDING &&
+      status !== TopicProposalStatus.DRAFT
+    ) {
       throw new ConflictException(
         'Đề xuất đã được chốt (nhận hoặc từ chối) nên không sửa hay rút lại được nữa.',
       );
@@ -662,14 +703,14 @@ export class ProposalsService {
     const pending = await this.prisma.topicProposal.findFirst({
       where: {
         studentId,
-        status: TopicProposalStatus.PENDING,
+        status: { in: [TopicProposalStatus.PENDING, TopicProposalStatus.DRAFT] },
       },
       select: { id: true },
     });
 
     if (pending) {
       throw new ConflictException(
-        'Bạn đang có một đề xuất đang chờ phản hồi. Hãy hoàn thiện hoặc rút lại đề xuất đó trước khi gửi cái mới.',
+        'Bạn đang có một đề xuất (bản nháp hoặc đang chờ duyệt). Hãy hoàn thiện hoặc rút lại đề xuất đó trước khi gửi cái mới.',
       );
     }
   }

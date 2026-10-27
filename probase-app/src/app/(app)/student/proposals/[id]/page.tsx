@@ -3,11 +3,19 @@
 import { use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, CheckCircle2, Loader2, XCircle } from 'lucide-react';
+import {
+  ArrowRight,
+  CheckCircle2,
+  FileEdit,
+  Loader2,
+  Send,
+  XCircle,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useDeleteProposalAttachment,
   useProposal,
+  useSubmitProposal,
   useUpdateProposal,
   useUploadProposalAttachment,
 } from '@/lib/api/proposals';
@@ -29,6 +37,7 @@ export default function StudentProposalDetailPage({
   const proposalId = Number(id);
   const { data: proposal, isPending, error } = useProposal(proposalId);
   const update = useUpdateProposal();
+  const submitProposal = useSubmitProposal();
   const uploadAttachment = useUploadProposalAttachment();
   const deleteAttachment = useDeleteProposalAttachment();
 
@@ -48,11 +57,26 @@ export default function StudentProposalDetailPage({
     return <p className="text-sm text-destructive">Không tìm thấy đề xuất.</p>;
   }
 
+  const isDraft = proposal.status === 'DRAFT';
   const isPendingStatus = proposal.status === 'PENDING';
+  const isEditable = isDraft || isPendingStatus;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl">
       <div className="lg:col-span-2 space-y-5">
+        {isDraft && (
+          <div className="rounded-xl border border-muted-foreground/30 bg-muted/40 p-4 space-y-2">
+            <h3 className="text-sm font-semibold flex items-center gap-1.5 text-foreground">
+              <FileEdit className="size-4 text-muted-foreground" />
+              Bản nháp đề xuất (Chỉ bạn nhìn thấy)
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Đề xuất này chỉ được lưu trên trang của bạn và giảng viên chưa nhận được.
+              Hãy kiểm tra kỹ thông tin, bổ sung tệp đính kèm rồi bấm &quot;Gửi cho giảng viên&quot; để nộp chính thức.
+            </p>
+          </div>
+        )}
+
         {proposal.status === 'ACCEPTED' && (
           <div className="rounded-xl border border-status-success/30 bg-status-success-bg/40 p-4 space-y-2">
             <h3 className="text-sm font-semibold text-status-success flex items-center gap-1.5">
@@ -89,7 +113,7 @@ export default function StudentProposalDetailPage({
           </div>
         )}
 
-        {isPendingStatus ? (
+        {isEditable ? (
           <ProposalForm
             projectTypes={[proposal.projectType]}
             fixed={{
@@ -105,7 +129,21 @@ export default function StudentProposalDetailPage({
               description: proposal.description,
               expectedOutcomes: proposal.expectedOutcomes,
             }}
-            submitLabel="Lưu cập nhật đề xuất"
+            submitLabel={isDraft ? 'Gửi cho giảng viên' : 'Lưu cập nhật'}
+            draftLabel={isDraft ? 'Lưu bản nháp' : undefined}
+            onSaveDraft={
+              isDraft
+                ? async (values) => {
+                    await update.mutateAsync({
+                      id: proposal.id,
+                      title: values.title,
+                      description: values.description,
+                      expectedOutcomes: values.expectedOutcomes,
+                    });
+                    toast.success('Đã lưu bản nháp đề xuất.');
+                  }
+                : undefined
+            }
             onSubmit={async (values) => {
               await update.mutateAsync({
                 id: proposal.id,
@@ -113,7 +151,14 @@ export default function StudentProposalDetailPage({
                 description: values.description,
                 expectedOutcomes: values.expectedOutcomes,
               });
-              toast.success('Đã lưu cập nhật đề xuất và thông báo cho GVHD.');
+
+              if (isDraft) {
+                await submitProposal.mutateAsync(proposal.id);
+                toast.success('Đã gửi đề xuất cho giảng viên thành công.');
+                router.push('/student/proposals');
+              } else {
+                toast.success('Đã lưu cập nhật đề xuất.');
+              }
             }}
             onCancel={() => router.push('/student/proposals')}
           >
@@ -150,7 +195,17 @@ export default function StudentProposalDetailPage({
       </div>
 
       <div className="lg:col-span-1">
-        <ProposalCommentThread proposal={proposal} />
+        {isDraft ? (
+          <div className="rounded-xl border border-dashed p-5 text-center text-xs text-muted-foreground space-y-2">
+            <Send className="size-5 mx-auto text-muted-foreground/60" />
+            <p className="font-medium text-foreground">Trao đổi & Góp ý</p>
+            <p>
+              Khung trao đổi sẽ mở sau khi bạn nhấn &quot;Gửi cho giảng viên&quot;.
+            </p>
+          </div>
+        ) : (
+          <ProposalCommentThread proposal={proposal} />
+        )}
       </div>
     </div>
   );
