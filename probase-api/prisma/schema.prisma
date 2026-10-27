@@ -144,6 +144,8 @@ enum NotificationType {
   PROPOSAL_SUBMITTED
   PROPOSAL_REVISION_REQUESTED
   PROPOSAL_RESUBMITTED
+  PROPOSAL_COMMENTED
+  PROPOSAL_UPDATED
   PROPOSAL_ACCEPTED
   PROPOSAL_REJECTED
 
@@ -240,6 +242,7 @@ model User {
   roundsFinalised          RegistrationRound[]       @relation("RoundFinalisedBy")
   membersAssigned          RegistrationGroupMember[] @relation("GroupMemberAssignedBy")
   topicAssignmentsAssigned TopicAssignment[]         @relation("TopicAssignmentAssignedBy")
+  proposalComments         ProposalComment[]
 
   @@map("users")
 }
@@ -505,6 +508,7 @@ model TopicProposal {
   // Back-link to the official topic created from this proposal
   convertedTopic Topic?
   attachments    ProposalAttachment[]
+  comments       ProposalComment[]
 
   @@map("topic_proposals")
 }
@@ -523,6 +527,21 @@ model ProposalAttachment {
 
   @@index([proposalId])
   @@map("proposal_attachments")
+}
+
+model ProposalComment {
+  id         Int           @id @default(autoincrement())
+  proposalId Int
+  authorId   Int
+  content    String        @db.Text
+  createdAt  DateTime      @default(now())
+
+  proposal   TopicProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  author     User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId])
+  @@index([authorId])
+  @@map("proposal_comments")
 }
 
 // ─────────────────────────────────────────────────────────

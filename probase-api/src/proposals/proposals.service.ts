@@ -23,8 +23,8 @@ import { CreateProposalDto } from './dto/create-proposal.dto';
 import {
   AcceptProposalDto,
   RejectProposalDto,
-  RequestChangesProposalDto,
 } from './dto/answer-proposal.dto';
+import { CreateProposalCommentDto } from './dto/proposal-comment.dto';
 import { QueryProposalsDto } from './dto/query-proposals.dto';
 import { UpdateProposalDto } from './dto/update-proposal.dto';
 
@@ -63,6 +63,25 @@ const PROPOSAL_SELECT = {
       fileSize: true,
       fileType: true,
       createdAt: true,
+    },
+    orderBy: { createdAt: 'asc' },
+  },
+  comments: {
+    select: {
+      id: true,
+      proposalId: true,
+      authorId: true,
+      content: true,
+      createdAt: true,
+      author: {
+        select: {
+          id: true,
+          role: true,
+          avatarUrl: true,
+          studentProfile: { select: { fullName: true } },
+          lecturerProfile: { select: { fullName: true, academicTitle: true } },
+        },
+      },
     },
     orderBy: { createdAt: 'asc' },
   },
@@ -193,6 +212,25 @@ export class ProposalsService {
       select: PROPOSAL_SELECT,
     });
 
+    if (updated.requestedLecturer) {
+      const lecturer = await this.prisma.lecturerProfile.findUnique({
+        where: { id: updated.requestedLecturer.id },
+        select: { userId: true },
+      });
+
+      if (lecturer) {
+        await this.notifications.notify([
+          {
+            userId: lecturer.userId,
+            type: 'PROPOSAL_UPDATED',
+            title: 'Đề xuất đề tài vừa được cập nhật',
+            content: `${student.fullName} vừa cập nhật nội dung đề xuất "${updated.title}".`,
+            targetId: updated.id,
+          },
+        ]);
+      }
+    }
+
     return render(updated);
   }
 
@@ -316,71 +354,87 @@ export class ProposalsService {
     return render(updated);
   }
 
-  async requestChanges(
+  async addComment(
     id: number,
-    dto: RequestChangesProposalDto,
+    dto: CreateProposalCommentDto,
     userId: number,
+    role: Role,
   ) {
-    const lecturer = await this.requireOwnLecturerProfile(userId);
-    const proposal = await this.requireAnswerable(id, lecturer.id);
-
-    const updated = await this.prisma.topicProposal.update({
-      where: { id, status: TopicProposalStatus.PENDING },
-      data: {
-        status: TopicProposalStatus.NEEDS_REVISION,
-        lecturerFeedback: dto.feedback,
-      },
-      select: PROPOSAL_SELECT,
-    });
-
-    await this.notifications.notify([
-      {
-        userId: proposal.student.userId,
-        type: 'PROPOSAL_REVISION_REQUESTED',
-        title: 'Giảng viên yêu cầu chỉnh sửa đề xuất',
-        content: `${lecturerName(lecturer)} đã gửi góp ý và yêu cầu bạn chỉnh sửa đề tài "${proposal.title}". Nhấn để xem và cập nhật.`,
-        targetId: proposal.id,
-      },
-    ]);
-
-    return render(updated);
-  }
-
-  async resubmit(id: number, dto: UpdateProposalDto, userId: number) {
-    const student = await this.requireStudent(userId);
     const proposal = await this.requireProposal(id);
 
-    await this.requireOwnPending(id, student.id, proposal.status);
+    if (!(await this.canView(proposal.id, userId, role))) {
+      throw new NotFoundException('Không tìm thấy đề xuất');
+    }
 
-    const updated = await this.prisma.topicProposal.update({
-      where: { id },
+    const comment = await this.prisma.proposalComment.create({
       data: {
-        ...dto,
-        status: TopicProposalStatus.PENDING,
+        proposalId: id,
+        authorId: userId,
+        content: dto.content.trim(),
       },
-      select: PROPOSAL_SELECT,
+      include: {
+        author: {
+          select: {
+            id: true,
+            role: true,
+            avatarUrl: true,
+            studentProfile: { select: { fullName: true } },
+            lecturerProfile: { select: { fullName: true, academicTitle: true } },
+          },
+        },
+      },
     });
 
-    if (updated.requestedLecturer) {
+    // Auto-notify the other party
+    if (role === Role.LECTURER && proposal.student) {
+      const lecturer = await this.prisma.lecturerProfile.findFirst({
+        where: { userId },
+        select: { fullName: true, academicTitle: true },
+      });
+      await this.notifications.notify([
+        {
+          userId: proposal.student.userId,
+          type: 'PROPOSAL_COMMENTED',
+          title: 'Giảng viên đã nhận xét đề xuất của bạn',
+          content: `${lecturerName(lecturer ?? { fullName: 'Giảng viên', academicTitle: null })}: "${dto.content.slice(0, 80)}${dto.content.length > 80 ? '...' : ''}"`,
+          targetId: proposal.id,
+        },
+      ]);
+    } else if (role === Role.STUDENT && proposal.requestedLecturer) {
       const lecturer = await this.prisma.lecturerProfile.findUnique({
-        where: { id: updated.requestedLecturer.id },
+        where: { id: proposal.requestedLecturer.id },
         select: { userId: true },
       });
-
       if (lecturer) {
         await this.notifications.notify([
           {
             userId: lecturer.userId,
-            type: 'PROPOSAL_RESUBMITTED',
-            title: 'Sinh viên đã gửi lại đề xuất',
-            content: `${student.fullName} đã cập nhật lại đề xuất "${updated.title}" sau khi nhận góp ý. Vui lòng kiểm tra lại.`,
-            targetId: updated.id,
+            type: 'PROPOSAL_COMMENTED',
+            title: 'Sinh viên đã phản hồi nhận xét',
+            content: `${proposal.student.fullName}: "${dto.content.slice(0, 80)}${dto.content.length > 80 ? '...' : ''}"`,
+            targetId: proposal.id,
           },
         ]);
       }
     }
 
-    return render(updated);
+    const authorName = comment.author.lecturerProfile
+      ? lecturerName(comment.author.lecturerProfile)
+      : (comment.author.studentProfile?.fullName ?? 'Người dùng');
+
+    return {
+      id: comment.id,
+      proposalId: comment.proposalId,
+      authorId: comment.authorId,
+      content: comment.content,
+      createdAt: comment.createdAt,
+      author: {
+        id: comment.author.id,
+        fullName: authorName,
+        avatarUrl: comment.author.avatarUrl,
+        role: comment.author.role,
+      },
+    };
   }
 
   async uploadAttachment(
@@ -565,10 +619,7 @@ export class ProposalsService {
 
     if (!owned) throw new NotFoundException('Không tìm thấy đề xuất');
 
-    if (
-      status !== TopicProposalStatus.PENDING &&
-      status !== TopicProposalStatus.NEEDS_REVISION
-    ) {
+    if (status !== TopicProposalStatus.PENDING) {
       throw new ConflictException(
         'Đề xuất đã được chốt (nhận hoặc từ chối) nên không sửa hay rút lại được nữa.',
       );
@@ -611,26 +662,46 @@ export class ProposalsService {
     const pending = await this.prisma.topicProposal.findFirst({
       where: {
         studentId,
-        status: {
-          in: [TopicProposalStatus.PENDING, TopicProposalStatus.NEEDS_REVISION],
-        },
+        status: TopicProposalStatus.PENDING,
       },
       select: { id: true },
     });
 
     if (pending) {
       throw new ConflictException(
-        'Bạn đang có một đề xuất đang chờ phản hồi hoặc cần chỉnh sửa. Hãy hoàn thiện hoặc rút lại đề xuất đó trước khi gửi cái mới.',
+        'Bạn đang có một đề xuất đang chờ phản hồi. Hãy hoàn thiện hoặc rút lại đề xuất đó trước khi gửi cái mới.',
       );
     }
   }
 }
 
 function render(proposal: ProposalRow) {
-  const { student, ...rest } = proposal;
+  const { student, comments, ...rest } = proposal;
   const { user, ...studentRest } = student;
 
-  return { ...rest, student: { ...studentRest, avatarUrl: user.avatarUrl } };
+  return {
+    ...rest,
+    student: { ...studentRest, avatarUrl: user.avatarUrl },
+    comments:
+      comments?.map((c) => {
+        const authorName = c.author.lecturerProfile
+          ? lecturerName(c.author.lecturerProfile)
+          : (c.author.studentProfile?.fullName ?? 'Người dùng');
+        return {
+          id: c.id,
+          proposalId: c.proposalId,
+          authorId: c.authorId,
+          content: c.content,
+          createdAt: c.createdAt,
+          author: {
+            id: c.author.id,
+            fullName: authorName,
+            avatarUrl: c.author.avatarUrl,
+            role: c.author.role,
+          },
+        };
+      }) ?? [],
+  };
 }
 
 function lecturerName(lecturer: {

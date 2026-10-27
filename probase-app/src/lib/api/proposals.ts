@@ -6,6 +6,7 @@ import { topicKeys } from '@/lib/api/topics';
 import type {
   Paginated,
   ProposalAttachment,
+  ProposalComment,
   ProposalStatus,
   TopicProposal,
 } from '@/lib/api/types';
@@ -133,27 +134,14 @@ export function useRejectProposal() {
   });
 }
 
-export function useRequestChangesProposal() {
+export function useCreateProposalComment() {
   const invalidate = useInvalidateProposals();
 
   return useMutation({
-    mutationFn: ({ id, feedback }: { id: number; feedback: string }) =>
-      api<TopicProposal>(`/proposals/${id}/request-changes`, {
+    mutationFn: ({ id, content }: { id: number; content: string }) =>
+      api<ProposalComment>(`/proposals/${id}/comments`, {
         method: 'POST',
-        body: { feedback },
-      }),
-    onSuccess: invalidate,
-  });
-}
-
-export function useResubmitProposal() {
-  const invalidate = useInvalidateProposals();
-
-  return useMutation({
-    mutationFn: ({ id, ...patch }: ProposalPatch & { id: number }) =>
-      api<TopicProposal>(`/proposals/${id}/resubmit`, {
-        method: 'POST',
-        body: patch,
+        body: { content },
       }),
     onSuccess: invalidate,
   });

@@ -18,7 +18,6 @@ import { PaginationBar } from '@/components/shared/pagination-bar';
 import {
   AcceptProposalDialog,
   RejectProposalDialog,
-  RequestChangesProposalDialog,
 } from '@/components/proposals/proposal-answer-dialogs';
 import { ProposalCard } from '@/components/proposals/proposal-card';
 import { ProposalDetailSheet } from '@/components/proposals/proposal-detail-sheet';
@@ -35,10 +34,9 @@ import {
 const PAGE_SIZE = 10;
 
 const STATUS_FILTERS: { value: ProposalStatus | 'ALL'; label: string }[] = [
-  { value: 'PENDING', label: 'Chờ trả lời' },
-  { value: 'NEEDS_REVISION', label: 'Yêu cầu sửa' },
-  { value: 'ACCEPTED', label: 'Đã nhận' },
-  { value: 'REJECTED', label: 'Từ chối' },
+  { value: 'PENDING', label: 'Chờ duyệt / Đang trao đổi' },
+  { value: 'ACCEPTED', label: 'Đã nhận hướng dẫn' },
+  { value: 'REJECTED', label: 'Đã từ chối' },
   { value: 'ALL', label: 'Mọi trạng thái' },
 ];
 
@@ -193,9 +191,7 @@ function MentoringLoadCard({ load }: { load: MentoringLoad }) {
 }
 
 function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
-  const [answering, setAnswering] = useState<
-    'accept' | 'reject' | 'revise' | null
-  >(null);
+  const [answering, setAnswering] = useState<'accept' | 'reject' | null>(null);
   const [viewing, setViewing] = useState(false);
   const student = proposal.student;
 
@@ -205,11 +201,6 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
         proposal={proposal}
         onClick={() => setViewing(true)}
         counterparty={
-          /*
-            The person, not just a name. A lecturer's inbox is a queue of
-            students as much as of ideas, and the code and class are what tell
-            them whether this is somebody they have taught.
-          */
           <span className="inline-flex items-center gap-1.5">
             <UserAvatar
               name={student.fullName}
@@ -234,10 +225,10 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setAnswering('revise')}
+                onClick={() => setViewing(true)}
               >
                 <MessageSquareCode />
-                Yêu cầu sửa
+                Xem & Nhận xét
               </Button>
               <Button
                 variant="ghost"
@@ -252,20 +243,8 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
         }
       />
 
-      {/*
-        Mounted only while answering. Each dialog holds the lecturer's typing in
-        its own state, and one closed pair per card would keep ten drafts alive
-        for a decision nobody has started.
-      */}
       {answering === 'accept' && (
         <AcceptProposalDialog
-          proposal={proposal}
-          open
-          onOpenChange={(open) => !open && setAnswering(null)}
-        />
-      )}
-      {answering === 'revise' && (
-        <RequestChangesProposalDialog
           proposal={proposal}
           open
           onOpenChange={(open) => !open && setAnswering(null)}
@@ -303,17 +282,6 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
                 Nhận hướng dẫn
               </Button>
               <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setViewing(false);
-                  setAnswering('revise');
-                }}
-              >
-                <MessageSquareCode />
-                Yêu cầu sửa
-              </Button>
-              <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => {
@@ -333,24 +301,11 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
 }
 
 function Outcome({ proposal }: { proposal: TopicProposal }) {
-  if (proposal.status === 'NEEDS_REVISION') {
-    return (
-      <section className="space-y-1 rounded-lg border border-status-active/25 bg-status-active-bg/40 px-3 py-2.5">
-        <h3 className="text-xs font-medium text-status-active">
-          Góp ý bạn đã gửi (Chờ sinh viên cập nhật)
-        </h3>
-        <p className="text-sm whitespace-pre-line break-words">
-          {proposal.lecturerFeedback}
-        </p>
-      </section>
-    );
-  }
-
-  if (proposal.status === 'REJECTED') {
+  if (proposal.status === 'REJECTED' && proposal.lecturerFeedback) {
     return (
       <section className="space-y-1 rounded-lg border bg-muted/40 px-3 py-2.5">
         <h3 className="text-xs font-medium text-muted-foreground">
-          Nhận xét bạn đã gửi
+          Lý do từ chối
         </h3>
         <p className="text-sm whitespace-pre-line break-words">
           {proposal.lecturerFeedback}

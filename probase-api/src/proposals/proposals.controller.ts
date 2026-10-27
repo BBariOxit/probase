@@ -20,8 +20,8 @@ import { MAX_ATTACHMENT_BYTES } from '../cloudinary/cloudinary.service';
 import {
   AcceptProposalDto,
   RejectProposalDto,
-  RequestChangesProposalDto,
 } from './dto/answer-proposal.dto';
+import { CreateProposalCommentDto } from './dto/proposal-comment.dto';
 import { CreateProposalDto } from './dto/create-proposal.dto';
 import { QueryProposalsDto } from './dto/query-proposals.dto';
 import { UpdateProposalDto } from './dto/update-proposal.dto';
@@ -65,14 +65,14 @@ export class ProposalsController {
     return this.proposalsService.update(id, dto, userId);
   }
 
-  @Roles('STUDENT')
-  @Post(':id/resubmit')
-  resubmit(
+  @Post(':id/comments')
+  addComment(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateProposalDto,
+    @Body() dto: CreateProposalCommentDto,
     @GetUser('id') userId: number,
+    @GetUser('role') role: Role,
   ) {
-    return this.proposalsService.resubmit(id, dto, userId);
+    return this.proposalsService.addComment(id, dto, userId, role);
   }
 
   @Roles('STUDENT')
@@ -115,16 +115,6 @@ export class ProposalsController {
     @GetUser('id') userId: number,
   ) {
     return this.proposalsService.accept(id, dto, userId);
-  }
-
-  @Roles('LECTURER')
-  @Post(':id/request-changes')
-  requestChanges(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: RequestChangesProposalDto,
-    @GetUser('id') userId: number,
-  ) {
-    return this.proposalsService.requestChanges(id, dto, userId);
   }
 
   @Roles('LECTURER')

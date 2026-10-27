@@ -678,6 +678,20 @@ export type ProposalStatus =
   | 'ACCEPTED'
   | 'REJECTED';
 
+export interface ProposalComment {
+  id: number;
+  proposalId: number;
+  authorId: number;
+  content: string;
+  createdAt: string;
+  author: {
+    id: number;
+    fullName: string;
+    avatarUrl?: string | null;
+    role: string;
+  };
+}
+
 export interface ProposalAttachment {
   id: number;
   fileUrl: string;
@@ -720,6 +734,7 @@ export interface TopicProposal {
   } | null;
 
   attachments: ProposalAttachment[];
+  comments?: ProposalComment[];
 
   convertedTopic: { id: number; title: string; status: TopicStatus } | null;
 }

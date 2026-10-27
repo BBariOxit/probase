@@ -1,14 +1,14 @@
 'use client';
 
-import { CalendarDays, Layers } from 'lucide-react';
+import { CalendarDays, Layers, MessageSquare } from 'lucide-react';
 import type { ProposalStatus, TopicProposal } from '@/lib/api/types';
 import { StatusPill, type StatusLabel } from '@/components/shared/status-pill';
 import { TextSection } from '@/components/shared/text-section';
 
 const PROPOSAL_STATUS: Record<ProposalStatus, StatusLabel> = {
-  PENDING: { label: 'Chờ trả lời', tone: 'waiting' },
-  NEEDS_REVISION: { label: 'Cần chỉnh sửa', tone: 'active' },
-  ACCEPTED: { label: 'Đã được nhận', tone: 'success' },
+  PENDING: { label: 'Chờ duyệt', tone: 'waiting' },
+  NEEDS_REVISION: { label: 'Đang trao đổi', tone: 'active' },
+  ACCEPTED: { label: 'Đã duyệt', tone: 'success' },
   REJECTED: { label: 'Từ chối', tone: 'danger' },
 };
 
@@ -78,6 +78,12 @@ export function ProposalCard({
           <CalendarDays className="size-3.5 shrink-0" />
           Gửi {dateFormat.format(new Date(proposal.createdAt))}
         </span>
+        {proposal.comments && proposal.comments.length > 0 && (
+          <span className="inline-flex items-center gap-1.5 text-primary font-medium">
+            <MessageSquare className="size-3.5 shrink-0" />
+            {proposal.comments.length} trao đổi
+          </span>
+        )}
       </div>
 
       <TextSection

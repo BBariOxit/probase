@@ -1,22 +1,24 @@
 'use client';
 
 import { use } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useDeleteProposalAttachment,
   useProposal,
-  useResubmitProposal,
   useUpdateProposal,
   useUploadProposalAttachment,
 } from '@/lib/api/proposals';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useBreadcrumbLabel } from '@/lib/breadcrumb-context';
 import { ProposalAttachments } from '@/components/proposals/proposal-attachments';
+import { ProposalCommentThread } from '@/components/proposals/proposal-comment-thread';
 import { ProposalForm } from '@/components/proposals/proposal-form';
+import { Button } from '@/components/ui/button';
 
-export default function EditProposalPage({
+export default function StudentProposalDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -27,55 +29,67 @@ export default function EditProposalPage({
   const proposalId = Number(id);
   const { data: proposal, isPending, error } = useProposal(proposalId);
   const update = useUpdateProposal();
-  const resubmit = useResubmitProposal();
   const uploadAttachment = useUploadProposalAttachment();
   const deleteAttachment = useDeleteProposalAttachment();
 
-  // Swap the raw ID for the proposal title in the breadcrumb.
   useBreadcrumbLabel(id, proposal?.title);
 
   if (!allowed) return null;
 
-  const isEditable =
-    proposal?.status === 'PENDING' || proposal?.status === 'NEEDS_REVISION';
-  const isNeedsRevision = proposal?.status === 'NEEDS_REVISION';
+  if (isPending) {
+    return (
+      <div className="flex justify-center py-16">
+        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error || !proposal) {
+    return <p className="text-sm text-destructive">Không tìm thấy đề xuất.</p>;
+  }
+
+  const isPendingStatus = proposal.status === 'PENDING';
 
   return (
-    <div className="space-y-5">
-      {isPending ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="size-5 animate-spin text-muted-foreground" />
-        </div>
-      ) : error || !proposal ? (
-        <p className="text-sm text-destructive">Không tìm thấy đề xuất.</p>
-      ) : !isEditable ? (
-        /*
-          The API refuses this too, so the form would only lead to a message
-          after the typing. Reached by a stale tab or a bookmarked link far more
-          often than by anything else, which is why it explains rather than
-          bounces: somebody arriving here has just been answered.
-        */
-        <p className="max-w-2xl rounded-xl border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-          Đề xuất này đã được chốt (nhận hoặc từ chối) nên không sửa được nữa.
-          Mở lại danh sách để xem chi tiết.
-        </p>
-      ) : (
-        <div className="max-w-2xl space-y-5">
-          {isNeedsRevision && (
-            <div className="rounded-xl border border-status-active/30 bg-status-active-bg/40 p-4 space-y-1.5">
-              <h3 className="text-sm font-semibold text-status-active flex items-center gap-1.5">
-                <span>⚠️</span> Nhận xét & Yêu cầu chỉnh sửa của Giảng viên
-              </h3>
-              <p className="text-sm whitespace-pre-line text-foreground">
-                {proposal.lecturerFeedback}
-              </p>
-              <p className="pt-1 text-xs text-muted-foreground">
-                Hãy chỉnh sửa lại thông tin đề tài hoặc bổ sung tệp đính kèm bên
-                dưới, sau đó nhấn &quot;Gửi lại cho giảng viên&quot;.
-              </p>
-            </div>
-          )}
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl">
+      <div className="lg:col-span-2 space-y-5">
+        {proposal.status === 'ACCEPTED' && (
+          <div className="rounded-xl border border-status-success/30 bg-status-success-bg/40 p-4 space-y-2">
+            <h3 className="text-sm font-semibold text-status-success flex items-center gap-1.5">
+              <CheckCircle2 className="size-4" />
+              Đề xuất đã được Giảng viên nhận hướng dẫn
+            </h3>
+            <p className="text-sm text-foreground">
+              Đề tài đã được tạo từ đề xuất này. Sau khi khoa phê duyệt, bạn có thể đăng ký giữ chỗ.
+            </p>
+            {proposal.convertedTopic && (
+              <Button
+                size="sm"
+                className="gap-1.5 mt-1"
+                render={<Link href={`/student/topics/${proposal.convertedTopic.id}`} />}
+              >
+                Xem đề tài & Đăng ký
+                <ArrowRight className="size-3.5" />
+              </Button>
+            )}
+          </div>
+        )}
 
+        {proposal.status === 'REJECTED' && (
+          <div className="rounded-xl border border-status-danger/30 bg-status-danger-bg/40 p-4 space-y-1.5">
+            <h3 className="text-sm font-semibold text-status-danger flex items-center gap-1.5">
+              <XCircle className="size-4" />
+              Đề xuất không được chấp nhận
+            </h3>
+            {proposal.lecturerFeedback && (
+              <p className="text-sm text-foreground whitespace-pre-line">
+                Lý do: {proposal.lecturerFeedback}
+              </p>
+            )}
+          </div>
+        )}
+
+        {isPendingStatus ? (
           <ProposalForm
             projectTypes={[proposal.projectType]}
             fixed={{
@@ -91,28 +105,15 @@ export default function EditProposalPage({
               description: proposal.description,
               expectedOutcomes: proposal.expectedOutcomes,
             }}
-            submitLabel={
-              isNeedsRevision ? 'Gửi lại cho giảng viên' : 'Lưu thay đổi'
-            }
+            submitLabel="Lưu cập nhật đề xuất"
             onSubmit={async (values) => {
-              if (isNeedsRevision) {
-                await resubmit.mutateAsync({
-                  id: proposal.id,
-                  title: values.title,
-                  description: values.description,
-                  expectedOutcomes: values.expectedOutcomes,
-                });
-                toast.success('Đề xuất đã được chỉnh sửa và gửi lại cho giảng viên.');
-              } else {
-                await update.mutateAsync({
-                  id: proposal.id,
-                  title: values.title,
-                  description: values.description,
-                  expectedOutcomes: values.expectedOutcomes,
-                });
-                toast.success('Đề xuất đã được lưu.');
-              }
-              router.push('/student/proposals');
+              await update.mutateAsync({
+                id: proposal.id,
+                title: values.title,
+                description: values.description,
+                expectedOutcomes: values.expectedOutcomes,
+              });
+              toast.success('Đã lưu cập nhật đề xuất và thông báo cho GVHD.');
             }}
             onCancel={() => router.push('/student/proposals')}
           >
@@ -132,8 +133,25 @@ export default function EditProposalPage({
               />
             </div>
           </ProposalForm>
-        </div>
-      )}
+        ) : (
+          <div className="space-y-4 rounded-xl border bg-card p-5">
+            <h2 className="text-lg font-semibold">{proposal.title}</h2>
+            <div className="space-y-1">
+              <h4 className="text-xs font-medium text-muted-foreground">Mô tả</h4>
+              <p className="text-sm whitespace-pre-line">{proposal.description}</p>
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-xs font-medium text-muted-foreground">Yêu cầu đầu ra</h4>
+              <p className="text-sm whitespace-pre-line">{proposal.expectedOutcomes}</p>
+            </div>
+            <ProposalAttachments attachments={proposal.attachments ?? []} />
+          </div>
+        )}
+      </div>
+
+      <div className="lg:col-span-1">
+        <ProposalCommentThread proposal={proposal} />
+      </div>
     </div>
   );
 }

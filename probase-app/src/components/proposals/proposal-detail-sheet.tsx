@@ -3,6 +3,7 @@
 import { CalendarDays, Layers, Users, User } from 'lucide-react';
 import type { TopicProposal } from '@/lib/api/types';
 import { ProposalAttachments } from '@/components/proposals/proposal-attachments';
+import { ProposalCommentThread } from '@/components/proposals/proposal-comment-thread';
 import { ProposalStatusBadge } from '@/components/proposals/proposal-card';
 import { Button } from '@/components/ui/button';
 import { TextSection } from '@/components/shared/text-section';
@@ -86,6 +87,7 @@ export function ProposalDetailSheet({
             body={proposal.expectedOutcomes}
           />
           <ProposalAttachments attachments={proposal.attachments ?? []} />
+          <ProposalCommentThread proposal={proposal} />
           {footer}
         </>
       )}
