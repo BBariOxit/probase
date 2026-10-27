@@ -3,6 +3,7 @@
 import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useTopic, useUpdateTopic } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useBreadcrumbLabel } from '@/lib/breadcrumb-context';
@@ -68,15 +69,16 @@ export default function EditTopicPage({
         submitLabel="Lưu thay đổi"
         // Listed out rather than spread minus semesterId: a PATCH accepts
         // exactly these, and naming them keeps that visible at the call site.
-        onSubmit={(values) =>
-          update.mutateAsync({
+        onSubmit={async (values) => {
+          await update.mutateAsync({
             projectTypeId: values.projectTypeId,
             title: values.title,
             description: values.description,
             expectedOutcomes: values.expectedOutcomes,
             maxStudents: values.maxStudents,
-          })
-        }
+          });
+          toast.success('Đã cập nhật đề tài thành công!');
+        }}
         onCancel={() => router.push('/lecturer')}
       />
     </div>
