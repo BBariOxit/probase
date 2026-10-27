@@ -75,37 +75,49 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-      // The name comes back with the account because the client greets somebody
-      // the moment they arrive, and one round trip to /auth/me for a string it
-      // could have had here is a header that renders an address for a second and
-      // then swaps it for a name.
-      include: {
-        studentProfile: {
-          select: {
-            id: true,
-            studentCode: true,
-            fullName: true,
-            majorId: true,
-            class: true,
-            cohort: true,
-          },
-        },
-        lecturerProfile: {
-          select: {
-            id: true,
-            lecturerCode: true,
-            fullName: true,
-            academicTitle: true,
-            majorId: true,
-            isHeadOfDepartment: true,
-            isFacultyBoard: true,
-            isAcademicAssistant: true,
-          },
+    const email = dto.email.trim().toLowerCase();
+    const candidateEmail = email.endsWith('@st.dlu.edu.vn')
+      ? email.replace('@st.dlu.edu.vn', '@dlu.edu.vn')
+      : email.endsWith('@dlu.edu.vn')
+        ? email.replace('@dlu.edu.vn', '@st.dlu.edu.vn')
+        : undefined;
+
+    const includeProfiles = {
+      studentProfile: {
+        select: {
+          id: true,
+          studentCode: true,
+          fullName: true,
+          majorId: true,
+          class: true,
+          cohort: true,
         },
       },
+      lecturerProfile: {
+        select: {
+          id: true,
+          lecturerCode: true,
+          fullName: true,
+          academicTitle: true,
+          majorId: true,
+          isHeadOfDepartment: true,
+          isFacultyBoard: true,
+          isAcademicAssistant: true,
+        },
+      },
+    };
+
+    let user = await this.prisma.user.findUnique({
+      where: { email },
+      include: includeProfiles,
     });
+
+    if (!user && candidateEmail) {
+      user = await this.prisma.user.findUnique({
+        where: { email: candidateEmail },
+        include: includeProfiles,
+      });
+    }
 
     const retryAfterMs = passwordRetryAfterMs(user);
     if (retryAfterMs > 0) {

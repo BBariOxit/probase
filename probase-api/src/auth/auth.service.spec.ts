@@ -251,6 +251,23 @@ describe('AuthService password backoff', () => {
 
       expect(update).not.toHaveBeenCalled();
     });
+
+    it('successfully logs in with candidate email domain fallback', async () => {
+      findUnique.mockImplementation(({ where }: { where: { email: string } }) => {
+        if (where.email === '2212345@dlu.edu.vn') {
+          return Promise.resolve(userRow({ email: '2212345@dlu.edu.vn' }));
+        }
+        return Promise.resolve(null);
+      });
+
+      const result = await service.login({
+        email: '2212345@st.dlu.edu.vn',
+        password: PASSWORD,
+      });
+
+      expect(result.user.email).toBe('2212345@dlu.edu.vn');
+      expect(result).toHaveProperty('accessToken');
+    });
   });
 
   describe('an address that holds no account', () => {
