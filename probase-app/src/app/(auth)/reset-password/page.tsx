@@ -5,27 +5,18 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react';
-import { api, ApiError } from '@/lib/api/client';
-import { passwordSchema } from '@/lib/auth/password';
+import { ApiError } from '@/lib/api/client';
+import { authService } from '@/services/auth.service';
+import {
+  ResetPasswordSchema,
+  type ResetPasswordValues,
+} from '@/validations/auth.validation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { FormError } from '@/components/shared/form-error';
 import { PasswordInput } from '@/components/shared/password-input';
-
-const ResetPasswordSchema = z
-  .object({
-    newPassword: passwordSchema,
-    confirmPassword: z.string().min(1, 'Vui lòng nhập lại mật khẩu mới'),
-  })
-  .refine((v) => v.newPassword === v.confirmPassword, {
-    message: 'Mật khẩu nhập lại không khớp',
-    path: ['confirmPassword'],
-  });
-
-type ResetPasswordValues = z.infer<typeof ResetPasswordSchema>;
 
 type LinkState = 'checking' | 'valid' | 'invalid';
 
@@ -53,10 +44,8 @@ function ResetPasswordForm() {
     if (!token) return;
 
     let cancelled = false;
-    void api<{ valid: boolean }>(
-      `/auth/reset-password/${encodeURIComponent(token)}`,
-      { anonymous: true },
-    )
+    void authService
+      .validateResetToken(token)
       .then((res) => {
         if (!cancelled) setLinkState(res.valid ? 'valid' : 'invalid');
       })
@@ -72,10 +61,9 @@ function ResetPasswordForm() {
   async function onSubmit(values: ResetPasswordValues) {
     setFormError(null);
     try {
-      await api('/auth/reset-password', {
-        method: 'POST',
-        body: { token, newPassword: values.newPassword },
-        anonymous: true,
+      await authService.resetPassword({
+        token,
+        newPassword: values.newPassword,
       });
       setDone(true);
     } catch (err) {

@@ -26,8 +26,7 @@ import { RoundTimeline } from '@/components/rounds/round-timeline';
 import { ProposalCard } from '@/components/proposals/proposal-card';
 import { ProposalDetailSheet } from '@/components/proposals/proposal-detail-sheet';
 import { Button } from '@/components/ui/button';
-
-const PAGE_SIZE = 20;
+import { PROPOSAL_PAGE_SIZE } from '@/constants/pagination.constant';
 
 export default function StudentProposalsPage() {
   const allowed = useRequireRole('STUDENT');
@@ -40,7 +39,10 @@ export default function StudentProposalsPage() {
     null,
   );
 
-  const { data, isPending, error } = useProposals({ page, limit: PAGE_SIZE });
+  const { data, isPending, error } = useProposals({
+    page,
+    limit: PROPOSAL_PAGE_SIZE,
+  });
 
   if (!allowed) return null;
 

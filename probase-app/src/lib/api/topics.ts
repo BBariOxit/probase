@@ -1,45 +1,22 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api/client';
-import type {
-  BulkOpenResult,
-  Paginated,
-  TopicDetail,
-  TopicListItem,
-  TopicStatus,
-} from '@/lib/api/types';
+import {
+  topicService,
+  type TopicInput,
+  type TopicLecturer,
+  type TopicPatch,
+  type TopicQuery,
+  type TopicTransition,
+} from '@/services/topic.service';
 
-export interface TopicQuery {
-  semesterId?: number;
-  projectTypeId?: number;
-  lecturerId?: number;
-  status?: TopicStatus;
-  q?: string;
-  mine?: boolean;
-
-  forMyCohort?: boolean;
-  page?: number;
-  limit?: number;
-}
-
-export interface TopicLecturer {
-  id: number;
-  fullName: string;
-  academicTitle: string | null;
-}
-
-function toSearchParams(query: TopicQuery): string {
-  const params = new URLSearchParams();
-
-  for (const [key, value] of Object.entries(query)) {
-    if (value === undefined || value === '' || value === false) continue;
-    params.set(key, String(value));
-  }
-
-  const search = params.toString();
-  return search ? `?${search}` : '';
-}
+export type {
+  TopicInput,
+  TopicLecturer,
+  TopicPatch,
+  TopicQuery,
+  TopicTransition,
+};
 
 export const topicKeys = {
   all: ['topics'] as const,
@@ -51,8 +28,7 @@ export const topicKeys = {
 export function useTopics(query: TopicQuery, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: topicKeys.list(query),
-    queryFn: () =>
-      api<Paginated<TopicListItem>>(`/topics${toSearchParams(query)}`),
+    queryFn: () => topicService.getAll(query),
     enabled: options?.enabled ?? true,
     // Keep the previous page on screen while the next one loads. Without this
     // the table empties and the page jumps every time someone types a letter
@@ -64,10 +40,7 @@ export function useTopics(query: TopicQuery, options?: { enabled?: boolean }) {
 export function useTopicLecturers(semesterId: number | undefined) {
   return useQuery({
     queryKey: [...topicKeys.all, 'lecturers', semesterId],
-    queryFn: () =>
-      api<TopicLecturer[]>(
-        `/topics/lecturers${semesterId ? `?semesterId=${semesterId}` : ''}`,
-      ),
+    queryFn: () => topicService.getLecturers(semesterId),
     enabled: semesterId !== undefined,
     staleTime: 60_000,
   });
@@ -76,38 +49,25 @@ export function useTopicLecturers(semesterId: number | undefined) {
 export function useTopic(id: number) {
   return useQuery({
     queryKey: topicKeys.detail(id),
-    queryFn: () => api<TopicDetail>(`/topics/${id}`),
+    queryFn: () => topicService.getById(id),
   });
-}
-
-export interface TopicInput {
-  semesterId: number;
-  projectTypeId: number;
-  title: string;
-  description: string;
-  expectedOutcomes: string;
-  maxStudents: number;
 }
 
 export function useCreateTopic() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: TopicInput) =>
-      api<TopicDetail>('/topics', { method: 'POST', body: input }),
+    mutationFn: (input: TopicInput) => topicService.create(input),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: topicKeys.lists() }),
   });
 }
 
-export type TopicPatch = Partial<Omit<TopicInput, 'semesterId'>>;
-
 export function useUpdateTopic(id: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (patch: TopicPatch) =>
-      api<TopicDetail>(`/topics/${id}`, { method: 'PATCH', body: patch }),
+    mutationFn: (patch: TopicPatch) => topicService.update(id, patch),
     onSuccess: (topic) => {
       queryClient.setQueryData(topicKeys.detail(id), topic);
       return queryClient.invalidateQueries({ queryKey: topicKeys.lists() });
@@ -119,20 +79,17 @@ export function useDeleteTopic() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) =>
-      api<{ message: string }>(`/topics/${id}`, { method: 'DELETE' }),
+    mutationFn: (id: number) => topicService.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: topicKeys.all }),
   });
 }
-
-export type TopicTransition = 'submit' | 'approve' | 'open' | 'close';
 
 export function useTopicTransition() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, to }: { id: number; to: TopicTransition }) =>
-      api<TopicDetail>(`/topics/${id}/${to}`, { method: 'PATCH' }),
+      topicService.transition(id, to),
     onSuccess: (topic) => {
       queryClient.setQueryData(topicKeys.detail(topic.id), topic);
       return queryClient.invalidateQueries({ queryKey: topicKeys.lists() });
@@ -144,11 +101,7 @@ export function useSubmitDraftTopics() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (topicIds?: number[]) =>
-      api<{ count: number; message: string }>('/topics/submit-drafts', {
-        method: 'POST',
-        body: { topicIds },
-      }),
+    mutationFn: (topicIds?: number[]) => topicService.submitDrafts(topicIds),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: topicKeys.all }),
   });
 }
@@ -157,11 +110,7 @@ export function useBulkOpenTopics() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (semesterId: number) =>
-      api<BulkOpenResult>('/topics/bulk-open', {
-        method: 'PATCH',
-        body: { semesterId },
-      }),
+    mutationFn: (semesterId: number) => topicService.bulkOpen(semesterId),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: topicKeys.lists() }),
   });

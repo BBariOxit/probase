@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, ApiError } from '@/lib/api/client';
+import { ApiError } from '@/lib/api/client';
 import type { LoginResponse, Role } from '@/lib/api/types';
 import { homePathFor, useSession } from '@/lib/auth/session';
 import { safeNextPath } from '@/lib/auth/next-path';
+import { authService } from '@/services/auth.service';
 
 interface UseGoogleSsoOptions {
   nextParam?: string | null;
@@ -40,11 +41,9 @@ export function useGoogleSso(options?: UseGoogleSsoOptions) {
 
     try {
       const isAccessToken = token.startsWith('ya29.');
-      const result = await api<LoginResponse>('/auth/google', {
-        method: 'POST',
-        body: isAccessToken ? { accessToken: token } : { credential: token },
-        anonymous: true,
-      });
+      const result = await authService.googleLogin(
+        isAccessToken ? { accessToken: token } : { credential: token },
+      );
 
       signIn(result, result.user);
       options?.onSuccess?.(result.user);

@@ -52,18 +52,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-
-const PAGE_SIZE = 10;
-
-const STATUS_FILTERS: { value: string; label: string }[] = [
-  { value: 'ALL', label: 'Mọi trạng thái' },
-  { value: 'DRAFT', label: 'Bản nháp (Chưa gửi duyệt)' },
-  { value: 'PENDING', label: 'Chờ duyệt' },
-  { value: 'APPROVED', label: 'Đã duyệt' },
-  { value: 'OPEN', label: 'Đang mở' },
-  { value: 'IN_PROGRESS', label: 'Đang thực hiện' },
-  { value: 'COMPLETED', label: 'Hoàn thành' },
-];
+import { TOPIC_PAGE_SIZE } from '@/constants/pagination.constant';
+import { TOPIC_STATUS_FILTERS } from '@/constants/status.constant';
 
 function RowActions({ topic }: { topic: TopicListItem }) {
   const transition = useTopicTransition();
@@ -171,7 +161,7 @@ export default function LecturerTopicsPage() {
   const { data, isPending, error } = useTopics({
     mine: true,
     page,
-    limit: PAGE_SIZE,
+    limit: TOPIC_PAGE_SIZE,
     q: debouncedSearch || undefined,
     status: status === 'ALL' ? undefined : (status as TopicStatus),
   });
@@ -216,12 +206,13 @@ export default function LecturerTopicsPage() {
           <SelectTrigger className="w-56" aria-label="Lọc theo trạng thái">
             <SelectValue>
               {(value) =>
-                STATUS_FILTERS.find((option) => option.value === value)?.label
+                TOPIC_STATUS_FILTERS.find((option) => option.value === value)
+                  ?.label
               }
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {STATUS_FILTERS.map((option) => (
+            {TOPIC_STATUS_FILTERS.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>

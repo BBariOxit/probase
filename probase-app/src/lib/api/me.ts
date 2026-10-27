@@ -1,10 +1,10 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api/client';
 import { groupKeys } from '@/lib/api/registration';
 import type { MyProfile, UpdateMyProfileInput } from '@/lib/api/types';
 import { useSession } from '@/lib/auth/session';
+import { profileService } from '@/services/profile.service';
 
 export const meKeys = {
   profile: ['me', 'profile'] as const,
@@ -13,7 +13,7 @@ export const meKeys = {
 export function useMyProfile() {
   return useQuery({
     queryKey: meKeys.profile,
-    queryFn: () => api<MyProfile>('/me/profile'),
+    queryFn: () => profileService.getProfile(),
     staleTime: 5 * 60_000,
   });
 }
@@ -23,7 +23,7 @@ export function useUpdateMyProfile() {
 
   return useMutation({
     mutationFn: (input: UpdateMyProfileInput) =>
-      api<MyProfile>('/me/profile', { method: 'PATCH', body: input }),
+      profileService.updateProfile(input),
     onSuccess: (profile) => queryClient.setQueryData(meKeys.profile, profile),
   });
 }
@@ -47,19 +47,9 @@ function useAvatarMutation<TVariables>(
 }
 
 export function useUploadAvatar() {
-  return useAvatarMutation((file: File) => {
-    const form = new FormData();
-    form.append('file', file);
-
-    return api<{ avatarUrl: string | null }>('/me/avatar', {
-      method: 'POST',
-      body: form,
-    });
-  });
+  return useAvatarMutation((file: File) => profileService.uploadAvatar(file));
 }
 
 export function useRemoveAvatar() {
-  return useAvatarMutation(() =>
-    api<{ avatarUrl: string | null }>('/me/avatar', { method: 'DELETE' }),
-  );
+  return useAvatarMutation(() => profileService.deleteAvatar());
 }

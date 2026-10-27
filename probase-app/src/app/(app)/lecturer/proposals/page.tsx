@@ -30,15 +30,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-const PAGE_SIZE = 10;
-
-const STATUS_FILTERS: { value: ProposalStatus | 'ALL'; label: string }[] = [
-  { value: 'PENDING', label: 'Chờ duyệt / Đang trao đổi' },
-  { value: 'ACCEPTED', label: 'Đã nhận hướng dẫn' },
-  { value: 'REJECTED', label: 'Đã từ chối' },
-  { value: 'ALL', label: 'Mọi trạng thái' },
-];
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination.constant';
+import { PROPOSAL_STATUS_FILTERS } from '@/constants/status.constant';
 
 export default function LecturerProposalsPage() {
   const allowed = useRequireRole('LECTURER');
@@ -49,7 +42,7 @@ export default function LecturerProposalsPage() {
   const { data, isPending, error } = useProposals({
     status: status === 'ALL' ? undefined : status,
     page,
-    limit: PAGE_SIZE,
+    limit: DEFAULT_PAGE_SIZE,
   });
 
   if (!allowed) return null;
@@ -73,12 +66,13 @@ export default function LecturerProposalsPage() {
             <SelectTrigger className="w-full" aria-label="Lọc theo trạng thái">
               <SelectValue>
                 {(value) =>
-                  STATUS_FILTERS.find((option) => option.value === value)?.label
+                  PROPOSAL_STATUS_FILTERS.find((option) => option.value === value)
+                    ?.label
                 }
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {STATUS_FILTERS.map((option) => (
+              {PROPOSAL_STATUS_FILTERS.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
