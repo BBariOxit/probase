@@ -8,46 +8,36 @@ import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import { api, ApiError } from '@/lib/api/client';
 import { passwordSchema } from '@/lib/auth/password';
-import { homePathFor, useSession } from '@/lib/auth/session';
+import { useSession } from '@/lib/auth/session';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { FormError } from '@/components/shared/form-error';
 import { PasswordInput } from '@/components/shared/password-input';
 
-const getSchema = (forced: boolean) =>
-  z
-    .object({
-      currentPassword: forced
-        ? z.string().optional()
-        : z.string().min(1, 'Vui lòng nhập mật khẩu hiện tại'),
-      newPassword: passwordSchema,
-      confirmPassword: z.string().min(1, 'Vui lòng nhập lại mật khẩu mới'),
-    })
-    .refine((v) => forced || v.newPassword !== v.currentPassword, {
-      message: 'Mật khẩu mới phải khác mật khẩu hiện tại',
-      path: ['newPassword'],
-    })
-    .refine((v) => v.newPassword === v.confirmPassword, {
-      message: 'Mật khẩu nhập lại không khớp',
-      path: ['confirmPassword'],
-    });
+const ChangePasswordSchema = z
+  .object({
+    newPassword: passwordSchema,
+    confirmPassword: z.string().min(1, 'Vui lòng nhập lại mật khẩu mới'),
+  })
+  .refine((v) => v.newPassword === v.confirmPassword, {
+    message: 'Mật khẩu nhập lại không khớp',
+    path: ['confirmPassword'],
+  });
 
-type ChangePasswordValues = z.infer<ReturnType<typeof getSchema>>;
+type ChangePasswordValues = z.infer<typeof ChangePasswordSchema>;
 
 export default function ChangePasswordPage() {
   const router = useRouter();
   const { status, user, setAccessToken, patchUser } = useSession();
   const [formError, setFormError] = useState<string | null>(null);
 
-  const forced = false;
-
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<ChangePasswordValues>({
-    resolver: zodResolver(getSchema(forced)),
+    resolver: zodResolver(ChangePasswordSchema),
     mode: 'onSubmit',
     reValidateMode: 'onChange',
   });
@@ -64,7 +54,6 @@ export default function ChangePasswordPage() {
         {
           method: 'PATCH',
           body: {
-            currentPassword: values.currentPassword,
             newPassword: values.newPassword,
           },
         },
@@ -99,29 +88,12 @@ export default function ChangePasswordPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
         <FormError message={formError} />
 
-        {!forced && (
-          <div className="space-y-2">
-            <Label htmlFor="currentPassword">Mật khẩu hiện tại</Label>
-            <PasswordInput
-              id="currentPassword"
-              autoComplete="current-password"
-              autoFocus
-              aria-invalid={!!errors.currentPassword}
-              {...register('currentPassword')}
-            />
-            {errors.currentPassword && (
-              <p className="text-xs text-destructive">
-                {errors.currentPassword.message}
-              </p>
-            )}
-          </div>
-        )}
-
         <div className="space-y-2">
           <Label htmlFor="newPassword">Mật khẩu mới</Label>
           <PasswordInput
             id="newPassword"
             autoComplete="new-password"
+            autoFocus
             aria-invalid={!!errors.newPassword}
             {...register('newPassword')}
           />
@@ -148,19 +120,17 @@ export default function ChangePasswordPage() {
         </div>
 
         <div className="flex gap-2">
-          {!forced && (
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1"
-              onClick={() => router.replace('/profile')}
-            >
-              Huỷ
-            </Button>
-          )}
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1"
+            onClick={() => router.replace('/profile')}
+          >
+            Huỷ
+          </Button>
           <Button
             type="submit"
-            className={forced ? 'w-full' : 'flex-1'}
+            className="flex-1"
             disabled={isSubmitting}
           >
             {isSubmitting && <Loader2 className="size-4 animate-spin" />}

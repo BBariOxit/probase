@@ -58,10 +58,12 @@ function userRow(overrides: Partial<UserRow> = {}): UserRow {
 describe('AuthService password backoff', () => {
   let service: AuthService;
   let findUnique: jest.Mock;
+  let studentProfileFindUnique: jest.Mock;
   let update: jest.Mock;
 
   beforeEach(async () => {
     findUnique = jest.fn();
+    studentProfileFindUnique = jest.fn();
     // Every `user.update` here stands in for one that returns the row, because
     // recordFailedPassword reads the incremented count back off it.
     update = jest.fn().mockResolvedValue({ failedPasswordCount: 1 });
@@ -74,6 +76,7 @@ describe('AuthService password backoff', () => {
           provide: PrismaService,
           useValue: {
             user: { findUnique, update },
+            studentProfile: { findUnique: studentProfileFindUnique },
             refreshToken: {
               create: jest.fn(),
               deleteMany: jest.fn(),
@@ -305,7 +308,7 @@ describe('AuthService password backoff', () => {
       global.fetch = originalFetch;
     });
 
-    it('rejects emails outside DLU domains (@dlu.edu.vn / @st.dlu.edu.vn)', async () => {
+    it('rejects emails outside DLU domain (@dlu.edu.vn)', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
@@ -320,11 +323,26 @@ describe('AuthService password backoff', () => {
       ).rejects.toThrow('Hệ thống ProBase chỉ chấp nhận email do Trường Đại học Đà Lạt cấp');
     });
 
+    it('rejects @st.dlu.edu.vn emails because only @dlu.edu.vn is accepted', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          email: '2212345@st.dlu.edu.vn',
+          email_verified: 'true',
+          name: 'Student St',
+        }),
+      } as unknown as Response);
+
+      await expect(
+        service.googleLogin({ idToken: 'fake-token' }),
+      ).rejects.toThrow('Hệ thống ProBase chỉ chấp nhận email do Trường Đại học Đà Lạt cấp (@dlu.edu.vn)');
+    });
+
     it('rejects DLU email not registered in the system (BR-01)', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
-          email: 'unregistered@st.dlu.edu.vn',
+          email: 'unregistered@dlu.edu.vn',
           email_verified: 'true',
           name: 'Unregistered Student',
         }),
@@ -420,45 +438,78 @@ describe('AuthService password backoff', () => {
       expect(result.user.mustChangePassword).toBe(false);
     });
 
-    it('matches student account when Google returns @st.dlu.edu.vn and DB stores @dlu.edu.vn', async () => {
+    it('matches student account by extracting 7-digit studentCode from email when emails mismatch', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
-          email: '2212345@st.dlu.edu.vn',
-          email_verified: 'true',
+          email: '2212345@dlu.edu.vn',
+          email_verified: true,
           name: 'Trần Văn B',
         }),
       } as unknown as Response);
 
-      // First call for @st.dlu.edu.vn returns null, candidate @dlu.edu.vn returns user
-      findUnique.mockImplementation(
-        ({ where }: { where: { email: string } }) => {
-          if (where.email === '2212345@dlu.edu.vn') {
-            return Promise.resolve({
-              id: 11,
-              email: '2212345@dlu.edu.vn',
-              role: 'STUDENT',
-              isActive: true,
-              mustChangePassword: false,
-              avatarUrl: null,
-              studentProfile: {
-                id: 2,
-                studentCode: '2212345',
-                fullName: 'Trần Văn B',
-                majorId: 1,
-                class: 'CTK46PM',
-                cohort: '2022',
-              },
-              lecturerProfile: null,
-            });
-          }
-          return Promise.resolve(null);
+      findUnique.mockResolvedValue(null);
+      studentProfileFindUnique.mockResolvedValue({
+        id: 2,
+        studentCode: '2212345',
+        fullName: 'Trần Văn B',
+        user: {
+          id: 11,
+          email: 'tranvanb@dlu.edu.vn',
+          role: 'STUDENT',
+          isActive: true,
+          mustChangePassword: false,
+          avatarUrl: null,
+          studentProfile: {
+            id: 2,
+            studentCode: '2212345',
+            fullName: 'Trần Văn B',
+            majorId: 1,
+            class: 'CTK46PM',
+            cohort: '2022',
+          },
+          lecturerProfile: null,
         },
-      );
+      });
 
       const result = await service.googleLogin({ idToken: 'valid-token' });
       expect(result).toHaveProperty('accessToken');
-      expect(result.user.email).toBe('2212345@dlu.edu.vn');
+      expect(result.user.studentProfile?.studentCode).toBe('2212345');
+    });
+  });
+
+  describe('changePassword', () => {
+    it('successfully changes password without requiring currentPassword', async () => {
+      findUnique.mockResolvedValue({
+        id: 1,
+        email: '2212345@dlu.edu.vn',
+        password: '$2b$10$oldpasswordhash',
+        role: 'STUDENT',
+        isActive: true,
+        mustChangePassword: false,
+      });
+
+      update.mockResolvedValue({
+        id: 1,
+        email: '2212345@dlu.edu.vn',
+        role: 'STUDENT',
+        mustChangePassword: false,
+      });
+
+      const result = await service.changePassword(1, {
+        newPassword: 'NewPassword123!',
+      });
+
+      expect(result).toHaveProperty('accessToken');
+      expect(result.message).toBe('Đổi mật khẩu thành công');
+      expect(update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 1 },
+          data: expect.objectContaining({
+            mustChangePassword: false,
+          }),
+        }),
+      );
     });
   });
 });

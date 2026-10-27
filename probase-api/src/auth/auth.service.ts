@@ -75,36 +75,36 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-      // The name comes back with the account because the client greets somebody
-      // the moment they arrive, and one round trip to /auth/me for a string it
-      // could have had here is a header that renders an address for a second and
-      // then swaps it for a name.
-      include: {
-        studentProfile: {
-          select: {
-            id: true,
-            studentCode: true,
-            fullName: true,
-            majorId: true,
-            class: true,
-            cohort: true,
-          },
-        },
-        lecturerProfile: {
-          select: {
-            id: true,
-            lecturerCode: true,
-            fullName: true,
-            academicTitle: true,
-            majorId: true,
-            isHeadOfDepartment: true,
-            isFacultyBoard: true,
-            isAcademicAssistant: true,
-          },
+    const email = dto.email.trim().toLowerCase();
+
+    const includeProfiles = {
+      studentProfile: {
+        select: {
+          id: true,
+          studentCode: true,
+          fullName: true,
+          majorId: true,
+          class: true,
+          cohort: true,
         },
       },
+      lecturerProfile: {
+        select: {
+          id: true,
+          lecturerCode: true,
+          fullName: true,
+          academicTitle: true,
+          majorId: true,
+          isHeadOfDepartment: true,
+          isFacultyBoard: true,
+          isAcademicAssistant: true,
+        },
+      },
+    };
+
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: includeProfiles,
     });
 
     const retryAfterMs = passwordRetryAfterMs(user);
@@ -166,7 +166,7 @@ export class AuthService {
 
   /**
    * Đăng nhập thông qua Google SSO của Trường Đại học Đà Lạt
-   * - Hỗ trợ cả sinh viên (@st.dlu.edu.vn / @dlu.edu.vn) và giảng viên (@dlu.edu.vn)
+   * - Định dạng email duy nhất: @dlu.edu.vn (Sinh viên: <MSSV>@dlu.edu.vn, Giảng viên: <tên>@dlu.edu.vn)
    * - Ràng buộc BR-01: Tài khoản phải được Khoa tạo/import trước trong CSDL
    */
   async googleLogin(dto: GoogleLoginDto) {
@@ -258,23 +258,14 @@ export class AuthService {
       );
     }
 
-    // Ràng buộc bảo mật DLU: Chỉ chấp nhận đuôi trường DLU (@dlu.edu.vn hoặc @st.dlu.edu.vn)
-    const isDluEmail =
-      email.endsWith('@dlu.edu.vn') || email.endsWith('@st.dlu.edu.vn');
-    if (!isDluEmail) {
+    // Ràng buộc bảo mật DLU: Chỉ chấp nhận duy nhất đuôi trường DLU (@dlu.edu.vn)
+    if (!email.endsWith('@dlu.edu.vn')) {
       throw new BadRequestException(
-        `Hệ thống ProBase chỉ chấp nhận email do Trường Đại học Đà Lạt cấp (@dlu.edu.vn hoặc @st.dlu.edu.vn). Địa chỉ "${email}" không được phép đăng nhập.`,
+        `Hệ thống ProBase chỉ chấp nhận email do Trường Đại học Đà Lạt cấp (@dlu.edu.vn). Địa chỉ "${email}" không được phép đăng nhập.`,
       );
     }
 
-    // BR-01: Tài khoản phải được Khoa import trước trong hệ thống.
-    // Hỗ trợ tìm kiếm theo cả @dlu.edu.vn và @st.dlu.edu.vn phòng trường hợp lệch domain
-    const candidateEmail = email.endsWith('@st.dlu.edu.vn')
-      ? email.replace('@st.dlu.edu.vn', '@dlu.edu.vn')
-      : email.endsWith('@dlu.edu.vn')
-        ? email.replace('@dlu.edu.vn', '@st.dlu.edu.vn')
-        : undefined;
-
+    // BR-01: Tài khoản phải được Khoa import trước trong hệ thống
     const includeProfiles = {
       studentProfile: {
         select: {
@@ -305,11 +296,21 @@ export class AuthService {
       include: includeProfiles,
     });
 
-    if (!user && candidateEmail) {
-      user = await this.prisma.user.findUnique({
-        where: { email: candidateEmail },
-        include: includeProfiles,
-      });
+    if (!user) {
+      const localPart = email.split('@')[0];
+      if (/^\d{7}$/.test(localPart)) {
+        const student = await this.prisma.studentProfile.findUnique({
+          where: { studentCode: localPart },
+          include: {
+            user: {
+              include: includeProfiles,
+            },
+          },
+        });
+        if (student?.user) {
+          user = student.user;
+        }
+      }
     }
 
     if (!user) {
@@ -483,30 +484,7 @@ export class AuthService {
 
     if (!user) throw new UnauthorizedException('Tài khoản không tồn tại');
 
-    if (!user.mustChangePassword) {
-      if (!dto.currentPassword) {
-        throw new BadRequestException('Vui lòng nhập mật khẩu hiện tại');
-      }
-
-      const retryAfterMs = passwordRetryAfterMs(user);
-      if (retryAfterMs > 0) {
-        throw new HttpException(
-          `Sai mật khẩu nhiều lần. Thử lại sau ${retryAfterSeconds(retryAfterMs)} giây.`,
-          HttpStatus.TOO_MANY_REQUESTS,
-        );
-      }
-
-      const passwordMatch = await bcrypt.compare(
-        dto.currentPassword,
-        user.password,
-      );
-      if (!passwordMatch) {
-        await this.recordFailedPassword(user);
-        throw new BadRequestException('Mật khẩu hiện tại không đúng');
-      }
-
-      await this.clearFailedPasswords(user);
-    }
+    await this.clearFailedPasswords(user);
 
     const hash = await bcrypt.hash(dto.newPassword, 10);
 
