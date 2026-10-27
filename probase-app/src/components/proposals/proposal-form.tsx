@@ -81,6 +81,7 @@ export function ProposalForm({
   defaultValues,
   fixed,
   submitLabel,
+  children,
   onSubmit,
   onCancel,
 }: {
@@ -88,6 +89,7 @@ export function ProposalForm({
   defaultValues?: Partial<ProposalFormValues>;
   fixed?: { projectType: string; lecturer: string };
   submitLabel: string;
+  children?: React.ReactNode;
   onSubmit: (values: ProposalInput) => Promise<unknown>;
   onCancel: () => void;
 }) {
@@ -252,6 +254,8 @@ export function ProposalForm({
           {...register('expectedOutcomes')}
         />
       </Field>
+
+      {children}
 
       <div className="flex items-center gap-2 pt-1">
         <Button type="submit" disabled={isSubmitting}>

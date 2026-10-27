@@ -82,8 +82,14 @@ enum GroupJoinSource {
 
 enum TopicProposalStatus {
   PENDING
+  NEEDS_REVISION
   ACCEPTED
   REJECTED
+}
+
+enum AttachmentType {
+  DOCUMENT
+  IMAGE
 }
 
 enum TopicStatus {
@@ -136,7 +142,8 @@ enum NotificationType {
   /// an inbox nobody is told about is an inbox nobody opens, and the person kept
   /// waiting by that is a student who cannot register in the meantime.
   PROPOSAL_SUBMITTED
-
+  PROPOSAL_REVISION_REQUESTED
+  PROPOSAL_RESUBMITTED
   PROPOSAL_ACCEPTED
   PROPOSAL_REJECTED
 
@@ -497,8 +504,25 @@ model TopicProposal {
 
   // Back-link to the official topic created from this proposal
   convertedTopic Topic?
+  attachments    ProposalAttachment[]
 
   @@map("topic_proposals")
+}
+
+model ProposalAttachment {
+  id           Int            @id @default(autoincrement())
+  proposalId   Int
+  fileUrl      String
+  filePublicId String
+  fileName     String
+  fileSize     Int
+  fileType     AttachmentType
+  createdAt    DateTime       @default(now())
+
+  proposal TopicProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId])
+  @@map("proposal_attachments")
 }
 
 // ─────────────────────────────────────────────────────────

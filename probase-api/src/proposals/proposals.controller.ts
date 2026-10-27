@@ -8,13 +8,19 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import type { Role } from '../../generated/prisma/client';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { MAX_ATTACHMENT_BYTES } from '../cloudinary/cloudinary.service';
 import {
   AcceptProposalDto,
   RejectProposalDto,
+  RequestChangesProposalDto,
 } from './dto/answer-proposal.dto';
 import { CreateProposalDto } from './dto/create-proposal.dto';
 import { QueryProposalsDto } from './dto/query-proposals.dto';
@@ -60,6 +66,42 @@ export class ProposalsController {
   }
 
   @Roles('STUDENT')
+  @Post(':id/resubmit')
+  resubmit(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateProposalDto,
+    @GetUser('id') userId: number,
+  ) {
+    return this.proposalsService.resubmit(id, dto, userId);
+  }
+
+  @Roles('STUDENT')
+  @Post(':id/attachments')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: MAX_ATTACHMENT_BYTES, files: 1 },
+    }),
+  )
+  uploadAttachment(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+    @GetUser('id') userId: number,
+  ) {
+    return this.proposalsService.uploadAttachment(id, file, userId);
+  }
+
+  @Roles('STUDENT')
+  @Delete(':id/attachments/:attachmentId')
+  removeAttachment(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('attachmentId', ParseIntPipe) attachmentId: number,
+    @GetUser('id') userId: number,
+  ) {
+    return this.proposalsService.removeAttachment(id, attachmentId, userId);
+  }
+
+  @Roles('STUDENT')
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number, @GetUser('id') userId: number) {
     return this.proposalsService.remove(id, userId);
@@ -73,6 +115,16 @@ export class ProposalsController {
     @GetUser('id') userId: number,
   ) {
     return this.proposalsService.accept(id, dto, userId);
+  }
+
+  @Roles('LECTURER')
+  @Post(':id/request-changes')
+  requestChanges(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: RequestChangesProposalDto,
+    @GetUser('id') userId: number,
+  ) {
+    return this.proposalsService.requestChanges(id, dto, userId);
   }
 
   @Roles('LECTURER')

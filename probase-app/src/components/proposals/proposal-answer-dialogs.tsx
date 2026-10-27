@@ -3,7 +3,11 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { ApiError } from '@/lib/api/client';
-import { useAcceptProposal, useRejectProposal } from '@/lib/api/proposals';
+import {
+  useAcceptProposal,
+  useRejectProposal,
+  useRequestChangesProposal,
+} from '@/lib/api/proposals';
 import type { TopicProposal } from '@/lib/api/types';
 import { toast } from 'sonner';
 import { FormError } from '@/components/shared/form-error';
@@ -183,6 +187,98 @@ export function RejectProposalDialog({
           >
             {reject.isPending && <Loader2 className="animate-spin" />}
             Gửi nhận xét
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function RequestChangesProposalDialog({
+  proposal,
+  open,
+  onOpenChange,
+}: {
+  proposal: TopicProposal;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  }) {
+  const requestChanges = useRequestChangesProposal();
+  const [feedback, setFeedback] = useState(proposal.lecturerFeedback ?? '');
+  const [error, setError] = useState<string | null>(null);
+
+  const trimmed = feedback.trim();
+  const valid = trimmed.length >= 5;
+
+  async function submit() {
+    setError(null);
+    try {
+      await requestChanges.mutateAsync({ id: proposal.id, feedback: trimmed });
+      toast.success('Đã gửi yêu cầu chỉnh sửa cho sinh viên.');
+      onOpenChange(false);
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : 'Không kết nối được máy chủ',
+      );
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!requestChanges.isPending) onOpenChange(next);
+      }}
+    >
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Yêu cầu sinh viên chỉnh sửa đề xuất</DialogTitle>
+          <DialogDescription>{proposal.title}</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <FormError message={error} />
+
+          <div className="space-y-2">
+            <Label htmlFor="feedback">Góp ý & Yêu cầu chỉnh sửa</Label>
+            <p className="-mt-1 text-xs text-muted-foreground">
+              Ghi rõ những điểm sinh viên cần làm rõ, bổ sung tài liệu hoặc điều
+              chỉnh phạm vi. Sinh viên sẽ nhận được thông báo để cập nhật và gửi
+              lại cho bạn.
+            </p>
+            <Textarea
+              id="feedback"
+              rows={5}
+              maxLength={2000}
+              placeholder="Ví dụ: Em cần làm rõ kiến trúc hệ thống, phạm vi công việc và bổ sung sơ đồ CSDL..."
+              value={feedback}
+              aria-invalid={!valid && trimmed.length > 0}
+              onChange={(event) => setFeedback(event.target.value)}
+            />
+            {trimmed.length > 0 && !valid && (
+              <p className="text-xs text-destructive">
+                Nhận xét phải có ít nhất 5 ký tự.
+              </p>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            disabled={requestChanges.isPending}
+            onClick={() => onOpenChange(false)}
+          >
+            Huỷ
+          </Button>
+          <Button
+            disabled={!valid || requestChanges.isPending}
+            onClick={submit}
+          >
+            {requestChanges.isPending && (
+              <Loader2 className="animate-spin" />
+            )}
+            Gửi yêu cầu chỉnh sửa
           </Button>
         </DialogFooter>
       </DialogContent>

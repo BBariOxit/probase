@@ -22,3 +22,15 @@ export const RejectProposalSchema = z.object({
 });
 
 export class RejectProposalDto extends createZodDto(RejectProposalSchema) {}
+
+export const RequestChangesProposalSchema = z.object({
+  feedback: z
+    .string('Vui lòng nhập nhận xét/yêu cầu chỉnh sửa cho sinh viên')
+    .trim()
+    .min(5, 'Nhận xét phải có ít nhất 5 ký tự')
+    .max(2000, 'Nhận xét tối đa 2000 ký tự'),
+});
+
+export class RequestChangesProposalDto extends createZodDto(
+  RequestChangesProposalSchema,
+) {}

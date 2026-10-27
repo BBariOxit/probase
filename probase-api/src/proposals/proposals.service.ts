@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -12,6 +13,7 @@ import {
   TopicProposalStatus,
   TopicStatus,
 } from '../../generated/prisma/client';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { MentoringLoadService } from '../lecturers/mentoring-load.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -21,6 +23,7 @@ import { CreateProposalDto } from './dto/create-proposal.dto';
 import {
   AcceptProposalDto,
   RejectProposalDto,
+  RequestChangesProposalDto,
 } from './dto/answer-proposal.dto';
 import { QueryProposalsDto } from './dto/query-proposals.dto';
 import { UpdateProposalDto } from './dto/update-proposal.dto';
@@ -51,6 +54,18 @@ const PROPOSAL_SELECT = {
   acceptedByLecturer: {
     select: { id: true, fullName: true, academicTitle: true },
   },
+  attachments: {
+    select: {
+      id: true,
+      fileUrl: true,
+      filePublicId: true,
+      fileName: true,
+      fileSize: true,
+      fileType: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: 'asc' },
+  },
   // What the yes turned into. Its status matters as much as its id: a topic
   // accepted by a lecturer still waits on the faculty office, and a student
   // staring at a register button that is not there deserves to know which of the
@@ -70,6 +85,7 @@ export class ProposalsService {
     private readonly phases: RoundPhaseService,
     private readonly notifications: NotificationsService,
     private readonly mentoring: MentoringLoadService,
+    private readonly cloudinary: CloudinaryService,
   ) {}
 
   async create(dto: CreateProposalDto, userId: number) {
@@ -186,9 +202,29 @@ export class ProposalsService {
 
     await this.requireOwnPending(id, student.id, proposal.status);
 
+    const attachments = await this.prisma.proposalAttachment.findMany({
+      where: { proposalId: id },
+    });
+
+    for (const att of attachments) {
+      await this.cloudinary.destroy(
+        att.filePublicId,
+        att.fileType === 'IMAGE' ? 'image' : 'raw',
+      );
+    }
+
     await this.prisma.$transaction([
       this.prisma.notification.deleteMany({
-        where: { type: 'PROPOSAL_SUBMITTED', targetId: id },
+        where: {
+          type: {
+            in: [
+              'PROPOSAL_SUBMITTED',
+              'PROPOSAL_RESUBMITTED',
+              'PROPOSAL_REVISION_REQUESTED',
+            ],
+          },
+          targetId: id,
+        },
       }),
       this.prisma.topicProposal.delete({ where: { id } }),
     ]);
@@ -278,6 +314,139 @@ export class ProposalsService {
     ]);
 
     return render(updated);
+  }
+
+  async requestChanges(
+    id: number,
+    dto: RequestChangesProposalDto,
+    userId: number,
+  ) {
+    const lecturer = await this.requireOwnLecturerProfile(userId);
+    const proposal = await this.requireAnswerable(id, lecturer.id);
+
+    const updated = await this.prisma.topicProposal.update({
+      where: { id, status: TopicProposalStatus.PENDING },
+      data: {
+        status: TopicProposalStatus.NEEDS_REVISION,
+        lecturerFeedback: dto.feedback,
+      },
+      select: PROPOSAL_SELECT,
+    });
+
+    await this.notifications.notify([
+      {
+        userId: proposal.student.userId,
+        type: 'PROPOSAL_REVISION_REQUESTED',
+        title: 'Giảng viên yêu cầu chỉnh sửa đề xuất',
+        content: `${lecturerName(lecturer)} đã gửi góp ý và yêu cầu bạn chỉnh sửa đề tài "${proposal.title}". Nhấn để xem và cập nhật.`,
+        targetId: proposal.id,
+      },
+    ]);
+
+    return render(updated);
+  }
+
+  async resubmit(id: number, dto: UpdateProposalDto, userId: number) {
+    const student = await this.requireStudent(userId);
+    const proposal = await this.requireProposal(id);
+
+    await this.requireOwnPending(id, student.id, proposal.status);
+
+    const updated = await this.prisma.topicProposal.update({
+      where: { id },
+      data: {
+        ...dto,
+        status: TopicProposalStatus.PENDING,
+      },
+      select: PROPOSAL_SELECT,
+    });
+
+    if (updated.requestedLecturer) {
+      const lecturer = await this.prisma.lecturerProfile.findUnique({
+        where: { id: updated.requestedLecturer.id },
+        select: { userId: true },
+      });
+
+      if (lecturer) {
+        await this.notifications.notify([
+          {
+            userId: lecturer.userId,
+            type: 'PROPOSAL_RESUBMITTED',
+            title: 'Sinh viên đã gửi lại đề xuất',
+            content: `${student.fullName} đã cập nhật lại đề xuất "${updated.title}" sau khi nhận góp ý. Vui lòng kiểm tra lại.`,
+            targetId: updated.id,
+          },
+        ]);
+      }
+    }
+
+    return render(updated);
+  }
+
+  async uploadAttachment(
+    id: number,
+    file: Express.Multer.File,
+    userId: number,
+  ) {
+    const student = await this.requireStudent(userId);
+    const proposal = await this.requireProposal(id);
+
+    await this.requireOwnPending(id, student.id, proposal.status);
+
+    const count = await this.prisma.proposalAttachment.count({
+      where: { proposalId: id },
+    });
+    if (count >= 5) {
+      throw new BadRequestException('Mỗi đề xuất chỉ được đính kèm tối đa 5 tệp.');
+    }
+
+    const stored = await this.cloudinary.uploadProposalAttachment(file);
+
+    return this.prisma.proposalAttachment.create({
+      data: {
+        proposalId: id,
+        fileUrl: stored.url,
+        filePublicId: stored.publicId,
+        fileName: stored.fileName,
+        fileSize: stored.bytes,
+        fileType: stored.fileType,
+      },
+      select: {
+        id: true,
+        fileUrl: true,
+        filePublicId: true,
+        fileName: true,
+        fileSize: true,
+        fileType: true,
+        createdAt: true,
+      },
+    });
+  }
+
+  async removeAttachment(id: number, attachmentId: number, userId: number) {
+    const student = await this.requireStudent(userId);
+    const proposal = await this.requireProposal(id);
+
+    await this.requireOwnPending(id, student.id, proposal.status);
+
+    const attachment = await this.prisma.proposalAttachment.findFirst({
+      where: { id: attachmentId, proposalId: id },
+    });
+
+    if (!attachment) {
+      throw new NotFoundException('Không tìm thấy tệp đính kèm');
+    }
+
+    await this.cloudinary.destroy(
+      attachment.filePublicId,
+      attachment.fileType === 'IMAGE' ? 'image' : 'raw',
+    );
+
+    await this.prisma.proposalAttachment.delete({
+      where: { id: attachmentId },
+    });
+
+    return { message: 'Đã xoá tệp đính kèm' };
   }
 
   // ── guards ────────────────────────────────────────────────
@@ -396,9 +565,12 @@ export class ProposalsService {
 
     if (!owned) throw new NotFoundException('Không tìm thấy đề xuất');
 
-    if (status !== TopicProposalStatus.PENDING) {
+    if (
+      status !== TopicProposalStatus.PENDING &&
+      status !== TopicProposalStatus.NEEDS_REVISION
+    ) {
       throw new ConflictException(
-        'Đề xuất đã được trả lời nên không sửa hay rút lại được nữa. Bạn có thể gửi một đề xuất mới.',
+        'Đề xuất đã được chốt (nhận hoặc từ chối) nên không sửa hay rút lại được nữa.',
       );
     }
   }
@@ -437,13 +609,18 @@ export class ProposalsService {
 
   private async requireNoPendingProposal(studentId: number) {
     const pending = await this.prisma.topicProposal.findFirst({
-      where: { studentId, status: TopicProposalStatus.PENDING },
+      where: {
+        studentId,
+        status: {
+          in: [TopicProposalStatus.PENDING, TopicProposalStatus.NEEDS_REVISION],
+        },
+      },
       select: { id: true },
     });
 
     if (pending) {
       throw new ConflictException(
-        'Bạn đang có một đề xuất chờ trả lời. Rút lại đề xuất đó trước khi gửi cái mới.',
+        'Bạn đang có một đề xuất đang chờ phản hồi hoặc cần chỉnh sửa. Hãy hoàn thiện hoặc rút lại đề xuất đó trước khi gửi cái mới.',
       );
     }
   }

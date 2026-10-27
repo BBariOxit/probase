@@ -10,8 +10,10 @@ import { v2 as cloudinary, type UploadApiResponse } from 'cloudinary';
 const AVATAR_FOLDER = 'probase/avatars';
 
 const DOCUMENT_FOLDER = 'probase/submissions';
+const PROPOSAL_ATTACHMENT_FOLDER = 'probase/proposals';
 
 export const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024;
+export const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
 
 const DOCUMENT_SIGNATURES: {
   name: string;
@@ -73,6 +75,14 @@ export interface StoredDocument {
 
   fileName: string;
   bytes: number;
+}
+
+export interface StoredProposalAttachment {
+  url: string;
+  publicId: string;
+  fileName: string;
+  bytes: number;
+  fileType: 'IMAGE' | 'DOCUMENT';
 }
 
 @Injectable()
@@ -175,6 +185,62 @@ export class CloudinaryService {
       publicId: result.public_id,
       fileName: safeFileName(file.originalname),
       bytes: file.buffer.length,
+    };
+  }
+
+  async uploadProposalAttachment(
+    file: Express.Multer.File,
+  ): Promise<StoredProposalAttachment> {
+    const buffer = file?.buffer;
+    if (!buffer?.length) {
+      throw new BadRequestException('Tệp rỗng, hãy chọn lại file.');
+    }
+    if (buffer.length > MAX_ATTACHMENT_BYTES) {
+      throw new BadRequestException('File đính kèm vượt quá 15MB.');
+    }
+
+    const isImg = IMAGE_SIGNATURES.some((s) => s.matches(buffer));
+    const isDoc = DOCUMENT_SIGNATURES.some((s) => s.matches(buffer));
+
+    if (!isImg && !isDoc) {
+      throw new BadRequestException(
+        'Chỉ nhận file ảnh (PNG, JPEG, WebP) hoặc tài liệu (PDF, Word, ZIP).',
+      );
+    }
+
+    this.assertConfigured(isImg ? 'ảnh' : 'tệp');
+
+    const resourceType = isImg ? 'image' : 'raw';
+    const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: PROPOSAL_ATTACHMENT_FOLDER,
+          use_filename: false,
+          unique_filename: true,
+          overwrite: false,
+          resource_type: resourceType,
+        },
+        (error, uploaded) => {
+          if (error || !uploaded) {
+            return reject(
+              error instanceof Error
+                ? error
+                : new Error('Cloudinary upload failed'),
+            );
+          }
+          resolve(uploaded);
+        },
+      );
+
+      stream.end(file.buffer);
+    });
+
+    return {
+      url: result.secure_url,
+      publicId: result.public_id,
+      fileName: safeFileName(file.originalname),
+      bytes: file.buffer.length,
+      fileType: isImg ? 'IMAGE' : 'DOCUMENT',
     };
   }
 

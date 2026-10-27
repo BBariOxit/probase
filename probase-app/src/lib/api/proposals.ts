@@ -3,7 +3,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 import { topicKeys } from '@/lib/api/topics';
-import type { Paginated, ProposalStatus, TopicProposal } from '@/lib/api/types';
+import type {
+  Paginated,
+  ProposalAttachment,
+  ProposalStatus,
+  TopicProposal,
+} from '@/lib/api/types';
 
 export interface ProposalQuery {
   status?: ProposalStatus;
@@ -124,6 +129,67 @@ export function useRejectProposal() {
         method: 'POST',
         body: { feedback },
       }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useRequestChangesProposal() {
+  const invalidate = useInvalidateProposals();
+
+  return useMutation({
+    mutationFn: ({ id, feedback }: { id: number; feedback: string }) =>
+      api<TopicProposal>(`/proposals/${id}/request-changes`, {
+        method: 'POST',
+        body: { feedback },
+      }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useResubmitProposal() {
+  const invalidate = useInvalidateProposals();
+
+  return useMutation({
+    mutationFn: ({ id, ...patch }: ProposalPatch & { id: number }) =>
+      api<TopicProposal>(`/proposals/${id}/resubmit`, {
+        method: 'POST',
+        body: patch,
+      }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUploadProposalAttachment() {
+  const invalidate = useInvalidateProposals();
+
+  return useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) => {
+      const form = new FormData();
+      form.append('file', file);
+      return api<ProposalAttachment>(`/proposals/${id}/attachments`, {
+        method: 'POST',
+        body: form,
+      });
+    },
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteProposalAttachment() {
+  const invalidate = useInvalidateProposals();
+
+  return useMutation({
+    mutationFn: ({
+      proposalId,
+      attachmentId,
+    }: {
+      proposalId: number;
+      attachmentId: number;
+    }) =>
+      api<{ message: string }>(
+        `/proposals/${proposalId}/attachments/${attachmentId}`,
+        { method: 'DELETE' },
+      ),
     onSuccess: invalidate,
   });
 }

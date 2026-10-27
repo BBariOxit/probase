@@ -7,6 +7,7 @@ import { TextSection } from '@/components/shared/text-section';
 
 const PROPOSAL_STATUS: Record<ProposalStatus, StatusLabel> = {
   PENDING: { label: 'Chờ trả lời', tone: 'waiting' },
+  NEEDS_REVISION: { label: 'Cần chỉnh sửa', tone: 'active' },
   ACCEPTED: { label: 'Đã được nhận', tone: 'success' },
   REJECTED: { label: 'Từ chối', tone: 'danger' },
 };

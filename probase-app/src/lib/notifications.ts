@@ -10,6 +10,7 @@ export function notificationHref(
       // they are opening it for is the queue, and the one they were told about
       // is at the top of it — pending first is the order the API returns.
       case 'PROPOSAL_SUBMITTED':
+      case 'PROPOSAL_RESUBMITTED':
         return '/lecturer/proposals';
 
       // The office put somebody on their topic. `targetId` is that topic, and
@@ -45,6 +46,7 @@ export function notificationHref(
     */
     case 'PROPOSAL_ACCEPTED':
     case 'PROPOSAL_REJECTED':
+    case 'PROPOSAL_REVISION_REQUESTED':
       return '/student/proposals';
 
     case 'GROUP_MEMBER_JOINED':

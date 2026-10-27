@@ -124,6 +124,8 @@ export interface TopicAvailability {
 
 export type NotificationType =
   | 'PROPOSAL_SUBMITTED'
+  | 'PROPOSAL_REVISION_REQUESTED'
+  | 'PROPOSAL_RESUBMITTED'
   | 'PROPOSAL_ACCEPTED'
   | 'PROPOSAL_REJECTED'
   | 'GROUP_MEMBER_JOINED'
@@ -670,7 +672,21 @@ export interface Submission {
   isLate: boolean;
 }
 
-export type ProposalStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
+export type ProposalStatus =
+  | 'PENDING'
+  | 'NEEDS_REVISION'
+  | 'ACCEPTED'
+  | 'REJECTED';
+
+export interface ProposalAttachment {
+  id: number;
+  fileUrl: string;
+  filePublicId: string;
+  fileName: string;
+  fileSize: number;
+  fileType: 'IMAGE' | 'DOCUMENT';
+  createdAt: string;
+}
 
 export interface TopicProposal {
   id: number;
@@ -702,6 +718,8 @@ export interface TopicProposal {
     fullName: string;
     academicTitle: string | null;
   } | null;
+
+  attachments: ProposalAttachment[];
 
   convertedTopic: { id: number; title: string; status: TopicStatus } | null;
 }

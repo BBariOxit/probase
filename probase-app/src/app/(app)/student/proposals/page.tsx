@@ -45,7 +45,9 @@ export default function StudentProposalsPage() {
   if (!allowed) return null;
 
   const proposals = data?.items ?? [];
-  const pending = proposals.find((one) => one.status === 'PENDING');
+  const pending = proposals.find(
+    (one) => one.status === 'PENDING' || one.status === 'NEEDS_REVISION',
+  );
 
   /*
     Whether *any* round this student belongs to would still take a proposal.
@@ -62,7 +64,9 @@ export default function StudentProposalsPage() {
   const blocked = group
     ? 'Bạn đã có đề tài trong học kỳ này. Muốn đề xuất đề tài khác thì rời nhóm trước.'
     : pending
-      ? 'Bạn đang có một đề xuất chờ trả lời. Rút lại đề xuất đó nếu muốn gửi cái khác.'
+      ? pending.status === 'NEEDS_REVISION'
+        ? 'Bạn có đề xuất cần chỉnh sửa theo yêu cầu của giảng viên. Nhấn Sửa & Gửi lại bên dưới.'
+        : 'Bạn đang có một đề xuất chờ trả lời. Rút lại đề xuất đó nếu muốn gửi cái khác.'
       : closedReason;
 
   return (
@@ -185,7 +189,8 @@ function SentProposal({
 }) {
   const withdraw = useWithdrawProposal();
   const [confirming, setConfirming] = useState(false);
-  const editable = proposal.status === 'PENDING';
+  const editable =
+    proposal.status === 'PENDING' || proposal.status === 'NEEDS_REVISION';
 
   return (
     <>
@@ -212,12 +217,16 @@ function SentProposal({
           editable && (
             <>
               <Button
-                variant="outline"
+                variant={
+                  proposal.status === 'NEEDS_REVISION' ? 'default' : 'outline'
+                }
                 size="sm"
                 render={<Link href={`/student/proposals/${proposal.id}`} />}
               >
                 <Pencil />
-                Sửa
+                {proposal.status === 'NEEDS_REVISION'
+                  ? 'Sửa & Gửi lại'
+                  : 'Sửa'}
               </Button>
               <Button
                 variant="ghost"
@@ -251,6 +260,23 @@ function Answer({
   proposal: TopicProposal;
   registeredTopicId: number | null;
 }) {
+  if (proposal.status === 'NEEDS_REVISION') {
+    return (
+      <section className="space-y-1.5 rounded-lg border border-status-active/30 bg-status-active-bg/40 px-3 py-2.5">
+        <h3 className="text-xs font-semibold text-status-active">
+          Giảng viên yêu cầu chỉnh sửa đề xuất
+        </h3>
+        <p className="text-sm whitespace-pre-line break-words text-foreground">
+          {proposal.lecturerFeedback}
+        </p>
+        <p className="pt-0.5 text-xs text-muted-foreground">
+          Nhấn &quot;Sửa & Gửi lại&quot; để bổ sung thông tin hoặc tệp đính kèm
+          theo góp ý của thầy/cô.
+        </p>
+      </section>
+    );
+  }
+
   if (proposal.status === 'REJECTED') {
     return (
       <section className="space-y-1 rounded-lg border border-status-danger/25 bg-status-danger-bg/40 px-3 py-2.5">
