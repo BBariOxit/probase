@@ -32,12 +32,15 @@ import {
 } from '@/components/ui/select';
 import { DEFAULT_PAGE_SIZE } from '@/constants/pagination.constant';
 import { PROPOSAL_STATUS_FILTERS } from '@/constants/status.constant';
+import { usePagination } from '@/hooks';
 
 export default function LecturerProposalsPage() {
   const allowed = useRequireRole('LECTURER');
   const { data: profile } = useMyProfile();
   const [status, setStatus] = useState<ProposalStatus | 'ALL'>('PENDING');
-  const [page, setPage] = useState(1);
+  const { page, setPage, resetPage } = usePagination({
+    initialPageSize: DEFAULT_PAGE_SIZE,
+  });
 
   const { data, isPending, error } = useProposals({
     status: status === 'ALL' ? undefined : status,
@@ -58,9 +61,7 @@ export default function LecturerProposalsPage() {
             value={status}
             onValueChange={(value) => {
               setStatus(value as ProposalStatus | 'ALL');
-              // The page number belongs to the old filter; keeping it lands the
-              // reader on an empty page of a shorter list.
-              setPage(1);
+              resetPage();
             }}
           >
             <SelectTrigger className="w-full" aria-label="Lọc theo trạng thái">

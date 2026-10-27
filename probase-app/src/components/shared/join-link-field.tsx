@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
+import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -12,24 +12,8 @@ export function joinUrl(code: string): string {
 }
 
 export function JoinLinkField({ code }: { code: string }) {
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard();
   const url = joinUrl(code);
-
-  useEffect(() => {
-    if (!copied) return;
-
-    const timer = setTimeout(() => setCopied(false), 2000);
-    return () => clearTimeout(timer);
-  }, [copied]);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-    } catch {
-      // Clipboard refused — the field is selectable as fallback.
-    }
-  }
 
   return (
     <div className="flex gap-2">
@@ -40,7 +24,7 @@ export function JoinLinkField({ code }: { code: string }) {
         aria-label="Link mời vào nhóm"
         className="border-transparent bg-muted font-mono text-xs shadow-none"
       />
-      <Button type="button" onClick={copy} className="shrink-0">
+      <Button type="button" onClick={() => copy(url)} className="shrink-0">
         {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
         {copied ? 'Đã sao chép' : 'Sao chép'}
       </Button>

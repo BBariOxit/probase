@@ -27,13 +27,16 @@ import { ProposalCard } from '@/components/proposals/proposal-card';
 import { ProposalDetailSheet } from '@/components/proposals/proposal-detail-sheet';
 import { Button } from '@/components/ui/button';
 import { PROPOSAL_PAGE_SIZE } from '@/constants/pagination.constant';
+import { usePagination } from '@/hooks';
 
 export default function StudentProposalsPage() {
   const allowed = useRequireRole('STUDENT');
   const semester = useActiveSemester();
   const { data: rounds } = useMyRounds(semester?.id);
   const { data: group } = useMyGroup();
-  const [page, setPage] = useState(1);
+  const { page, setPage } = usePagination({
+    initialPageSize: PROPOSAL_PAGE_SIZE,
+  });
 
   const [viewingProposal, setViewingProposal] = useState<TopicProposal | null>(
     null,

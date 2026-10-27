@@ -54,11 +54,12 @@ import {
 } from '@/components/ui/table';
 import { TOPIC_PAGE_SIZE } from '@/constants/pagination.constant';
 import { TOPIC_STATUS_FILTERS } from '@/constants/status.constant';
+import { useDebounce, useDisclosure, usePagination } from '@/hooks';
 
 function RowActions({ topic }: { topic: TopicListItem }) {
   const transition = useTopicTransition();
   const remove = useDeleteTopic();
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const deleteDialog = useDisclosure();
 
   const canEdit =
     topic.status !== 'IN_PROGRESS' && topic.status !== 'COMPLETED';
@@ -128,7 +129,7 @@ function RowActions({ topic }: { topic: TopicListItem }) {
             {canDelete && (
               <DropdownMenuItem
                 variant="destructive"
-                onClick={() => setConfirmingDelete(true)}
+                onClick={deleteDialog.onOpen}
               >
                 <Trash2 />
                 Xoá
@@ -139,8 +140,8 @@ function RowActions({ topic }: { topic: TopicListItem }) {
       </div>
 
       <ConfirmDialog
-        open={confirmingDelete}
-        onOpenChange={setConfirmingDelete}
+        open={deleteDialog.isOpen}
+        onOpenChange={deleteDialog.setIsOpen}
         title="Xoá đề tài?"
         description={`"${topic.title}" sẽ bị xoá vĩnh viễn. Không thể hoàn tác.`}
         confirmLabel="Xoá đề tài"
@@ -152,11 +153,13 @@ function RowActions({ topic }: { topic: TopicListItem }) {
 
 export default function LecturerTopicsPage() {
   const allowed = useRequireRole('LECTURER');
-  const [page, setPage] = useState(1);
+  const { page, setPage, resetPage } = usePagination({
+    initialPageSize: TOPIC_PAGE_SIZE,
+  });
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('ALL');
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
-  const debouncedSearch = useDebouncedValue(search);
+  const debouncedSearch = useDebounce(search);
 
   const { data, isPending, error } = useTopics({
     mine: true,
@@ -188,7 +191,7 @@ export default function LecturerTopicsPage() {
             value={search}
             onChange={(event) => {
               setSearch(event.target.value);
-              setPage(1);
+              resetPage();
             }}
             placeholder="Tìm theo tên đề tài…"
             className="pl-8"
@@ -200,7 +203,7 @@ export default function LecturerTopicsPage() {
           value={status}
           onValueChange={(value) => {
             setStatus(value as string);
-            setPage(1);
+            resetPage();
           }}
         >
           <SelectTrigger className="w-56" aria-label="Lọc theo trạng thái">
