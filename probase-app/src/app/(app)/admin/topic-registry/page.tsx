@@ -21,7 +21,7 @@ import { useDebouncedValue } from '@/lib/use-debounced-value';
 import type { Semester, TopicListItem, TopicStatus } from '@/lib/api/types';
 import { useSemesters } from '@/lib/api/master-data';
 import { BulkOpenDialog } from '@/components/admin/bulk-open-dialog';
-import { TopicReviewSheet } from '@/components/admin/topic-review-sheet';
+import { TopicReviewModal } from '@/components/topics/topic-review-modal';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { Button } from '@/components/ui/button';
@@ -46,23 +46,40 @@ const PAGE_SIZE = 15;
 
 const STATUS_OPTIONS: { value: TopicStatus | 'ALL'; label: string }[] = [
   { value: 'ALL', label: 'Mọi trạng thái' },
+  { value: 'PENDING_DEPARTMENT', label: 'Chờ Bộ môn duyệt' },
+  { value: 'PENDING_FACULTY', label: 'Chờ Khoa duyệt' },
   { value: 'APPROVED', label: 'Đã duyệt — chờ mở' },
   { value: 'OPEN', label: 'Đang mở' },
   { value: 'IN_PROGRESS', label: 'Đang thực hiện' },
   { value: 'COMPLETED', label: 'Hoàn thành' },
+  { value: 'REJECTED', label: 'Bị từ chối' },
 ];
 
 const STATUS_LABELS: Record<TopicStatus, { label: string; className: string }> =
   {
     DRAFT: { label: 'Bản nháp', className: 'text-muted-foreground' },
     PENDING: { label: 'Chờ duyệt', className: 'text-muted-foreground' },
+    PENDING_DEPARTMENT: {
+      label: 'Chờ Bộ môn',
+      className: 'text-orange-600 dark:text-orange-400',
+    },
+    PENDING_FACULTY: {
+      label: 'Chờ Khoa',
+      className: 'text-blue-600 dark:text-blue-400',
+    },
+    APPROVED_OPEN: {
+      label: 'Đã duyệt mở',
+      className: 'text-emerald-600 dark:text-emerald-400',
+    },
     APPROVED: {
       label: 'Đã duyệt',
       className: 'text-amber-600 dark:text-amber-400',
     },
     OPEN: { label: 'Đang mở', className: 'text-green-600 dark:text-green-400' },
+    ASSIGNED: { label: 'Đã giao nhóm', className: 'text-purple-600' },
     IN_PROGRESS: { label: 'Đang làm', className: 'text-blue-600' },
     COMPLETED: { label: 'Hoàn thành', className: 'text-muted-foreground' },
+    REJECTED: { label: 'Bị từ chối', className: 'text-rose-600' },
   };
 
 const dateFormat = new Intl.DateTimeFormat('vi-VN', {
@@ -378,10 +395,12 @@ export default function AdminTopicRegistryPage() {
         />
       )}
 
-      {/* ── Detail sheet ── */}
-      <TopicReviewSheet
+      {/* ── Detail review modal ── */}
+      <TopicReviewModal
         topicId={selectedTopicId}
         onClose={() => setSelectedTopicId(null)}
+        isAdmin={true}
+        stage="AUTO"
       />
 
       {/* ── Bulk open dialog ── */}

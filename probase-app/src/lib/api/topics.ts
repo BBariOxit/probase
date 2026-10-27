@@ -115,3 +115,51 @@ export function useBulkOpenTopics() {
       queryClient.invalidateQueries({ queryKey: topicKeys.lists() }),
   });
 }
+
+export function useDepartmentReviewTopic() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: import('@/lib/api/types').DepartmentReviewInput;
+    }) => topicService.reviewDepartment(id, data),
+    onSuccess: (topic) => {
+      queryClient.setQueryData(topicKeys.detail(topic.id), topic);
+      return queryClient.invalidateQueries({ queryKey: topicKeys.all });
+    },
+  });
+}
+
+export function useFacultyReviewTopic() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: import('@/lib/api/types').FacultyReviewInput;
+    }) => topicService.reviewFaculty(id, data),
+    onSuccess: (topic) => {
+      queryClient.setQueryData(topicKeys.detail(topic.id), topic);
+      return queryClient.invalidateQueries({ queryKey: topicKeys.all });
+    },
+  });
+}
+
+export function useTopicSimilarity(
+  id: number,
+  options?: { enabled?: boolean },
+) {
+  return useQuery({
+    queryKey: [...topicKeys.all, 'similarity', id],
+    queryFn: () => topicService.getSimilarity(id),
+    enabled: options?.enabled ?? true,
+    staleTime: 30_000,
+  });
+}
