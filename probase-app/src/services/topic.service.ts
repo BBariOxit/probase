@@ -1,7 +1,10 @@
 import { api } from '@/lib/api/client';
 import type {
   BulkOpenResult,
+  DepartmentReviewInput,
+  FacultyReviewInput,
   Paginated,
+  SimilarityMatch,
   TopicDetail,
   TopicListItem,
   TopicStatus,
@@ -11,7 +14,9 @@ export interface TopicQuery {
   semesterId?: number;
   projectTypeId?: number;
   lecturerId?: number;
+  majorId?: number;
   status?: TopicStatus;
+  reviewStage?: 'DEPARTMENT' | 'FACULTY' | 'ALL';
   q?: string;
   mine?: boolean;
   forMyCohort?: boolean;
@@ -28,9 +33,12 @@ export interface TopicLecturer {
 export interface TopicInput {
   semesterId: number;
   projectTypeId: number;
+  majorId?: number;
   title: string;
   description: string;
+  objectives?: string;
   expectedOutcomes: string;
+  techStack?: string;
   maxStudents: number;
 }
 
@@ -82,6 +90,24 @@ export const topicService = {
     return api<TopicDetail>(`/topics/${id}/${to}`, {
       method: 'PATCH',
     });
+  },
+
+  reviewDepartment(id: number, input: DepartmentReviewInput) {
+    return api<TopicDetail>(`/topics/${id}/department-review`, {
+      method: 'PATCH',
+      body: input,
+    });
+  },
+
+  reviewFaculty(id: number, input: FacultyReviewInput) {
+    return api<TopicDetail>(`/topics/${id}/faculty-review`, {
+      method: 'PATCH',
+      body: input,
+    });
+  },
+
+  getSimilarity(id: number) {
+    return api<SimilarityMatch[]>(`/topics/${id}/similarity`);
   },
 
   submitDrafts(topicIds?: number[]) {

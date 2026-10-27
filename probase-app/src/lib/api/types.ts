@@ -30,8 +30,22 @@ export interface MeResponse {
   isActive: boolean;
   mustChangePassword: boolean;
   avatarUrl: string | null;
-  studentProfile: { fullName: string; studentCode: string } | null;
-  lecturerProfile: { fullName: string; lecturerCode: string } | null;
+  studentProfile: {
+    fullName: string;
+    studentCode: string;
+    class?: string;
+    cohort?: string;
+    major?: { id: number; name: string; code: string } | null;
+  } | null;
+  lecturerProfile: {
+    fullName: string;
+    lecturerCode: string;
+    academicTitle?: string | null;
+    isHeadOfDepartment?: boolean;
+    isFacultyBoard?: boolean;
+    isAcademicAssistant?: boolean;
+    major?: { id: number; name: string; code: string } | null;
+  } | null;
 }
 
 export function displayName(me: MeResponse): string {
@@ -103,10 +117,15 @@ export interface ActiveGroup {
 export type TopicStatus =
   | 'DRAFT'
   | 'PENDING'
+  | 'PENDING_DEPARTMENT'
+  | 'PENDING_FACULTY'
+  | 'APPROVED_OPEN'
   | 'APPROVED'
   | 'OPEN'
+  | 'ASSIGNED'
   | 'IN_PROGRESS'
-  | 'COMPLETED';
+  | 'COMPLETED'
+  | 'REJECTED';
 
 export interface TopicAvailability {
   occupiedSeats: number;
@@ -172,6 +191,20 @@ export interface TopicListItem extends TopicAvailability {
   title: string;
   maxStudents: number;
   status: TopicStatus;
+  majorId?: number | null;
+  major?: { id: number; name: string; code: string } | null;
+  departmentFeedback?: string | null;
+  facultyFeedback?: string | null;
+  departmentReviewer?: {
+    id: number;
+    fullName: string;
+    academicTitle: string | null;
+  } | null;
+  facultyApprover?: {
+    id: number;
+    fullName: string;
+    academicTitle: string | null;
+  } | null;
   createdAt: string;
   semester: { id: number; name: string; code: string };
   round: TopicRound;
@@ -185,8 +218,24 @@ export interface TopicDetail extends TopicAvailability {
   title: string;
   description: string;
   expectedOutcomes: string;
+  objectives?: string | null;
+  techStack?: string | null;
   maxStudents: number;
   status: TopicStatus;
+  majorId?: number | null;
+  major?: { id: number; name: string; code: string } | null;
+  departmentFeedback?: string | null;
+  facultyFeedback?: string | null;
+  departmentReviewer?: {
+    id: number;
+    fullName: string;
+    academicTitle: string | null;
+  } | null;
+  facultyApprover?: {
+    id: number;
+    fullName: string;
+    academicTitle: string | null;
+  } | null;
   createdAt: string;
   updatedAt: string;
   semesterId: number;
@@ -205,6 +254,29 @@ export interface TopicDetail extends TopicAvailability {
   roundPhase: RoundPhase;
 
   isRegistrationOpen: boolean;
+}
+
+export interface DepartmentReviewInput {
+  action: 'APPROVE' | 'REQUEST_REVISION' | 'REJECT';
+  feedback?: string;
+}
+
+export interface FacultyReviewInput {
+  action: 'APPROVE' | 'REQUEST_REVISION' | 'REJECT';
+  feedback?: string;
+}
+
+export interface SimilarityMatch {
+  matchedTopicId: number;
+  matchedTitle: string;
+  matchedLecturerName: string;
+  matchedSemesterName: string;
+  similarityScore: number;
+  matchedFields: {
+    titleSimilarity: number;
+    contentSimilarity: number;
+    overlappingKeywords: string[];
+  };
 }
 
 export type GroupJoinSource = 'SELF' | 'LINK' | 'ASSIGNED';
