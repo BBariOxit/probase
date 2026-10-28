@@ -163,7 +163,10 @@ export type NotificationType =
   | 'REGISTRATION_CLOSING_SOON'
   | 'SUBMISSION_DUE_SOON'
   | 'GRADE_PUBLISHED'
-  | 'DEADLINE_REMINDER';
+  | 'DEADLINE_REMINDER'
+  | 'OUTLINE_SUBMITTED'
+  | 'OUTLINE_REVISION_REQUESTED'
+  | 'OUTLINE_APPROVED';
 
 export interface AppNotification {
   id: number;
@@ -881,3 +884,96 @@ export interface ProgressRow {
     submitted: number;
   }[];
 }
+
+export type OutlineStatus =
+  | 'NOT_SUBMITTED'
+  | 'SUBMITTED'
+  | 'NEEDS_REVISION'
+  | 'APPROVED_BY_LECTURER';
+
+export interface TopicOutline {
+  id?: number;
+  groupId?: number;
+  topicId?: number;
+  status: OutlineStatus;
+  attachmentUrl?: string | null;
+  fileName?: string | null;
+  fileSize?: number | null;
+  submittedAt?: string | null;
+  approvedAt?: string | null;
+  lecturerFeedback?: string | null;
+  submittedBy?: {
+    id: number;
+    email: string;
+    studentProfile?: {
+      fullName: string;
+      studentCode: string;
+    } | null;
+  } | null;
+}
+
+export interface StudentGroupOutlineResponse {
+  hasGroup: boolean;
+  hasTopic?: boolean;
+  message?: string;
+  group: {
+    id: number;
+    name: string | null;
+    code?: string | null;
+    topic: TopicDetail;
+    members: Array<{
+      id: number;
+      student: {
+        id: number;
+        fullName: string;
+        studentCode: string;
+        class?: string | null;
+        user: { id: number; email: string; avatarUrl: string | null };
+      };
+    }>;
+    leader: {
+      id: number;
+      fullName: string;
+      studentCode: string;
+    };
+  } | null;
+  outline: TopicOutline | null;
+}
+
+export interface LecturerGroupOutlineItem {
+  id: number;
+  name: string | null;
+  topic: TopicDetail;
+  members: Array<{
+    id: number;
+    student: {
+      id: number;
+      fullName: string;
+      studentCode: string;
+      class?: string | null;
+      user: { id: number; email: string; avatarUrl: string | null };
+    };
+  }>;
+  leader: {
+    id: number;
+    fullName: string;
+    studentCode: string;
+  };
+  outline: TopicOutline | null;
+}
+
+export interface FacultyOutlineOverview {
+  items: LecturerGroupOutlineItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  stats: {
+    totalGroups: number;
+    approved: number;
+    submitted: number;
+    needsRevision: number;
+    notSubmitted: number;
+  };
+}
+
