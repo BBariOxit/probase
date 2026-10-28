@@ -14,6 +14,7 @@ import { MailModule } from './mail/mail.module';
 import { MajorsModule } from './majors/majors.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { OutlinesModule } from './outlines/outlines.module';
 import { ProjectTypesModule } from './project-types/project-types.module';
 import { ProposalsModule } from './proposals/proposals.module';
 import { RegistrationModule } from './registration/registration.module';
@@ -68,6 +69,7 @@ import { UsersModule } from './users/users.module';
     StudentsModule,
     SubmissionsModule,
     TopicsModule,
+    OutlinesModule,
     RegistrationModule,
     RemindersModule,
     ReportsModule,
