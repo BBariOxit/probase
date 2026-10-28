@@ -113,31 +113,31 @@ Tài liệu này định nghĩa chi tiết toàn bộ yêu cầu nghiệp vụ, 
 ### Phân hệ 3: Lập, Xét duyệt Đề cương (Mẫu M03) & Công bố chính thức
 
 #### BR-08: Lập và nộp Đề cương chi tiết (Mẫu M03)
-- **Tác nhân:** Sinh viên.
-- **Mô tả:** Trong tuần đầu tiên sau khi nhận đề tài, nhóm SV liên hệ GVHD và điền biểu mẫu **Đề cương thực hiện đồ án (Mẫu M03)** trực tuyến gồm 6 mục chuẩn:
-  1. Mục tiêu đề tài.
-  2. Nội dung và phạm vi nghiên cứu.
-  3. Phần mềm, công cụ và công nghệ sử dụng.
-  4. Dự kiến kết quả đạt được.
-  5. Kế hoạch thực hiện theo tuần (từ ngày - đến ngày, công việc cụ thể).
-  6. Tài liệu tham khảo.
-  *(Hỗ trợ đính kèm file .docx/.pdf nếu có).*
-- **Đầu ra:** Bản ghi Đề cương M03 ở trạng thái `CHỜ_GVHD_DUYỆT`.
+- **Tác nhân:** Sinh viên (đại diện nhóm).
+- **Mô tả quy trình thực tế:**
+  1. *Tải biểu mẫu:* Nhóm sinh viên tải file biểu mẫu chuẩn **Đề cương thực hiện đồ án (Mẫu M03)** định dạng `.docx` do Khoa CNTT - DLU ban hành trực tiếp từ hệ thống.
+  2. *Soạn thảo & Xin chữ ký sống:* Sinh viên điền thông tin đề tài và 6 mục chuyên môn (Mục tiêu, Phạm vi, Công cụ, Kết quả dự kiến, Kế hoạch tuần, Tài liệu tham khảo). Nhóm in văn bản ra giấy và gặp Giảng viên hướng dẫn (GVHD) để trao đổi chuyên môn, xin chữ ký sống xác nhận trực tiếp của GVHD trên bản in.
+  3. *Nộp bản scan lên hệ thống:* Nhóm scan hoặc chụp rõ nét bản đề cương đã có chữ ký GVHD thành file PDF (hoặc DOCX/ảnh scan) và upload nộp lên hệ thống trước hạn chót.
+  4. *Tính năng nâng cao (Lộ trình Roadmap - Triển khai sau):* Hệ thống tự động điền trước thông tin đề tài/nhóm vào file Word (Auto-fill Template M03) khi sinh viên bấm tải về.
+- **Đầu ra:** Bản ghi Đề cương M03 ở trạng thái `SUBMITTED` (Chờ GVHD duyệt trên hệ thống) kèm file đính kèm.
 
-#### BR-09: GVHD duyệt đề cương và nộp cho Giáo vụ / Bộ môn
+#### BR-09: GVHD duyệt đề cương và chuyển tiếp lên Giáo vụ / Bộ môn
 - **Tác nhân:** GVHD.
-- **Mô tả:** GVHD xem xét đề cương của nhóm SV:
-  - Nếu chưa đạt: Nhập nhận xét yêu cầu chỉnh sửa lại.
-  - Nếu đạt: Bấm **Phê duyệt Đề cương** (xác nhận điện tử). Hệ thống tự động chuyển đề cương về danh sách quản lý của TLGV và TTBM.
-- **Đầu ra:** Đề cương ở trạng thái `GVHD_ĐÃ_DUYỆT`. Hệ thống tự động sinh file PDF Đề cương Mẫu M03 theo chuẩn văn bản của Khoa CNTT - DLU.
+- **Mô tả quy trình thực tế:**
+  1. GVHD nhận thông báo có bài nộp M03 từ nhóm sinh viên hướng dẫn, vào hệ thống xem trước file scan đề cương và đối chiếu chữ ký xác nhận cùng nội dung.
+  2. **Trường hợp chưa đạt:** (Chữ ký mờ, thiếu chữ ký, hoặc nội dung cần chỉnh sửa thêm), GVHD bấm **"Yêu cầu chỉnh sửa / Nộp lại"** kèm nhận xét góp ý cụ thể. Nhóm sinh viên nhận thông báo và upload bản thay thế.
+  3. **Trường hợp đạt:** GVHD bấm **"Phê duyệt Đề cương"**. Bản ghi chuyển sang trạng thái `APPROVED_BY_LECTURER` (hoặc `APPROVED`).
+  4. *Tính năng nâng cao (Lộ trình Roadmap - Triển khai sau):* Cơ chế Ký số điện tử nội bộ (E-Signature Stamp) kèm mã QR xác thực để đóng dấu mộc điện tử tự động trực tiếp trên web thay cho việc in scan giấy.
+- **Đầu ra:** Đề cương ở trạng thái `APPROVED_BY_LECTURER`. Hệ thống tự động tổng hợp về danh sách quản lý của TLGV và TTBM.
 
 #### BR-10: Trình ký & Công bố danh sách chính thức
-- **Tác nhân:** TLGV, BCN Khoa.
+- **Tác nhân:** TLGV, BCN Khoa, TTBM.
 - **Mô tả:**
-  - TLGV lọc ra danh sách các nhóm đã có đề cương M03 được GVHD duyệt; cảnh báo danh sách SV không nộp đề cương (không đủ điều kiện tiếp tục học phần đồ án).
-  - TLGV xuất Tờ trình danh sách đề tài chính thức.
+  - TLGV và TTBM theo dõi danh sách tổng hợp M03: thống kê các nhóm đã được GVHD phê duyệt, cảnh báo các nhóm chưa nộp hoặc chưa hoàn tất thủ tục đề cương.
+  - TLGV xuất Tờ trình danh sách đề tài & đề cương chính thức.
   - BCN Khoa ký duyệt Quyết định công bố danh sách chính thức (Đề tài, GVHD, SV thực hiện) toàn Khoa.
-- **Đầu ra:** Quyết định giao đề tài chính thức; kích hoạt không gian làm việc theo dõi tiến độ cho từng nhóm.
+  - Hệ thống chuyển trạng thái đề tài sang `IN_PROGRESS`, kích hoạt không gian làm việc theo dõi tiến độ tuần (BR-11) và đợt Báo cáo Tiến độ 1 (BR-12).
+- **Đầu ra:** Quyết định giao đề tài chính thức; kích hoạt giai đoạn thực hiện đồ án.
 
 ---
 
