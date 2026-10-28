@@ -182,13 +182,14 @@ export default function LecturerOutlinesPage() {
             className="gap-1.5"
             render={
               <a
-                href="/templates/M03_Mau_De_Cuong.docx"
-                download="M03_Mau_De_Cuong_Thuc_Hien_Do_An.docx"
+                href="/templates/M03_Mau_De_Cuong.pdf"
+                download="M03_Mau_De_Cuong_Thuc_Hien_Do_An.pdf"
+                target="_blank"
               />
             }
           >
             <Download className="size-4" />
-            Mẫu M03 chuẩn (.docx)
+            Mẫu M03 chuẩn (.pdf)
           </Button>
         </div>
       </div>

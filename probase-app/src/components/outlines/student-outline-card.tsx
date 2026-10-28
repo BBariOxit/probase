@@ -230,13 +230,14 @@ export function StudentOutlineCard() {
               className="gap-2 text-emerald-700 dark:text-emerald-400 border-emerald-600/30 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
               render={
                 <a
-                  href="/templates/M03_Mau_De_Cuong.docx"
-                  download="M03_Mau_De_Cuong_Thuc_Hien_Do_An.docx"
+                  href="/templates/M03_Mau_De_Cuong.pdf"
+                  download="M03_Mau_De_Cuong_Thuc_Hien_Do_An.pdf"
+                  target="_blank"
                 />
               }
             >
               <Download className="size-4" />
-              Tải Biểu mẫu Đề cương M03 (.docx)
+              Tải Biểu mẫu Đề cương M03 (.pdf)
             </Button>
             <span className="text-xs text-muted-foreground">
               Mẫu biểu số hóa chính thức của Khoa CNTT - Đại học Đà Lạt.
