@@ -6,6 +6,7 @@ import {
   ChartColumn,
   ClipboardCheck,
   ClipboardPen,
+  FileCheck2,
   FileSearch,
   FileUp,
   Gavel,
@@ -97,6 +98,12 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           ready: true,
         },
         {
+          href: '/lecturer/outlines',
+          label: 'Đề cương M03',
+          icon: FileCheck2,
+          ready: true,
+        },
+        {
           href: '/lecturer/proposals',
           label: 'Đề xuất từ SV',
           icon: Lightbulb,
@@ -163,6 +170,12 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           href: '/admin/submissions',
           label: 'Bài nộp',
           icon: Inbox,
+          ready: true,
+        },
+        {
+          href: '/admin/outlines',
+          label: 'Đề cương M03',
+          icon: FileCheck2,
           ready: true,
         },
         { href: '/admin/hoi-dong', label: 'Hội đồng bảo vệ', icon: Gavel },

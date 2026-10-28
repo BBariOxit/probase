@@ -199,6 +199,10 @@ enum NotificationType {
 
   GRADE_PUBLISHED
   DEADLINE_REMINDER
+
+  OUTLINE_SUBMITTED
+  OUTLINE_REVISION_REQUESTED
+  OUTLINE_APPROVED
 }
 
 // ─────────────────────────────────────────────────────────
@@ -245,6 +249,7 @@ model User {
   membersAssigned          RegistrationGroupMember[] @relation("GroupMemberAssignedBy")
   topicAssignmentsAssigned TopicAssignment[]         @relation("TopicAssignmentAssignedBy")
   proposalComments         ProposalComment[]
+  outlinesSubmitted        TopicOutline[]            @relation("OutlineSubmittedBy")
 
   @@map("users")
 }
@@ -990,27 +995,40 @@ model PasswordResetToken {
 // GROUP 10: DLU BIỂU MẪU & QUY TRÌNH HÀNH CHÍNH (M03, M02/M05, ARCHIVE)
 // ─────────────────────────────────────────────────────────
 
-/// Số hóa Đề cương thực hiện đồ án (Mẫu M03) chuẩn Khoa CNTT - DLU (BR-08, BR-09).
+/// Quản lý nộp và xét duyệt Đề cương thực hiện đồ án (Mẫu M03) chuẩn Khoa CNTT - DLU (BR-08, BR-09).
 model TopicOutline {
   id               Int       @id @default(autoincrement())
   groupId          Int       @unique
   topicId          Int
-  objectives       String    @db.Text
-  scopeAndContent  String    @db.Text
-  toolsAndTech     String    @db.Text
-  expectedResults  String    @db.Text
-  weeklyPlans      Json      // Bảng kế hoạch tuần [{ week, fromDate, toDate, task, deliverable }]
-  references       String?   @db.Text
-  attachmentUrl    String?   // File đính kèm .docx/.pdf nếu có
-  status           String    @default("DRAFT") // DRAFT, SUBMITTED, APPROVED_BY_LECTURER, REJECTED
+
+  // Bản scan thực tế đã có chữ ký sống
+  attachmentUrl    String?   // File URL trên Cloudinary / storage
+  fileName         String?   // Tên file gốc (ví dụ M03_De_cuong.pdf)
+  fileSize         Int?      // Dung lượng file (bytes)
+  publicId         String?   // Storage public ID nếu cần quản lý file
+  submittedById    Int?      // Sinh viên nộp
+  submittedAt      DateTime? // Thời điểm nộp file
+
+  // Trạng thái & Đánh giá
+  status           String    @default("NOT_SUBMITTED") // NOT_SUBMITTED, SUBMITTED, NEEDS_REVISION, APPROVED_BY_LECTURER
   lecturerFeedback String?   @db.Text
   approvedAt       DateTime?
+
+  // Các trường nội dung mở rộng cho tương lai (Roadmap)
+  objectives       String?   @db.Text
+  scopeAndContent  String?   @db.Text
+  toolsAndTech     String?   @db.Text
+  expectedResults  String?   @db.Text
+  weeklyPlans      Json?     // Bảng kế hoạch tuần [{ week, fromDate, toDate, task, deliverable }]
+  references       String?   @db.Text
   pdfExportUrl     String?
+
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  group RegistrationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  topic Topic             @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  group            RegistrationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  topic            Topic             @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  submittedBy      User?             @relation("OutlineSubmittedBy", fields: [submittedById], references: [id], onDelete: SetNull)
 
   @@map("topic_outlines")
 }

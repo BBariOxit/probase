@@ -17,6 +17,9 @@ export function notificationHref(
       // it is where the new roster is.
       // Somebody handed something in on one of their topics, or they are being
       // reminded of it. The queue is what they open it for.
+      case 'OUTLINE_SUBMITTED':
+        return '/lecturer/outlines';
+
       case 'SUBMISSION_FEEDBACK':
         return '/lecturer/reports';
 
@@ -33,6 +36,10 @@ export function notificationHref(
   if (role !== 'STUDENT') return null;
 
   switch (notice.type) {
+    case 'OUTLINE_APPROVED':
+    case 'OUTLINE_REVISION_REQUESTED':
+      return '/student/groups';
+
     /*
       Both land on the outbox rather than on the thing they name, and for
       different reasons that happen to agree.

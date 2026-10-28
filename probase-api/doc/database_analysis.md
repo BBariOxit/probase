@@ -231,22 +231,24 @@ Thành viên trong nhóm đề tài.
 ### NHÓM 5: Đề cương chi tiết Mẫu M03 (Topic Outline M03)
 
 #### 14. `topic_outlines`
-Số hóa biểu mẫu **Đề cương thực hiện đồ án (Mẫu M03)** theo chuẩn Khoa CNTT - DLU (BR-08, BR-09).
+Quản lý nộp và xét duyệt **Đề cương thực hiện đồ án (Mẫu M03)** theo chuẩn Khoa CNTT - DLU (BR-08, BR-09).
 - `id` (INT, PK, Auto Increment)
 - `group_id` (INT, FK → `registration_groups.id`, Cascade Delete, Unique)
 - `topic_id` (INT, FK → `topics.id`, Not Null)
-- **Nội dung 6 mục chuẩn Mẫu M03:**
-  - `objectives` (TEXT, Not Null): Mục tiêu đề tài.
-  - `scope_and_content` (TEXT, Not Null): Nội dung và phạm vi đề tài.
-  - `tools_and_tech` (TEXT, Not Null): Phần mềm và công cụ sử dụng.
-  - `expected_results` (TEXT, Not Null): Dự kiến kết quả đạt được.
-  - `weekly_plans` (JSON, Not Null): Bảng kế hoạch tuần `[{ week: 1, fromDate, toDate, task, deliverable }]`.
-  - `references` (TEXT, Nullable): Tài liệu tham khảo.
-- `attachment_url` (VARCHAR(255), Nullable): Link file đính kèm nếu có (.docx/.pdf).
-- `status` (ENUM: `'DRAFT'`, `'SUBMITTED'`, `'APPROVED_BY_LECTURER'`, `'REJECTED'`):
-- `lecturer_feedback` (TEXT, Nullable): Nhận xét góp ý của GVHD.
-- `approved_at` (TIMESTAMP, Nullable): Thời điểm GVHD bấm phê duyệt.
-- `pdf_export_url` (VARCHAR(255), Nullable): Đường dẫn file PDF M03 tự động xuất có chữ ký/xác nhận điện tử.
+- **Tài liệu nộp thực tế (Bản scan có chữ ký sống):**
+  - `attachment_url` (VARCHAR(255), Not Null): Đường dẫn file scan M03 đã có chữ ký GVHD (.pdf, .docx).
+  - `file_name` (VARCHAR(255), Nullable): Tên file gốc do sinh viên nộp.
+  - `file_size` (INT, Nullable): Dung lượng file tính bằng bytes.
+  - `submitted_by_id` (INT, FK → `users.id`, Nullable): Sinh viên đại diện nhóm nộp bài.
+  - `submitted_at` (TIMESTAMP, Nullable): Thời điểm nộp file.
+- **Trạng thái & Đánh giá của GVHD:**
+  - `status` (ENUM / VARCHAR: `'DRAFT'`, `'SUBMITTED'`, `'NEEDS_REVISION'`, `'APPROVED_BY_LECTURER'`): Trạng thái xét duyệt đề cương.
+  - `lecturer_feedback` (TEXT, Nullable): Nhận xét / yêu cầu chỉnh sửa từ GVHD.
+  - `approved_at` (TIMESTAMP, Nullable): Thời điểm GVHD bấm phê duyệt.
+- **Các trường nội dung dự phòng cho tính năng nâng cao (Lộ trình tương lai):**
+  - `objectives`, `scope_and_content`, `tools_and_tech`, `expected_results`, `references` (TEXT, Nullable).
+  - `weekly_plans` (JSON, Nullable): Bảng kế hoạch tuần.
+  - `pdf_export_url` (VARCHAR(255), Nullable): Link PDF xuất có dấu mộc điện tử (E-Signature roadmap).
 
 ---
 
