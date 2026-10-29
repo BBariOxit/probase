@@ -55,14 +55,30 @@ Tài liệu này định nghĩa chi tiết toàn bộ yêu cầu nghiệp vụ, 
   7. *Bảo vệ Hội đồng (50%) & Nộp gói lưu trữ*.
 - **Đầu ra:** Lịch trình hiển thị trực quan dưới dạng Stepper/Timeline trên Dashboard; hệ thống tự khóa/mở cổng nộp theo hạn.
 
-#### BR-02: Quản lý danh sách SV đủ điều kiện & Định mức GV
-- **Tác nhân:** TLGV.
-- **Mô tả:**
-  - Import danh sách sinh viên đủ điều kiện làm đồ án trong kỳ từ file Excel của Phòng Đào tạo (chứa MSSV, Họ tên, Lớp, Email sinh viên <MSSV>@dlu.edu.vn ví dụ 2212345@dlu.edu.vn).
-  - Kiểm tra mã lớp đối chiếu: lớp `CTK46PM` thuộc chuyên ngành CNPM, `CTK46MMT` thuộc chuyên ngành Mạng máy tính.
+#### BR-02: Quản lý danh sách SV đủ điều kiện & Import Excel theo Đợt
+- **Tác nhân:** Trợ lý Giáo vụ Khoa (TLGV) / Quản trị hệ thống (Admin).
+- **Nguồn gốc dữ liệu:** File Excel danh sách sinh viên đủ điều kiện làm đồ án do Phòng Đào tạo (PĐT) thẩm định và chuyển giao cho Văn phòng Khoa sau khi kết thúc đợt đăng ký tín chỉ học phần.
+- **Quy trình Import theo Đợt (Học kỳ × Loại đồ án: ĐACS / ĐACN / KLTN):**
+  - Cho phép Giáo vụ chọn Đợt làm đồ án và upload file `.xlsx` hoặc `.csv`.
+  - Hệ thống tự động nhận diện và đọc các cột: `MSSV` (7 số), `Họ và tên`, `Lớp` (ví dụ `CTK46PM`, `CTK46MMT`), `Email` (tùy chọn, mặc định tự sinh `<MSSV>@dlu.edu.vn`), `Ghi chú` (tùy chọn: "Đủ tín chỉ", "Học vượt", "Trả nợ K45").
+  - **Cơ chế xử lý đồng bộ 2-in-1:**
+    + *Nếu sinh viên chưa có tài khoản:* Hệ thống tự động khởi tạo tài khoản User (Role `STUDENT`) kèm `StudentProfile` (phân lớp, ngành, cohort tương ứng).
+    + *Nếu sinh viên đã có tài khoản:* Hệ thống tự động liên kết và kích hoạt cờ "Đủ điều kiện làm đồ án" cho sinh viên trong đợt đó (`RoundStudentEligibility`).
+- **Bộ lọc & Quản lý danh sách cho Giáo vụ:**
+  - Bộ lọc nhanh theo **Lớp** sinh hoạt (`CTK46PM`, `CTK46MMT`, `CTK47...`).
+  - Bộ lọc theo **Loại đồ án** (Cơ sở / Chuyên ngành / Tốt nghiệp) hoặc Đợt đăng ký.
+  - Tìm kiếm nhanh theo MSSV, Họ tên.
+  - Hiển thị trực quan tình trạng: *Đã có đề tài*, *Chưa có đề tài*, *Đang trong nhóm*.
+  - Hỗ trợ xuất file Excel (Export) phục vụ đối soát và báo cáo.
+- **Thông báo & Trải nghiệm phía Sinh viên:**
+  - Tự động phát thông báo in-app (chuông) và gửi email kích hoạt cho sinh viên có tên trong danh sách.
+  - **Banner Dashboard sinh viên:**
+    + *Sinh viên đủ điều kiện:* Hiển thị banner màu xanh nổi bật chúc mừng, thông báo thời hạn chọn đề tài & nộp đề cương M03 kèm nút tắt điều hướng nhanh.
+    + *Sinh viên không đủ điều kiện:* Hiển thị cảnh báo rõ ràng: *"Tài khoản của bạn chưa nằm trong danh sách đủ điều kiện làm đồ án của học kỳ này. Vui lòng liên hệ Giáo vụ Khoa nếu có thắc mắc."* và chặn hoàn toàn thao tác đăng ký đề tài/tạo nhóm.
+- **Cấu hình Định mức GV & Giới hạn nhóm:**
   - Cấu hình số lượng SV trên 1 đề tài: **từ 1 đến 3 sinh viên** (theo quy định Khoa CNTT).
   - Cấu hình định mức tải hướng dẫn tối đa của mỗi GV trong một học kỳ (hạn mức quota).
-- **Đầu ra:** Danh sách tài khoản SV được kích hoạt trong đợt đồ án; bộ quy tắc kiểm tra giới hạn nhóm và tải hướng dẫn.
+- **Đầu ra:** Danh sách sinh viên chính thức đủ điều kiện theo từng đợt; bộ lọc và công cụ import Excel tối ưu; luồng kiểm soát quyền đăng ký chuẩn xác.
 
 ---
 

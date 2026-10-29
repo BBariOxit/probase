@@ -137,11 +137,22 @@ Một đợt làm đồ án cụ thể = Cặp (Học kỳ × Loại đồ án).
 - `UNIQUE(semester_id, project_type_id)`
 
 #### 8. `round_eligibilities`
-Quy định Khóa sinh viên được tham gia đợt đồ án nào (BR-02).
+Quy định Khóa sinh viên được tham gia đợt đồ án nào (BR-02) (Quy tắc chung theo năm tuyển sinh).
 - `id` (INT, PK, Auto Increment)
 - `round_id` (INT, FK → `registration_rounds.id`, Cascade Delete)
 - `cohort` (VARCHAR(10), Not Null): Năm nhập học (VD: `"2022"` cho CTK46).
 - `UNIQUE(round_id, cohort)`
+
+#### 8.1. `round_student_eligibilities`
+Danh sách chi tiết từng sinh viên chính thức đủ điều kiện tham gia đợt đồ án (BR-02) do Trợ lý Giáo vụ Khoa import từ file Excel của Phòng Đào tạo (PĐT).
+- `id` (INT, PK, Auto Increment)
+- `round_id` (INT, FK → `registration_rounds.id`, Cascade Delete): Đợt đồ án cụ thể (Học kỳ × Loại đồ án).
+- `student_id` (INT, FK → `student_profiles.id`, Cascade Delete): Hồ sơ sinh viên.
+- `note` (VARCHAR(255), Nullable): Ghi chú thẩm định từ PĐT (VD: *"Đủ 100 tín chỉ"*, *"Học vượt"*, *"Trả nợ K45"*).
+- `created_at` (TIMESTAMP, Default: now())
+- `UNIQUE(round_id, student_id)`
+- `INDEX(round_id)`
+- `INDEX(student_id)`
 
 ---
 
