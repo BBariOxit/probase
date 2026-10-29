@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { GroupTopicBrief } from '@/components/groups/group-topic-brief';
 import { MyGroupPanel } from '@/components/groups/my-group-panel';
 import { StudentOutlineCard } from '@/components/outlines/student-outline-card';
+import { StudentProgressSection } from '@/components/progress/student-progress-section';
 import { PageWithRail } from '@/components/layout/page-with-rail';
 import { RoundTimeline } from '@/components/rounds/round-timeline';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,7 @@ export default function StudentGroupPage() {
       */}
       <MyGroupPanel group={group} canEdit={round?.phase === 'OPEN'} />
       <StudentOutlineCard />
+      <StudentProgressSection />
       <GroupTopicBrief topicId={group.topicId} />
     </PageWithRail>
   );

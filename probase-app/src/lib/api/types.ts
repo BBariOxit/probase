@@ -167,7 +167,11 @@ export type NotificationType =
   | 'OUTLINE_SUBMITTED'
   | 'OUTLINE_REVISION_REQUESTED'
   | 'OUTLINE_APPROVED'
-  | 'STUDENT_ELIGIBILITY_CONFIRMED';
+  | 'STUDENT_ELIGIBILITY_CONFIRMED'
+  | 'PROGRESS_LOG_SUBMITTED'
+  | 'PROGRESS_LOG_FEEDBACK'
+  | 'PROGRESS_REPORT_SUBMITTED'
+  | 'PROGRESS_REPORT_GRADED';
 
 export interface AppNotification {
   id: number;
@@ -1043,4 +1047,170 @@ export interface StudentEligibilityStatus {
     note: string | null;
   }[];
 }
+
+// ─────────────────────────────────────────────────────────
+// PROGRESS TRACKING TYPES (BR-11, BR-12, BR-14)
+// ─────────────────────────────────────────────────────────
+
+export interface WeeklyLogItem {
+  id: number;
+  groupId: number;
+  weekNumber: number;
+  title: string | null;
+  completionPercentage: number;
+  gitCommitUrl: string | null;
+  summaryNotes: string;
+  blockers: string | null;
+  lecturerComment: string | null;
+  isAcknowledged: boolean;
+  feedbackAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  submittedBy?: {
+    id: number;
+    email: string;
+    studentProfile?: {
+      fullName: string;
+      studentCode: string;
+    } | null;
+  } | null;
+}
+
+export interface ProgressReportItem {
+  id: number;
+  groupId: number;
+  stage: 'STAGE_1' | 'STAGE_2';
+  reportFileUrl: string | null;
+  reportFileName: string | null;
+  reportFileSize: number | null;
+  sourceCodeUrl: string | null;
+  submittedAt: string;
+  supervisorGrade: number | null;
+  supervisorFeedback: string | null;
+  reviewerGrade: number | null;
+  reviewerFeedback: string | null;
+  finalStageGrade: number | null;
+  workloadPercentage: number | null;
+  isPassed: boolean | null;
+  finalisedAt: string | null;
+  submittedBy?: {
+    id: number;
+    email: string;
+    studentProfile?: {
+      fullName: string;
+    } | null;
+  } | null;
+}
+
+export interface MyGroupProgressResponse {
+  hasGroup: boolean;
+  hasTopic?: boolean;
+  message?: string;
+  group: {
+    id: number;
+    name: string | null;
+    joinCode: string | null;
+    topic: {
+      id: number;
+      title: string;
+      titleVi?: string | null;
+      titleEn?: string | null;
+      lecturer?: {
+        id: number;
+        fullName: string;
+        academicTitle: string | null;
+        lecturerCode: string;
+      } | null;
+    };
+    leader: {
+      id: number;
+      studentCode: string;
+      fullName: string;
+      class: string | null;
+    };
+    members: Array<{
+      id: number;
+      student: {
+        id: number;
+        studentCode: string;
+        fullName: string;
+        class: string | null;
+      };
+    }>;
+    reviewer?: {
+      id: number;
+      fullName: string;
+      academicTitle: string | null;
+      lecturerCode: string;
+    } | null;
+  } | null;
+  currentPercentage: number;
+  weeklyLogs: WeeklyLogItem[];
+  progressReports: {
+    stage1: ProgressReportItem | null;
+    stage2: ProgressReportItem | null;
+  };
+}
+
+export interface LecturerGroupProgressItem {
+  id: number;
+  name: string | null;
+  topic: {
+    id: number;
+    title: string;
+    round?: {
+      projectType?: {
+        name: string;
+        code: string;
+      };
+    };
+  };
+  leader: {
+    id: number;
+    studentCode: string;
+    fullName: string;
+    class: string | null;
+  };
+  membersCount: number;
+  members: Array<{
+    id: number;
+    studentCode: string;
+    fullName: string;
+    class: string | null;
+  }>;
+  isSupervisor: boolean;
+  isReviewer: boolean;
+  reviewer?: {
+    id: number;
+    fullName: string;
+    academicTitle: string | null;
+  } | null;
+  latestLog?: {
+    id: number;
+    weekNumber: number;
+    title: string | null;
+    completionPercentage: number;
+    isAcknowledged: boolean;
+    hasComment: boolean;
+    createdAt: string;
+  } | null;
+  stage1Status: {
+    submitted: boolean;
+    submittedAt?: string;
+    grade?: number | null;
+    feedback?: string | null;
+    isFinalised?: boolean;
+  };
+  stage2Status: {
+    submitted: boolean;
+    submittedAt?: string;
+    supervisorGrade?: number | null;
+    reviewerGrade?: number | null;
+    finalGrade?: number | null;
+    workloadPercentage?: number | null;
+    isPassed?: boolean | null;
+    isFinalised?: boolean;
+  };
+}
+
 

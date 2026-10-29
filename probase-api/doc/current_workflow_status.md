@@ -45,7 +45,11 @@
 [BƯỚC 5: Nhóm SV ➔ GVHD ➔ Giáo vụ & BCN Khoa]
    │ Tải mẫu M03 ➔ Xin chữ ký sống GVHD ➔ Nộp PDF scan ➔ GVHD duyệt ➔ Khoa ra Tờ trình
    ▼
-[BƯỚC VÀO GIAI ĐOẠN THỰC HIỆN ĐỒ ÁN]
+[BƯỚC 6: Giai đoạn Thực hiện đồ án & Đánh giá tiến độ (DLU Real-world)]
+   │ • Phân hệ 1 (Nội bộ): Sổ tay tiến độ tuần/sprint (SV log ➔ GVHD xác nhận & góp ý)
+   │ • Phân hệ 2 (Khoa): 2 đợt kiểm tra tập trung (Đợt 1: Tuần 5-6 [20%], Đợt 2: Tuần 9-10 [30% + Cổng ≥ 50%])
+   ▼
+[GIAI ĐOẠN TIẾP THEO: Phân công GVPB ➔ Nộp Báo cáo Cuối kỳ ➔ Hội đồng Bảo vệ]
 ```
 
 ---
@@ -204,26 +208,63 @@
 
 ---
 
+### BƯỚC 6: GIAI ĐOẠN THỰC HIỆN ĐỒ ÁN & ĐÁNH GIÁ TIẾN ĐỘ TẬP TRUNG (BR-11, BR-12, BR-14)
+
+* **Ai thực hiện:** Nhóm Sinh viên $\longleftrightarrow$ Giảng viên hướng dẫn (GVHD) $\longleftrightarrow$ Hội đồng Bộ môn (GVHD + GVPB).
+* **Màn hình giao diện trên Web:**
+  - Nhóm sinh viên: `/student/groups` (Phần **Tiến độ thực hiện đồ án**)
+  - Giảng viên hướng dẫn: `/lecturer/groups/[id]` (Tab **Đánh giá tiến độ đồ án**)
+* **Nguyên tắc thực tế Khoa CNTT – DLU:**
+  - Khoa **không bắt buộc** nộp nhật ký hành chính hàng tuần lên văn phòng Khoa (tránh thủ tục hình thức rườm rà).
+  - Hoạt động tuần là **thỏa thuận nội bộ** giữa GVHD và nhóm SV nhằm bám sát tiến độ.
+  - Khoa quản lý chất lượng qua **2 đợt kiểm tra tiến độ tập trung bắt buộc**:
+    - **Đợt 1 (Tuần 5–6):** Báo cáo phân tích thiết kế, mô hình CSDL, giao diện mẫu (prototype). GVHD chấm trực tiếp, chiếm **20%** trọng số.
+    - **Đợt 2 (Tuần 9–10):** Báo cáo tập trung trước Hội đồng Bộ môn (GVHD + GVPB), chiếm **30%** trọng số. Yêu cầu sản phẩm đạt **tối thiểu 50% khối lượng**. Nếu < 50%, kích hoạt cảnh báo đình chỉ, **không được phép bảo vệ chính thức**.
+
+* **Quy trình chi tiết trên Web:**
+  1. **Phân hệ 1: Sổ tay tiến độ nội bộ (Weekly Log / Sprint Tracking - BR-11):**
+     - **Sinh viên:**
+       - Bấm **"Ghi nhận tiến độ"** trên thanh công cụ.
+       - Chọn Tuần (1–15), nhập Tiêu đề ngắn gọn, Tỷ lệ hoàn thành ước tính (%), Link Git Commit / PR, tóm tắt công việc đã làm và khó khăn/vướng mắc (Blockers).
+       - Có thể cập nhật hoặc xóa nhật ký tuần của chính mình nếu GVHD chưa khóa.
+     - **Giảng viên hướng dẫn (GVHD):**
+       - Xem dòng thời gian nhật ký tuần của nhóm, click mở trực tiếp link Git Commit.
+       - Bấm **"Xác nhận & Nhận xét"** để tích chọn *Đã xem xét / Đồng ý tiến độ* và gửi phản hồi định hướng cho nhóm.
+       - Hệ thống tự động gửi thông báo in-app `PROGRESS_LOG_FEEDBACK` đến toàn bộ thành viên nhóm.
+
+  2. **Phân hệ 2: Hai đợt kiểm tra tiến độ tập trung (Stage 1 & Stage 2 - BR-12, BR-14):**
+     - **Sinh viên nộp báo cáo tập trung:**
+       - Tại thẻ **Đợt 1 (Tuần 5–6)** hoặc **Đợt 2 (Tuần 9–10)**, bấm nút **"Nộp báo cáo"**.
+       - Đính kèm file tài liệu báo cáo (.pdf/.docx/.zip) và cung cấp Link kho mã nguồn / Bản demo.
+       - Hệ thống tự động gửi thông báo in-app `PROGRESS_REPORT_SUBMITTED` đến GVHD.
+     - **GVHD & Bộ môn đánh giá & Chấm điểm:**
+       - **Đợt 1 (20%):** GVHD bấm **"Chấm điểm Đợt 1"**, nhập điểm (thang 10) và nhận xét chuyên môn. Điểm được tự động đồng bộ vào bảng điểm tích lũy `StudentGrade.midtermScore` (trọng số 20%).
+       - **Đợt 2 (30% + Cổng điều kiện ≥ 50%):**
+         - GVHD/Hội đồng bấm **"Chấm điểm Đợt 2"**, nhập điểm thang 10, nhận xét và **xác nhận Tỷ lệ khối lượng sản phẩm hoàn thành (%)**.
+         - *Cổng kiểm soát:* Nếu tỷ lệ đạt $\ge 50\%$, hệ thống ghi nhận `isPassed = true` và đồng bộ điểm (trọng số 30%). Nếu $< 50\%$, hệ thống ghi nhận `isPassed = false`, kích hoạt cảnh báo đỏ đình chỉ bảo vệ chính thức trên cả giao diện SV và GVHD.
+       - Hệ thống tự động gửi thông báo in-app `PROGRESS_REPORT_GRADED` đến sinh viên.
+
+---
+
 ## 4. BẢNG TỔNG HỢP PHÂN QUYỀN VÀ THAO TÁC CỦA TỪNG VAI TRÒ HIỆN TẠI
 
 | Vai trò | Màn hình truy cập | Những việc ĐƯỢC LÀM trên giao diện hiện tại | Ràng buộc hệ thống |
 | :--- | :--- | :--- | :--- |
 | **Trợ lý Giáo vụ Khoa (TLGV) / Admin** | `/admin/semesters`<br>`/admin/students`<br>`/admin/outlines` | • Tạo & kích hoạt Học kỳ, thiết lập Đợt đồ án (ĐACS/ĐACN/KLTN)<br>• Tải mẫu Excel & Import danh sách SV đủ điều kiện từ PĐT<br>• Lọc sinh viên theo mã lớp (`CTK48`, `CTK46PM`...), theo đợt, theo tình trạng nhóm<br>• Xuất Excel sinh viên đối soát với PĐT<br>• Xuất file CSV Tờ trình giao đề tài chính thức | • Không xóa học kỳ đã có dữ liệu<br>• Không thể xóa sinh viên đủ điều kiện nếu sinh viên đó đã lập nhóm đồ án |
-| **Giảng viên hướng dẫn (GVHD)** | `/lecturer/topics`<br>`/lecturer/outlines`<br>`/lecturer/groups` | • Tạo đề tài mới, nhân bản đề tài cũ, chọn tổ CNPM/MMT, chọn số lượng 1–3 SV<br>• Xem file PDF scan Đề cương M03 có chữ ký sống của SV<br>• Nhập nhận xét văn bản, bấm **Phê duyệt** hoặc **Yêu cầu chỉnh sửa** Đề cương M03<br>• Duyệt đề tài do sinh viên tự đề xuất | • Chỉ duyệt đề cương của các nhóm do chính mình hướng dẫn |
+| **Giảng viên hướng dẫn (GVHD)** | `/lecturer/topics`<br>`/lecturer/outlines`<br>`/lecturer/groups`<br>`/lecturer/groups/[id]` | • Tạo đề tài mới, nhân bản đề tài cũ, chọn tổ CNPM/MMT, chọn số lượng 1–3 SV<br>• Xem file PDF scan Đề cương M03 có chữ ký sống của SV, bấm Phê duyệt/Yêu cầu sửa<br>• Duyệt đề tài SV đề xuất<br>• **Tiến độ:** Xem dòng thời gian nhật ký tuần của nhóm, bấm xác nhận & nhận xét<br>• **Đợt 1:** Chấm điểm tiến độ 1 (thang 10, trọng số 20%)<br>• **Đợt 2:** Chấm điểm tiến độ 2 (thang 10, trọng số 30%) và đánh giá khối lượng hoàn thành (≥ 50% đạt, < 50% cảnh báo đình chỉ) | • Chỉ thao tác trên các nhóm do chính mình hướng dẫn |
 | **Tổ trưởng Bộ môn (TTBM)** | `/admin/topics` | • Xem danh sách đề tài do các GV trong tổ bộ môn soạn thảo<br>• Bấm **Chấp thuận** (chuyển cấp Khoa), **Yêu cầu sửa**, hoặc **Từ chối** | • Chỉ thấy và duyệt đề tài thuộc đúng chuyên ngành/tổ mình quản lý (CNPM hoặc MMT) |
 | **Ban Chủ nhiệm Khoa (BCN Khoa)** | `/admin/topics`<br>`/admin/outlines` | • Phê duyệt chính thức đề tài cấp Khoa để mở cổng đăng ký cho sinh viên<br>• Xem báo cáo tổng quan tiến độ duyệt Đề cương M03 toàn khoa | • Thẩm định sau khi TTBM đã chấp thuận |
-| **Sinh viên (Đủ điều kiện)** | `/student`<br>`/student/topics`<br>`/student/groups`<br>`/join/[code]` | • Thấy Banner xanh báo đủ điều kiện kèm mốc hạn M03<br>• Tra cứu đề tài theo đúng chuyên ngành của mình<br>• Đăng ký đề tài (làm Trưởng nhóm), nhận Join Code mời bạn<br>• Nhập Join Code gia nhập nhóm (1–3 bạn)<br>• Tải mẫu M03 PDF chuẩn, nộp file PDF scan có chữ ký sống của GVHD<br>• Xem nhận xét của GVHD khi bị yêu cầu sửa đề cương | • Chỉ được tham gia tối đa 1 nhóm/đợt<br>• Nhóm tối đa 3 thành viên<br>• Bị khóa nộp lại khi GVHD đã duyệt |
+| **Sinh viên (Đủ điều kiện)** | `/student`<br>`/student/topics`<br>`/student/groups`<br>`/join/[code]` | • Thấy Banner xanh báo đủ điều kiện kèm mốc hạn M03<br>• Tra cứu đề tài theo đúng chuyên ngành của mình<br>• Đăng ký đề tài (làm Trưởng nhóm), nhận Join Code mời bạn<br>• Nhập Join Code gia nhập nhóm (1–3 bạn)<br>• Tải mẫu M03 PDF chuẩn, nộp file PDF scan có chữ ký sống của GVHD<br>• **Tiến độ tuần:** Tạo/sửa/xóa nhật ký tuần (tiến độ %, git commit, blockers)<br>• **Báo cáo Đợt 1 & 2:** Nộp file báo cáo + link mã nguồn/demo, theo dõi điểm và phản hồi của GVHD/Hội đồng | • Chỉ được tham gia tối đa 1 nhóm/đợt<br>• Nhóm tối đa 3 thành viên<br>• Bị khóa nộp lại M03 khi GVHD đã duyệt<br>• Không thể xóa nhật ký tuần khi GVHD đã xác nhận |
 | **Sinh viên (Chưa đủ điều kiện)** | `/student` | • Đăng nhập xem thông tin tài khoản<br>• Thấy Banner màu cam cảnh báo chưa đủ điều kiện | • **Bị chặn toàn bộ**: Không thể tạo nhóm, không thể đăng ký đề tài, không thể nộp đề cương |
 
 ---
 
 ## 5. TỔNG KẾT & ĐIỂM DỪNG KỸ THUẬT HIỆN TẠI
 
-* **Trạng thái kỹ thuật hiện tại:** Toàn bộ chu trình từ **Bước 0 đến Bước 5** đã được lập trình hoàn chỉnh, đồng bộ 100% giữa Database PostgreSQL, Backend NestJS (`probase-api`) và Frontend Next.js (`probase-app`).
-* **Các phân hệ tiếp theo (Giai đoạn thực hiện & Bảo vệ đồ án - SẼ LÀM TIẾP THEO):**
-  1. **BR-11 (Nhật ký tuần - WeeklyLog):** Sinh viên báo cáo tiến độ hàng tuần (commit Git, công việc hoàn thành), GVHD phản hồi nhận xét.
-  2. **BR-12 (Báo cáo Tiến độ 1 - 20%):** Nhóm nộp báo cáo đợt 1, GVHD chấm điểm trọng số 20%.
-  3. **BR-13 (Phân công Giảng viên phản biện - GVPB):** Giáo vụ/Bộ môn phân công GVPB cùng chuyên môn CNPM/MMT.
-  4. **BR-14 (Báo cáo Tiến độ 2 - 30%):** Báo cáo tiến độ đợt 2, GVHD chấm điểm trọng số 30%.
-  5. **BR-16 $\rightarrow$ BR-21 (Đánh giá cuối kỳ & Hội đồng bảo vệ - 50%):** Nhận xét M02 (GVHD), M05 (GVPB), chấm điểm Hội đồng và lưu trữ số khóa luận.
+* **Trạng thái kỹ thuật hiện tại:** Toàn bộ chu trình từ **Bước 0 đến Bước 6** đã được lập trình hoàn chỉnh, đồng bộ 100% giữa Database PostgreSQL, Backend NestJS (`probase-api`) và Frontend Next.js (`probase-app`).
+* **Các phân hệ tiếp theo (Giai đoạn Báo cáo cuối kỳ & Hội đồng bảo vệ - SẼ LÀM TIẾP THEO):**
+  1. **BR-13 (Phân công Giảng viên phản biện - GVPB):** Giáo vụ/Bộ môn phân công GVPB cùng chuyên môn CNPM/MMT trước khi bảo vệ đợt 2 / cuối kỳ.
+  2. **BR-15 (Quản lý thay đổi trong quá trình thực hiện - TopicChangeRequest):** Đổi tên đề tài, đổi thành viên nhóm, xin gia hạn nộp báo cáo.
+  3. **BR-16 $\rightarrow$ BR-21 (Đánh giá cuối kỳ & Hội đồng bảo vệ - 50% còn lại):** Nhận xét M02 (GVHD), nhận xét M05 (GVPB), thành lập Hội đồng chấm bảo vệ, tổng hợp điểm chính thức và lưu trữ số khóa luận.
+
 

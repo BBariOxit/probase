@@ -205,6 +205,11 @@ enum NotificationType {
   OUTLINE_APPROVED
 
   STUDENT_ELIGIBILITY_CONFIRMED
+
+  PROGRESS_LOG_SUBMITTED
+  PROGRESS_LOG_FEEDBACK
+  PROGRESS_REPORT_SUBMITTED
+  PROGRESS_REPORT_GRADED
 }
 
 // ─────────────────────────────────────────────────────────
@@ -252,6 +257,8 @@ model User {
   topicAssignmentsAssigned TopicAssignment[]         @relation("TopicAssignmentAssignedBy")
   proposalComments         ProposalComment[]
   outlinesSubmitted        TopicOutline[]            @relation("OutlineSubmittedBy")
+  weeklyLogsSubmitted      WeeklyLog[]               @relation("WeeklyLogSubmittedBy")
+  progressReportsSubmitted ProgressReport[]          @relation("ProgressReportSubmittedBy")
 
   @@map("users")
 }
@@ -1144,16 +1151,20 @@ model WeeklyLog {
   id                   Int       @id @default(autoincrement())
   groupId              Int
   weekNumber           Int       // Tuần thứ mấy (Tuần 1 – 15)
+  title                String?   // Tiêu đề ngắn gọn của mốc công việc
   completionPercentage Int       @default(0) // Tiến độ hoàn thành (0 – 100%)
   gitCommitUrl         String?   // Link commit mã nguồn minh chứng
   summaryNotes         String    @db.Text // Các việc đã làm trong tuần
   blockers             String?   @db.Text // Khó khăn vướng mắc
+  submittedById        Int?
   lecturerComment      String?   @db.Text // Phản hồi của GVHD
+  isAcknowledged       Boolean   @default(false) // GVHD xác nhận đã xem
   feedbackAt           DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
-  group RegistrationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  group       RegistrationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  submittedBy User?             @relation("WeeklyLogSubmittedBy", fields: [submittedById], references: [id], onDelete: SetNull)
 
   @@index([groupId, weekNumber])
   @@map("weekly_logs")
@@ -1165,18 +1176,29 @@ model ProgressReport {
   groupId            Int
   stage              String    // "STAGE_1" (Tiến độ 1 - 20%) | "STAGE_2" (Tiến độ 2 - 30%)
   reportFileUrl      String?   // File báo cáo .pdf/.docx
+  reportFileName     String?   // Tên file gốc
+  reportFileSize     Int?      // Dung lượng (bytes)
   sourceCodeUrl      String?   // Link repository mã nguồn
+  submittedById      Int?
   submittedAt        DateTime  @default(now())
+
+  // Đánh giá đợt 1 & 2
   supervisorGrade    Float?    // Điểm do GVHD chấm (thang 10)
   supervisorFeedback String?   @db.Text
   reviewerGrade      Float?    // Điểm do GVPB chấm (Tiến độ 2, thang 10)
   reviewerFeedback   String?   @db.Text
   finalStageGrade    Float?    // Điểm chốt giai đoạn (TĐ1 = GVHD; TĐ2 = TB cộng)
+
+  // Tiêu chí sống còn ở Đợt 2: Đạt >= 50% khối lượng công việc
+  workloadPercentage Int?      // Đánh giá % khối lượng hoàn thành thực tế (0 - 100)
+  isPassed           Boolean?  // Đạt yêu cầu tiếp tục / cho phép bảo vệ (false = cảnh báo đình chỉ)
+
   finalisedAt        DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  group RegistrationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  group       RegistrationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  submittedBy User?             @relation("ProgressReportSubmittedBy", fields: [submittedById], references: [id], onDelete: SetNull)
 
   @@unique([groupId, stage])
   @@map("progress_reports")
