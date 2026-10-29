@@ -18,6 +18,7 @@ import {
   MessageSquareText,
   ScrollText,
   Shuffle,
+  UserCheck,
   Users,
   type LucideIcon,
 } from 'lucide-react';
@@ -111,7 +112,7 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
         },
         {
           href: '/lecturer/reviews',
-          label: 'Thẩm định đề tài',
+          label: 'Đề tài phản biện',
           icon: Building2,
           ready: true,
         },
@@ -176,6 +177,12 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           href: '/admin/outlines',
           label: 'Đề cương M03',
           icon: FileCheck2,
+          ready: true,
+        },
+        {
+          href: '/admin/reviewers',
+          label: 'Phân công GVPB',
+          icon: UserCheck,
           ready: true,
         },
         { href: '/admin/hoi-dong', label: 'Hội đồng bảo vệ', icon: Gavel },

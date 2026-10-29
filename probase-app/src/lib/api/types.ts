@@ -171,7 +171,8 @@ export type NotificationType =
   | 'PROGRESS_LOG_SUBMITTED'
   | 'PROGRESS_LOG_FEEDBACK'
   | 'PROGRESS_REPORT_SUBMITTED'
-  | 'PROGRESS_REPORT_GRADED';
+  | 'PROGRESS_REPORT_GRADED'
+  | 'REVIEWER_ASSIGNED';
 
 export interface AppNotification {
   id: number;
@@ -1212,5 +1213,168 @@ export interface LecturerGroupProgressItem {
     isFinalised?: boolean;
   };
 }
+
+export interface ReviewCandidateLecturer {
+  id: number;
+  fullName: string;
+  academicTitle: string | null;
+  lecturerCode: string;
+  majorId: number | null;
+  major?: { id: number; name: string; code: string } | null;
+  isHeadOfDepartment: boolean;
+  supervisedCount: number;
+  reviewingCount: number;
+}
+
+export interface ReviewAssignmentGroupItem {
+  id: number;
+  name: string | null;
+  topic: {
+    id: number;
+    title: string;
+    majorId: number | null;
+    lecturer: {
+      id: number;
+      fullName: string;
+      academicTitle: string | null;
+      lecturerCode: string;
+      majorId: number | null;
+    };
+    major?: { id: number; name: string; code: string } | null;
+    round?: {
+      id: number;
+      semesterId: number;
+      semester?: { id: number; name: string } | null;
+      projectType?: { id: number; name: string } | null;
+    } | null;
+  };
+  assignment?: {
+    id: number;
+    groupId: number;
+    reviewerId: number;
+    assignedById: number;
+    assignedAt: string;
+    reviewer: {
+      id: number;
+      fullName: string;
+      academicTitle: string | null;
+      lecturerCode: string;
+      majorId: number | null;
+      major?: { id: number; name: string; code: string } | null;
+    };
+    assignedBy?: { id: number; email: string } | null;
+  } | null;
+  members: Array<{
+    student: {
+      id: number;
+      fullName: string;
+      studentCode: string;
+      class: string | null;
+    };
+  }>;
+  outline?: {
+    id: number;
+    status: string;
+    attachmentUrl: string | null;
+    fileName: string | null;
+  } | null;
+  progressReports: Array<{
+    id: number;
+    stage: string;
+    finalStageGrade: number | null;
+    workloadPercentage: number | null;
+    isPassed: boolean | null;
+    reportFileUrl: string | null;
+    reportFileName: string | null;
+    sourceCodeUrl: string | null;
+    submittedAt: string;
+  }>;
+}
+
+export interface ReviewAssignmentsOverviewResponse {
+  stats: {
+    totalGroups: number;
+    assignedCount: number;
+    unassignedCount: number;
+  };
+  groups: ReviewAssignmentGroupItem[];
+  candidates: ReviewCandidateLecturer[];
+}
+
+export interface AutoAssignResult {
+  assignedCount: number;
+  unassignedCount: number;
+  message?: string;
+  assignments: Array<{
+    groupId: number;
+    topicId: number;
+    reviewerId: number;
+    reviewerName: string;
+    topicTitle: string;
+  }>;
+  unassigned: Array<{
+    groupId: number;
+    topicTitle: string;
+    reason: string;
+  }>;
+}
+
+export interface MyReviewItem {
+  id: number;
+  groupId: number;
+  topicId: number;
+  supervisorId: number;
+  reviewerId: number;
+  assignedAt: string;
+  topic: {
+    id: number;
+    title: string;
+    lecturer: {
+      id: number;
+      fullName: string;
+      academicTitle: string | null;
+      lecturerCode: string;
+    };
+    major?: { id: number; name: string; code: string } | null;
+    round?: {
+      id: number;
+      semester?: { id: number; name: string } | null;
+      projectType?: { id: number; name: string } | null;
+    } | null;
+  };
+  group: {
+    id: number;
+    name: string | null;
+    members: Array<{
+      student: {
+        id: number;
+        fullName: string;
+        studentCode: string;
+        class: string | null;
+      };
+    }>;
+    outline?: {
+      id: number;
+      status: string;
+      attachmentUrl: string | null;
+      fileName: string | null;
+      approvedAt: string | null;
+    } | null;
+    progressReports: Array<{
+      id: number;
+      stage: string;
+      reportFileUrl: string | null;
+      reportFileName: string | null;
+      sourceCodeUrl: string | null;
+      workloadPercentage: number | null;
+      isPassed: boolean | null;
+      supervisorGrade: number | null;
+      reviewerGrade: number | null;
+      finalStageGrade: number | null;
+      submittedAt: string;
+    }>;
+  };
+}
+
 
 

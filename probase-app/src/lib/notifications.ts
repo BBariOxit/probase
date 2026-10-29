@@ -34,6 +34,9 @@ export function notificationHref(
           ? `/lecturer/topics/${notice.targetId}`
           : '/lecturer';
 
+      case 'REVIEWER_ASSIGNED':
+        return '/lecturer/reviews';
+
       default:
         return null;
     }

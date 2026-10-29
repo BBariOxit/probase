@@ -182,13 +182,16 @@ Tài liệu này định nghĩa chi tiết toàn bộ yêu cầu nghiệp vụ, 
 - **Đầu ra:** Cột điểm Tiến độ 1 (20%) được ghi nhận vào bảng điểm tổng kết; nhóm SV nhận góp ý chỉnh sửa cho giai đoạn 2.
 
 #### BR-13: Phân công Giảng viên phản biện (GVPB)
-- **Tác nhân:** TTBM, BCN Khoa, TLGV.
-- **Thời điểm:** Thực hiện trước đợt Báo cáo tiến độ lần 2 khoảng 1 tuần.
-- **Quy tắc phân công của hệ thống:**
-  - GVPB phải **khác** GVHD của đề tài đó.
-  - GVPB phải **cùng Chuyên ngành** với đề tài (đề tài CNPM phân cho GV chuyên môn Phần mềm; đề tài Mạng phân cho GV chuyên môn Mạng máy tính).
-  - Cân bằng số lượng đề tài phản biện giữa các GV trong bộ môn (tránh lệch tải).
-- **Đầu ra:** Danh sách phân công GVPB được phê duyệt; GVPB được cấp quyền truy cập vào hồ sơ đề tài.
+- **Tác nhân:** Tổ trưởng Bộ môn (TTBM), Ban Chủ nhiệm Khoa (BCN Khoa), Trợ lý Giáo vụ (TLGV).
+- **Thời điểm:** Thực hiện trước đợt Báo cáo tiến độ lần 2 hoặc trước ngày bảo vệ chính thức khoảng 2–3 tuần.
+- **3 Nguyên tắc phân công bắt buộc tuân thủ (Business Rules):**
+  1. ❌ **Không được vừa hướng dẫn vừa phản biện:** GVHD của nhóm đồ án đó **tuyệt đối không được** làm GVPB cho chính nhóm đó. Hệ thống tự động loại trừ tên GVHD ra khỏi danh sách ứng viên chọn GVPB cho nhóm.
+  2. 🎯 **Đúng chuyên môn / Tổ Bộ môn:** Sinh viên/Đề tài thuộc Chuyên ngành nào (ví dụ: Kỹ thuật phần mềm - CNPM) thì GVPB bắt buộc phải là giảng viên thuộc Bộ môn đó để đảm bảo tính chuyên môn khi chấm bài.
+  3. ⚖️ **Cân bằng tải công việc:** Mỗi giảng viên thường chỉ nhận phản biện một số lượng đồ án tối đa (ví dụ: 5–7 đề tài/học kỳ). Hệ thống hiển thị chỉ số tải công việc `(HD: x | PB: y)` ngay cạnh tên giảng viên.
+- **Cơ chế phân công trên hệ thống:**
+  - *Chế độ 1 (Thủ công):* TTBM duyệt danh sách đề tài, chọn GVPB qua thẻ dropdown select (đã lọc đúng bộ môn, trừ GVHD, kèm chỉ số tải).
+  - *Chế độ 2 (Phân công tự động - Bán tự động):* Hệ thống chạy thuật toán tối ưu tải trọng (Greedy Min-load Balancer) tự động ghép cặp đề tài với giảng viên có số lượng phản biện ít nhất trong bộ môn, hiển thị bản xem trước (Preview) để TTBM rà soát trước khi lưu chính thức.
+- **Đầu ra:** Bản ghi phân công `TopicAssignment` được kích hoạt; hệ thống gửi thông báo in-app `REVIEWER_ASSIGNED` đến GVPB; mở quyền truy cập menu "Đề tài phản biện" (`/lecturer/reviews`) để GVPB đọc đề cương M03, tải các bản thảo báo cáo và nhập phiếu nhận xét phản biện M05.
 
 #### BR-14: Kiểm tra tiến độ lần 2 tập trung của Khoa (Bắt buộc - Hội đồng Bộ môn đánh giá 30%)
 - **Tác nhân:** Sinh viên, Hội đồng Bộ môn (gồm GVHD và GVPB).

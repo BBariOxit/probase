@@ -49,7 +49,11 @@
    │ • Phân hệ 1 (Nội bộ): Sổ tay tiến độ tuần/sprint (SV log ➔ GVHD xác nhận & góp ý)
    │ • Phân hệ 2 (Khoa): 2 đợt kiểm tra tập trung (Đợt 1: Tuần 5-6 [20%], Đợt 2: Tuần 9-10 [30% + Cổng ≥ 50%])
    ▼
-[GIAI ĐOẠN TIẾP THEO: Phân công GVPB ➔ Nộp Báo cáo Cuối kỳ ➔ Hội đồng Bảo vệ]
+[BƯỚC 7: TTBM / Giáo vụ phân công Giảng viên phản biện (GVPB - BR-13)]
+   │ • 3 nguyên tắc: Không trùng GVHD, Đúng chuyên môn/Bộ môn, Cân bằng tải (HD: x | PB: y)
+   │ • 2 chế độ: Chọn thủ công & Phân công tự động (Min-load Balancer) ➔ Mở menu Đề tài phản biện cho GVPB
+   ▼
+[GIAI ĐOẠN TIẾP THEO: Nộp Báo cáo Toàn văn Cuối kỳ ➔ Nhận xét M02/M05 ➔ Hội đồng Bảo vệ]
 ```
 
 ---
@@ -246,14 +250,43 @@
 
 ---
 
+### BƯỚC 7: PHÂN CÔNG GIẢNG VIÊN PHẢN BIỆN (GVPB - BR-13)
+
+* **Ai thực hiện:** Tổ trưởng Bộ môn (TTBM Tổ CNPM & Tổ MMT), Ban Chủ nhiệm Khoa, Trợ lý Giáo vụ Khoa (TLGV).
+* **Màn hình giao diện trên Web:**
+  - TTBM & Ban quản lý: `/admin/reviewers` (**Phân công Giảng viên phản biện**)
+  - Giảng viên được phân công: `/lecturer/reviews` (**Đề tài phản biện của tôi**)
+* **3 Nguyên tắc nghiệp vụ bất di bất dịch (DLU):**
+  1. ❌ **Không được vừa hướng dẫn vừa phản biện:** GVHD tuyệt đối không được làm phản biện cho chính đề tài mình hướng dẫn.
+  2. 🎯 **Đúng chuyên môn / Tổ Bộ môn:** Đề tài thuộc Chuyên ngành nào (CNPM/MMT) thì GVPB bắt buộc phải là Giảng viên thuộc Bộ môn đó.
+  3. ⚖️ **Cân bằng tải công việc:** Hiển thị trực tiếp chỉ số tải công việc `(HD: x | PB: y)` cạnh tên giảng viên. Giới hạn trần phản biện tối đa (mặc định 5–7 đề tài/GV).
+
+* **Quy trình chi tiết trên Web:**
+  1. **Thẩm định & Phân công phía Quản trị / TTBM (`/admin/reviewers`):**
+     - Dashboard thống kê: Tổng số đề tài, Số đề tài đã phân công GVPB, Số đề tài chưa phân công.
+     - Bộ lọc thông minh: Lọc theo Bộ môn (CNPM/MMT), theo Trạng thái (Chưa phân công / Đã phân công), tìm kiếm từ khóa.
+     - **Chế độ 1 (Chọn thủ công):** Tại mỗi dòng đề tài, bấm Dropdown Select chọn GVPB. Dropdown tự động lọc bỏ GVHD của nhóm và hiển thị chỉ số tải `Thầy/Cô [Họ tên] (HD: x | PB: y)`.
+     - **Chế độ 2 (Phân công tự động - Min-load Balancer):** Bấm nút **"Phân công tự động"** $\rightarrow$ Thiết lập trần tải tối đa $\rightarrow$ Hệ thống tự động ghép cặp ưu tiên giảng viên có số lượng phản biện ít nhất trong bộ môn $\rightarrow$ Hiển thị bảng đối soát xem trước $\rightarrow$ Bấm lưu và gửi thông báo hàng loạt.
+     - Hỗ trợ nút **Hủy phân công** nhanh để thay đổi khi có phát sinh.
+  2. **Quyền truy cập & Theo dõi phía Giảng viên phản biện (`/lecturer/reviews`):**
+     - Nhận thông báo in-app `REVIEWER_ASSIGNED` ngay khi được phân công.
+     - Mở trang **Đề tài phản biện của tôi** để xem toàn bộ danh sách nhóm phụ trách.
+     - Xem thông tin nhóm sinh viên, thông tin GVHD.
+     - Tải file PDF scan Đề cương M03 có chữ ký sống để nắm phạm vi nghiên cứu.
+     - Tải file báo cáo tiến độ Đợt 1 (20%) và Đợt 2 (30%), click xem trực tiếp Kho mã nguồn / Link Demo dự án của nhóm.
+     - Sẵn sàng bước vào khâu đọc bản thảo toàn văn và lập Phiếu nhận xét phản biện M05.
+
+---
+
 ## 4. BẢNG TỔNG HỢP PHÂN QUYỀN VÀ THAO TÁC CỦA TỪNG VAI TRÒ HIỆN TẠI
 
 | Vai trò | Màn hình truy cập | Những việc ĐƯỢC LÀM trên giao diện hiện tại | Ràng buộc hệ thống |
 | :--- | :--- | :--- | :--- |
-| **Trợ lý Giáo vụ Khoa (TLGV) / Admin** | `/admin/semesters`<br>`/admin/students`<br>`/admin/outlines` | • Tạo & kích hoạt Học kỳ, thiết lập Đợt đồ án (ĐACS/ĐACN/KLTN)<br>• Tải mẫu Excel & Import danh sách SV đủ điều kiện từ PĐT<br>• Lọc sinh viên theo mã lớp (`CTK48`, `CTK46PM`...), theo đợt, theo tình trạng nhóm<br>• Xuất Excel sinh viên đối soát với PĐT<br>• Xuất file CSV Tờ trình giao đề tài chính thức | • Không xóa học kỳ đã có dữ liệu<br>• Không thể xóa sinh viên đủ điều kiện nếu sinh viên đó đã lập nhóm đồ án |
+| **Trợ lý Giáo vụ Khoa (TLGV) / Admin** | `/admin/semesters`<br>`/admin/students`<br>`/admin/outlines`<br>`/admin/reviewers` | • Tạo & kích hoạt Học kỳ, thiết lập Đợt đồ án (ĐACS/ĐACN/KLTN)<br>• Tải mẫu Excel & Import danh sách SV đủ điều kiện từ PĐT<br>• Lọc sinh viên theo mã lớp (`CTK48`, `CTK46PM`...), theo đợt, theo tình trạng nhóm<br>• Xuất Excel sinh viên đối soát với PĐT<br>• Xuất file CSV Tờ trình giao đề tài chính thức<br>• Phân công GVPB thủ công hoặc chạy phân công tự động toàn khoa | • Không xóa học kỳ đã có dữ liệu<br>• Không thể xóa sinh viên đủ điều kiện nếu sinh viên đó đã lập nhóm đồ án<br>• Không chọn GVPB trùng GVHD |
 | **Giảng viên hướng dẫn (GVHD)** | `/lecturer/topics`<br>`/lecturer/outlines`<br>`/lecturer/groups`<br>`/lecturer/groups/[id]` | • Tạo đề tài mới, nhân bản đề tài cũ, chọn tổ CNPM/MMT, chọn số lượng 1–3 SV<br>• Xem file PDF scan Đề cương M03 có chữ ký sống của SV, bấm Phê duyệt/Yêu cầu sửa<br>• Duyệt đề tài SV đề xuất<br>• **Tiến độ:** Xem dòng thời gian nhật ký tuần của nhóm, bấm xác nhận & nhận xét<br>• **Đợt 1:** Chấm điểm tiến độ 1 (thang 10, trọng số 20%)<br>• **Đợt 2:** Chấm điểm tiến độ 2 (thang 10, trọng số 30%) và đánh giá khối lượng hoàn thành (≥ 50% đạt, < 50% cảnh báo đình chỉ) | • Chỉ thao tác trên các nhóm do chính mình hướng dẫn |
-| **Tổ trưởng Bộ môn (TTBM)** | `/admin/topics` | • Xem danh sách đề tài do các GV trong tổ bộ môn soạn thảo<br>• Bấm **Chấp thuận** (chuyển cấp Khoa), **Yêu cầu sửa**, hoặc **Từ chối** | • Chỉ thấy và duyệt đề tài thuộc đúng chuyên ngành/tổ mình quản lý (CNPM hoặc MMT) |
-| **Ban Chủ nhiệm Khoa (BCN Khoa)** | `/admin/topics`<br>`/admin/outlines` | • Phê duyệt chính thức đề tài cấp Khoa để mở cổng đăng ký cho sinh viên<br>• Xem báo cáo tổng quan tiến độ duyệt Đề cương M03 toàn khoa | • Thẩm định sau khi TTBM đã chấp thuận |
+| **Giảng viên phản biện (GVPB)** | `/lecturer/reviews` | • Nhận thông báo khi được phân công phản biện<br>• Xem danh sách nhóm được phân công phản biện<br>• Xem đề cương M03, tải báo cáo Đợt 1 & Đợt 2, xem repo source code/demo của nhóm SV | • Chỉ xem các đề tài do Bộ môn phân công mình phản biện |
+| **Tổ trưởng Bộ môn (TTBM)** | `/admin/topics`<br>`/admin/reviewers` | • Thẩm định và Chấp thuận / Yêu cầu sửa đề tài trong tổ<br>• **Phân công GVPB:** Phân công thủ công hoặc chạy phân công tự động min-load balancer cho toàn bộ đề tài trong tổ bộ môn mình phụ trách | • Chỉ thấy và phân công đề tài thuộc đúng chuyên ngành/tổ mình quản lý (CNPM hoặc MMT)<br>• Ràng buộc không trùng GVHD |
+| **Ban Chủ nhiệm Khoa (BCN Khoa)** | `/admin/topics`<br>`/admin/outlines`<br>`/admin/reviewers` | • Phê duyệt chính thức đề tài cấp Khoa để mở cổng đăng ký cho sinh viên<br>• Xem báo cáo tổng quan tiến độ duyệt Đề cương M03 toàn khoa<br>• Rà soát phân công GVPB toàn khoa | • Thẩm định sau khi TTBM đã chấp thuận |
 | **Sinh viên (Đủ điều kiện)** | `/student`<br>`/student/topics`<br>`/student/groups`<br>`/join/[code]` | • Thấy Banner xanh báo đủ điều kiện kèm mốc hạn M03<br>• Tra cứu đề tài theo đúng chuyên ngành của mình<br>• Đăng ký đề tài (làm Trưởng nhóm), nhận Join Code mời bạn<br>• Nhập Join Code gia nhập nhóm (1–3 bạn)<br>• Tải mẫu M03 PDF chuẩn, nộp file PDF scan có chữ ký sống của GVHD<br>• **Tiến độ tuần:** Tạo/sửa/xóa nhật ký tuần (tiến độ %, git commit, blockers)<br>• **Báo cáo Đợt 1 & 2:** Nộp file báo cáo + link mã nguồn/demo, theo dõi điểm và phản hồi của GVHD/Hội đồng | • Chỉ được tham gia tối đa 1 nhóm/đợt<br>• Nhóm tối đa 3 thành viên<br>• Bị khóa nộp lại M03 khi GVHD đã duyệt<br>• Không thể xóa nhật ký tuần khi GVHD đã xác nhận |
 | **Sinh viên (Chưa đủ điều kiện)** | `/student` | • Đăng nhập xem thông tin tài khoản<br>• Thấy Banner màu cam cảnh báo chưa đủ điều kiện | • **Bị chặn toàn bộ**: Không thể tạo nhóm, không thể đăng ký đề tài, không thể nộp đề cương |
 
@@ -261,10 +294,10 @@
 
 ## 5. TỔNG KẾT & ĐIỂM DỪNG KỸ THUẬT HIỆN TẠI
 
-* **Trạng thái kỹ thuật hiện tại:** Toàn bộ chu trình từ **Bước 0 đến Bước 6** đã được lập trình hoàn chỉnh, đồng bộ 100% giữa Database PostgreSQL, Backend NestJS (`probase-api`) và Frontend Next.js (`probase-app`).
+* **Trạng thái kỹ thuật hiện tại:** Toàn bộ chu trình từ **Bước 0 đến Bước 7** đã được lập trình hoàn chỉnh, đồng bộ 100% giữa Database PostgreSQL, Backend NestJS (`probase-api`) và Frontend Next.js (`probase-app`).
 * **Các phân hệ tiếp theo (Giai đoạn Báo cáo cuối kỳ & Hội đồng bảo vệ - SẼ LÀM TIẾP THEO):**
-  1. **BR-13 (Phân công Giảng viên phản biện - GVPB):** Giáo vụ/Bộ môn phân công GVPB cùng chuyên môn CNPM/MMT trước khi bảo vệ đợt 2 / cuối kỳ.
-  2. **BR-15 (Quản lý thay đổi trong quá trình thực hiện - TopicChangeRequest):** Đổi tên đề tài, đổi thành viên nhóm, xin gia hạn nộp báo cáo.
-  3. **BR-16 $\rightarrow$ BR-21 (Đánh giá cuối kỳ & Hội đồng bảo vệ - 50% còn lại):** Nhận xét M02 (GVHD), nhận xét M05 (GVPB), thành lập Hội đồng chấm bảo vệ, tổng hợp điểm chính thức và lưu trữ số khóa luận.
+  1. **BR-15 (Quản lý thay đổi trong quá trình thực hiện - TopicChangeRequest):** Đổi tên đề tài, đổi thành viên nhóm, xin gia hạn nộp báo cáo.
+  2. **BR-16 $\rightarrow$ BR-21 (Đánh giá cuối kỳ & Hội đồng bảo vệ - 50% còn lại):** Sinh viên nộp báo cáo toàn văn cuối kỳ, GVHD nhận xét M02, GVPB nhận xét M05, thành lập Hội đồng chấm bảo vệ, tổng hợp điểm chính thức và lưu trữ số khóa luận.
+
 
 
