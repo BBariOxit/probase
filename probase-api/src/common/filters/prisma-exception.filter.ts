@@ -34,7 +34,8 @@ export class PrismaClientExceptionFilter implements ExceptionFilter {
       }
       case 'P2003': {
         status = HttpStatus.BAD_REQUEST;
-        message = 'Ràng buộc khóa ngoại không hợp lệ hoặc dữ liệu liên kết không tồn tại.';
+        message =
+          'Ràng buộc khóa ngoại không hợp lệ hoặc dữ liệu liên kết không tồn tại.';
         break;
       }
       default: {

@@ -1,4 +1,8 @@
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
@@ -107,7 +111,12 @@ describe('EligibleStudentsService', () => {
             class: 'CTK46PM',
             cohort: '2022',
             major: { id: 1, name: 'CNPM', code: 'CNPM' },
-            user: { id: 20, email: '2212345@dlu.edu.vn', isActive: true, avatarUrl: null },
+            user: {
+              id: 20,
+              email: '2212345@dlu.edu.vn',
+              isActive: true,
+              avatarUrl: null,
+            },
             groupMemberships: [],
           },
         },
@@ -134,7 +143,9 @@ describe('EligibleStudentsService', () => {
         studentId: 50,
       });
 
-      await expect(service.removeEligible(1, 50)).rejects.toThrow(ConflictException);
+      await expect(service.removeEligible(1, 50)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('deletes student from round eligibility if no group exists', async () => {

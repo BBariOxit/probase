@@ -6,7 +6,11 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Role } from '../../../../generated/prisma/client';
-import { AppActor, ROLES_KEY, RequiredRole } from '../decorators/roles.decorator';
+import {
+  AppActor,
+  ROLES_KEY,
+  RequiredRole,
+} from '../decorators/roles.decorator';
 
 export interface RequestLecturerProfile {
   id: number;
@@ -106,4 +110,3 @@ export class RolesGuard implements CanActivate {
     return true;
   }
 }
-

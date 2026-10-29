@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { GroupMemberStatus, Role } from '../../../generated/prisma/client';
 import { CloudinaryService } from '../../core/cloudinary/cloudinary.service';
@@ -18,8 +22,17 @@ describe('OutlinesService', () => {
       studentProfile: { findUnique: jest.fn() },
       lecturerProfile: { findUnique: jest.fn() },
       registrationGroupMember: { findFirst: jest.fn() },
-      registrationGroup: { findUnique: jest.fn(), findMany: jest.fn(), count: jest.fn() },
-      topicOutline: { findUnique: jest.fn(), upsert: jest.fn(), update: jest.fn(), count: jest.fn() },
+      registrationGroup: {
+        findUnique: jest.fn(),
+        findMany: jest.fn(),
+        count: jest.fn(),
+      },
+      topicOutline: {
+        findUnique: jest.fn(),
+        upsert: jest.fn(),
+        update: jest.fn(),
+        count: jest.fn(),
+      },
       topic: { updateMany: jest.fn() },
       auditLog: { create: jest.fn() },
       $transaction: jest.fn((callback) => {
@@ -62,12 +75,17 @@ describe('OutlinesService', () => {
 
     it('returns group and outline details when student is in a group with topic', async () => {
       prisma.studentProfile.findUnique.mockResolvedValue({ id: 1, userId: 10 });
-      prisma.registrationGroupMember.findFirst.mockResolvedValue({ groupId: 5 });
+      prisma.registrationGroupMember.findFirst.mockResolvedValue({
+        groupId: 5,
+      });
       prisma.registrationGroup.findUnique.mockResolvedValue({
         id: 5,
         name: 'Nhóm 01',
         topic: { id: 2, title: 'Đồ án Quản lý' },
-        outline: { status: 'SUBMITTED', attachmentUrl: 'https://res.cloudinary.com/doc.pdf' },
+        outline: {
+          status: 'SUBMITTED',
+          attachmentUrl: 'https://res.cloudinary.com/doc.pdf',
+        },
       });
 
       const result = await service.getMyGroupOutline(10);
@@ -85,9 +103,14 @@ describe('OutlinesService', () => {
     });
 
     it('successfully uploads file, upserts TopicOutline and notifies lecturer', async () => {
-      const mockFile = { originalname: 'de_cuong.pdf', buffer: Buffer.from('%PDF-1.4') } as any;
+      const mockFile = {
+        originalname: 'de_cuong.pdf',
+        buffer: Buffer.from('%PDF-1.4'),
+      } as any;
       prisma.studentProfile.findUnique.mockResolvedValue({ id: 1, userId: 10 });
-      prisma.registrationGroupMember.findFirst.mockResolvedValue({ groupId: 5 });
+      prisma.registrationGroupMember.findFirst.mockResolvedValue({
+        groupId: 5,
+      });
       prisma.registrationGroup.findUnique.mockResolvedValue({
         id: 5,
         name: 'Nhóm 01',
@@ -125,7 +148,11 @@ describe('OutlinesService', () => {
       });
 
       await expect(
-        service.reviewOutline(1, { action: OutlineReviewAction.APPROVE }, { id: 88, role: Role.LECTURER }),
+        service.reviewOutline(
+          1,
+          { action: OutlineReviewAction.APPROVE },
+          { id: 88, role: Role.LECTURER },
+        ),
       ).rejects.toThrow(ForbiddenException);
     });
 

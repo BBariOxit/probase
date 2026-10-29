@@ -132,7 +132,9 @@ export class EligibleStudentsService {
       .slice(file.originalname.lastIndexOf('.'))
       .toLowerCase();
     if (!['.xlsx', '.csv'].includes(ext)) {
-      throw new BadRequestException('Chỉ chấp nhận file định dạng .xlsx hoặc .csv');
+      throw new BadRequestException(
+        'Chỉ chấp nhận file định dạng .xlsx hoặc .csv',
+      );
     }
 
     const workbook = new ExcelJS.Workbook();
@@ -249,10 +251,7 @@ export class EligibleStudentsService {
         // Check if user exists
         let user = await this.prisma.user.findFirst({
           where: {
-            OR: [
-              { email },
-              { studentProfile: { studentCode } },
-            ],
+            OR: [{ email }, { studentProfile: { studentCode } }],
           },
           include: { studentProfile: true },
         });
@@ -421,7 +420,12 @@ export class EligibleStudentsService {
           student: {
             include: {
               user: {
-                select: { id: true, email: true, isActive: true, avatarUrl: true },
+                select: {
+                  id: true,
+                  email: true,
+                  isActive: true,
+                  avatarUrl: true,
+                },
               },
               major: { select: { id: true, name: true, code: true } },
               groupMemberships: {
@@ -436,7 +440,11 @@ export class EligibleStudentsService {
                       topic: {
                         include: {
                           lecturer: {
-                            select: { id: true, fullName: true, academicTitle: true },
+                            select: {
+                              id: true,
+                              fullName: true,
+                              academicTitle: true,
+                            },
                           },
                         },
                       },
@@ -555,7 +563,9 @@ export class EligibleStudentsService {
     });
 
     if (res.count === 0) {
-      throw new NotFoundException('Sinh viên không nằm trong danh sách đợt này');
+      throw new NotFoundException(
+        'Sinh viên không nằm trong danh sách đợt này',
+      );
     }
 
     return { message: 'Đã xóa sinh viên khỏi danh sách đủ điều kiện' };

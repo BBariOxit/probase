@@ -8,7 +8,10 @@ import {
   RegistrationGroupStatus,
   RoundPhase,
 } from '../../../generated/prisma/client';
-import { endOfNamedDay, startOfNamedDay } from '../../common/utils/named-day.util';
+import {
+  endOfNamedDay,
+  startOfNamedDay,
+} from '../../common/utils/named-day.util';
 import { PrismaService } from '../../core/prisma/prisma.service';
 
 @Injectable()

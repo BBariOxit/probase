@@ -58,7 +58,6 @@ export class AuthController {
     return result;
   }
 
-
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)

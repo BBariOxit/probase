@@ -414,7 +414,9 @@ export class ProposalsService {
             role: true,
             avatarUrl: true,
             studentProfile: { select: { fullName: true } },
-            lecturerProfile: { select: { fullName: true, academicTitle: true } },
+            lecturerProfile: {
+              select: { fullName: true, academicTitle: true },
+            },
           },
         },
       },
@@ -486,7 +488,9 @@ export class ProposalsService {
       where: { proposalId: id },
     });
     if (count >= 5) {
-      throw new BadRequestException('Mỗi đề xuất chỉ được đính kèm tối đa 5 tệp.');
+      throw new BadRequestException(
+        'Mỗi đề xuất chỉ được đính kèm tối đa 5 tệp.',
+      );
     }
 
     const stored = await this.cloudinary.uploadProposalAttachment(file);
@@ -703,7 +707,9 @@ export class ProposalsService {
     const pending = await this.prisma.topicProposal.findFirst({
       where: {
         studentId,
-        status: { in: [TopicProposalStatus.PENDING, TopicProposalStatus.DRAFT] },
+        status: {
+          in: [TopicProposalStatus.PENDING, TopicProposalStatus.DRAFT],
+        },
       },
       select: { id: true },
     });

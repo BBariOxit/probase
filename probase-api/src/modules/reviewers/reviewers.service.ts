@@ -40,7 +40,7 @@ export class ReviewersService {
 
     // Giới hạn phạm vi theo Bộ môn của TTBM
     const targetMajorId = isHodOnly
-      ? user.lecturerProfile?.majorId ?? undefined
+      ? (user.lecturerProfile?.majorId ?? undefined)
       : query.majorId;
 
     // Điều kiện lọc nhóm đồ án
@@ -372,7 +372,7 @@ export class ReviewersService {
       !user.lecturerProfile?.isAcademicAssistant;
 
     const targetMajorId = isHodOnly
-      ? user.lecturerProfile?.majorId ?? undefined
+      ? (user.lecturerProfile?.majorId ?? undefined)
       : dto.majorId;
 
     const whereUnassigned: Prisma.RegistrationGroupWhereInput = {

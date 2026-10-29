@@ -51,7 +51,10 @@ export class TopicSimilarityService {
   /**
    * Calculate Sørensen–Dice / Jaccard similarity coefficient between two token sets.
    */
-  private calculateDiceSimilarity(setA: Set<string>, setB: Set<string>): {
+  private calculateDiceSimilarity(
+    setA: Set<string>,
+    setB: Set<string>,
+  ): {
     score: number;
     overlap: string[];
   } {

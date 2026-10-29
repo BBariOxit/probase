@@ -7,4 +7,6 @@ export const AutoAssignReviewersSchema = z.object({
   maxReviewsPerLecturer: z.coerce.number().int().min(1).max(20).optional(),
 });
 
-export class AutoAssignReviewersDto extends createZodDto(AutoAssignReviewersSchema) {}
+export class AutoAssignReviewersDto extends createZodDto(
+  AutoAssignReviewersSchema,
+) {}

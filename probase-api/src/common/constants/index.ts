@@ -16,7 +16,8 @@ export const REGEX_PATTERNS = {
 } as const;
 
 export const ERROR_MESSAGES = {
-  UNAUTHORIZED: 'Phiên làm việc đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.',
+  UNAUTHORIZED:
+    'Phiên làm việc đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.',
   FORBIDDEN: 'Bạn không có quyền thực hiện hành động này.',
   NOT_FOUND: 'Không tìm thấy dữ liệu yêu cầu.',
   VALIDATION_ERROR: 'Dữ liệu gửi lên không đúng định dạng.',

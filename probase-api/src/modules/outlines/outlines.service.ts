@@ -17,7 +17,10 @@ import { CloudinaryService } from '../../core/cloudinary/cloudinary.service';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { QueryOutlinesDto } from './dto/query-outlines.dto';
-import { OutlineReviewAction, ReviewOutlineDto } from './dto/review-outline.dto';
+import {
+  OutlineReviewAction,
+  ReviewOutlineDto,
+} from './dto/review-outline.dto';
 
 const GROUP_OUTLINE_INCLUDE = {
   topic: {
@@ -178,7 +181,9 @@ export class OutlinesService {
     });
 
     if (!membership) {
-      throw new BadRequestException('Bạn chưa là thành viên chính thức của nhóm nào.');
+      throw new BadRequestException(
+        'Bạn chưa là thành viên chính thức của nhóm nào.',
+      );
     }
 
     const group = await this.prisma.registrationGroup.findUnique({
@@ -194,7 +199,9 @@ export class OutlinesService {
     });
 
     if (!group || !group.topic) {
-      throw new BadRequestException('Nhóm chưa có đề tài được phê duyệt để nộp đề cương.');
+      throw new BadRequestException(
+        'Nhóm chưa có đề tài được phê duyệt để nộp đề cương.',
+      );
     }
 
     if (group.outline?.status === 'APPROVED_BY_LECTURER') {
@@ -270,7 +277,9 @@ export class OutlinesService {
       where: { userId },
     });
     if (!lecturer) {
-      throw new ForbiddenException('Chỉ giảng viên mới có quyền xem danh sách này.');
+      throw new ForbiddenException(
+        'Chỉ giảng viên mới có quyền xem danh sách này.',
+      );
     }
 
     const where: Prisma.RegistrationGroupWhereInput = {
@@ -279,9 +288,8 @@ export class OutlinesService {
         ...(query.semesterId && { semesterId: query.semesterId }),
       },
       ...(query.status && {
-        outline: query.status === 'NOT_SUBMITTED'
-          ? null
-          : { status: query.status },
+        outline:
+          query.status === 'NOT_SUBMITTED' ? null : { status: query.status },
       }),
       ...(query.search && {
         OR: [
@@ -292,8 +300,15 @@ export class OutlinesService {
               some: {
                 student: {
                   OR: [
-                    { fullName: { contains: query.search, mode: 'insensitive' } },
-                    { studentCode: { contains: query.search, mode: 'insensitive' } },
+                    {
+                      fullName: { contains: query.search, mode: 'insensitive' },
+                    },
+                    {
+                      studentCode: {
+                        contains: query.search,
+                        mode: 'insensitive',
+                      },
+                    },
                   ],
                 },
               },
@@ -397,7 +412,10 @@ export class OutlinesService {
     }
 
     // Kiểm tra quyền: Chỉ GVHD của đề tài này (hoặc Admin hệ thống) mới được duyệt
-    if (user.role === Role.LECTURER && outline.topic.lecturer.userId !== user.id) {
+    if (
+      user.role === Role.LECTURER &&
+      outline.topic.lecturer.userId !== user.id
+    ) {
       throw new ForbiddenException(
         'Bạn không phải là Giảng viên hướng dẫn của đề tài này.',
       );
@@ -409,7 +427,10 @@ export class OutlinesService {
       );
     }
 
-    if (dto.action === OutlineReviewAction.REQUEST_REVISION && !dto.feedback?.trim()) {
+    if (
+      dto.action === OutlineReviewAction.REQUEST_REVISION &&
+      !dto.feedback?.trim()
+    ) {
       throw new BadRequestException(
         'Vui lòng nhập lý do/góp ý khi yêu cầu sinh viên nộp lại đề cương.',
       );
@@ -509,9 +530,8 @@ export class OutlinesService {
         topic: { semesterId: query.semesterId },
       }),
       ...(query.status && {
-        outline: query.status === 'NOT_SUBMITTED'
-          ? null
-          : { status: query.status },
+        outline:
+          query.status === 'NOT_SUBMITTED' ? null : { status: query.status },
       }),
       ...(query.search && {
         OR: [
@@ -528,70 +548,76 @@ export class OutlinesService {
       }),
     };
 
-    const [groups, total, totalWithTopic, approvedCount, submittedCount, needsRevisionCount] =
-      await this.prisma.$transaction([
-        this.prisma.registrationGroup.findMany({
-          where,
-          include: {
-            topic: {
-              include: {
-                lecturer: {
-                  select: { id: true, fullName: true, academicTitle: true },
+    const [
+      groups,
+      total,
+      totalWithTopic,
+      approvedCount,
+      submittedCount,
+      needsRevisionCount,
+    ] = await this.prisma.$transaction([
+      this.prisma.registrationGroup.findMany({
+        where,
+        include: {
+          topic: {
+            include: {
+              lecturer: {
+                select: { id: true, fullName: true, academicTitle: true },
+              },
+              round: {
+                include: { projectType: true },
+              },
+              major: true,
+              semester: true,
+            },
+          },
+          members: {
+            where: { status: GroupMemberStatus.ACCEPTED },
+            include: {
+              student: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  studentCode: true,
+                  class: true,
                 },
-                round: {
-                  include: { projectType: true },
-                },
-                major: true,
-                semester: true,
               },
             },
-            members: {
-              where: { status: GroupMemberStatus.ACCEPTED },
-              include: {
-                student: {
-                  select: {
-                    id: true,
-                    fullName: true,
-                    studentCode: true,
-                    class: true,
-                  },
-                },
-              },
-            },
-            leader: {
-              select: { id: true, fullName: true, studentCode: true },
-            },
-            outline: true,
           },
-          orderBy: { updatedAt: 'desc' },
-          skip: (query.page - 1) * query.limit,
-          take: query.limit,
-        }),
-        this.prisma.registrationGroup.count({ where }),
-        this.prisma.registrationGroup.count({
-          where: {
-            ...(query.semesterId && { topic: { semesterId: query.semesterId } }),
+          leader: {
+            select: { id: true, fullName: true, studentCode: true },
           },
-        }),
-        this.prisma.topicOutline.count({
-          where: {
-            status: 'APPROVED_BY_LECTURER',
-            ...(query.semesterId && { topic: { semesterId: query.semesterId } }),
-          },
-        }),
-        this.prisma.topicOutline.count({
-          where: {
-            status: 'SUBMITTED',
-            ...(query.semesterId && { topic: { semesterId: query.semesterId } }),
-          },
-        }),
-        this.prisma.topicOutline.count({
-          where: {
-            status: 'NEEDS_REVISION',
-            ...(query.semesterId && { topic: { semesterId: query.semesterId } }),
-          },
-        }),
-      ]);
+          outline: true,
+        },
+        orderBy: { updatedAt: 'desc' },
+        skip: (query.page - 1) * query.limit,
+        take: query.limit,
+      }),
+      this.prisma.registrationGroup.count({ where }),
+      this.prisma.registrationGroup.count({
+        where: {
+          ...(query.semesterId && { topic: { semesterId: query.semesterId } }),
+        },
+      }),
+      this.prisma.topicOutline.count({
+        where: {
+          status: 'APPROVED_BY_LECTURER',
+          ...(query.semesterId && { topic: { semesterId: query.semesterId } }),
+        },
+      }),
+      this.prisma.topicOutline.count({
+        where: {
+          status: 'SUBMITTED',
+          ...(query.semesterId && { topic: { semesterId: query.semesterId } }),
+        },
+      }),
+      this.prisma.topicOutline.count({
+        where: {
+          status: 'NEEDS_REVISION',
+          ...(query.semesterId && { topic: { semesterId: query.semesterId } }),
+        },
+      }),
+    ]);
 
     const notSubmittedCount = Math.max(
       0,

@@ -67,10 +67,7 @@ export class ProposalsController {
 
   @Roles('STUDENT')
   @Post(':id/submit')
-  submit(
-    @Param('id', ParseIntPipe) id: number,
-    @GetUser('id') userId: number,
-  ) {
+  submit(@Param('id', ParseIntPipe) id: number, @GetUser('id') userId: number) {
     return this.proposalsService.submit(id, userId);
   }
 

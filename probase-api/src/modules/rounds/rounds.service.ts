@@ -150,7 +150,10 @@ export class RoundsService {
     if (!student.cohort) return [];
 
     const cohortRounds = await this.prisma.registrationRound.findMany({
-      where: { semesterId, eligibilities: { some: { cohort: student.cohort } } },
+      where: {
+        semesterId,
+        eligibilities: { some: { cohort: student.cohort } },
+      },
       select: {
         id: true,
         projectType: { select: { id: true, name: true, code: true } },

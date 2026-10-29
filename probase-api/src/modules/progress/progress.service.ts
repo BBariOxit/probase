@@ -226,7 +226,9 @@ export class ProgressService {
     });
 
     if (!membership?.group?.topic) {
-      throw new BadRequestException('Bạn chưa có nhóm hoặc đề tài để cập nhật tiến độ.');
+      throw new BadRequestException(
+        'Bạn chưa có nhóm hoặc đề tài để cập nhật tiến độ.',
+      );
     }
 
     const group = membership.group;
@@ -285,7 +287,11 @@ export class ProgressService {
     return log;
   }
 
-  async updateWeeklyLog(userId: number, logId: number, dto: UpdateWeeklyLogDto) {
+  async updateWeeklyLog(
+    userId: number,
+    logId: number,
+    dto: UpdateWeeklyLogDto,
+  ) {
     const log = await this.prisma.weeklyLog.findUnique({
       where: { id: logId },
       include: {
@@ -304,9 +310,7 @@ export class ProgressService {
       throw new NotFoundException('Nhật ký không tồn tại.');
     }
 
-    const isMember = log.group.members.some(
-      (m) => m.student.userId === userId,
-    );
+    const isMember = log.group.members.some((m) => m.student.userId === userId);
     if (!isMember) {
       throw new ForbiddenException('Bạn không thuộc nhóm sở hữu nhật ký này.');
     }
@@ -318,8 +322,12 @@ export class ProgressService {
         ...(dto.completionPercentage !== undefined && {
           completionPercentage: dto.completionPercentage,
         }),
-        ...(dto.gitCommitUrl !== undefined && { gitCommitUrl: dto.gitCommitUrl }),
-        ...(dto.summaryNotes !== undefined && { summaryNotes: dto.summaryNotes }),
+        ...(dto.gitCommitUrl !== undefined && {
+          gitCommitUrl: dto.gitCommitUrl,
+        }),
+        ...(dto.summaryNotes !== undefined && {
+          summaryNotes: dto.summaryNotes,
+        }),
         ...(dto.blockers !== undefined && { blockers: dto.blockers }),
         submittedById: userId,
       },
@@ -345,9 +353,7 @@ export class ProgressService {
       throw new NotFoundException('Nhật ký không tồn tại.');
     }
 
-    const isMember = log.group.members.some(
-      (m) => m.student.userId === userId,
-    );
+    const isMember = log.group.members.some((m) => m.student.userId === userId);
     if (!isMember) {
       throw new ForbiddenException('Bạn không thuộc nhóm sở hữu nhật ký này.');
     }
@@ -465,7 +471,9 @@ export class ProgressService {
     });
 
     if (!membership?.group?.topic) {
-      throw new BadRequestException('Nhóm của bạn chưa có đề tài để nộp báo cáo tiến độ.');
+      throw new BadRequestException(
+        'Nhóm của bạn chưa có đề tài để nộp báo cáo tiến độ.',
+      );
     }
 
     const group = membership.group;
@@ -502,7 +510,9 @@ export class ProgressService {
         ...(fileUrl && { reportFileUrl: fileUrl }),
         ...(fileName && { reportFileName: fileName }),
         ...(fileSize && { reportFileSize: fileSize }),
-        ...(dto.sourceCodeUrl !== undefined && { sourceCodeUrl: dto.sourceCodeUrl }),
+        ...(dto.sourceCodeUrl !== undefined && {
+          sourceCodeUrl: dto.sourceCodeUrl,
+        }),
         submittedById: userId,
         submittedAt: new Date(),
       },
@@ -661,9 +671,15 @@ export class ProgressService {
 
     // Tính điểm trung bình cộng nếu có cả 2, hoặc lấy điểm hiện tại
     let finalStageGrade = dto.grade;
-    if (supervisorGrade !== undefined && supervisorGrade !== null &&
-        reviewerGrade !== undefined && reviewerGrade !== null) {
-      finalStageGrade = Number(((supervisorGrade + reviewerGrade) / 2).toFixed(2));
+    if (
+      supervisorGrade !== undefined &&
+      supervisorGrade !== null &&
+      reviewerGrade !== undefined &&
+      reviewerGrade !== null
+    ) {
+      finalStageGrade = Number(
+        ((supervisorGrade + reviewerGrade) / 2).toFixed(2),
+      );
     }
 
     // Tiêu chí sống còn: Đạt >= 50% khối lượng công việc
@@ -723,9 +739,10 @@ export class ProgressService {
         },
       });
 
-      const statusText = isPassed === false
-        ? 'CẢNH BÁO: Chưa đạt 50% khối lượng công việc'
-        : `Điểm chốt: ${finalStageGrade}/10`;
+      const statusText =
+        isPassed === false
+          ? 'CẢNH BÁO: Chưa đạt 50% khối lượng công việc'
+          : `Điểm chốt: ${finalStageGrade}/10`;
 
       notices.push({
         userId: member.student.userId,
@@ -828,8 +845,10 @@ export class ProgressService {
       const isSupervisor = g.topic?.lecturerId === lecturer.id;
       const isReviewer = g.assignment?.reviewerId === lecturer.id;
       const latestLog = g.weeklyLogs[0] ?? null;
-      const stage1 = g.progressReports.find((r) => r.stage === 'STAGE_1') ?? null;
-      const stage2 = g.progressReports.find((r) => r.stage === 'STAGE_2') ?? null;
+      const stage1 =
+        g.progressReports.find((r) => r.stage === 'STAGE_1') ?? null;
+      const stage2 =
+        g.progressReports.find((r) => r.stage === 'STAGE_2') ?? null;
 
       return {
         id: g.id,
@@ -970,8 +989,10 @@ export class ProgressService {
       );
     }
 
-    const stage1 = group.progressReports.find((r) => r.stage === 'STAGE_1') ?? null;
-    const stage2 = group.progressReports.find((r) => r.stage === 'STAGE_2') ?? null;
+    const stage1 =
+      group.progressReports.find((r) => r.stage === 'STAGE_1') ?? null;
+    const stage2 =
+      group.progressReports.find((r) => r.stage === 'STAGE_2') ?? null;
 
     return {
       group: {

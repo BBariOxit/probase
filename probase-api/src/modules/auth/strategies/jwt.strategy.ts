@@ -65,4 +65,3 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return user; // This gets attached to req.user
   }
 }
-

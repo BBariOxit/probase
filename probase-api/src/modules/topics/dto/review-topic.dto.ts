@@ -17,7 +17,8 @@ export const DepartmentReviewSchema = z
       data.action === 'APPROVE' ||
       (typeof data.feedback === 'string' && data.feedback.length > 0),
     {
-      message: 'Vui lòng nhập lý do/nhận xét khi yêu cầu sửa hoặc từ chối đề tài',
+      message:
+        'Vui lòng nhập lý do/nhận xét khi yêu cầu sửa hoặc từ chối đề tài',
       path: ['feedback'],
     },
   );
@@ -40,7 +41,8 @@ export const FacultyReviewSchema = z
       data.action === 'APPROVE' ||
       (typeof data.feedback === 'string' && data.feedback.length > 0),
     {
-      message: 'Vui lòng nhập lý do/nhận xét khi yêu cầu sửa hoặc từ chối đề tài',
+      message:
+        'Vui lòng nhập lý do/nhận xét khi yêu cầu sửa hoặc từ chối đề tài',
       path: ['feedback'],
     },
   );

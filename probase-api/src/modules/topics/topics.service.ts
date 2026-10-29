@@ -22,10 +22,7 @@ import { RoundsService } from '../rounds/rounds.service';
 import { CreateTopicDto } from './dto/create-topic.dto';
 import { QueryTopicsDto } from './dto/query-topics.dto';
 import { UpdateTopicDto } from './dto/update-topic.dto';
-import {
-  DepartmentReviewDto,
-  FacultyReviewDto,
-} from './dto/review-topic.dto';
+import { DepartmentReviewDto, FacultyReviewDto } from './dto/review-topic.dto';
 import { TopicSimilarityService } from './topic-similarity.service';
 
 const PUBLISHED_STATUSES = [
@@ -68,8 +65,12 @@ const LIST_SELECT = {
   major: { select: { id: true, name: true, code: true } },
   departmentFeedback: true,
   facultyFeedback: true,
-  departmentReviewer: { select: { id: true, fullName: true, academicTitle: true } },
-  facultyApprover: { select: { id: true, fullName: true, academicTitle: true } },
+  departmentReviewer: {
+    select: { id: true, fullName: true, academicTitle: true },
+  },
+  facultyApprover: {
+    select: { id: true, fullName: true, academicTitle: true },
+  },
   createdAt: true,
   semester: { select: { id: true, name: true, code: true } },
   round: ROUND_SELECT,
@@ -654,7 +655,9 @@ export class TopicsService {
 
     for (const t of draftTopics) {
       this.similarity.checkTopicSimilarity(t.id).catch((err) => {
-        this.logger.warn(`Failed async similarity check for topic ${t.id}: ${err}`);
+        this.logger.warn(
+          `Failed async similarity check for topic ${t.id}: ${err}`,
+        );
       });
     }
 

@@ -347,11 +347,7 @@ export class AuthService {
 
     await this.clearFailedPasswords(user);
 
-    const tokens = await this.generateTokenPair(
-      user.id,
-      user.email,
-      user.role,
-    );
+    const tokens = await this.generateTokenPair(user.id, user.email, user.role);
 
     return {
       ...tokens,

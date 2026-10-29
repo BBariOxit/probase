@@ -18,10 +18,7 @@ import { QueryTopicsDto } from './dto/query-topics.dto';
 import { UpdateTopicDto } from './dto/update-topic.dto';
 import { BulkOpenTopicsDto } from './dto/bulk-open-topics.dto';
 import { SubmitTopicsDto } from './dto/submit-topics.dto';
-import {
-  DepartmentReviewDto,
-  FacultyReviewDto,
-} from './dto/review-topic.dto';
+import { DepartmentReviewDto, FacultyReviewDto } from './dto/review-topic.dto';
 import { TopicSimilarityService } from './topic-similarity.service';
 import { TopicsService } from './topics.service';
 
@@ -74,10 +71,7 @@ export class TopicsController {
 
   @Roles('LECTURER')
   @Post('submit-drafts')
-  submitDrafts(
-    @Body() dto: SubmitTopicsDto,
-    @GetUser('id') userId: number,
-  ) {
+  submitDrafts(@Body() dto: SubmitTopicsDto, @GetUser('id') userId: number) {
     return this.topicsService.submitDrafts(userId, dto.topicIds);
   }
 
@@ -120,10 +114,7 @@ export class TopicsController {
 
   @Roles('LECTURER')
   @Patch(':id/submit')
-  submit(
-    @Param('id', ParseIntPipe) id: number,
-    @GetUser('id') userId: number,
-  ) {
+  submit(@Param('id', ParseIntPipe) id: number, @GetUser('id') userId: number) {
     return this.topicsService.submit(id, userId);
   }
 

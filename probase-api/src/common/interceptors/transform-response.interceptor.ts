@@ -15,9 +15,10 @@ export interface ResponseFormat<T> {
 }
 
 @Injectable()
-export class TransformResponseInterceptor<T>
-  implements NestInterceptor<T, ResponseFormat<T> | T>
-{
+export class TransformResponseInterceptor<T> implements NestInterceptor<
+  T,
+  ResponseFormat<T> | T
+> {
   intercept(
     context: ExecutionContext,
     next: CallHandler,
@@ -29,7 +30,10 @@ export class TransformResponseInterceptor<T>
     return next.handle().pipe(
       map((data) => {
         // If data is already in a stream or file buffer, bypass
-        if (data instanceof Buffer || (data && typeof data === 'object' && 'pipe' in data)) {
+        if (
+          data instanceof Buffer ||
+          (data && typeof data === 'object' && 'pipe' in data)
+        ) {
           return data;
         }
 

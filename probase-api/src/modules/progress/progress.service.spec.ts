@@ -1,6 +1,13 @@
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { GroupMemberStatus, NotificationType } from '../../../generated/prisma/client';
+import {
+  GroupMemberStatus,
+  NotificationType,
+} from '../../../generated/prisma/client';
 import { CloudinaryService } from '../../core/cloudinary/cloudinary.service';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
@@ -67,7 +74,10 @@ describe('ProgressService', () => {
 
   describe('getMyGroupProgress', () => {
     it('should return hasGroup: false when student has no accepted group', async () => {
-      prisma.studentProfile.findUnique.mockResolvedValue({ id: 10, userId: 100 });
+      prisma.studentProfile.findUnique.mockResolvedValue({
+        id: 10,
+        userId: 100,
+      });
       prisma.registrationGroupMember.findFirst.mockResolvedValue(null);
 
       const result = await service.getMyGroupProgress(100);
@@ -76,12 +86,21 @@ describe('ProgressService', () => {
     });
 
     it('should return group progress and latest percentage when student has group and topic', async () => {
-      prisma.studentProfile.findUnique.mockResolvedValue({ id: 10, userId: 100 });
-      prisma.registrationGroupMember.findFirst.mockResolvedValue({ groupId: 20 });
+      prisma.studentProfile.findUnique.mockResolvedValue({
+        id: 10,
+        userId: 100,
+      });
+      prisma.registrationGroupMember.findFirst.mockResolvedValue({
+        groupId: 20,
+      });
       prisma.registrationGroup.findUnique.mockResolvedValue({
         id: 20,
         name: 'Nhóm 1',
-        topic: { id: 30, title: 'Hệ thống Quản lý', lecturer: { fullName: 'Thầy A' } },
+        topic: {
+          id: 30,
+          title: 'Hệ thống Quản lý',
+          lecturer: { fullName: 'Thầy A' },
+        },
         members: [{ student: { fullName: 'SV 1' } }],
       });
       prisma.weeklyLog.findMany.mockResolvedValue([
@@ -102,7 +121,10 @@ describe('ProgressService', () => {
 
   describe('createWeeklyLog', () => {
     it('should create log and send notification to supervisor', async () => {
-      prisma.studentProfile.findUnique.mockResolvedValue({ id: 10, userId: 100 });
+      prisma.studentProfile.findUnique.mockResolvedValue({
+        id: 10,
+        userId: 100,
+      });
       prisma.registrationGroupMember.findFirst.mockResolvedValue({
         group: {
           id: 20,
@@ -155,7 +177,10 @@ describe('ProgressService', () => {
     });
 
     it('should acknowledge log and notify members', async () => {
-      prisma.lecturerProfile.findUnique.mockResolvedValue({ id: 5, fullName: 'GV A' });
+      prisma.lecturerProfile.findUnique.mockResolvedValue({
+        id: 5,
+        fullName: 'GV A',
+      });
       prisma.weeklyLog.findUnique.mockResolvedValue({
         id: 1,
         weekNumber: 2,
@@ -165,7 +190,10 @@ describe('ProgressService', () => {
           members: [{ student: { userId: 201 } }],
         },
       });
-      prisma.weeklyLog.update.mockResolvedValue({ id: 1, isAcknowledged: true });
+      prisma.weeklyLog.update.mockResolvedValue({
+        id: 1,
+        isAcknowledged: true,
+      });
 
       const result = await service.feedbackWeeklyLog(100, 1, {
         isAcknowledged: true,
@@ -240,7 +268,9 @@ describe('ProgressService', () => {
       expect(result.isPassed).toBe(false);
       expect(notifications.notify).toHaveBeenCalledWith([
         expect.objectContaining({
-          title: expect.stringContaining('CẢNH BÁO: Chưa đạt 50% khối lượng công việc'),
+          title: expect.stringContaining(
+            'CẢNH BÁO: Chưa đạt 50% khối lượng công việc',
+          ),
         }),
       ]);
     });

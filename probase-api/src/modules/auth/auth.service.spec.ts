@@ -316,11 +316,13 @@ describe('AuthService password backoff', () => {
           email_verified: 'true',
           name: 'Student Gmail',
         }),
-      } as unknown as Response);
+      });
 
       await expect(
         service.googleLogin({ idToken: 'fake-token' }),
-      ).rejects.toThrow('Hệ thống ProBase chỉ chấp nhận email do Trường Đại học Đà Lạt cấp');
+      ).rejects.toThrow(
+        'Hệ thống ProBase chỉ chấp nhận email do Trường Đại học Đà Lạt cấp',
+      );
     });
 
     it('rejects @st.dlu.edu.vn emails because only @dlu.edu.vn is accepted', async () => {
@@ -331,11 +333,13 @@ describe('AuthService password backoff', () => {
           email_verified: 'true',
           name: 'Student St',
         }),
-      } as unknown as Response);
+      });
 
       await expect(
         service.googleLogin({ idToken: 'fake-token' }),
-      ).rejects.toThrow('Hệ thống ProBase chỉ chấp nhận email do Trường Đại học Đà Lạt cấp (@dlu.edu.vn)');
+      ).rejects.toThrow(
+        'Hệ thống ProBase chỉ chấp nhận email do Trường Đại học Đà Lạt cấp (@dlu.edu.vn)',
+      );
     });
 
     it('rejects DLU email not registered in the system (BR-01)', async () => {
@@ -346,7 +350,7 @@ describe('AuthService password backoff', () => {
           email_verified: 'true',
           name: 'Unregistered Student',
         }),
-      } as unknown as Response);
+      });
 
       findUnique.mockResolvedValue(null);
 
@@ -364,7 +368,7 @@ describe('AuthService password backoff', () => {
           name: 'Nguyễn Văn A',
           picture: 'https://avatar.google.com/a.jpg',
         }),
-      } as unknown as Response);
+      });
 
       findUnique.mockResolvedValue({
         id: 10,
@@ -446,7 +450,7 @@ describe('AuthService password backoff', () => {
           email_verified: true,
           name: 'Trần Văn B',
         }),
-      } as unknown as Response);
+      });
 
       findUnique.mockResolvedValue(null);
       studentProfileFindUnique.mockResolvedValue({
@@ -513,4 +517,3 @@ describe('AuthService password backoff', () => {
     });
   });
 });
-

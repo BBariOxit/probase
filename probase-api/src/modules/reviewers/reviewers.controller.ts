@@ -35,12 +35,7 @@ export class ReviewersController {
   // PHÍA QUẢN LÝ (TTBM, ADMIN, BCN KHOA, TLGV)
   // ─────────────────────────────────────────────────────────
 
-  @Roles(
-    Role.ADMIN,
-    AppActor.TTBM,
-    AppActor.BCN_KHOA,
-    AppActor.TLGV,
-  )
+  @Roles(Role.ADMIN, AppActor.TTBM, AppActor.BCN_KHOA, AppActor.TLGV)
   @Get('assignments')
   getAssignmentsOverview(
     @GetUser() user: RequestUser,
@@ -49,26 +44,13 @@ export class ReviewersController {
     return this.reviewersService.getAssignmentsOverview(user, query);
   }
 
-  @Roles(
-    Role.ADMIN,
-    AppActor.TTBM,
-    AppActor.BCN_KHOA,
-    AppActor.TLGV,
-  )
+  @Roles(Role.ADMIN, AppActor.TTBM, AppActor.BCN_KHOA, AppActor.TLGV)
   @Post('assignments')
-  assignReviewer(
-    @GetUser() user: RequestUser,
-    @Body() dto: AssignReviewerDto,
-  ) {
+  assignReviewer(@GetUser() user: RequestUser, @Body() dto: AssignReviewerDto) {
     return this.reviewersService.assignReviewer(user, dto);
   }
 
-  @Roles(
-    Role.ADMIN,
-    AppActor.TTBM,
-    AppActor.BCN_KHOA,
-    AppActor.TLGV,
-  )
+  @Roles(Role.ADMIN, AppActor.TTBM, AppActor.BCN_KHOA, AppActor.TLGV)
   @Post('assignments/auto')
   autoAssign(
     @GetUser() user: RequestUser,
@@ -77,12 +59,7 @@ export class ReviewersController {
     return this.reviewersService.autoAssign(user, dto);
   }
 
-  @Roles(
-    Role.ADMIN,
-    AppActor.TTBM,
-    AppActor.BCN_KHOA,
-    AppActor.TLGV,
-  )
+  @Roles(Role.ADMIN, AppActor.TTBM, AppActor.BCN_KHOA, AppActor.TLGV)
   @Delete('assignments/:groupId')
   unassignReviewer(
     @GetUser() user: RequestUser,
