@@ -23,6 +23,12 @@ export function notificationHref(
       case 'SUBMISSION_FEEDBACK':
         return '/lecturer/reports';
 
+      case 'PROGRESS_LOG_SUBMITTED':
+      case 'PROGRESS_REPORT_SUBMITTED':
+        return notice.targetId
+          ? `/lecturer/groups/${notice.targetId}`
+          : '/lecturer/groups';
+
       case 'TOPIC_STUDENT_ASSIGNED':
         return notice.targetId
           ? `/lecturer/topics/${notice.targetId}`
@@ -41,6 +47,8 @@ export function notificationHref(
 
     case 'OUTLINE_APPROVED':
     case 'OUTLINE_REVISION_REQUESTED':
+    case 'PROGRESS_LOG_FEEDBACK':
+    case 'PROGRESS_REPORT_GRADED':
       return '/student/groups';
 
     /*
