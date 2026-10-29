@@ -15,6 +15,7 @@ import { MajorsModule } from './majors/majors.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { OutlinesModule } from './outlines/outlines.module';
+import { ProgressModule } from './progress/progress.module';
 import { ProjectTypesModule } from './project-types/project-types.module';
 import { ProposalsModule } from './proposals/proposals.module';
 import { RegistrationModule } from './registration/registration.module';
@@ -70,6 +71,7 @@ import { UsersModule } from './users/users.module';
     SubmissionsModule,
     TopicsModule,
     OutlinesModule,
+    ProgressModule,
     RegistrationModule,
     RemindersModule,
     ReportsModule,
