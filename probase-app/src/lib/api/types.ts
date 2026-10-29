@@ -166,7 +166,8 @@ export type NotificationType =
   | 'DEADLINE_REMINDER'
   | 'OUTLINE_SUBMITTED'
   | 'OUTLINE_REVISION_REQUESTED'
-  | 'OUTLINE_APPROVED';
+  | 'OUTLINE_APPROVED'
+  | 'STUDENT_ELIGIBILITY_CONFIRMED';
 
 export interface AppNotification {
   id: number;
@@ -975,5 +976,71 @@ export interface FacultyOutlineOverview {
     needsRevision: number;
     notSubmitted: number;
   };
+}
+
+export interface EligibleStudentItem {
+  id: number;
+  roundId: number;
+  studentId: number;
+  studentCode: string;
+  fullName: string;
+  class: string | null;
+  cohort: string | null;
+  major: { id: number; name: string; code: string } | null;
+  email: string;
+  isActive: boolean;
+  avatarUrl: string | null;
+  note: string | null;
+  createdAt: string;
+  hasGroup: boolean;
+  group: {
+    id: number;
+    name: string | null;
+    topic: {
+      id: number;
+      title: string;
+      lecturer: { id: number; fullName: string; academicTitle: string | null };
+    } | null;
+  } | null;
+}
+
+export interface EligibleStudentsResponse {
+  round: {
+    id: number;
+    semesterId: number;
+    semesterName: string;
+    projectTypeId: number;
+    projectTypeName: string;
+  };
+  items: EligibleStudentItem[];
+  total: number;
+  totalEligible: number;
+  withGroupCount: number;
+  withoutGroupCount: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface ImportEligibleStudentsResult {
+  totalRows: number;
+  importedCount: number;
+  createdAccountsCount: number;
+  errorCount: number;
+  errors: { row: number; reason: string }[];
+}
+
+export interface StudentEligibilityStatus {
+  isEligible: boolean;
+  specific: boolean;
+  message: string;
+  rounds: {
+    roundId: number;
+    projectTypeId: number;
+    projectTypeName: string;
+    semesterName: string;
+    deadline: string | null;
+    note: string | null;
+  }[];
 }
 
