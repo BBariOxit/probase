@@ -120,34 +120,85 @@ export class RoundsService {
       return this.prisma.projectType.findMany({ orderBy: { code: 'asc' } });
     }
 
-    const cohort = await this.cohortOf(userId);
+    const student = await this.prisma.studentProfile.findUnique({
+      where: { userId },
+      select: { id: true, cohort: true },
+    });
+    if (!student) return [];
 
-    // No profile or no intake year means nothing can be said about eligibility,
-    // and an empty list is the honest answer — not the whole catalogue.
-    if (!cohort) return [];
+    // Prioritize specific student eligibility imported for this semester
+    const specificRounds = await this.prisma.roundStudentEligibility.findMany({
+      where: {
+        studentId: student.id,
+        round: { semesterId },
+      },
+      select: {
+        round: {
+          select: {
+            projectType: { select: { id: true, name: true, code: true } },
+          },
+        },
+      },
+      orderBy: { round: { projectType: { code: 'asc' } } },
+    });
 
-    const rounds = await this.prisma.registrationRound.findMany({
-      where: { semesterId, eligibilities: { some: { cohort } } },
-      select: { projectType: { select: { id: true, name: true, code: true } } },
+    if (specificRounds.length > 0) {
+      return specificRounds.map((r) => r.round.projectType);
+    }
+
+    // Fallback: check rounds with cohort rule where NO specific student roster was imported
+    if (!student.cohort) return [];
+
+    const cohortRounds = await this.prisma.registrationRound.findMany({
+      where: { semesterId, eligibilities: { some: { cohort: student.cohort } } },
+      select: {
+        id: true,
+        projectType: { select: { id: true, name: true, code: true } },
+        _count: { select: { eligibleStudents: true } },
+      },
       orderBy: { projectType: { code: 'asc' } },
     });
 
-    return rounds.map((round) => round.projectType);
+    return cohortRounds
+      .filter((r) => r._count.eligibleStudents === 0)
+      .map((round) => round.projectType);
   }
 
   async eligibleRoundIds(userId: number, semesterIds?: number[]) {
-    const cohort = await this.cohortOf(userId);
-    if (!cohort) return [];
+    const student = await this.prisma.studentProfile.findUnique({
+      where: { userId },
+      select: { id: true, cohort: true },
+    });
+    if (!student) return [];
 
-    const rows = await this.prisma.roundEligibility.findMany({
+    const specificRows = await this.prisma.roundStudentEligibility.findMany({
       where: {
-        cohort,
+        studentId: student.id,
         ...(semesterIds && { round: { semesterId: { in: semesterIds } } }),
       },
       select: { roundId: true },
     });
 
-    return rows.map((row) => row.roundId);
+    if (specificRows.length > 0) {
+      return specificRows.map((r) => r.roundId);
+    }
+
+    if (!student.cohort) return [];
+
+    const cohortRounds = await this.prisma.registrationRound.findMany({
+      where: {
+        eligibilities: { some: { cohort: student.cohort } },
+        ...(semesterIds && { semesterId: { in: semesterIds } }),
+      },
+      select: {
+        id: true,
+        _count: { select: { eligibleStudents: true } },
+      },
+    });
+
+    return cohortRounds
+      .filter((r) => r._count.eligibleStudents === 0)
+      .map((row) => row.id);
   }
 
   async requireRoundFor(semesterId: number, projectTypeId: number) {

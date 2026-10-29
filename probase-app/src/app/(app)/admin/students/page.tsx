@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Download, Loader2, Search, Users } from 'lucide-react';
+import { Download, FileUp, Loader2, Search, Users } from 'lucide-react';
 import { useMajors } from '@/lib/api/majors';
 import { useActiveSemester, useRoundsForSemester } from '@/lib/api/master-data';
 import { useExportStudents, useStudents } from '@/lib/api/students';
@@ -9,6 +9,7 @@ import { useTopicLecturers } from '@/lib/api/topics';
 import type { StudentRosterRow } from '@/lib/api/types';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
+import { EligibleStudentsImportDialog } from '@/components/admin/eligible-students-import-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { StatusPill } from '@/components/shared/status-pill';
@@ -50,16 +51,21 @@ export default function StudentRosterPage() {
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [classCode, setClassCode] = useState('');
   const [roundId, setRoundId] = useState(ANY);
   const [majorId, setMajorId] = useState(ANY);
   const [lecturerId, setLecturerId] = useState(ANY);
   const [groupState, setGroupState] = useState('ALL');
+  const [importOpen, setImportOpen] = useState(false);
+
   const debouncedSearch = useDebouncedValue(search);
+  const debouncedClass = useDebouncedValue(classCode);
 
   const query = {
     semesterId: semester?.id,
     roundId: roundId === ANY ? undefined : roundId,
     majorId: majorId === ANY ? undefined : majorId,
+    class: debouncedClass || undefined,
     lecturerId: lecturerId === ANY ? undefined : lecturerId,
     hasGroup: groupState === 'ALL' ? undefined : groupState === 'true',
     q: debouncedSearch || undefined,
@@ -98,6 +104,15 @@ export default function StudentRosterPage() {
             placeholder="Tìm theo tên hoặc mã sinh viên…"
             className="pl-8"
             aria-label="Tìm sinh viên"
+          />
+        </div>
+
+        <div className="w-32">
+          <Input
+            value={classCode}
+            onChange={(event) => refilter(() => setClassCode(event.target.value))}
+            placeholder="Lớp (CTK…)"
+            aria-label="Lọc theo mã lớp"
           />
         </div>
 
@@ -210,10 +225,18 @@ export default function StudentRosterPage() {
 
         <div className="ml-auto flex items-center gap-2">
           {data && (
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted-foreground mr-1">
               {data.total} sinh viên
             </span>
           )}
+          <Button
+            variant="default"
+            className="gap-1.5"
+            onClick={() => setImportOpen(true)}
+          >
+            <FileUp className="size-4" />
+            Import SV đủ ĐK
+          </Button>
           <Button
             variant="outline"
             disabled={exportRoster.isPending}
@@ -293,6 +316,12 @@ export default function StudentRosterPage() {
           onPageChange={setPage}
         />
       )}
+
+      <EligibleStudentsImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        defaultRoundId={roundId !== ANY ? roundId : undefined}
+      />
     </div>
   );
 }

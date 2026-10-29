@@ -18,6 +18,7 @@ import { MyGroupBanner } from '@/components/groups/my-group-banner';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { RegistrationPhaseNotice } from '@/components/rounds/registration-phase-notice';
 import { SeatBadge } from '@/components/groups/seat-indicator';
+import { StudentEligibilityBanner } from '@/components/students/student-eligibility-banner';
 import { TopicRegisterButton } from '@/components/topics/topic-register-button';
 import { TopicDetailSheet } from '@/components/topics/topic-detail-sheet';
 import { Input } from '@/components/ui/input';
@@ -89,6 +90,8 @@ export default function StudentTopicsPage() {
 
   return (
     <div className="space-y-4">
+      <StudentEligibilityBanner />
+
       {myGroup && <MyGroupBanner group={myGroup} />}
 
       {rounds?.map((round) => (

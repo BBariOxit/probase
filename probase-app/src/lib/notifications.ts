@@ -36,6 +36,9 @@ export function notificationHref(
   if (role !== 'STUDENT') return null;
 
   switch (notice.type) {
+    case 'STUDENT_ELIGIBILITY_CONFIRMED':
+      return '/student';
+
     case 'OUTLINE_APPROVED':
     case 'OUTLINE_REVISION_REQUESTED':
       return '/student/groups';

@@ -6,6 +6,7 @@ import {
 
 export interface RosterFilters {
   semesterId?: number;
+  roundId?: number;
 
   cohorts?: string[];
   cohort?: string;
@@ -42,6 +43,9 @@ export function rosterWhere(
     // administering, so it stays out unless somebody asks for everything.
     ...(filters.activeOnly !== false && { user: { isActive: true } }),
 
+    ...(filters.roundId && {
+      roundEligibilities: { some: { roundId: filters.roundId } },
+    }),
     ...(filters.cohorts?.length && { cohort: { in: filters.cohorts } }),
     ...(filters.cohort && { cohort: filters.cohort }),
     ...(filters.majorId && { majorId: filters.majorId }),
