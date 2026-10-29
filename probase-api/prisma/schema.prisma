@@ -203,6 +203,8 @@ enum NotificationType {
   OUTLINE_SUBMITTED
   OUTLINE_REVISION_REQUESTED
   OUTLINE_APPROVED
+
+  STUDENT_ELIGIBILITY_CONFIRMED
 }
 
 // ─────────────────────────────────────────────────────────
@@ -280,6 +282,7 @@ model StudentProfile {
   councilGrades    CouncilTopicGrade[]
   studentGrades    StudentGrade[]
   submissions      Submission[]              @relation("SubmissionAuthor")
+  roundEligibilities RoundStudentEligibility[]
 
   @@map("student_profiles")
 }
@@ -436,9 +439,10 @@ model RegistrationRound {
   projectType ProjectType @relation(fields: [projectTypeId], references: [id], onDelete: Restrict)
   finalisedBy User?       @relation("RoundFinalisedBy", fields: [finalisedById], references: [id], onDelete: SetNull)
 
-  eligibilities RoundEligibility[]
-  requirements  SubmissionRequirement[]
-  topics        Topic[]
+  eligibilities    RoundEligibility[]
+  eligibleStudents RoundStudentEligibility[]
+  requirements     SubmissionRequirement[]
+  topics           Topic[]
 
   @@unique([semesterId, projectTypeId])
   // Lets Topic carry a denormalised semesterId that a composite foreign key pins
@@ -468,6 +472,24 @@ model RoundEligibility {
   // hot read.
   @@unique([roundId, cohort])
   @@map("round_eligibilities")
+}
+
+/// Official list of individual students eligible for a specific registration round (BR-02).
+/// Imported by academic assistant (TLGV) from the Department of Academic Affairs' (PĐT) roster.
+model RoundStudentEligibility {
+  id        Int      @id @default(autoincrement())
+  roundId   Int
+  studentId Int
+  note      String?  // Note from PĐT e.g. "Đủ ĐK tín chỉ", "Học vượt", "Trả nợ K45"
+  createdAt DateTime @default(now())
+
+  round   RegistrationRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  student StudentProfile    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([roundId, studentId])
+  @@index([roundId])
+  @@index([studentId])
+  @@map("round_student_eligibilities")
 }
 
 model ProjectType {
