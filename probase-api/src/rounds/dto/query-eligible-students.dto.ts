@@ -6,7 +6,8 @@ export const QueryEligibleStudentsSchema = z.object({
   hasGroup: z
     .enum(['true', 'false'])
     .optional()
-    .transform((value) => (value === undefined ? undefined : value === 'true')),
+    .transform((value) => (value === undefined ? undefined : value === 'true'))
+    .optional(),
   q: z.string().trim().min(1).max(100).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(25),
