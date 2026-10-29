@@ -62,10 +62,12 @@ Tài liệu này định nghĩa chi tiết toàn bộ yêu cầu nghiệp vụ, 
   - Cho phép Giáo vụ chọn Đợt làm đồ án và upload file `.xlsx` hoặc `.csv`.
   - Hệ thống tự động nhận diện và đọc các cột: `MSSV` (7 số), `Họ và tên`, `Lớp` (ví dụ `CTK46PM`, `CTK46MMT`), `Email` (tùy chọn, mặc định tự sinh `<MSSV>@dlu.edu.vn`), `Ghi chú` (tùy chọn: "Đủ tín chỉ", "Học vượt", "Trả nợ K45").
   - **Cơ chế xử lý đồng bộ 2-in-1:**
-    + *Nếu sinh viên chưa có tài khoản:* Hệ thống tự động khởi tạo tài khoản User (Role `STUDENT`) kèm `StudentProfile` (phân lớp, ngành, cohort tương ứng).
+    + *Nếu sinh viên chưa có tài khoản:* Hệ thống tự động khởi tạo tài khoản User (Role `STUDENT`) kèm `StudentProfile`:
+      * **Sinh viên Năm 1-2 (lớp dạng `CTK48`, `CTK47`):** Lưu mã lớp, tính cohort, `majorId = null` (chưa phân chuyên ngành, phục vụ làm Đồ án cơ sở ĐACS nền tảng).
+      * **Sinh viên Năm 3-4 (lớp có hậu tố `CTK46PM`, `CTK46MMT`):** Tự động map sang Chuyên ngành CNPM hoặc MMT tương ứng (phục vụ lọc đề tài ĐACN và KLTN).
     + *Nếu sinh viên đã có tài khoản:* Hệ thống tự động liên kết và kích hoạt cờ "Đủ điều kiện làm đồ án" cho sinh viên trong đợt đó (`RoundStudentEligibility`).
 - **Bộ lọc & Quản lý danh sách cho Giáo vụ:**
-  - Bộ lọc nhanh theo **Lớp** sinh hoạt (`CTK46PM`, `CTK46MMT`, `CTK47...`).
+  - Bộ lọc nhanh theo **Lớp** sinh hoạt (`CTK48` đại trà, `CTK46PM`, `CTK46MMT`...).
   - Bộ lọc theo **Loại đồ án** (Cơ sở / Chuyên ngành / Tốt nghiệp) hoặc Đợt đăng ký.
   - Tìm kiếm nhanh theo MSSV, Họ tên.
   - Hiển thị trực quan tình trạng: *Đã có đề tài*, *Chưa có đề tài*, *Đang trong nhóm*.

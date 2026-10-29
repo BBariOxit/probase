@@ -7,12 +7,17 @@
 
 ## 1. THIẾT KẾ ĐẶC THÙ KHOA CNTT - ĐẠI HỌC ĐÀ LẠT (DLU DOMAIN RULES)
 
-1. **Ngành & Chuyên ngành đào tạo:**
+1. **Lộ trình phân Chuyên ngành theo năm học:**
    - Trường chỉ tuyển sinh 1 ngành chung: **Công nghệ Thông tin**.
-   - Đến năm thứ 3, sinh viên phân vào đúng **2 Chuyên ngành (hướng chuyên sâu)**:
-     - `CNPM`: **Công nghệ phần mềm** (mã lớp dạng `CTK46PM`).
-     - `MMT`: **Mạng máy tính** (mã lớp dạng `CTK46MMT`).
-   - Hai chuyên ngành này đồng thời là hai **Tổ chuyên môn** trực thuộc Khoa quản lý thẩm định đề tài và phân công giảng viên.
+   - **Năm 1 và Năm 2 (ví dụ khóa K48, K49):** Sinh viên học chung các môn đại cương và cơ sở ngành cốt lõi (Toán cấu trúc, Nhập môn lập trình, CSDL, CTDL&GT...).
+     - Lớp sinh hoạt là **lớp đại trà chưa phân chuyên ngành** (mã lớp dạng `CTK48`, `CTK47` - không có hậu tố chuyên ngành).
+     - Khi làm **Đồ án cơ sở (ĐACS)** ở cuối năm 2: Sinh viên **chưa phân chuyên ngành**, hồ sơ `StudentProfile.majorId = null`. Đề tài ĐACS là đề tài nền tảng chung cho toàn ngành, làm chung form, không bắt buộc lọc chuyên ngành.
+   - **Đầu năm thứ 3:** Khoa tổ chức tư vấn hướng nghiệp và sinh viên chính thức đăng ký phân vào 2 Chuyên ngành chính (hướng chuyên sâu):
+     - `CNPM`: **Công nghệ phần mềm** (mã lớp tách thành dạng `CTK46PM`, `CTK47PM`).
+     - `MMT`: **Mạng máy tính** (mã lớp tách thành dạng `CTK46MMT`, `CTK47MMT`).
+   - **Từ năm thứ 3 (Đồ án chuyên ngành - ĐACN) và Năm 4 (Khóa luận tốt nghiệp - KLTN):**
+     - Sinh viên bắt buộc đã có chuyên ngành (`majorId` trỏ tới `CNPM` hoặc `MMT`).
+     - Hệ thống bắt buộc lọc đề tài theo đúng Chuyên ngành của sinh viên để phân phối giảng viên hướng dẫn (GVHD), giảng viên phản biện (GVPB) và Tổ trưởng bộ môn (TTBM) thẩm định chuẩn xác (ví dụ: Giảng viên chuyên bộ môn Mạng sẽ không nhận hướng dẫn đề tài thuần về CNPM hay AI/Data).
 
 2. **Cơ cấu Giảng viên & Chức vụ kiêm nhiệm:**
    - Hệ thống không tạo bảng phân quyền rời rạc mà quản lý trên `lecturer_profiles` với các cờ kiêm nhiệm:
@@ -55,13 +60,15 @@
 * **Quy trình thực hiện tại trang Quản lý Sinh viên (`/admin/students`):**
   1. Giáo vụ bấm nút **"Import SV đủ ĐK"** để mở hộp thoại Import.
   2. Chọn Đợt làm đồ án tương ứng (Học kỳ × Loại đồ án: *Đồ án Cơ sở / Đồ án Chuyên ngành / Khóa luận tốt nghiệp*).
-  3. Có sẵn nút **"Tải file mẫu Excel"** (`Mau_DS_SV_Du_Dieu_Kien.xlsx`) gồm các cột: `MSSV` (bắt buộc, 7 số), `Họ và tên` (bắt buộc), `Lớp` (bắt buộc, ví dụ `CTK46PM`, `CTK46MMT`), `Email` (tùy chọn, mặc định lấy `<MSSV>@dlu.edu.vn`), `Ghi chú` (tùy chọn: *"Đủ ĐK tín chỉ"*, *"Học vượt"*, *"Trả nợ K45"*).
+  3. Có sẵn nút **"Tải file mẫu Excel"** (`Mau_DS_SV_Du_Dieu_Kien.xlsx`) gồm các cột: `MSSV` (bắt buộc, 7 số), `Họ và tên` (bắt buộc), `Lớp` (bắt buộc, ví dụ `CTK48` cho năm 2 hoặc `CTK46PM`, `CTK46MMT` cho năm 3-4), `Email` (tùy chọn, mặc định lấy `<MSSV>@dlu.edu.vn`), `Ghi chú` (tùy chọn: *"Đủ ĐK tín chỉ"*, *"Học vượt"*, *"Trả nợ K45"*).
   4. **Cơ chế xử lý tự động 2-trong-1 của Backend:**
-     - *Nếu sinh viên chưa có tài khoản:* Hệ thống tự động tạo User (email `<MSSV>@dlu.edu.vn`) và `StudentProfile` (tự động map mã lớp `CTK46PM` sang Chuyên ngành CNPM, `CTK46MMT` sang Chuyên ngành MMT, tính cohort).
+     - *Nếu sinh viên chưa có tài khoản:* Hệ thống tự động tạo User (email `<MSSV>@dlu.edu.vn`) và `StudentProfile`:
+       + **Sinh viên Năm 1-2 (lớp dạng `CTK48`, `CTK47`):** Lưu mã lớp, tính cohort, `majorId = null` (chưa phân chuyên ngành).
+       + **Sinh viên Năm 3-4 (lớp có hậu tố chuyên ngành `CTK46PM`, `CTK46MMT`):** Tự động nhận diện map sang Chuyên ngành CNPM hoặc MMT tương ứng.
      - *Nếu sinh viên đã có tài khoản:* Hệ thống tự động kích hoạt và liên kết sinh viên vào danh sách đủ điều kiện của đợt đồ án đó (`RoundStudentEligibility`).
      - Tự động phát thông báo in-app `STUDENT_ELIGIBILITY_CONFIRMED` và gửi email thông báo cho sinh viên.
 * **Bộ lọc và Quản lý phía Giáo vụ:**
-  - Bộ lọc theo **Mã lớp** sinh hoạt (`CTK46PM`, `CTK46MMT`, `CTK47...`).
+  - Bộ lọc theo **Mã lớp** sinh hoạt (`CTK48` đại trà, `CTK46PM`, `CTK46MMT`...).
   - Bộ lọc theo **Đợt làm đồ án** (Cơ sở / Chuyên ngành / Tốt nghiệp).
   - Bộ lọc theo **Chuyên ngành** (CNPM / MMT).
   - Bộ lọc theo **Tình trạng đề tài** (*Đã có đề tài* / *Chưa có đề tài*).

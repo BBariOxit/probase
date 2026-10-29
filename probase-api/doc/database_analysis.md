@@ -7,12 +7,13 @@ Tài liệu này định nghĩa chi tiết kiến trúc cơ sở dữ liệu qua
 
 ## 1. NGUYÊN TẮC THIẾT KẾ DỮ LIỆU CỐT LÕI (DLU DOMAIN RULES)
 
-1. **Ngành đào tạo & Hai Chuyên ngành thực tế:**
+1. **Ngành đào tạo & Lộ trình phân Chuyên ngành thực tế:**
    - Trường chỉ tuyển sinh một ngành: **Công nghệ Thông tin**.
-   - Đến năm thứ 3, sinh viên phân vào đúng **2 Chuyên ngành (hướng chuyên sâu)**:
-     - `CNPM`: **Công nghệ phần mềm** (mã lớp ví dụ `CTK46PM`).
-     - `MMT`: **Mạng máy tính** (mã lớp ví dụ `CTK46MMT`).
-   - Hai chuyên ngành này cũng là hai **Tổ chuyên môn** quản lý đề tài và phân công giảng viên.
+   - **Năm 1 và Năm 2:** Sinh viên học chung các môn đại cương và cơ sở ngành (mã lớp đại trà dạng `CTK48`, `CTK47` – chưa phân chuyên ngành, `specialization_id` là `NULL`). Sinh viên làm **Đồ án cơ sở (ĐACS)** ở giai đoạn này với đề tài nền tảng chung, không phân biệt chuyên ngành.
+   - **Đầu năm thứ 3:** Sinh viên chính thức đăng ký phân vào đúng **2 Chuyên ngành (hướng chuyên sâu)**:
+     - `CNPM`: **Công nghệ phần mềm** (mã lớp tách thành dạng `CTK46PM`, `CTK47PM`).
+     - `MMT`: **Mạng máy tính** (mã lớp tách thành dạng `CTK46MMT`, `CTK47MMT`).
+   - Hai chuyên ngành này đồng thời là hai **Tổ chuyên môn** quản lý đề tài và phân công giảng viên cho **Đồ án chuyên ngành (ĐACN)** và **Khóa luận tốt nghiệp (KLTN)**.
 
 2. **Cơ cấu Giảng viên & 6 Tác nhân (Actors):**
    - Không tạo các bảng role rời rạc gây phân mảnh. Hệ thống sử dụng bảng `lecturer_profiles` có các cờ chức vụ kiêm nhiệm trong Khoa:
@@ -69,8 +70,8 @@ Hồ sơ sinh viên do Giáo vụ Khoa (TLGV) import từ file Excel đầu kỳ
 - `user_id` (INT, FK → `users.id`, Unique, Cascade Delete)
 - `student_code` (VARCHAR(20), Unique, Not Null): 7 chữ số (VD: `2212345`).
 - `full_name` (VARCHAR(100), Not Null)
-- `class` (VARCHAR(50), Not Null): Tên lớp sinh hoạt (VD: `CTK46PM`, `CTK46MMT`).
-- `specialization_id` (INT, FK → `specializations.id`, Nullable): Tự động map từ mã lớp.
+- `class` (VARCHAR(50), Not Null): Tên lớp sinh hoạt (VD: `CTK48` cho SV năm 1-2 chưa chia ngành, `CTK46PM` / `CTK46MMT` cho SV năm 3-4).
+- `specialization_id` (INT, FK → `specializations.id`, Nullable): Tự động map từ mã lớp có hậu tố chuyên ngành; bằng `NULL` nếu là sinh viên năm 1-2 học chung đại trà.
 - `cohort` (VARCHAR(10), Not Null): Năm nhập học (VD: `"2022"` cho CTK46).
 - `phone` (VARCHAR(20), Nullable)
 - `bio` (TEXT, Nullable)

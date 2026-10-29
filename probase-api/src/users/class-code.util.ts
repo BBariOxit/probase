@@ -1,6 +1,6 @@
 import { cohortFromKhoa, cohortFromStudentCode } from './student-code.util';
 
-const CLASS_CODE = /^CT[\s-]*K(\d{2})[\s-]*([A-Za-z]+)$/;
+const CLASS_CODE = /^CT[\s-]*K(\d{2})[\s-]*([A-Za-z]*)$/;
 
 export interface ParsedClassCode {
   khoa: number;
