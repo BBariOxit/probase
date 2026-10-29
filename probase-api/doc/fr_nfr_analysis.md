@@ -161,20 +161,25 @@ Tài liệu này định nghĩa chi tiết toàn bộ yêu cầu nghiệp vụ, 
 
 ### Phân hệ 4: Theo dõi tiến độ thực hiện & Quản lý thay đổi
 
-#### BR-11: Nhật ký hướng dẫn & Theo dõi task theo tuần
-- **Tác nhân:** Sinh viên, GVHD.
-- **Mô tả:**
-  - Dựa trên Kế hoạch thực hiện trong Đề cương M03, hệ thống tạo bảng theo dõi tiến độ hàng tuần.
-  - Hàng tuần SV cập nhật: % hoàn thành, link GitHub/GitLab commit, các khó khăn vướng mắc.
-  - GVHD vào kiểm tra, phản hồi và ghi nhận xét trực tiếp vào nhật ký.
-- **Đầu ra:** Lịch sử làm việc (Activity / Audit Log) minh bạch làm minh chứng cho quá trình làm việc thực chất của SV khi ra Hội đồng.
+#### BR-11: Sổ tay tiến độ nội bộ (Internal Progress / Sprint Tracking)
+- **Tác nhân:** Sinh viên, Giảng viên hướng dẫn (GVHD).
+- **Mô tả quy trình thực tế:**
+  - **Khoa không bắt buộc sinh viên nộp báo cáo hành chính hàng tuần lên Khoa.** Hình thức và tần suất báo cáo định kỳ (hàng tuần hoặc hàng tháng) là **thỏa thuận nội bộ giữa GVHD và nhóm sinh viên** (họp Meet/Zoom, trao đổi Zalo, hoặc gặp trực tiếp để kiểm tra source code và sửa báo cáo).
+  - Hệ thống cung cấp **Sổ tay tiến độ nội bộ (Feed/Timeline)**:
+    + Sinh viên chủ động tạo bài đăng cập nhật tiến độ theo tuần/sprint: Tiêu đề công việc, % tiến độ ước lượng (0–100%), tóm tắt các việc đã hoàn thành, link kho mã nguồn (Git commit/PR/repo), khó khăn vướng mắc.
+    + GVHD truy cập timeline của nhóm: Bấm **"Đã xem / Xác nhận"** (để SV biết thầy cô đã nắm tiến độ), để lại bình luận góp ý chuyên môn trực tiếp.
+- **Đầu ra:** Dòng thời gian làm việc minh bạch (Internal Activity Log) làm minh chứng cho quá trình làm việc thực chất của SV khi đánh giá thái độ và bảo vệ Hội đồng.
 
-#### BR-12: Báo cáo tiến độ lần 1 (Đánh giá 20%)
+#### BR-12: Kiểm tra tiến độ lần 1 của Khoa (Bắt buộc - Đánh giá 20%)
 - **Tác nhân:** Sinh viên, GVHD.
-- **Mô tả:**
-  - Đến mốc Tiến độ 1 (khoảng 4–5 tuần sau khi bắt đầu), SV nộp: Báo cáo phân tích thiết kế, mô hình CSDL, giao diện mẫu (UI prototype) và link source repository.
-  - GVHD kiểm tra sản phẩm, ghi nhận xét và **nhập Điểm Tiến độ lần 1 (trọng số 20%)** theo thang điểm 10.
-- **Đầu ra:** Cột điểm Tiến độ 1 (20%) được ghi nhận vào bảng điểm tổng kết.
+- **Thời điểm:** Khoảng tuần thứ 5 – 6 từ khi bắt đầu đợt đồ án (theo lịch ấn định của Khoa).
+- **Mô tả quy trình:**
+  - Nhóm sinh viên nộp hồ sơ đợt 1 lên hệ thống: Báo cáo phân tích thiết kế, sơ đồ cơ sở dữ liệu ban đầu, giao diện mẫu thô (wireframe/UI prototype) và link repo Git.
+  - **GVHD kiểm tra trực tiếp** và nhập kết quả đánh giá:
+    + Nhập nhận xét góp ý chuyên môn.
+    + Nhập **Điểm Tiến độ lần 1 (trọng số 20%)** theo thang điểm 10.
+  - Kết quả tự động chuyển về danh sách theo dõi của Khoa và thông báo cho sinh viên.
+- **Đầu ra:** Cột điểm Tiến độ 1 (20%) được ghi nhận vào bảng điểm tổng kết; nhóm SV nhận góp ý chỉnh sửa cho giai đoạn 2.
 
 #### BR-13: Phân công Giảng viên phản biện (GVPB)
 - **Tác nhân:** TTBM, BCN Khoa, TLGV.
@@ -185,15 +190,19 @@ Tài liệu này định nghĩa chi tiết toàn bộ yêu cầu nghiệp vụ, 
   - Cân bằng số lượng đề tài phản biện giữa các GV trong bộ môn (tránh lệch tải).
 - **Đầu ra:** Danh sách phân công GVPB được phê duyệt; GVPB được cấp quyền truy cập vào hồ sơ đề tài.
 
-#### BR-14: Báo cáo tiến độ lần 2 (Đánh giá 30% bởi GVHD + GVPB)
-- **Tác nhân:** Sinh viên, GVHD, GVPB.
-- **Mô tả:**
-  - SV nộp sản phẩm tiến độ lần 2: source code chạy được các chức năng chính, CSDL hoàn chỉnh, dự thảo quyển báo cáo.
-  - GVHD và GVPB cùng vào đánh giá sản phẩm:
-    + Cả hai giảng viên độc lập nhập nhận xét góp ý.
-    + Nhập điểm Tiến độ 2 (thang 10).
-    + Điểm Tiến độ 2 = Trung bình cộng giữa điểm GVHD và GVPB (hoặc theo cấu hình riêng của kỳ).
-- **Đầu ra:** Cột điểm Tiến độ 2 (**trọng số 30%**) và Biên bản góp ý chỉnh sửa cho đợt cuối kỳ.
+#### BR-14: Kiểm tra tiến độ lần 2 tập trung của Khoa (Bắt buộc - Hội đồng Bộ môn đánh giá 30%)
+- **Tác nhân:** Sinh viên, Hội đồng Bộ môn (gồm GVHD và GVPB).
+- **Thời điểm:** Khoảng tuần thứ 9 – 10 (cách ngày bảo vệ chính thức 3–4 tuần).
+- **Mô tả quy trình:**
+  - Đây là đợt kiểm tra **cực kỳ quan trọng** mang tính quyết định: Sinh viên báo cáo tập trung trước Hội đồng Bộ môn (gồm GVHD và GVPB, sinh viên làm đồ án ở xa trường có thể báo cáo trực tuyến).
+  - Nhóm sinh viên nộp sản phẩm tiến độ lần 2 lên hệ thống: Mã nguồn chạy được các chức năng cốt lõi (demo), cơ sở dữ liệu hoàn chỉnh, dự thảo quyển báo cáo đồ án.
+  - **GVHD và GVPB cùng đánh giá độc lập:**
+    + Nhập nhận xét chuyên môn.
+    + Nhập điểm Tiến độ 2 (thang 10, **trọng số 30%**). Điểm đợt 2 là trung bình cộng giữa điểm GVHD và GVPB.
+    + **Điều kiện tiên quyết sống còn (Pass/Fail Gate):** Hội đồng thẩm định xem sản phẩm chạy có đạt **tối thiểu 50% khối lượng công việc** hay không.
+    + *Nếu đạt:* Đồ án được phép hoàn thiện quyển báo cáo để nộp cuối kỳ và ra Hội đồng bảo vệ chính thức.
+    + *Nếu không đạt (< 50% khối lượng):* Hệ thống kích hoạt trạng thái **"Cảnh báo đình chỉ bảo vệ"**, báo cáo lên Ban Chủ nhiệm Khoa để ra quyết định đình chỉ, không cho phép bảo vệ chính thức trong học kỳ này.
+- **Đầu ra:** Cột điểm Tiến độ 2 (30%), biên bản góp ý chỉnh sửa cuối kỳ, và trạng thái cho phép bảo vệ.
 
 #### BR-15: Quản lý thay đổi trong quá trình thực hiện đề tài
 - **Tác nhân:** Sinh viên, GVHD, BCN Khoa, TLGV.
