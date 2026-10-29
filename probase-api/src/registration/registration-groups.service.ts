@@ -157,7 +157,7 @@ export class RegistrationGroupsService {
     const topic = await this.requireRegistrableTopic(topicId);
 
     await this.phases.requireCanJoin(topic.roundId, student.id);
-    await this.requireEligible(topic, student.cohort);
+    await this.requireEligible(topic, student);
     requireProposerOrFree(topic, student.id);
     await this.requireNoExistingGroup(student.id, topic.semesterId);
 
@@ -799,7 +799,7 @@ export class RegistrationGroupsService {
     await this.phases.requireCanJoin(group.topic.roundId, student.id);
 
     const topic = await this.requireRegistrableTopic(group.topicId);
-    await this.requireEligible(topic, student.cohort);
+    await this.requireEligible(topic, student);
     await this.requireNoExistingGroup(student.id, group.semesterId);
 
     if (!group.openForJoin) {
@@ -864,16 +864,38 @@ export class RegistrationGroupsService {
 
   private async requireEligible(
     topic: { roundId: number; round: { projectType: { name: string } } },
-    cohort: string | null,
+    student: { id: number; cohort: string | null },
   ) {
-    if (!cohort) {
+    // 1. Check if an official roster has been imported for this round
+    const rosterCount = await this.prisma.roundStudentEligibility.count({
+      where: { roundId: topic.roundId },
+    });
+
+    if (rosterCount > 0) {
+      const match = await this.prisma.roundStudentEligibility.findUnique({
+        where: {
+          roundId_studentId: {
+            roundId: topic.roundId,
+            studentId: student.id,
+          },
+        },
+      });
+      if (match) return;
+
+      throw new ForbiddenException(
+        `Bạn không nằm trong danh sách đủ điều kiện tham gia ${topic.round.projectType.name} học kỳ này. Vui lòng liên hệ Giáo vụ Khoa nếu có thắc mắc.`,
+      );
+    }
+
+    // 2. Fallback to cohort-based rule if no specific student roster was imported
+    if (!student.cohort) {
       throw new ForbiddenException(
         'This account has no intake year on file, so eligibility cannot be established',
       );
     }
 
     const match = await this.prisma.roundEligibility.findFirst({
-      where: { roundId: topic.roundId, cohort },
+      where: { roundId: topic.roundId, cohort: student.cohort },
       select: { id: true },
     });
 
@@ -895,7 +917,7 @@ export class RegistrationGroupsService {
     }
 
     throw new ForbiddenException(
-      `${topic.round.projectType.name} is not open to intake ${cohort} this semester`,
+      `${topic.round.projectType.name} is not open to intake ${student.cohort} this semester`,
     );
   }
 

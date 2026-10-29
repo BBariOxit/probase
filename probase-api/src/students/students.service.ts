@@ -72,12 +72,23 @@ export class StudentsService {
   private async toFilters(query: QueryStudentsDto): Promise<RosterFilters> {
     const semesterId = query.semesterId ?? (await this.activeSemesterId());
 
-    const cohorts = query.roundId
-      ? await this.cohortsOf(query.roundId)
-      : undefined;
+    let roundId: number | undefined = undefined;
+    let cohorts: string[] | undefined = undefined;
+
+    if (query.roundId) {
+      const specificCount = await this.prisma.roundStudentEligibility.count({
+        where: { roundId: query.roundId },
+      });
+      if (specificCount > 0) {
+        roundId = query.roundId;
+      } else {
+        cohorts = await this.cohortsOf(query.roundId);
+      }
+    }
 
     return {
       semesterId,
+      roundId,
       cohorts,
       cohort: query.cohort,
       majorId: query.majorId,
