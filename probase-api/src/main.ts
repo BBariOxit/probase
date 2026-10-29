@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
-import { ZodValidationPipe } from './common/zod-validation.pipe';
+import { ZodValidationPipe } from './common/pipes/zod-validation.pipe';
 
 function trustedProxyHops(): number {
   const configured = process.env.TRUST_PROXY_HOPS;

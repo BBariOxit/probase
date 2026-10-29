@@ -1,0 +1,328 @@
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  GroupMemberStatus,
+  NotificationType,
+  Prisma,
+  RegistrationGroupStatus,
+  Role,
+} from '../../../generated/prisma/client';
+import { CloudinaryService } from '../../core/cloudinary/cloudinary.service';
+import { endOfNamedDay } from '../../common/utils/named-day.util';
+import {
+  REQUIREMENT_SELECT,
+  RequirementsService,
+} from '../rounds/requirements.service';
+import { NotificationsService } from '../../core/notifications/notifications.service';
+import { PrismaService } from '../../core/prisma/prisma.service';
+import {
+  CreateSubmissionDto,
+  QuerySubmissionsDto,
+  SubmissionFeedbackDto,
+} from './dto/submission.dto';
+
+const SUBMISSION_SELECT = {
+  id: true,
+  version: true,
+
+  requirement: { select: REQUIREMENT_SELECT },
+  fileUrl: true,
+  fileName: true,
+  fileSize: true,
+  submissionUrl: true,
+  lecturerFeedback: true,
+  feedbackAt: true,
+  submittedAt: true,
+  submittedBy: {
+    select: { id: true, fullName: true, studentCode: true },
+  },
+  group: {
+    select: {
+      id: true,
+      name: true,
+      topic: {
+        select: {
+          id: true,
+          title: true,
+          lecturer: {
+            select: { id: true, fullName: true, academicTitle: true },
+          },
+        },
+      },
+    },
+  },
+} satisfies Prisma.SubmissionSelect;
+
+type SubmissionRow = Prisma.SubmissionGetPayload<{
+  select: typeof SUBMISSION_SELECT;
+}>;
+
+function present(submission: SubmissionRow) {
+  const dueAt = submission.requirement.dueAt;
+
+  return {
+    ...submission,
+    dueAt,
+    isLate: submission.submittedAt.getTime() >= endOfNamedDay(dueAt),
+  };
+}
+
+@Injectable()
+export class SubmissionsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: CloudinaryService,
+    private readonly notifications: NotificationsService,
+    private readonly requirements: RequirementsService,
+  ) {}
+
+  async create(
+    dto: CreateSubmissionDto,
+    file: Express.Multer.File | undefined,
+    userId: number,
+  ) {
+    const student = await this.requireStudent(userId);
+    const group = await this.requireOwnGroup(student.id);
+
+    // Checked before anything is uploaded, and checked against this group's own
+    // round: nothing in the database ties a requirement to a group, so this is
+    // what stops an id from another đợt being filed against its deadline.
+    const requirement = await this.requirements.requireForRound(
+      dto.requirementId,
+      group.roundId,
+    );
+
+    if (!file && !dto.submissionUrl) {
+      throw new BadRequestException(
+        'Cần tải lên một file hoặc dán một link — nộp trống thì không có gì để chấm.',
+      );
+    }
+
+    // Uploaded before the row is written and outside any transaction, because
+    // it is a network call to somebody else's service: holding a database
+    // transaction open across it would be holding a lock for as long as a
+    // student's upstream takes.
+    const stored = file ? await this.storage.uploadDocument(file) : null;
+
+    try {
+      const created = await this.prisma.$transaction(async (tx) => {
+        // Read inside the transaction: two members pressing submit together
+        // would otherwise both see the same highest version and both claim it.
+        const latest = await tx.submission.findFirst({
+          where: { groupId: group.id, requirementId: requirement.id },
+          select: { version: true },
+          orderBy: { version: 'desc' },
+        });
+
+        return tx.submission.create({
+          data: {
+            groupId: group.id,
+            topicId: group.topicId,
+            requirementId: requirement.id,
+            version: (latest?.version ?? 0) + 1,
+            submittedById: student.id,
+            ...(stored && {
+              fileUrl: stored.url,
+              filePublicId: stored.publicId,
+              fileName: stored.fileName,
+              fileSize: stored.bytes,
+            }),
+            ...(dto.submissionUrl && { submissionUrl: dto.submissionUrl }),
+          },
+          select: SUBMISSION_SELECT,
+        });
+      });
+
+      return present(created);
+    } catch (error) {
+      // The file is already in the provider's account and now nothing points at
+      // it, so it is taken back out rather than left to sit there forever.
+      if (stored) await this.storage.destroy(stored.publicId, 'raw');
+      throw error;
+    }
+  }
+
+  async findAll(query: QuerySubmissionsDto, userId: number, role: Role) {
+    const where: Prisma.SubmissionWhereInput = {
+      ...(query.requirementId && { requirementId: query.requirementId }),
+    };
+
+    if (role === Role.STUDENT) {
+      const student = await this.requireStudent(userId);
+      const group = await this.findOwnGroup(student.id);
+
+      // No group, no submissions — and answering with an empty page is the
+      // truthful version of that rather than an error.
+      if (!group) return empty(query);
+
+      where.groupId = group.id;
+    } else if (role === Role.LECTURER) {
+      const lecturer = await this.requireLecturer(userId);
+      where.topic = { lecturerId: lecturer.id };
+
+      // Staff filters apply within what they are already allowed to see, never
+      // instead of it.
+      if (query.groupId) where.groupId = query.groupId;
+      if (query.topicId) where.topicId = query.topicId;
+    } else {
+      if (query.groupId) where.groupId = query.groupId;
+      if (query.topicId) where.topicId = query.topicId;
+    }
+
+    const [items, total] = await Promise.all([
+      this.prisma.submission.findMany({
+        where,
+        select: SUBMISSION_SELECT,
+        // Newest first, and within one moment the higher version first: a
+        // supervisor opening this wants the latest of each kind at the top.
+        orderBy: [{ submittedAt: 'desc' }, { version: 'desc' }],
+        skip: (query.page - 1) * query.limit,
+        take: query.limit,
+      }),
+      this.prisma.submission.count({ where }),
+    ]);
+
+    return {
+      items: items.map(present),
+      total,
+      page: query.page,
+      limit: query.limit,
+      totalPages: Math.ceil(total / query.limit),
+    };
+  }
+
+  async giveFeedback(id: number, dto: SubmissionFeedbackDto, userId: number) {
+    const lecturer = await this.requireLecturer(userId);
+    const submission = await this.prisma.submission.findFirst({
+      where: { id, topic: { lecturerId: lecturer.id } },
+      select: {
+        id: true,
+        version: true,
+        requirement: { select: { name: true } },
+        group: {
+          select: {
+            id: true,
+            topic: { select: { title: true } },
+            members: {
+              where: { status: GroupMemberStatus.ACCEPTED },
+              select: { student: { select: { userId: true } } },
+            },
+          },
+        },
+      },
+    });
+
+    // 404 rather than 403 for a submission on somebody else's topic: knowing an
+    // id should not confirm that it exists.
+    if (!submission) throw new NotFoundException('Không tìm thấy bài nộp');
+
+    const updated = await this.prisma.submission.update({
+      where: { id },
+      data: { lecturerFeedback: dto.feedback, feedbackAt: new Date() },
+      select: SUBMISSION_SELECT,
+    });
+
+    await this.notifications.notify(
+      submission.group.members.map((member) => ({
+        userId: member.student.userId,
+        type: NotificationType.SUBMISSION_FEEDBACK,
+        title: 'Giảng viên đã nhận xét bài nộp',
+        content: `${lecturerName(lecturer)} vừa nhận xét ${submission.requirement.name.toLowerCase()} (lần ${submission.version}) của đề tài "${submission.group.topic.title}".`,
+        targetId: submission.group.id,
+      })),
+    );
+
+    return present(updated);
+  }
+
+  // ── guards ────────────────────────────────────────────────
+
+  private async requireStudent(userId: number) {
+    const student = await this.prisma.studentProfile.findUnique({
+      where: { userId },
+      select: { id: true, fullName: true },
+    });
+
+    if (!student) {
+      throw new ForbiddenException('Tài khoản này không có hồ sơ sinh viên');
+    }
+
+    return student;
+  }
+
+  private async requireLecturer(userId: number) {
+    const lecturer = await this.prisma.lecturerProfile.findUnique({
+      where: { userId },
+      select: { id: true, fullName: true, academicTitle: true },
+    });
+
+    if (!lecturer) {
+      throw new ForbiddenException('Tài khoản này không có hồ sơ giảng viên');
+    }
+
+    return lecturer;
+  }
+
+  private async findOwnGroup(studentId: number) {
+    const membership = await this.prisma.registrationGroupMember.findFirst({
+      where: {
+        studentId,
+        status: GroupMemberStatus.ACCEPTED,
+        group: { status: { not: RegistrationGroupStatus.REJECTED } },
+      },
+      select: {
+        group: {
+          select: {
+            id: true,
+            topicId: true,
+            // The round is what the requirement list belongs to, and a group
+            // reaches it only through its topic.
+            topic: { select: { roundId: true } },
+          },
+        },
+      },
+      orderBy: { id: 'desc' },
+    });
+
+    if (!membership) return null;
+
+    const { topic, ...group } = membership.group;
+
+    return { ...group, roundId: topic.roundId };
+  }
+
+  private async requireOwnGroup(studentId: number) {
+    const group = await this.findOwnGroup(studentId);
+
+    if (!group) {
+      throw new ForbiddenException(
+        'Bạn chưa có nhóm đề tài nào, nên chưa nộp bài được.',
+      );
+    }
+
+    return group;
+  }
+}
+
+function lecturerName(lecturer: {
+  fullName: string;
+  academicTitle: string | null;
+}) {
+  return lecturer.academicTitle
+    ? `${lecturer.academicTitle} ${lecturer.fullName}`
+    : lecturer.fullName;
+}
+
+function empty(query: { page: number; limit: number }) {
+  return {
+    items: [],
+    total: 0,
+    page: query.page,
+    limit: query.limit,
+    totalPages: 0,
+  };
+}
