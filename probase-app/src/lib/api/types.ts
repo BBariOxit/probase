@@ -76,6 +76,9 @@ export interface RegistrationRound {
   registrationEnd: string;
   allocationMode: 'FIRST_COME' | 'PREFERENCE_ROUND';
   finalisedAt: string | null;
+  targetCohort?: string | null;
+  officialStartDate?: string | null;
+  officialEndDate?: string | null;
   semester: { id: number; name: string; code: string };
   projectType: ProjectType;
   cohorts: string[];
@@ -691,6 +694,9 @@ export interface RoundPlanInput {
 
   registrationStart: string;
   registrationEnd: string;
+  targetCohort?: string;
+  officialStartDate?: string;
+  officialEndDate?: string;
 
   cohorts: string[];
   allocationMode?: 'FIRST_COME' | 'PREFERENCE_ROUND';

@@ -10,7 +10,12 @@ import { daysUntilDay } from '@/lib/named-day';
 
 export type RoundLike = Pick<
   RegistrationRound,
-  'phase' | 'registrationStart' | 'registrationEnd'
+  | 'phase'
+  | 'registrationStart'
+  | 'registrationEnd'
+  | 'targetCohort'
+  | 'officialStartDate'
+  | 'officialEndDate'
 >;
 
 export interface RoundStatus {
