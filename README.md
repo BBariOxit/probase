@@ -63,11 +63,11 @@ Tất cả các tài khoản demo đều dùng mật khẩu chung: **`123456`**
 | :--- | :--- | :--- | :--- |
 | **Trợ lý Giáo vụ Khoa (TLGV / Admin)** | ThS. Nguyễn Thị GVK | `gvgvk@dlu.edu.vn` | `123456` |
 | **Ban Chủ nhiệm Khoa (BCN Khoa)** | TS. Trần Văn CNK | `gvcnk@dlu.edu.vn` | `123456` |
-| **Tổ trưởng BM Phần mềm (TTBM CNPM)** | TS. An Bình | `gvab@dlu.edu.vn` | `123456` |
+| **Tổ trưởng BM Kỹ thuật phần mềm (TTBM KTPM/CNPM)** | TS. An Bình | `gvab@dlu.edu.vn` | `123456` |
 | **Tổ trưởng BM Mạng máy tính (TTBM MMT)** | ThS. Chu Đình | `gvcd@dlu.edu.vn` | `123456` |
 | **Giảng viên Hướng dẫn & Phản biện** | ThS. Phan Bửu | `gvpb@dlu.edu.vn` | `123456` |
-| **Sinh viên 1 (Trưởng nhóm - Lớp CNPM)** | Nguyễn Văn A | `2266666@dlu.edu.vn` | `123456` |
-| **Sinh viên 2 (Thành viên - Lớp CNPM)** | Phạm Thị B | `2277777@dlu.edu.vn` | `123456` |
+| **Sinh viên 1 (Trưởng nhóm - Lớp KTPM)** | Nguyễn Văn A | `2266666@dlu.edu.vn` | `123456` |
+| **Sinh viên 2 (Thành viên - Lớp KTPM)** | Phạm Thị B | `2277777@dlu.edu.vn` | `123456` |
 | **Sinh viên 3 (Lớp Mạng máy tính)** | Lê Văn C | `2288888@dlu.edu.vn` | `123456` |
 
 ---
