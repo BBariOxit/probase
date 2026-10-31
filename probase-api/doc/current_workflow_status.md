@@ -7,20 +7,32 @@
 
 ---
 
-## 1. CÁC NGUYÊN TẮC NGHIỆP VỤ CỐT LÕI (DLU)
+## 1. CÁC NGUYÊN TẮC NGHIỆP VỤ CỐT LÕI (KHOA CNTT - DLU)
 
-1. **Lộ trình đào tạo & Chuyên ngành (Tổ bộ môn):**
-   - Trường Đại học Đà Lạt tuyển sinh 1 ngành chung: **Công nghệ Thông tin**.
-   - **Năm 1 & Năm 2 (ví dụ khóa K48, K49):** Toàn bộ sinh viên học chung khung đại trà (đại cương và cơ sở ngành). Lớp sinh hoạt chưa phân nhánh chuyên ngành (mã lớp dạng `CTK48`, `CTK47`).
-     - Khi làm **Đồ án cơ sở (ĐACS)** ở cuối năm 2: Sinh viên chưa có chuyên ngành (`majorId = null`), làm chung ngân hàng đề tài cơ sở.
-   - **Đầu năm thứ 3:** Khoa tổ chức tư vấn và sinh viên đăng ký phân về 2 Chuyên ngành chính (tương ứng với 2 Tổ bộ môn chuyên môn):
-     - `CNPM`: **Công nghệ phần mềm** (mã lớp tách thành dạng `CTK46PM`, `CTK47PM`).
-     - `MMT`: **Mạng máy tính và Truyền thông dữ liệu** (mã lớp tách thành dạng `CTK46MMT`, `CTK47MMT`).
-   - **Năm 3 (ĐACN) và Năm 4 (KLTN):** Hệ thống bắt buộc lọc đề tài và thẩm định chuyên môn đúng theo Chuyên ngành của sinh viên và Bộ môn phụ trách.
+1. **Lộ trình đào tạo & 2 Chuyên ngành chính thức:**
+   - Trường Đại học Đà Lạt tuyển sinh 1 ngành chung: **Công nghệ Thông tin** (Mã ngành: `7480201`).
+   - **Năm 1 & Năm 2 (ví dụ khóa K48, K49):** Toàn bộ sinh viên học chung khung đại cương và cơ sở ngành. Lớp sinh hoạt chưa phân nhánh chuyên ngành (mã lớp dạng `CTK48`, `CTK47`).
+     - Khi làm **Đồ án cơ sở (ĐACS)** ở cuối năm 2: Dành cho lớp đại trà (ví dụ `CTK48`), sinh viên chưa có chuyên ngành (`majorId = null`), làm chung ngân hàng đề tài cơ sở.
+   - **Đầu năm thứ 3:** Khoa tổ chức tư vấn và sinh viên đăng ký phân vào đúng **2 Chuyên ngành**:
+     - `KTPM` (mã hệ thống `CNPM`): **Kỹ thuật phần mềm** (mã lớp tách thành dạng `CTK46PM`, `CTK47PM`).
+     - `MMT`: **Mạng máy tính** (mã lớp tách thành dạng `CTK46MMT`, `CTK47MMT`).
+   - **Năm 3 (ĐACN) và Năm 4 (KLTN):** Hệ thống bắt buộc lọc đề tài và thẩm định chuyên môn đúng theo Chuyên ngành của sinh viên và giảng viên phụ trách.
 
-2. **Quy mô nhóm đồ án:** Mỗi nhóm đồ án cho phép từ **1 đến 3 sinh viên**.
+2. **Cách Khoa phân phối Kế hoạch & Quản lý Đợt đồ án theo Khóa/Lớp:**
+   - Khoa **không gộp chung một lịch** cho tất cả loại đồ án mà chia theo từng kế hoạch riêng lẻ gắn với **Mã lớp học (Khóa)**:
+     - Kế hoạch ĐACS cho lớp `CTK48`.
+     - Kế hoạch ĐACN cho lớp `CTK47` (nhánh `CTK47PM` và `CTK47MMT`).
+     - Kế hoạch KLTN cho lớp `CTK46` (nhánh `CTK46PM` và `CTK46MMT`).
+   - **Thời gian làm chính thức là 3 tháng** (ví dụ: từ 10/08 đến 10/11).
+   - **Quản lý cuốn chiếu:** Trước ngày bắt đầu chính thức khoảng 2 tuần, Khoa mở cổng cho sinh viên chọn đề tài và liên hệ giảng viên.
 
-3. **Chữ ký thẩm định Đề cương M03:** Ban hành theo mẫu chuẩn của Khoa CNTT - DLU. Sinh viên in bản giấy, **gặp trực tiếp GVHD để xin chữ ký sống**, sau đó scan/chụp thành 1 file PDF duy nhất để nộp lên hệ thống.
+3. **Quy mô nhóm đồ án:** Mỗi nhóm đồ án cho phép từ **1 đến 3 sinh viên**.
+
+4. **Chữ ký thẩm định Đề cương M03:** Ban hành theo mẫu chuẩn của Khoa CNTT - DLU. Sinh viên in bản giấy, **gặp trực tiếp GVHD để xin chữ ký sống**, sau đó scan/chụp thành 1 file PDF duy nhất để nộp lên hệ thống.
+
+5. **Cơ chế đánh giá phân biệt ĐACS/ĐACN vs KLTN:**
+   - **Với ĐACS & ĐACN:** TĐ1 do GVHD tự chấm (50%). TĐ2 là buổi đánh giá của **Hội đồng nhỏ gồm (GVHD + GVPB) chấm 50% số điểm tổng** (kết thúc môn, không cần lập Hội đồng lớn bảo vệ).
+   - **Với KLTN:** TĐ1 (20% GVHD) ➔ TĐ2 (30% GVHD + GVPB, cổng điều kiện ≥ 50%) ➔ Nộp báo cáo cuối kỳ & Nhận xét M02/M05 ➔ Hội đồng bảo vệ lớn (50%).
 
 ---
 
@@ -81,7 +93,7 @@
      - Thiết lập timeline cho từng đợt: Ngày bắt đầu mở đăng ký, ngày kết thúc đăng ký, hạn chót nộp Đề cương M03.
      - Chuyển trạng thái đợt: `PREP` (Chuẩn bị) $\rightarrow$ `OPEN` (Mở cổng).
   3. **Quản lý Giảng viên & Bộ môn:**
-     - Khai báo danh sách Giảng viên cơ hữu trong Khoa, phân bổ về 2 Tổ bộ môn: **Bộ môn Công nghệ phần mềm (CNPM)** hoặc **Bộ môn Mạng máy tính (MMT)**.
+     - Khai báo danh sách Giảng viên cơ hữu trong Khoa, phân bổ về 2 Chuyên ngành / Bộ môn: **Bộ môn Công nghệ phần mềm (CNPM)** hoặc **Bộ môn Mạng máy tính (MMT)**.
      - Gán vai trò chức vụ kiêm nhiệm cho giảng viên: Giảng viên hướng dẫn (`GVHD`), Tổ trưởng bộ môn (`TTBM`), Ban Chủ nhiệm Khoa (`BCN Khoa` / Dean / Vice-Dean), Trợ lý Giáo vụ (`TLGV`).
 * **Hệ thống kiểm soát:**
   - Mỗi thời điểm chỉ cho phép duy nhất **1 Học kỳ đang Active**.
@@ -147,7 +159,7 @@
      - Bấm nộp: Đề tài mang trạng thái `PENDING_DEPARTMENT` (Chờ Bộ môn thẩm định).
   2. **Tổ trưởng Bộ môn (TTBM - Tổ CNPM hoặc Tổ MMT):**
      - Đăng nhập với quyền TTBM vào màn hình Duyệt đề tài (`/admin/topics`).
-     - Hệ thống chỉ lọc hiển thị các đề tài thuộc Chuyên ngành/Tổ bộ môn mà TTBM đó phụ trách.
+     - Hệ thống chỉ lọc hiển thị các đề tài thuộc Chuyên ngành/Chuyên ngành / Bộ môn mà TTBM đó phụ trách.
      - Thẩm định độ khó, tính thực tiễn và tính trùng lặp.
      - TTBM được làm 3 hành động:
        - **Chấp thuận**: Đề tài được chuyển lên cấp Khoa (`PENDING_FACULTY`).

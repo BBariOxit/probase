@@ -100,7 +100,7 @@ describe('ReviewersService', () => {
           title: 'Hệ thống phần mềm',
           lecturerId: 5,
           majorId: 1, // CNPM
-          major: { name: 'Công nghệ phần mềm' },
+          major: { name: 'Kỹ thuật phần mềm' },
         },
       });
 
@@ -126,7 +126,7 @@ describe('ReviewersService', () => {
           title: 'Hệ thống phần mềm',
           lecturerId: 5, // GVHD: Thầy A (id 5)
           majorId: 1, // CNPM
-          major: { name: 'Công nghệ phần mềm' },
+          major: { name: 'Kỹ thuật phần mềm' },
         },
       });
 

@@ -19,6 +19,20 @@ import { QueryLecturerProgressDto } from './dto/query-progress.dto';
 import { SubmitProgressReportDto } from './dto/submit-progress-report.dto';
 import { UpdateWeeklyLogDto } from './dto/update-weekly-log.dto';
 
+/**
+ * Quy đổi điểm hệ 10 sang điểm chữ theo chuẩn ĐH Đà Lạt & Quy chế tín chỉ MOET (Thông tư 08/2021)
+ */
+export function calculateLetterGrade(score: number): string {
+  if (score >= 8.5) return 'A';
+  if (score >= 7.8) return 'B+';
+  if (score >= 7.0) return 'B';
+  if (score >= 6.3) return 'C+';
+  if (score >= 5.5) return 'C';
+  if (score >= 4.8) return 'D+';
+  if (score >= 4.0) return 'D';
+  return 'F';
+}
+
 @Injectable()
 export class ProgressService {
   constructor(
@@ -70,6 +84,21 @@ export class ProgressService {
                 lecturerCode: true,
               },
             },
+            round: {
+              select: {
+                id: true,
+                targetCohort: true,
+                officialStartDate: true,
+                officialEndDate: true,
+                projectType: {
+                  select: {
+                    id: true,
+                    code: true,
+                    name: true,
+                  },
+                },
+              },
+            },
           },
         },
         leader: {
@@ -92,6 +121,10 @@ export class ProgressService {
               },
             },
           },
+        },
+        studentGrades: {
+          where: { studentId: student.id },
+          take: 1,
         },
         assignment: {
           include: {
@@ -196,6 +229,7 @@ export class ProgressService {
         stage1,
         stage2,
       },
+      studentGrade: group.studentGrades?.[0] ?? null,
     };
   }
 
@@ -565,7 +599,15 @@ export class ProgressService {
     const group = await this.prisma.registrationGroup.findUnique({
       where: { id: groupId },
       include: {
-        topic: true,
+        topic: {
+          include: {
+            round: {
+              include: {
+                projectType: true,
+              },
+            },
+          },
+        },
         assignment: true,
         members: {
           where: { status: GroupMemberStatus.ACCEPTED },
@@ -586,6 +628,10 @@ export class ProgressService {
         'Bạn không phải là Giảng viên hướng dẫn hoặc Phản biện của nhóm này.',
       );
     }
+
+    const projectTypeCode = group.topic?.round?.projectType?.code;
+    const isSubCouncilCourse =
+      projectTypeCode === 'DACS' || projectTypeCode === 'DACN';
 
     // Existing report
     const existing = await this.prisma.progressReport.findUnique({
@@ -622,6 +668,33 @@ export class ProgressService {
         },
       });
 
+      // Nếu là ĐACS/ĐACN và đã có điểm Stage 2 của cả 2 GV, tính luôn tổng kết
+      let finalGradeNum: number | undefined;
+      let finalGradeLetter: string | undefined;
+
+      if (isSubCouncilCourse) {
+        const stage2Report = await this.prisma.progressReport.findUnique({
+          where: { groupId_stage: { groupId, stage: 'STAGE_2' } },
+        });
+        const bothGradedStage2 =
+          stage2Report?.supervisorGrade !== null &&
+          stage2Report?.supervisorGrade !== undefined &&
+          stage2Report?.reviewerGrade !== null &&
+          stage2Report?.reviewerGrade !== undefined &&
+          stage2Report?.finalStageGrade !== null &&
+          stage2Report?.finalStageGrade !== undefined;
+
+        if (bothGradedStage2) {
+          finalGradeNum = Number(
+            (0.5 * dto.grade + 0.5 * stage2Report.finalStageGrade!).toFixed(2),
+          );
+          finalGradeLetter =
+            stage2Report.isPassed === false
+              ? 'F'
+              : calculateLetterGrade(finalGradeNum);
+        }
+      }
+
       // Sync to StudentGrade (progress1Grade)
       const notices = [];
       for (const member of group.members) {
@@ -636,9 +709,13 @@ export class ProgressService {
             groupId,
             studentId: member.studentId,
             progress1Grade: dto.grade,
+            ...(finalGradeNum !== undefined && { finalGradeNum }),
+            ...(finalGradeLetter !== undefined && { finalGradeLetter }),
           },
           update: {
             progress1Grade: dto.grade,
+            ...(finalGradeNum !== undefined && { finalGradeNum }),
+            ...(finalGradeLetter !== undefined && { finalGradeLetter }),
           },
         });
 
@@ -719,7 +796,34 @@ export class ProgressService {
       },
     });
 
-    // Sync to StudentGrade (progress2Grade)
+    // Kiểm tra nếu cả 2 GV đã chấm xong cho môn ĐACS/ĐACN (Tiểu ban 2 người kết thúc môn)
+    const bothGraded =
+      supervisorGrade !== undefined &&
+      supervisorGrade !== null &&
+      reviewerGrade !== undefined &&
+      reviewerGrade !== null;
+
+    let finalGradeNum: number | undefined;
+    let finalGradeLetter: string | undefined;
+    let progress1GradeVal: number | null | undefined;
+
+    if (isSubCouncilCourse && bothGraded) {
+      const stage1Report = await this.prisma.progressReport.findUnique({
+        where: { groupId_stage: { groupId, stage: 'STAGE_1' } },
+      });
+      progress1GradeVal =
+        stage1Report?.finalStageGrade ?? stage1Report?.supervisorGrade;
+
+      if (progress1GradeVal !== null && progress1GradeVal !== undefined) {
+        finalGradeNum = Number(
+          (0.5 * progress1GradeVal + 0.5 * finalStageGrade).toFixed(2),
+        );
+        finalGradeLetter =
+          isPassed === false ? 'F' : calculateLetterGrade(finalGradeNum);
+      }
+    }
+
+    // Sync to StudentGrade (progress2Grade & finalGrade for Sub-council)
     const notices = [];
     for (const member of group.members) {
       await this.prisma.studentGrade.upsert({
@@ -733,9 +837,15 @@ export class ProgressService {
           groupId,
           studentId: member.studentId,
           progress2Grade: finalStageGrade,
+          ...(finalGradeNum !== undefined && { finalGradeNum }),
+          ...(finalGradeLetter !== undefined && { finalGradeLetter }),
+          ...(isPassed === false ? { note: 'Chưa đạt 50% khối lượng tối thiểu' } : {}),
         },
         update: {
           progress2Grade: finalStageGrade,
+          ...(finalGradeNum !== undefined && { finalGradeNum }),
+          ...(finalGradeLetter !== undefined && { finalGradeLetter }),
+          ...(isPassed === false ? { note: 'Chưa đạt 50% khối lượng tối thiểu' } : {}),
         },
       });
 
@@ -744,15 +854,29 @@ export class ProgressService {
           ? 'CẢNH BÁO: Chưa đạt 50% khối lượng công việc'
           : `Điểm chốt: ${finalStageGrade}/10`;
 
+      let noticeTitle = `Kết quả đánh giá Tiến độ 2 - ${statusText}`;
+      let noticeContent = `Hội đồng đã đánh giá Tiến độ 2 cho nhóm bạn. Điểm: ${finalStageGrade}/10.${
+        isPassed === false
+          ? ' Cảnh báo: Khối lượng chưa đạt 50%, có nguy cơ bị đình chỉ bảo vệ!'
+          : ' Chúc mừng bạn đủ điều kiện hoàn thiện quyển để ra bảo vệ.'
+      }`;
+
+      if (isSubCouncilCourse) {
+        if (bothGraded && finalGradeNum !== undefined) {
+          noticeTitle = `Tổng kết học phần ${projectTypeCode ?? 'Đồ án'}: ${finalGradeNum}/10 (${finalGradeLetter})`;
+          noticeContent = `Tiểu ban 2 Giảng viên (GVHD & GVPB) đã hoàn tất đánh giá kết thúc môn ${projectTypeCode ?? 'Đồ án'}. Điểm TĐ1 (50%): ${progress1GradeVal}/10, Điểm Tiểu ban (50%): ${finalStageGrade}/10. Điểm tổng kết: ${finalGradeNum}/10 (${finalGradeLetter}).`;
+        } else {
+          const roleText = isSupervisor ? 'GVHD' : 'GVPB';
+          noticeTitle = `${roleText} đã chấm điểm Tiến độ 2 / Tiểu ban (${dto.grade}/10)`;
+          noticeContent = `${roleText} đã hoàn tất chấm điểm cho nhóm bạn (${dto.grade}/10). Điểm tổng kết môn học sẽ được chốt sau khi cả GVHD và GVPB hoàn tất đánh giá.`;
+        }
+      }
+
       notices.push({
         userId: member.student.userId,
         type: NotificationType.PROGRESS_REPORT_GRADED,
-        title: `Kết quả đánh giá Tiến độ 2 - ${statusText}`,
-        content: `Hội đồng đã đánh giá Tiến độ 2 cho nhóm bạn. Điểm: ${finalStageGrade}/10.${
-          isPassed === false
-            ? ' Cảnh báo: Khối lượng chưa đạt 50%, có nguy cơ bị đình chỉ bảo vệ!'
-            : ' Chúc mừng bạn đủ điều kiện hoàn thiện quyển để ra bảo vệ.'
-        }`,
+        title: noticeTitle,
+        content: noticeContent,
         targetId: groupId,
       });
     }

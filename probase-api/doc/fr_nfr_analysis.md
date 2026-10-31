@@ -14,9 +14,9 @@ Tài liệu này định nghĩa chi tiết toàn bộ yêu cầu nghiệp vụ, 
 
 2. **Hai Chuyên ngành đào tạo (từ năm thứ 3):**
    - Đến năm 3, sinh viên được phân vào một trong **2 Chuyên ngành (hướng chuyên sâu)**:
-     1. **Công nghệ phần mềm** (Mã: `CNPM`, mã lớp: ví dụ `CTK46PM`).
+     1. **Kỹ thuật phần mềm** (Mã: `CNPM` / `KTPM`, mã lớp: ví dụ `CTK46PM`).
      2. **Mạng máy tính** (Mã: `MMT`, mã lớp: ví dụ `CTK46MMT`).
-   - Hai chuyên ngành này tương ứng với **2 Tổ chuyên môn** của Khoa, phụ trách bởi **Tổ trưởng Bộ môn (TTBM)** chuyên trách.
+   - Hai chuyên ngành này tương ứng với **2 Chuyên ngành** của Khoa, phụ trách bởi **Tổ trưởng Bộ môn (TTBM)** chuyên trách.
 
 3. **Ba loại đồ án trong chương trình đào tạo:**
    - **Đồ án cơ sở (ĐACS)**: Thường dành cho sinh viên năm 2 (ví dụ CTK48).
@@ -31,7 +31,7 @@ Tài liệu này định nghĩa chi tiết toàn bộ yêu cầu nghiệp vụ, 
 | :---: | :--- | :--- |
 | **1** | **Trợ lý Giáo vụ Khoa (TLGV) / Quản trị hệ thống** | - Thiết lập năm học, học kỳ, đợt làm đồ án (ĐACS, ĐACN, ĐATN) và cấu hình Timeline các mốc deadline.<br>- Import danh sách sinh viên đủ điều kiện làm đồ án theo file Excel từ Phòng Đào tạo/Giáo vụ.<br>- Tổng hợp danh sách đề tài, đề cương M03 đã được GVHD duyệt để xuất Tờ trình cho BCN Khoa ký quyết định.<br>- Quản lý kho lưu trữ đồ án số hóa, xuất bảng điểm tổng hợp và báo cáo thống kê giáo vụ. |
 | **2** | **Ban Chủ nhiệm Khoa (BCN Khoa)** | - Xét duyệt danh sách đề tài toàn Khoa trước khi mở cổng cho SV đăng ký.<br>- Phê duyệt và ký Quyết định công bố danh sách chính thức (Đề tài – Sinh viên – GVHD) sau vòng duyệt Đề cương M03.<br>- Phê duyệt danh sách phân công Giảng viên phản biện (GVPB) và thành lập Hội đồng bảo vệ.<br>- Xem báo cáo thống kê toàn diện (tải hướng dẫn GV, tỷ lệ hoàn thành, phổ điểm A/B/C/D/F). |
-| **3** | **Tổ trưởng Bộ môn / Trưởng nhóm chuyên môn (TTBM)** | - Phụ trách 2 tổ chuyên môn: **Công nghệ phần mềm** và **Mạng máy tính**.<br>- Rà soát, thẩm định nội dung chuyên môn các đề tài do giảng viên trong bộ môn đề xuất.<br>- Tiếp nhận và kiểm tra tập hợp đề cương nghiên cứu M03 từ GVHD thuộc bộ môn.<br>- Đề xuất phân công GVHD (đợt Khoa giao đề tài) và phân công GVPB đúng chuyên môn trước đợt Báo cáo tiến độ lần 2. |
+| **3** | **Tổ trưởng Bộ môn / Trưởng nhóm chuyên môn (TTBM)** | - Phụ trách 2 tổ chuyên môn: **Kỹ thuật phần mềm** và **Mạng máy tính**.<br>- Rà soát, thẩm định nội dung chuyên môn các đề tài do giảng viên trong bộ môn đề xuất.<br>- Tiếp nhận và kiểm tra tập hợp đề cương nghiên cứu M03 từ GVHD thuộc bộ môn.<br>- Đề xuất phân công GVHD (đợt Khoa giao đề tài) và phân công GVPB đúng chuyên môn trước đợt Báo cáo tiến độ lần 2. |
 | **4** | **Giảng viên hướng dẫn (GVHD)** | - Đề xuất danh sách đề tài mới (hoặc sao chép đề tài cũ có tinh chỉnh) theo đúng chuyên ngành.<br>- Xác nhận duyệt nhóm SV đăng ký đề tài (hoặc duyệt đề tài do SV tự đề xuất).<br>- Hướng dẫn, nhận xét và phê duyệt Đề cương chi tiết (Mẫu M03) của SV nộp lên Khoa.<br>- Theo dõi nhật ký tuần, kiểm tra và chấm điểm Báo cáo tiến độ lần 1 (trọng số **20%**).<br>- Phối hợp cùng GVPB kiểm tra, đánh giá và chấm điểm Báo cáo tiến độ lần 2 (trọng số **30%**).<br>- Đọc duyệt bản nộp cuối kỳ, viết Nhận xét của GVHD (**Mẫu M02/M04**), xác nhận cho phép SV ra bảo vệ và chấm điểm Bảo vệ cuối kỳ (trọng số **50%**). |
 | **5** | **Giảng viên phản biện (GVPB) / Thành viên Hội đồng** | - Nhận danh sách đề tài được phân công phản biện từ trước đợt Báo cáo tiến độ lần 2 (cùng chuyên môn CNPM hoặc MMT, khác GVHD).<br>- Xem đề cương M03, xem sản phẩm tại Tiến độ 2 và cùng GVHD chấm điểm Tiến độ lần 2 (**30%**).<br>- Đọc quyển báo cáo toàn văn và kiểm tra source code hoàn chỉnh ở giai đoạn cuối kỳ; viết Nhận xét của GVPB (**Mẫu M05**), xác nhận đề tài đạt yêu cầu bảo vệ và tham gia chấm điểm Bảo vệ (**50%**). |
 | **6** | **Sinh viên (SV / Nhóm SV 1–2 bạn)** | - Đăng nhập Google SSO `@dlu.edu.vn`, tra cứu danh sách đề tài đã được duyệt; lập nhóm (1–3 SV) để đăng ký đề tài hoặc gửi đề xuất đề tài mới cho GVHD.<br>- Soạn thảo và nộp trực tuyến Đề cương thực hiện đồ án (**Mẫu M03**) theo mẫu chuẩn của Khoa.<br>- Cập nhật nhật ký tuần (link Git, tiến độ), nộp báo cáo Tiến độ lần 1, Tiến độ lần 2 và Báo cáo cuối kỳ.<br>- Gửi yêu cầu điều chỉnh (đổi tên đề tài, gia hạn, đổi thành viên) khi phát sinh.<br>- Nộp gói lưu trữ số hóa hoàn chỉnh (**SOURCE, DATABASE, THESIS**) sau khi bảo vệ; tra cứu kho đồ án tham khảo. |
@@ -91,7 +91,7 @@ Tài liệu này định nghĩa chi tiết toàn bộ yêu cầu nghiệp vụ, 
 - **Mô tả:** GV nhập thông tin đề tài:
   - Tên đề tài (Tiếng Việt & Tiếng Anh).
   - Loại đồ án (ĐACS, ĐACN, KLTN).
-  - Chuyên ngành: **Công nghệ phần mềm** hoặc **Mạng máy tính**.
+  - Chuyên ngành: **Kỹ thuật phần mềm** hoặc **Mạng máy tính**.
   - Mục tiêu đề tài, Nội dung yêu cầu, Công nghệ/Công cụ dự kiến.
   - Số lượng sinh viên tối đa: từ 1 đến 3 SV.
   - Hỗ trợ kế thừa/sao chép đề tài từ các học kỳ trước và tinh chỉnh nội dung.
@@ -105,7 +105,7 @@ Tài liệu này định nghĩa chi tiết toàn bộ yêu cầu nghiệp vụ, 
 #### BR-05: Xét duyệt danh sách đề tài cấp Bộ môn & Cấp Khoa
 - **Tác nhân:** TTBM, BCN Khoa.
 - **Quy trình duyệt 2 cấp chặt chẽ:**
-  1. **Bước 1 (Cấp Bộ môn):** TTBM rà soát tính chuyên môn và độ khó của đề tài thuộc chuyên ngành mình phụ trách (CNPM hoặc Mạng máy tính). TTBM có quyền: Chấp thuận, Yêu cầu GV chỉnh sửa, hoặc Từ chối.
+  1. **Bước 1 (Cấp Bộ môn):** TTBM rà soát tính chuyên môn và độ khó của đề tài thuộc chuyên ngành mình phụ trách (Kỹ thuật phần mềm hoặc Mạng máy tính). TTBM có quyền: Chấp thuận, Yêu cầu GV chỉnh sửa, hoặc Từ chối.
   2. **Bước 2 (Cấp Khoa):** BCN Khoa xem xét danh sách đã qua thẩm định của TTBM, phê duyệt danh sách chính thức trước ngày mở cổng cho sinh viên.
 - **Đầu ra:** Đề tài chuyển sang trạng thái `ĐÃ_DUYỆT_MỞ_ĐĂNG_KÝ` và công bố cho SV.
 
@@ -186,7 +186,7 @@ Tài liệu này định nghĩa chi tiết toàn bộ yêu cầu nghiệp vụ, 
 - **Thời điểm:** Thực hiện trước đợt Báo cáo tiến độ lần 2 hoặc trước ngày bảo vệ chính thức khoảng 2–3 tuần.
 - **3 Nguyên tắc phân công bắt buộc tuân thủ (Business Rules):**
   1. ❌ **Không được vừa hướng dẫn vừa phản biện:** GVHD của nhóm đồ án đó **tuyệt đối không được** làm GVPB cho chính nhóm đó. Hệ thống tự động loại trừ tên GVHD ra khỏi danh sách ứng viên chọn GVPB cho nhóm.
-  2. 🎯 **Đúng chuyên môn / Tổ Bộ môn:** Sinh viên/Đề tài thuộc Chuyên ngành nào (ví dụ: Kỹ thuật phần mềm - CNPM) thì GVPB bắt buộc phải là giảng viên thuộc Bộ môn đó để đảm bảo tính chuyên môn khi chấm bài.
+  2. 🎯 **Đúng chuyên môn / Tổ Bộ môn:** Sinh viên/Đề tài thuộc Chuyên ngành nào (ví dụ: Kỹ thuật phần mềm - KTPM/CNPM) thì GVPB bắt buộc phải là giảng viên thuộc Bộ môn đó để đảm bảo tính chuyên môn khi chấm bài.
   3. ⚖️ **Cân bằng tải công việc:** Mỗi giảng viên thường chỉ nhận phản biện một số lượng đồ án tối đa (ví dụ: 5–7 đề tài/học kỳ). Hệ thống hiển thị chỉ số tải công việc `(HD: x | PB: y)` ngay cạnh tên giảng viên.
 - **Cơ chế phân công trên hệ thống:**
   - *Chế độ 1 (Thủ công):* TTBM duyệt danh sách đề tài, chọn GVPB qua thẻ dropdown select (đã lọc đúng bộ môn, trừ GVHD, kèm chỉ số tải).

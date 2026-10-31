@@ -81,7 +81,7 @@ const DEMO_STAFF = [
     researchInterests: 'Kỹ thuật phần mềm, Kiến trúc hệ thống phân tán',
     isAcademicAssistant: false,
     isFacultyBoard: false,
-    isHeadOfDepartment: true, // Tổ trưởng Bộ môn (TTBM) Công nghệ phần mềm
+    isHeadOfDepartment: true, // Tổ trưởng Bộ môn (TTBM) Kỹ thuật phần mềm
   },
   {
     email: 'gvcd@dlu.edu.vn',
@@ -113,7 +113,7 @@ const DEMO_STAFF = [
 // 3. DANH MỤC CHUYÊN NGÀNH CHUẨN KHOA CNTT - DLU
 // ─────────────────────────────────────────────────────────
 const MAJORS = [
-  { code: 'CNPM', name: 'Công nghệ phần mềm' },
+  { code: 'CNPM', name: 'Kỹ thuật phần mềm' },
   { code: 'MMT', name: 'Mạng máy tính' },
 ];
 
@@ -182,12 +182,12 @@ async function main() {
 
   // 4. Seed các Đợt đồ án (Registration Rounds)
   const ROUNDS = [
-    { code: 'DACS', cohort: '2024', closesInDays: 21 }, // Năm 2 (CTK48) làm ĐACS
-    { code: 'DACN', cohort: '2023', closesInDays: 21 }, // Năm 3 (CTK47) làm ĐACN
-    { code: 'DATN', cohort: '2022', closesInDays: 30 }, // Năm 4 (CTK46) làm KLTN
+    { code: 'DACS', cohort: '2024', targetCohort: 'CTK48', closesInDays: 21 }, // Năm 2 (CTK48) làm ĐACS
+    { code: 'DACN', cohort: '2023', targetCohort: 'CTK47', closesInDays: 21 }, // Năm 3 (CTK47) làm ĐACN
+    { code: 'DATN', cohort: '2022', targetCohort: 'CTK46', closesInDays: 30 }, // Năm 4 (CTK46) làm KLTN
   ];
 
-  for (const { code, cohort, closesInDays } of ROUNDS) {
+  for (const { code, cohort, targetCohort, closesInDays } of ROUNDS) {
     const projectType = await prisma.projectType.findUniqueOrThrow({
       where: { code },
     });
@@ -202,11 +202,18 @@ async function main() {
       create: {
         semesterId: semester.id,
         projectTypeId: projectType.id,
+        targetCohort,
+        officialStartDate: daysFromNow(7),
+        officialEndDate: daysFromNow(97), // 3 tháng (90 ngày)
         registrationStart: daysFromNow(-7),
         registrationEnd: daysFromNow(closesInDays),
         phase: 'OPEN',
       },
-      update: {},
+      update: {
+        targetCohort,
+        officialStartDate: daysFromNow(7),
+        officialEndDate: daysFromNow(97),
+      },
     });
 
     await prisma.roundEligibility.deleteMany({ where: { roundId: round.id } });
@@ -415,13 +422,13 @@ async function main() {
   console.log('1. DANH SÁCH GIẢNG VIÊN & CÁN BỘ:');
   console.log('   - gvgvk@dlu.edu.vn   | Vai trò: Trợ lý Giáo vụ Khoa (TLGV / ADMIN)');
   console.log('   - gvcnk@dlu.edu.vn   | Vai trò: Ban Chủ nhiệm Khoa (BCN Khoa)');
-  console.log('   - gvab@dlu.edu.vn    | Vai trò: Tổ trưởng BM Phần mềm (TTBM CNPM)');
+  console.log('   - gvab@dlu.edu.vn    | Vai trò: Tổ trưởng BM Kỹ thuật phần mềm (TTBM KTPM/CNPM)');
   console.log('   - gvcd@dlu.edu.vn    | Vai trò: Tổ trưởng BM Mạng máy tính (TTBM MMT)');
   console.log('   - gvpb@dlu.edu.vn    | Vai trò: Giảng viên Hướng dẫn & Phản biện\n');
 
   console.log('2. DANH SÁCH SINH VIÊN (CTK46 - Năm cuối làm KLTN):');
-  console.log('   - 2266666@dlu.edu.vn | Nguyễn Văn A (Lớp CTK46PM - Chuyên ngành Phần mềm)');
-  console.log('   - 2277777@dlu.edu.vn | Phạm Thị B   (Lớp CTK46PM - Chuyên ngành Phần mềm)');
+  console.log('   - 2266666@dlu.edu.vn | Nguyễn Văn A (Lớp CTK46PM - Chuyên ngành Kỹ thuật phần mềm)');
+  console.log('   - 2277777@dlu.edu.vn | Phạm Thị B   (Lớp CTK46PM - Chuyên ngành Kỹ thuật phần mềm)');
   console.log('   - 2288888@dlu.edu.vn | Lê Văn C     (Lớp CTK46MMT - Chuyên ngành Mạng)');
   console.log('============================================================\n');
 }

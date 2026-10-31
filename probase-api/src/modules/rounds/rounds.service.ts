@@ -30,6 +30,9 @@ const ROUND_SELECT = {
   projectTypeId: true,
   registrationStart: true,
   registrationEnd: true,
+  targetCohort: true,
+  officialStartDate: true,
+  officialEndDate: true,
   phase: true,
   allocationMode: true,
   finalisedAt: true,
@@ -292,6 +295,15 @@ export class RoundsService {
               data: {
                 registrationStart: plan.registrationStart,
                 registrationEnd: plan.registrationEnd,
+                ...(plan.targetCohort !== undefined && {
+                  targetCohort: plan.targetCohort,
+                }),
+                ...(plan.officialStartDate !== undefined && {
+                  officialStartDate: plan.officialStartDate,
+                }),
+                ...(plan.officialEndDate !== undefined && {
+                  officialEndDate: plan.officialEndDate,
+                }),
                 ...(plan.allocationMode && {
                   allocationMode: plan.allocationMode,
                 }),
@@ -304,6 +316,15 @@ export class RoundsService {
                 projectTypeId: plan.projectTypeId,
                 registrationStart: plan.registrationStart,
                 registrationEnd: plan.registrationEnd,
+                ...(plan.targetCohort !== undefined && {
+                  targetCohort: plan.targetCohort,
+                }),
+                ...(plan.officialStartDate !== undefined && {
+                  officialStartDate: plan.officialStartDate,
+                }),
+                ...(plan.officialEndDate !== undefined && {
+                  officialEndDate: plan.officialEndDate,
+                }),
                 ...(plan.allocationMode && {
                   allocationMode: plan.allocationMode,
                 }),
@@ -371,6 +392,13 @@ export class RoundsService {
         data: {
           registrationStart,
           registrationEnd,
+          ...(dto.targetCohort !== undefined && { targetCohort: dto.targetCohort }),
+          ...(dto.officialStartDate !== undefined && {
+            officialStartDate: dto.officialStartDate,
+          }),
+          ...(dto.officialEndDate !== undefined && {
+            officialEndDate: dto.officialEndDate,
+          }),
           ...(dto.allocationMode && { allocationMode: dto.allocationMode }),
         },
       });

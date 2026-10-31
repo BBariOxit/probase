@@ -45,7 +45,7 @@ describe('EligibleStudentsService', () => {
       },
       major: {
         findMany: jest.fn().mockResolvedValue([
-          { id: 1, name: 'Công nghệ phần mềm', code: 'CNPM' },
+          { id: 1, name: 'Kỹ thuật phần mềm', code: 'CNPM' },
           { id: 2, name: 'Mạng máy tính', code: 'MMT' },
         ]),
       },

@@ -11,13 +11,13 @@ Tài liệu này định nghĩa chi tiết kiến trúc cơ sở dữ liệu qua
    - Trường chỉ tuyển sinh một ngành: **Công nghệ Thông tin**.
    - **Năm 1 và Năm 2:** Sinh viên học chung các môn đại cương và cơ sở ngành (mã lớp đại trà dạng `CTK48`, `CTK47` – chưa phân chuyên ngành, `specialization_id` là `NULL`). Sinh viên làm **Đồ án cơ sở (ĐACS)** ở giai đoạn này với đề tài nền tảng chung, không phân biệt chuyên ngành.
    - **Đầu năm thứ 3:** Sinh viên chính thức đăng ký phân vào đúng **2 Chuyên ngành (hướng chuyên sâu)**:
-     - `CNPM`: **Công nghệ phần mềm** (mã lớp tách thành dạng `CTK46PM`, `CTK47PM`).
+     - `CNPM`: **Kỹ thuật phần mềm** (mã lớp tách thành dạng `CTK46PM`, `CTK47PM`).
      - `MMT`: **Mạng máy tính** (mã lớp tách thành dạng `CTK46MMT`, `CTK47MMT`).
    - Hai chuyên ngành này đồng thời là hai **Tổ chuyên môn** quản lý đề tài và phân công giảng viên cho **Đồ án chuyên ngành (ĐACN)** và **Khóa luận tốt nghiệp (KLTN)**.
 
 2. **Cơ cấu Giảng viên & 6 Tác nhân (Actors):**
    - Không tạo các bảng role rời rạc gây phân mảnh. Hệ thống sử dụng bảng `lecturer_profiles` có các cờ chức vụ kiêm nhiệm trong Khoa:
-     - `is_head_of_department` (Tổ trưởng Bộ môn - TTBM phụ trách Tổ CNPM hoặc Tổ MMT).
+     - `is_head_of_department` (Tổ trưởng Bộ môn - TTBM phụ trách Tổ KTPM hoặc Tổ MMT).
      - `is_faculty_board` (Ban Chủ nhiệm Khoa - BCN Khoa).
      - `is_academic_assistant` (Trợ lý Giáo vụ Khoa - TLGV).
      - Đồng thời mỗi giảng viên đều có thể đóng vai trò `GVHD` (hướng dẫn) hoặc `GVPB` (phản biện) tùy theo từng đề tài.
@@ -60,7 +60,7 @@ Tài khoản đăng nhập hệ thống, hỗ trợ Google OAuth 2.0 theo 2 doma
 #### 2. `specializations`
 Danh mục 2 Chuyên ngành đào tạo cố định của Khoa CNTT - DLU.
 - `id` (INT, PK, Auto Increment)
-- `name` (VARCHAR(100), Not Null): *"Công nghệ phần mềm"* hoặc *"Mạng máy tính"*.
+- `name` (VARCHAR(100), Not Null): *"Kỹ thuật phần mềm"* hoặc *"Mạng máy tính"*.
 - `code` (VARCHAR(20), Unique, Not Null): `'CNPM'` hoặc `'MMT'`.
 - `description` (TEXT, Nullable)
 
