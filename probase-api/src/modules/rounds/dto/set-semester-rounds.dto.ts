@@ -13,6 +13,10 @@ export const RoundPlanSchema = z
     registrationStart: z.coerce.date(),
     registrationEnd: z.coerce.date(),
 
+    targetCohort: z.string().trim().max(50).optional(),
+    officialStartDate: z.coerce.date().optional(),
+    officialEndDate: z.coerce.date().optional(),
+
     cohorts: z.array(CohortSchema).min(1).max(20),
     allocationMode: z.enum(AllocationMode).optional(),
   })
