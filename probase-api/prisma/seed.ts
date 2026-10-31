@@ -182,12 +182,12 @@ async function main() {
 
   // 4. Seed các Đợt đồ án (Registration Rounds)
   const ROUNDS = [
-    { code: 'DACS', cohort: '2024', closesInDays: 21 }, // Năm 2 (CTK48) làm ĐACS
-    { code: 'DACN', cohort: '2023', closesInDays: 21 }, // Năm 3 (CTK47) làm ĐACN
-    { code: 'DATN', cohort: '2022', closesInDays: 30 }, // Năm 4 (CTK46) làm KLTN
+    { code: 'DACS', cohort: '2024', targetCohort: 'CTK48', closesInDays: 21 }, // Năm 2 (CTK48) làm ĐACS
+    { code: 'DACN', cohort: '2023', targetCohort: 'CTK47', closesInDays: 21 }, // Năm 3 (CTK47) làm ĐACN
+    { code: 'DATN', cohort: '2022', targetCohort: 'CTK46', closesInDays: 30 }, // Năm 4 (CTK46) làm KLTN
   ];
 
-  for (const { code, cohort, closesInDays } of ROUNDS) {
+  for (const { code, cohort, targetCohort, closesInDays } of ROUNDS) {
     const projectType = await prisma.projectType.findUniqueOrThrow({
       where: { code },
     });
@@ -202,11 +202,18 @@ async function main() {
       create: {
         semesterId: semester.id,
         projectTypeId: projectType.id,
+        targetCohort,
+        officialStartDate: daysFromNow(7),
+        officialEndDate: daysFromNow(97), // 3 tháng (90 ngày)
         registrationStart: daysFromNow(-7),
         registrationEnd: daysFromNow(closesInDays),
         phase: 'OPEN',
       },
-      update: {},
+      update: {
+        targetCohort,
+        officialStartDate: daysFromNow(7),
+        officialEndDate: daysFromNow(97),
+      },
     });
 
     await prisma.roundEligibility.deleteMany({ where: { roundId: round.id } });

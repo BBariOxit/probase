@@ -420,6 +420,11 @@ model RegistrationRound {
 
   allocationMode AllocationMode @default(FIRST_COME)
 
+  // Phân phối theo Khóa/Lớp & Chu kỳ 3 tháng chuẩn Khoa CNTT - DLU
+  targetCohort         String?   // Mã lớp học / Khóa áp dụng (VD: "CTK48", "CTK47", "CTK46")
+  officialStartDate    DateTime? // Thời gian làm đồ án chính thức (3 tháng theo Kế hoạch Khoa)
+  officialEndDate      DateTime? // Hạn kết thúc 3 tháng chính thức
+
   // Timeline 7 mốc thời gian tự động chuẩn Khoa CNTT - DLU (BR-01)
   topicSubmissionStart       DateTime? // Hạn GV nộp đề tài
   topicSubmissionEnd         DateTime? // Hạn TTBM & Khoa duyệt đề tài
