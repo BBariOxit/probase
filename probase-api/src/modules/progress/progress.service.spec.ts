@@ -274,5 +274,64 @@ describe('ProgressService', () => {
         }),
       ]);
     });
+
+    it('should compute finalGradeNum and finalGradeLetter for DACS when both GVHD and GVPB grade STAGE_2', async () => {
+      prisma.lecturerProfile.findUnique.mockResolvedValue({ id: 8 }); // Reviewer
+      prisma.registrationGroup.findUnique.mockResolvedValue({
+        id: 20,
+        topic: {
+          lecturerId: 5,
+          round: {
+            projectType: { code: 'DACS', name: 'Đồ án cơ sở' },
+          },
+        },
+        assignment: { reviewerId: 8 },
+        members: [{ studentId: 10, student: { userId: 201 } }],
+      });
+      // Existing report for STAGE_2 already has supervisorGrade = 9.0
+      prisma.progressReport.findUnique
+        .mockResolvedValueOnce({
+          supervisorGrade: 9.0,
+          reviewerGrade: null,
+          workloadPercentage: 80,
+        })
+        // Mock lookup for STAGE_1 report
+        .mockResolvedValueOnce({
+          finalStageGrade: 8.0,
+          supervisorGrade: 8.0,
+        });
+
+      prisma.progressReport.upsert.mockResolvedValue({
+        id: 2,
+        stage: 'STAGE_2',
+        supervisorGrade: 9.0,
+        reviewerGrade: 8.0,
+        finalStageGrade: 8.5,
+        workloadPercentage: 80,
+        isPassed: true,
+      });
+
+      await service.gradeProgressReport(108, 20, 'STAGE_2', {
+        grade: 8.0,
+        workloadPercentage: 80,
+        feedback: 'Phản biện đánh giá tốt.',
+      });
+
+      // 0.5 * 8.0 (Stage 1) + 0.5 * 8.5 (Stage 2) = 8.25 -> Letter 'B+'
+      expect(prisma.studentGrade.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({
+            progress2Grade: 8.5,
+            finalGradeNum: 8.25,
+            finalGradeLetter: 'B+',
+          }),
+          update: expect.objectContaining({
+            progress2Grade: 8.5,
+            finalGradeNum: 8.25,
+            finalGradeLetter: 'B+',
+          }),
+        }),
+      );
+    });
   });
 });
