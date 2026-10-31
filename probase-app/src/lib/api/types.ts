@@ -1128,6 +1128,17 @@ export interface MyGroupProgressResponse {
         academicTitle: string | null;
         lecturerCode: string;
       } | null;
+      round?: {
+        id: number;
+        targetCohort?: string | null;
+        officialStartDate?: string | null;
+        officialEndDate?: string | null;
+        projectType?: {
+          id: number;
+          code: string;
+          name: string;
+        } | null;
+      } | null;
     };
     leader: {
       id: number;
@@ -1157,6 +1168,15 @@ export interface MyGroupProgressResponse {
     stage1: ProgressReportItem | null;
     stage2: ProgressReportItem | null;
   };
+  studentGrade?: {
+    progress1Grade?: number | null;
+    progress2Grade?: number | null;
+    defenseGrade?: number | null;
+    finalGradeNum?: number | null;
+    finalGradeLetter?: string | null;
+    note?: string | null;
+    isLocked?: boolean;
+  } | null;
 }
 
 export interface LecturerGroupProgressItem {
@@ -1345,7 +1365,7 @@ export interface MyReviewItem {
     round?: {
       id: number;
       semester?: { id: number; name: string } | null;
-      projectType?: { id: number; name: string } | null;
+      projectType?: { id: number; name: string; code?: string } | null;
     } | null;
   };
   group: {
@@ -1375,7 +1395,9 @@ export interface MyReviewItem {
       workloadPercentage: number | null;
       isPassed: boolean | null;
       supervisorGrade: number | null;
+      supervisorFeedback?: string | null;
       reviewerGrade: number | null;
+      reviewerFeedback?: string | null;
       finalStageGrade: number | null;
       submittedAt: string;
     }>;

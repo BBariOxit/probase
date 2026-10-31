@@ -205,6 +205,7 @@ export function useGradeProgressReport() {
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: progressKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['reviewers'] });
     },
   });
 }
