@@ -335,7 +335,7 @@ model LecturerProfile {
 // ─────────────────────────────────────────────────────────
 
 // Chuyên ngành (Tổ chuyên môn). Gồm 2 chuyên ngành đào tạo chính thức của Khoa CNTT - DLU:
-// 1. Công nghệ phần mềm (CNPM)
+// 1. Kỹ thuật phần mềm (CNPM / KTPM)
 // 2. Mạng máy tính (MMT)
 model Major {
   id          Int     @id @default(autoincrement())

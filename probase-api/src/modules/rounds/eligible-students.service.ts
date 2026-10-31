@@ -236,7 +236,7 @@ export class EligibleStudentsService {
 
     // Majors lookup
     const majors = await this.prisma.major.findMany();
-    const cnpmMajor = majors.find((m) => m.code === 'CNPM');
+    const cnpmMajor = majors.find((m) => m.code === 'CNPM' || m.code === 'KTPM');
     const mmtMajor = majors.find((m) => m.code === 'MMT');
 
     let createdAccountsCount = 0;

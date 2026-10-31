@@ -4,7 +4,7 @@ import { Role } from '../../../../generated/prisma/client';
 export enum AppActor {
   STUDENT = 'STUDENT',
   LECTURER = 'LECTURER',
-  TTBM = 'TTBM', // Tổ trưởng Bộ môn (CNPM / MMT)
+  TTBM = 'TTBM', // Tổ trưởng Bộ môn (KTPM / MMT)
   BCN_KHOA = 'BCN_KHOA', // Ban Chủ nhiệm Khoa
   TLGV = 'TLGV', // Trợ lý Giáo vụ Khoa
   ADMIN = 'ADMIN', // Quản trị viên

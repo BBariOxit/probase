@@ -81,7 +81,7 @@ const DEMO_STAFF = [
     researchInterests: 'Kỹ thuật phần mềm, Kiến trúc hệ thống phân tán',
     isAcademicAssistant: false,
     isFacultyBoard: false,
-    isHeadOfDepartment: true, // Tổ trưởng Bộ môn (TTBM) Công nghệ phần mềm
+    isHeadOfDepartment: true, // Tổ trưởng Bộ môn (TTBM) Kỹ thuật phần mềm
   },
   {
     email: 'gvcd@dlu.edu.vn',
@@ -113,7 +113,7 @@ const DEMO_STAFF = [
 // 3. DANH MỤC CHUYÊN NGÀNH CHUẨN KHOA CNTT - DLU
 // ─────────────────────────────────────────────────────────
 const MAJORS = [
-  { code: 'CNPM', name: 'Công nghệ phần mềm' },
+  { code: 'CNPM', name: 'Kỹ thuật phần mềm' },
   { code: 'MMT', name: 'Mạng máy tính' },
 ];
 
@@ -415,13 +415,13 @@ async function main() {
   console.log('1. DANH SÁCH GIẢNG VIÊN & CÁN BỘ:');
   console.log('   - gvgvk@dlu.edu.vn   | Vai trò: Trợ lý Giáo vụ Khoa (TLGV / ADMIN)');
   console.log('   - gvcnk@dlu.edu.vn   | Vai trò: Ban Chủ nhiệm Khoa (BCN Khoa)');
-  console.log('   - gvab@dlu.edu.vn    | Vai trò: Tổ trưởng BM Phần mềm (TTBM CNPM)');
+  console.log('   - gvab@dlu.edu.vn    | Vai trò: Tổ trưởng BM Kỹ thuật phần mềm (TTBM KTPM/CNPM)');
   console.log('   - gvcd@dlu.edu.vn    | Vai trò: Tổ trưởng BM Mạng máy tính (TTBM MMT)');
   console.log('   - gvpb@dlu.edu.vn    | Vai trò: Giảng viên Hướng dẫn & Phản biện\n');
 
   console.log('2. DANH SÁCH SINH VIÊN (CTK46 - Năm cuối làm KLTN):');
-  console.log('   - 2266666@dlu.edu.vn | Nguyễn Văn A (Lớp CTK46PM - Chuyên ngành Phần mềm)');
-  console.log('   - 2277777@dlu.edu.vn | Phạm Thị B   (Lớp CTK46PM - Chuyên ngành Phần mềm)');
+  console.log('   - 2266666@dlu.edu.vn | Nguyễn Văn A (Lớp CTK46PM - Chuyên ngành Kỹ thuật phần mềm)');
+  console.log('   - 2277777@dlu.edu.vn | Phạm Thị B   (Lớp CTK46PM - Chuyên ngành Kỹ thuật phần mềm)');
   console.log('   - 2288888@dlu.edu.vn | Lê Văn C     (Lớp CTK46MMT - Chuyên ngành Mạng)');
   console.log('============================================================\n');
 }
