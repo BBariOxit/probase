@@ -22,6 +22,7 @@ import { RegistrationModule } from './modules/registration/registration.module';
 import { RemindersModule } from './core/reminders/reminders.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { ReviewersModule } from './modules/reviewers/reviewers.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 import { RoundsModule } from './modules/rounds/rounds.module';
 import { SemestersModule } from './modules/semesters/semesters.module';
 import { StudentsModule } from './modules/students/students.module';
@@ -77,6 +78,7 @@ import { UsersModule } from './modules/users/users.module';
     RemindersModule,
     ReportsModule,
     ReviewersModule,
+    ReviewsModule,
     UsersModule,
     MailModule,
   ],
