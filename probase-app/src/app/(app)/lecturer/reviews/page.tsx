@@ -22,11 +22,13 @@ import { useRequireRole } from '@/lib/auth/use-require-role';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SubCouncilEvaluationDialog } from '@/components/reviewers/sub-council-evaluation-dialog';
+import { TopicReviewDialog } from '@/components/reviews/topic-review-dialog';
 
 export default function LecturerReviewsPage() {
   const allowed = useRequireRole('LECTURER');
   const { data: reviews, isPending, error } = useMyReviews();
   const [evaluatingItem, setEvaluatingItem] = useState<MyReviewItem | null>(null);
+  const [defenseReviewItem, setDefenseReviewItem] = useState<MyReviewItem | null>(null);
 
   if (!allowed) return null;
 
@@ -327,17 +329,29 @@ export default function LecturerReviewsPage() {
                     {new Date(item.assignedAt).toLocaleDateString('vi-VN')}
                   </span>
 
-                  <Button
-                    size="sm"
-                    variant={hasReviewerGraded ? 'outline' : 'default'}
-                    className="gap-1.5 text-xs"
-                    onClick={() => setEvaluatingItem(item)}
-                  >
-                    <Scale className="size-3.5" />
-                    {hasReviewerGraded
-                      ? 'Chỉnh sửa đánh giá Tiểu ban'
-                      : 'Đánh giá Tiểu ban / Phản biện'}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 text-xs text-primary border-primary/30 hover:bg-primary/5"
+                      onClick={() => setDefenseReviewItem(item)}
+                    >
+                      <FileText className="size-3.5" />
+                      Phiếu nhận xét M05
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant={hasReviewerGraded ? 'outline' : 'default'}
+                      className="gap-1.5 text-xs"
+                      onClick={() => setEvaluatingItem(item)}
+                    >
+                      <Scale className="size-3.5" />
+                      {hasReviewerGraded
+                        ? 'Chỉnh sửa đánh giá Tiểu ban'
+                        : 'Đánh giá Tiểu ban / Phản biện'}
+                    </Button>
+                  </div>
                 </div>
               </div>
             );
@@ -351,6 +365,25 @@ export default function LecturerReviewsPage() {
           open={!!evaluatingItem}
           onOpenChange={(open) => !open && setEvaluatingItem(null)}
           reviewItem={evaluatingItem}
+        />
+      )}
+      {/* Defense Review Dialog M05 */}
+      {defenseReviewItem && (
+        <TopicReviewDialog
+          open={!!defenseReviewItem}
+          onOpenChange={(open) => !open && setDefenseReviewItem(null)}
+          groupId={defenseReviewItem.groupId}
+          groupName={defenseReviewItem.group.name}
+          topicTitle={defenseReviewItem.topic.title}
+          projectTypeName={defenseReviewItem.topic.round?.projectType?.name}
+          projectTypeCode={defenseReviewItem.topic.round?.projectType?.code}
+          role="REVIEWER"
+          expectedTemplate="M05"
+          supervisorName={defenseReviewItem.topic.lecturer?.fullName}
+          members={defenseReviewItem.group.members.map((m) => m.student)}
+          stage2Report={defenseReviewItem.group.progressReports.find(
+            (r) => r.stage === 'STAGE_2',
+          )}
         />
       )}
     </div>
