@@ -1406,3 +1406,221 @@ export interface MyReviewItem {
 
 
 
+
+
+export interface TopicReviewItem {
+  id: number;
+  groupId: number;
+  lecturerId: number;
+  reviewerType: 'SUPERVISOR' | 'REVIEWER';
+  templateCode: 'M02' | 'M04' | 'M05';
+  evaluationCriteria?: Record<string, any> | null;
+  generalComment: string;
+  isDefenseAllowed: boolean;
+  pdfExportUrl?: string | null;
+  signedAt: string;
+  lecturer?: {
+    id: number;
+    fullName: string;
+    academicTitle: string | null;
+    lecturerCode: string;
+    major?: { id: number; name: string; code: string } | null;
+  } | null;
+}
+
+export interface GroupReviewsResponse {
+  group: {
+    id: number;
+    name: string | null;
+    topic: {
+      id: number;
+      title: string;
+      major?: { id: number; name: string; code: string } | null;
+      round?: {
+        id: number;
+        projectType?: { id: number; name: string; code?: string } | null;
+      } | null;
+    };
+    supervisor: {
+      id: number;
+      fullName: string;
+      academicTitle: string | null;
+      lecturerCode?: string;
+    } | null;
+    reviewer: {
+      id: number;
+      fullName: string;
+      academicTitle: string | null;
+      lecturerCode?: string;
+    } | null;
+    members: Array<{
+      id: number;
+      studentCode: string;
+      fullName: string;
+      class: string | null;
+    }>;
+  };
+  stage2: {
+    id: number;
+    stage: string;
+    isPassed: boolean | null;
+    workloadPercentage: number | null;
+    supervisorGrade: number | null;
+    reviewerGrade: number | null;
+    finalStageGrade: number | null;
+    reportFileUrl: string | null;
+    sourceCodeUrl: string | null;
+  } | null;
+  stage2Passed: boolean;
+  supervisorReview: TopicReviewItem | null;
+  reviewerReview: TopicReviewItem | null;
+  hasSupervisorReview: boolean;
+  hasReviewerReview: boolean;
+  isSupervisorAllowed: boolean;
+  isReviewerAllowed: boolean;
+  isDefenseEligible: boolean;
+  eligibilityStatus: 'ELIGIBLE' | 'NOT_ELIGIBLE' | 'PENDING';
+  recentSubmissions: Array<{
+    id: number;
+    fileName: string | null;
+    fileUrl: string | null;
+    submissionUrl: string | null;
+    submittedAt: string;
+    requirement?: { id: number; name: string } | null;
+  }>;
+}
+
+export interface MyReviewWorkItem {
+  groupId: number;
+  groupName: string | null;
+  role: 'SUPERVISOR' | 'REVIEWER';
+  expectedTemplate: 'M02' | 'M04' | 'M05';
+  topic: {
+    id: number;
+    title: string;
+    round?: {
+      id: number;
+      projectType?: { id: number; name: string; code?: string } | null;
+    } | null;
+  };
+  supervisor: {
+    id: number;
+    fullName: string;
+    academicTitle: string | null;
+  } | null;
+  reviewer: {
+    id: number;
+    fullName: string;
+    academicTitle: string | null;
+  } | null;
+  members: Array<{
+    id: number;
+    fullName: string;
+    studentCode: string;
+    class: string | null;
+  }>;
+  stage2: {
+    id: number;
+    isPassed: boolean | null;
+    workloadPercentage: number | null;
+    finalStageGrade: number | null;
+    reportFileUrl: string | null;
+    sourceCodeUrl: string | null;
+  } | null;
+  myReview: TopicReviewItem | null;
+  partnerReview: TopicReviewItem | null;
+  latestSubmission: {
+    id: number;
+    fileName: string | null;
+    fileUrl: string | null;
+    submissionUrl: string | null;
+    submittedAt: string;
+  } | null;
+}
+
+export interface DefenseEligibilityOverviewResponse {
+  stats: {
+    totalGroups: number;
+    eligibleCount: number;
+    notEligibleCount: number;
+    pendingCount: number;
+  };
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  items: Array<{
+    id: number;
+    name: string | null;
+    topic: {
+      id: number;
+      title: string;
+      major?: { id: number; name: string; code: string } | null;
+      round?: {
+        id: number;
+        projectType?: { id: number; name: string; code?: string } | null;
+      } | null;
+    };
+    supervisor: {
+      id: number;
+      fullName: string;
+      academicTitle: string | null;
+    } | null;
+    reviewer: {
+      id: number;
+      fullName: string;
+      academicTitle: string | null;
+    } | null;
+    members: Array<{
+      id: number;
+      studentCode: string;
+      fullName: string;
+      class: string | null;
+    }>;
+    stage2: {
+      isPassed: boolean;
+      workloadPercentage: number | null;
+      finalStageGrade: number | null;
+    };
+    supervisorReview: {
+      id: number;
+      templateCode: string;
+      isDefenseAllowed: boolean;
+      signedAt: string;
+      lecturer: {
+        id: number;
+        fullName: string;
+        academicTitle: string | null;
+      };
+    } | null;
+    reviewerReview: {
+      id: number;
+      templateCode: string;
+      isDefenseAllowed: boolean;
+      signedAt: string;
+      lecturer: {
+        id: number;
+        fullName: string;
+        academicTitle: string | null;
+      };
+    } | null;
+    latestSubmission: {
+      id: number;
+      fileName: string | null;
+      fileUrl: string | null;
+      submissionUrl: string | null;
+      submittedAt: string;
+    } | null;
+    status: 'ELIGIBLE' | 'NOT_ELIGIBLE' | 'PENDING';
+  }>;
+}
+
+export interface SubmitTopicReviewInput {
+  groupId: number;
+  templateCode: 'M02' | 'M04' | 'M05';
+  evaluationCriteria?: Record<string, any>;
+  generalComment: string;
+  isDefenseAllowed: boolean;
+}

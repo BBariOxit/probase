@@ -290,6 +290,43 @@
 
 ---
 
+
+---
+
+### BƯỚC 8: NỘP BÁO CÁO CUỐI KỲ, LẬP PHIẾU NHẬN XÉT M02/M04 & M05 VÀ CỔNG THẨM ĐỊNH BẢO VỆ (BR-16, BR-17)
+
+* **Ai thực hiện:** Nhóm Sinh viên $\longrightarrow$ Giảng viên hướng dẫn (GVHD) & Giảng viên phản biện (GVPB) $\longrightarrow$ Trợ lý Giáo vụ (TLGV) & Ban Chủ nhiệm Khoa.
+* **Màn hình giao diện trên Web:**
+  - Nhóm sinh viên: `/student/groups` (Mục **Hồ sơ Cuối kỳ & Thẩm định ra Hội đồng**) & `/student/submissions`
+  - Giảng viên hướng dẫn: `/lecturer/groups/[id]` (Mục **Phiếu nhận xét GVHD & Thẩm định Bảo vệ**)
+  - Giảng viên phản biện: `/lecturer/reviews` (Nút **Phiếu nhận xét M05**)
+  - Quản trị / Giáo vụ: `/admin/reviewers` (Tab **Thẩm định Điều kiện Bảo vệ**) hoặc `/admin/defense-eligibility`
+* **Quy trình chi tiết trên Web:**
+  1. **Sinh viên nộp hồ sơ kết quả cuối kỳ (BR-16):**
+     - Sinh viên nộp quyển báo cáo toàn văn (.pdf), slide thuyết trình (.pptx/.pdf) và link kho mã nguồn Git + bản sao lưu CSDL trước tuần bảo vệ.
+     - Hệ thống phát thông báo in-app cho cả GVHD và GVPB vào đọc duyệt.
+  2. **GVHD lập Phiếu nhận xét M02 / M04 (BR-17):**
+     - GVHD vào trang nhóm hướng dẫn (`/lecturer/groups/[id]`), bấm **"Lập / Cập nhật Phiếu nhận xét (M02/M04)"**.
+     - Hệ thống tự động nhận diện loại đề tài: `M04` cho Khóa luận tốt nghiệp (KLTN), `M02` cho Đồ án cơ sở/chuyên ngành (ĐACS/ĐACN).
+     - Điền barem tiêu chí: Tinh thần thái độ, khối lượng hoàn thành, chất lượng sản phẩm thực nghiệm, bố cục quyển báo cáo.
+     - Nhập nhận xét chung và chọn kết luận then chốt: **"Đồng ý cho phép bảo vệ"** hoặc **"Không đồng ý"** (`isDefenseAllowed`).
+     - Hỗ trợ tab **"Xem biểu mẫu DLU"** để in hoặc xem trước văn bản chuẩn theo mẫu hành chính Trường Đại học Đà Lạt.
+  3. **GVPB lập Phiếu nhận xét M05 (BR-17):**
+     - GVPB vào trang `/lecturer/reviews`, bấm **"Phiếu nhận xét M05"**.
+     - Đánh giá barem: Tính cấp thiết, phương pháp nghiên cứu, chất lượng mã nguồn/demo, kết cấu quyển báo cáo.
+     - **Nhập các câu hỏi chất vấn trước Hội đồng:** GVPB đặt 1–3 câu hỏi để nhóm sinh viên đọc trước và chuẩn bị trả lời khi bảo vệ.
+     - Chọn kết luận: **"Đồng ý cho phép bảo vệ"** hoặc **"Không đồng ý"** (`isDefenseAllowed`).
+  4. **Cổng kiểm soát điều kiện ra Hội đồng (Defense Eligibility Gate):**
+     - Quy tắc cứng: Một nhóm chỉ đạt trạng thái **"ĐỦ ĐIỀU KIỆN BẢO VỆ"** khi đồng thời thỏa mãn:
+       + Điểm kiểm tra Tiến độ 2 đạt $\ge 50\%$ khối lượng (không bị cờ cảnh báo đỏ).
+       + GVHD tích chọn: `isDefenseAllowed = true`.
+       + GVPB tích chọn: `isDefenseAllowed = true`.
+     - Nếu 1 trong 2 giảng viên từ chối: Nhóm chuyển sang trạng thái **"TỪ CHỐI / ĐÌNH CHỈ BẢO VỆ"**.
+  5. **Giáo vụ Khoa & BCN rà soát và xuất danh sách đối soát:**
+     - Tại `/admin/defense-eligibility` hoặc tab Thẩm định trên `/admin/reviewers`, Giáo vụ theo dõi Dashboard thống kê: Tổng số nhóm, Đủ điều kiện, Chờ duyệt, Đình chỉ.
+     - Bấm nút **"Xuất danh sách đối soát (CSV)"** để kết xuất danh sách chính thức phục vụ thành lập Hội đồng (BR-18).
+
+---
 ## 4. BẢNG TỔNG HỢP PHÂN QUYỀN VÀ THAO TÁC CỦA TỪNG VAI TRÒ HIỆN TẠI
 
 | Vai trò | Màn hình truy cập | Những việc ĐƯỢC LÀM trên giao diện hiện tại | Ràng buộc hệ thống |
