@@ -174,7 +174,7 @@ export default function AdminOutlinesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <PageHeading
           title="Tổng hợp Đề cương M03 toàn Khoa"
-          description="Theo dõi tiến độ nộp và xét duyệt Đề cương M03 để xuất Tờ trình và trình BCN Khoa ký Quyết định giao việc chính thức (BR-10)"
+          description="Theo dõi tiến độ nộp và xét duyệt Đề cương M03 để xuất Tờ trình và trình BCN Khoa ký Quyết định giao việc chính thức"
         />
 
         <div className="flex items-center gap-2">

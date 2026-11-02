@@ -90,7 +90,7 @@ export function CouncilEvaluationDialog({
         <DialogHeader>
           <div className="flex items-center gap-2">
             <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-              BR-18 • Đánh giá 50%
+               • Đánh giá 50%
             </span>
             {topicItem.timeSlot && (
               <Badge variant="outline" className="text-xs">

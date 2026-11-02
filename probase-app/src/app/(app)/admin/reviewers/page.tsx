@@ -64,7 +64,7 @@ export default function ReviewersAdminPage() {
             Phân công GVPB & Thẩm định Bảo vệ
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Quản lý phân công Giảng viên phản biện (BR-13) và đối soát danh sách đủ điều kiện bảo vệ cuối kỳ (BR-17).
+            Quản lý phân công Giảng viên phản biện và đối soát danh sách đủ điều kiện bảo vệ cuối kỳ.
           </p>
         </div>
 
@@ -91,7 +91,7 @@ export default function ReviewersAdminPage() {
           }`}
         >
           <Users className="size-4" />
-          Phân công Giảng viên phản biện (BR-13)
+          Phân công Giảng viên phản biện
         </button>
         <button
           type="button"
@@ -103,7 +103,7 @@ export default function ReviewersAdminPage() {
           }`}
         >
           <ShieldCheck className="size-4" />
-          Thẩm định Điều kiện Bảo vệ (BR-17)
+          Thẩm định Điều kiện Bảo vệ
         </button>
       </div>
 
@@ -339,7 +339,7 @@ export default function ReviewersAdminPage() {
                                   className="h-8 max-w-[220px] rounded-lg border border-amber-500/30 bg-amber-500/5 px-2 text-xs font-medium text-amber-900 focus:outline-none focus:ring-1 focus:ring-ring dark:text-amber-200"
                                 >
                                   <option value="" disabled>
-                                    ⚠️ Chọn GVPB...
+                                    Chọn GVPB...
                                   </option>
                                   {eligibleCandidates.map((cand) => (
                                     <option key={cand.id} value={cand.id}>
