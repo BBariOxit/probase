@@ -16,7 +16,7 @@ import { useMyGroupOutline, useSubmitOutline } from '@/lib/api/outlines';
 import type { OutlineStatus } from '@/lib/api/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 function formatBytes(bytes?: number | null): string {
   if (!bytes) return '';
@@ -41,29 +41,29 @@ function OutlineStatusBadge({ status }: { status: OutlineStatus }) {
   switch (status) {
     case 'APPROVED_BY_LECTURER':
       return (
-        <Badge className="bg-emerald-600/15 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/30 gap-1.5 px-3 py-1 font-medium">
-          <CheckCircle2 className="size-4" />
-          Đã được GVHD phê duyệt
+        <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 gap-1.5 px-2.5 py-0.5 text-xs font-medium">
+          <CheckCircle2 className="size-3.5" />
+          Đã duyệt
         </Badge>
       );
     case 'SUBMITTED':
       return (
-        <Badge className="bg-amber-500/15 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-500/30 gap-1.5 px-3 py-1 font-medium">
-          <Clock className="size-4" />
-          Đã nộp bản scan — Chờ GVHD duyệt
+        <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/20 gap-1.5 px-2.5 py-0.5 text-xs font-medium">
+          <Clock className="size-3.5" />
+          Chờ GVHD duyệt
         </Badge>
       );
     case 'NEEDS_REVISION':
       return (
-        <Badge className="bg-rose-500/15 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300 border border-rose-500/30 gap-1.5 px-3 py-1 font-medium">
-          <AlertCircle className="size-4" />
-          Cần chỉnh sửa / Nộp lại
+        <Badge className="bg-rose-500/10 text-rose-400 border border-rose-500/20 gap-1.5 px-2.5 py-0.5 text-xs font-medium">
+          <AlertCircle className="size-3.5" />
+          Cần chỉnh sửa
         </Badge>
       );
     default:
       return (
-        <Badge variant="outline" className="text-muted-foreground gap-1.5 px-3 py-1 font-medium">
-          <FileText className="size-4" />
+        <Badge variant="outline" className="text-zinc-400 border-zinc-700/40 gap-1.5 px-2.5 py-0.5 text-xs font-medium">
+          <FileText className="size-3.5" />
           Chưa nộp
         </Badge>
       );
@@ -78,9 +78,9 @@ export function StudentOutlineCard() {
 
   if (isLoading) {
     return (
-      <Card className="shadow-xs border-border/80">
-        <CardContent className="flex justify-center py-10">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      <Card className="border-border/60 bg-card/60">
+        <CardContent className="flex justify-center py-8">
+          <Loader2 className="size-5 animate-spin text-muted-foreground" />
         </CardContent>
       </Card>
     );
@@ -113,121 +113,29 @@ export function StudentOutlineCard() {
 
     try {
       await submitMutation.mutateAsync(selectedFile);
-      toast.success('Nộp bản scan Đề cương M03 thành công! Đã gửi thông báo cho GVHD.');
+      toast.success('Nộp bản scan Đề cương M03 thành công');
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err: any) {
-      toast.error(err?.message || 'Có lỗi xảy ra khi nộp đề cương. Vui lòng thử lại.');
+      toast.error(err?.message || 'Có lỗi xảy ra khi nộp đề cương.');
     }
   };
 
   return (
-    <Card className="shadow-xs border-border/80 overflow-hidden">
-      <CardHeader className="bg-muted/30 border-b pb-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <FileCheck2 className="size-5 text-emerald-600 dark:text-emerald-400" />
-              <CardTitle className="text-lg font-semibold tracking-tight">
-                Đề cương thực hiện đồ án (Mẫu M03)
-              </CardTitle>
-            </div>
-            <CardDescription className="text-sm">
-              Nộp bản scan Đề cương chi tiết có chữ ký xác nhận của GVHD để hoàn tất thủ tục giao đề tài (BR-08)
-            </CardDescription>
+    <Card className="border-border/60 bg-card/60">
+      <CardHeader className="pb-3 border-b border-border/40">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <FileCheck2 className="size-4.5 text-emerald-500" />
+            <CardTitle className="text-sm font-semibold tracking-tight text-foreground">
+              Đề cương đồ án (M03)
+            </CardTitle>
           </div>
-          <div>
-            <OutlineStatusBadge status={status} />
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="pt-6 space-y-6">
-        {/* Phản hồi từ GVHD nếu có yêu cầu chỉnh sửa */}
-        {status === 'NEEDS_REVISION' && outline?.lecturerFeedback && (
-          <div className="rounded-lg border border-rose-300 bg-rose-50/70 p-4 dark:border-rose-900/50 dark:bg-rose-950/20">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="size-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-              <div className="space-y-1 text-sm">
-                <p className="font-semibold text-rose-800 dark:text-rose-300">
-                  Góp ý từ Giảng viên hướng dẫn:
-                </p>
-                <p className="text-rose-700 dark:text-rose-400 whitespace-pre-line leading-relaxed">
-                  {outline.lecturerFeedback}
-                </p>
-                <p className="text-xs text-rose-600/80 dark:text-rose-400/80 pt-1">
-                  Nhóm vui lòng cập nhật lại nội dung hoặc bổ sung chữ ký rồi upload bản scan mới bên dưới.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Thông báo chúc mừng khi đã được duyệt */}
-        {isApproved && (
-          <div className="rounded-lg border border-emerald-300 bg-emerald-50/70 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/20">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <div className="text-sm">
-                <p className="font-semibold text-emerald-800 dark:text-emerald-300">
-                  Đề cương M03 đã được Giảng viên hướng dẫn phê duyệt chính thức
-                </p>
-                <p className="text-emerald-700 dark:text-emerald-400 text-xs mt-0.5">
-                  Phê duyệt lúc {formatDate(outline?.approvedAt)}. Đề tài đã bước vào giai đoạn thực hiện chính thức!
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Quy trình 3 bước thực tế */}
-        <div className="rounded-xl border bg-card/60 p-4 space-y-3">
-          <p className="text-xs font-semibold tracking-wide uppercase text-muted-foreground">
-            Quy trình thực hiện chuẩn Khoa CNTT - DLU
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-muted/40 border">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white text-xs font-bold">
-                1
-              </span>
-              <div>
-                <p className="font-medium text-foreground">Tải biểu mẫu M03</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Tải file Word chuẩn từ hệ thống và hoàn thiện 6 mục chuyên môn.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-muted/40 border">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white text-xs font-bold">
-                2
-              </span>
-              <div>
-                <p className="font-medium text-foreground">Xin chữ ký GVHD</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  In bản Word ra giấy, gặp GVHD trao đổi chuyên môn và xin chữ ký sống xác nhận.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-muted/40 border">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white text-xs font-bold">
-                3
-              </span>
-              <div>
-                <p className="font-medium text-foreground">Scan & Nộp file</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Scan hoặc chụp rõ bản đã ký thành file PDF và tải lên hệ thống để GVHD duyệt.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-2 flex flex-wrap gap-2 items-center">
+          <div className="flex items-center gap-2">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="gap-2 text-emerald-700 dark:text-emerald-400 border-emerald-600/30 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+              className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1.5 px-2"
               render={
                 <a
                   href="/templates/M03_Mau_De_Cuong.pdf"
@@ -236,116 +144,127 @@ export function StudentOutlineCard() {
                 />
               }
             >
-              <Download className="size-4" />
-              Tải Biểu mẫu Đề cương M03 (.pdf)
+              <Download className="size-3.5" />
+              Tải mẫu M03 (.pdf)
             </Button>
-            <span className="text-xs text-muted-foreground">
-              Mẫu biểu số hóa chính thức của Khoa CNTT - Đại học Đà Lạt.
-            </span>
+            <OutlineStatusBadge status={status} />
           </div>
         </div>
+      </CardHeader>
 
-        {/* Thông tin bản nộp hiện tại */}
-        {outline?.attachmentUrl && (
-          <div className="rounded-lg border bg-muted/20 p-4 space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Bản scan đề cương đã nộp trên hệ thống
-            </p>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-              <div className="flex items-center gap-3">
-                <div className="size-10 rounded-lg bg-emerald-600/10 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                  <FileText className="size-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium line-clamp-1">
-                    {outline.fileName || 'Ban_scan_De_cuong_M03.pdf'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatBytes(outline.fileSize)}
-                    {outline.submittedAt && ` • Nộp lúc ${formatDate(outline.submittedAt)}`}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  render={
-                    <a
-                      href={outline.attachmentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    />
-                  }
-                >
-                  <Download className="size-4" />
-                  Xem / Tải bản scan
-                </Button>
-              </div>
+      <CardContent className="pt-4 space-y-4">
+        {/* Phản hồi từ GVHD nếu có yêu cầu chỉnh sửa */}
+        {status === 'NEEDS_REVISION' && outline?.lecturerFeedback && (
+          <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-3 text-xs space-y-1">
+            <div className="flex items-center gap-1.5 font-medium text-rose-400">
+              <AlertCircle className="size-3.5 shrink-0" />
+              <span>Góp ý từ GVHD:</span>
             </div>
+            <p className="text-zinc-300 pl-5 leading-relaxed whitespace-pre-line">
+              {outline.lecturerFeedback}
+            </p>
           </div>
         )}
 
-        {/* Khu vực upload file nộp mới / nộp lại (chỉ hiển thị khi chưa duyệt) */}
+        {/* Thông báo khi đã được duyệt */}
+        {isApproved && (
+          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs flex items-center justify-between">
+            <div className="flex items-center gap-2 text-emerald-400 font-medium">
+              <CheckCircle2 className="size-4 shrink-0" />
+              <span>Đề cương đã được GVHD phê duyệt</span>
+            </div>
+            {outline?.approvedAt && (
+              <span className="text-zinc-400 text-[11px]">
+                {formatDate(outline.approvedAt)}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Thông tin bản nộp hiện tại */}
+        {outline?.attachmentUrl && (
+          <div className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border/40 bg-muted/20">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <FileText className="size-4 text-emerald-500 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs font-medium truncate text-foreground">
+                  {outline.fileName || 'Ban_scan_De_cuong_M03.pdf'}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {formatBytes(outline.fileSize)}
+                  {outline.submittedAt && ` • Nộp lúc ${formatDate(outline.submittedAt)}`}
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1.5 shrink-0"
+              render={
+                <a
+                  href={outline.attachmentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
+            >
+              Xem file scan
+            </Button>
+          </div>
+        )}
+
+        {/* Khung nộp file (chỉ hiển thị khi chưa duyệt) */}
         {!isApproved && (
-          <div className="space-y-3 pt-2">
-            <p className="text-sm font-semibold text-foreground">
-              {outline?.attachmentUrl ? 'Cập nhật lại bản scan Đề cương M03' : 'Nộp bản scan Đề cương M03 có chữ ký'}
-            </p>
+          <div className="space-y-3 pt-1">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept=".pdf,.docx,.doc,image/*"
+              className="hidden"
+            />
 
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-border/80 hover:border-emerald-500/60 dark:hover:border-emerald-500/50 rounded-xl p-6 text-center cursor-pointer transition-colors bg-muted/10 hover:bg-muted/30"
+              className="rounded-lg border border-dashed border-border/60 hover:border-primary/50 bg-muted/10 hover:bg-muted/20 p-5 text-center cursor-pointer transition-colors"
             >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.docx,.doc,image/*"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              <UploadCloud className="size-8 mx-auto text-muted-foreground/70 mb-2" />
-              {selectedFile ? (
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                    {selectedFile.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Dung lượng: {formatBytes(selectedFile.size)} (Bấm để chọn file khác)
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-foreground">
-                    Nhấp để chọn file scan hoặc kéo thả file vào đây
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Định dạng hỗ trợ: PDF, Word (.docx, .doc), hoặc ảnh scan rõ nét (Tối đa 25MB)
-                  </p>
-                </div>
-              )}
+              <UploadCloud className="size-6 mx-auto text-muted-foreground/60 mb-1.5" />
+              <p className="text-xs font-medium text-foreground">
+                {selectedFile ? selectedFile.name : 'Chọn file scan đề cương đã có chữ ký GVHD'}
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {selectedFile
+                  ? formatBytes(selectedFile.size)
+                  : 'PDF hoặc ảnh scan rõ nét (Tối đa 25MB)'}
+              </p>
             </div>
 
-            <div className="flex justify-end pt-1">
-              <Button
-                onClick={handleUploadSubmit}
-                disabled={!selectedFile || submitMutation.isPending}
-                className="gap-2 bg-emerald-700 hover:bg-emerald-800 text-white"
-              >
-                {submitMutation.isPending ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Đang tải lên...
-                  </>
-                ) : (
-                  <>
-                    <FileCheck2 className="size-4" />
-                    {outline?.attachmentUrl ? 'Tải lên bản thay thế' : 'Xác nhận nộp Đề cương M03'}
-                  </>
-                )}
-              </Button>
-            </div>
+            {selectedFile && (
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => {
+                    setSelectedFile(null);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-8 text-xs gap-1.5"
+                  onClick={handleUploadSubmit}
+                  disabled={submitMutation.isPending}
+                >
+                  {submitMutation.isPending && (
+                    <Loader2 className="size-3.5 animate-spin mr-1" />
+                  )}
+                  Nộp đề cương
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
