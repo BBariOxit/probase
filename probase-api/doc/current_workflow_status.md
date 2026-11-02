@@ -65,7 +65,18 @@
    │ • 3 nguyên tắc: Không trùng GVHD, Đúng chuyên môn/Bộ môn, Cân bằng tải (HD: x | PB: y)
    │ • 2 chế độ: Chọn thủ công & Phân công tự động (Min-load Balancer) ➔ Mở menu Đề tài phản biện cho GVPB
    ▼
-[GIAI ĐOẠN TIẾP THEO: Nộp Báo cáo Toàn văn Cuối kỳ ➔ Nhận xét M02/M05 ➔ Hội đồng Bảo vệ]
+[BƯỚC 8: Nộp Báo cáo Cuối kỳ, Nhận xét M02/M04 & M05 và Cổng Thẩm định Bảo vệ (BR-16, BR-17)]
+   │ • SV nộp báo cáo toàn văn, slide, link source/demo ➔ GVHD nhận xét M02/M04 ➔ GVPB nhận xét M05
+   │ • Cổng Thẩm định ra Hội đồng: TĐ2 ≥ 50% + Cả 2 GV đồng ý cho phép bảo vệ ➔ Xuất danh sách đối soát
+   ▼
+[BƯỚC 9: Thành lập Hội đồng, Xếp lịch & Chấm điểm Bảo vệ 50% (BR-18)]
+   │ • Giáo vụ/Admin tạo Hội đồng theo Bộ môn (3–5 GV: Chủ tịch, Thư ký, GVPB, Ủy viên)
+   │ • Xếp lịch bảo vệ cho nhóm đủ điều kiện (phòng thi, ngày, ca/thứ tự bảo vệ)
+   │ • Thành viên Hội đồng chấm điểm độc lập (thang 10) ➔ Tự động tính TB Hội đồng
+   │ • Tự động tính Điểm Tổng Kết: (20% * TĐ1) + (30% * TĐ2) + (50% * TB Hội đồng) ➔ Đồng bộ StudentGrade
+   │ • (Nâng cao / Roadmap): Bàn làm việc Thư ký (Secretary Console) ghi chép biên bản chi tiết
+   ▼
+[GIAI ĐOẠN TIẾP THEO: Nộp gói lưu trữ số hóa 3 thành phần (SOURCE, DB, THESIS) & Thư viện số]
 ```
 
 ---
@@ -326,27 +337,59 @@
      - Tại `/admin/defense-eligibility` hoặc tab Thẩm định trên `/admin/reviewers`, Giáo vụ theo dõi Dashboard thống kê: Tổng số nhóm, Đủ điều kiện, Chờ duyệt, Đình chỉ.
      - Bấm nút **"Xuất danh sách đối soát (CSV)"** để kết xuất danh sách chính thức phục vụ thành lập Hội đồng (BR-18).
 
+### BƯỚC 9: THÀNH LẬP HỘI ĐỒNG, XẾP LỊCH BẢO VỆ & CHẤM ĐIỂM CUỐI KỲ (BR-18)
+
+* **Ai thực hiện:** Trợ lý Giáo vụ Khoa (TLGV) / Admin $\longleftrightarrow$ Thành viên Hội đồng (Chủ tịch, Thư ký, GVPB, Ủy viên) $\longleftrightarrow$ Sinh viên.
+* **Màn hình giao diện trên Web:**
+  - Quản trị / Giáo vụ: `/admin/councils` (**Quản lý Hội đồng & Xếp lịch bảo vệ**)
+  - Giảng viên Hội đồng: `/lecturer/councils` (**Hội đồng bảo vệ của tôi**)
+  - Nhóm sinh viên: `/student/groups` (Phần **Lịch bảo vệ & Bảng điểm tổng kết**)
+* **Quy trình chi tiết trên Web:**
+  1. **Thành lập Hội đồng & Xếp lịch (`/admin/councils`):**
+     - Giáo vụ/Admin tạo Hội đồng: Tên hội đồng (ví dụ: *Hội đồng KLTN 01 - Chuyên ngành Phần mềm*), chọn Học kỳ, chọn Chuyên ngành (CNPM/MMT), địa điểm (Phòng bảo vệ, ví dụ: *A11.204*), ngày bảo vệ.
+     - Gán thành viên Hội đồng (3–5 giảng viên): Chủ tịch (`PRESIDENT`), Thư ký (`SECRETARY`), Ủy viên (`MEMBER`).
+     - **Xếp lịch bảo vệ:** Chọn các nhóm đồ án đã đạt trạng thái **"ĐỦ ĐIỀU KIỆN BẢO VỆ"** từ Bước 8, gán vào Hội đồng, phân bổ ca bảo vệ (`timeSlot`, ví dụ: *08:00 - 08:45*) và thứ tự bảo vệ (`defenseOrder`).
+  2. **Chấm điểm bảo vệ độc lập phía Giảng viên Hội đồng (`/lecturer/councils`):**
+     - Giảng viên thấy danh sách Hội đồng mình tham gia và các nhóm trong buổi bảo vệ.
+     - Bấm vào nhóm để xem thông tin đề tài, xem file báo cáo cuối kỳ, link mã nguồn/demo.
+     - **Chấm điểm độc lập (Chấm thầm):** Mỗi thành viên nhập điểm đánh giá của riêng mình (thang 10, bước nhảy 0.1) và nhận xét.
+     - **Bảo mật điểm số:** Các giảng viên không nhìn thấy điểm của nhau trước khi có kết quả chính thức.
+  3. **Hệ thống tự động tính điểm & Đồng bộ bảng điểm chuẩn DLU:**
+     - **Điểm Hội đồng (50%):** Tự động tính điểm trung bình cộng của các thành viên trong Hội đồng đã chấm:
+       $$\text{Điểm HĐ} = \frac{\sum \text{Điểm thành viên}}{N}$$
+     - **Điểm Tổng Kết toàn diện:** Tự động tính theo công thức chuẩn Khoa CNTT - DLU:
+       $$\text{Điểm TK} = (20\% \times \text{Điểm TĐ1}) + (30\% \times \text{Điểm TĐ2}) + (50\% \times \text{Điểm HĐ})$$
+     - Tự động quy đổi sang Điểm chữ (A, B+, B, C+, C, D+, D, F) và đồng bộ vào `StudentGrade`.
+     - Hỗ trợ nút **"Khóa & Chốt điểm"** để đóng băng bảng điểm của nhóm sau khi hoàn thành buổi bảo vệ.
+  4. **📌 TÍNH NĂNG NÂNG CAO (Roadmap tương lai):**
+     - Bàn làm việc Thư ký (Secretary Console): Thư ký theo dõi real-time trạng thái nộp điểm của từng thành viên, gõ tóm tắt Biên bản chất vấn & Yêu cầu chỉnh sửa của Hội đồng, và xuất file PDF Biên bản họp bảo vệ chuẩn DLU. *(Tạm thời để ở roadmap, ưu tiên xử lý luồng cốt lõi trước).*
+
 ---
+
 ## 4. BẢNG TỔNG HỢP PHÂN QUYỀN VÀ THAO TÁC CỦA TỪNG VAI TRÒ HIỆN TẠI
 
 | Vai trò | Màn hình truy cập | Những việc ĐƯỢC LÀM trên giao diện hiện tại | Ràng buộc hệ thống |
 | :--- | :--- | :--- | :--- |
-| **Trợ lý Giáo vụ Khoa (TLGV) / Admin** | `/admin/semesters`<br>`/admin/students`<br>`/admin/outlines`<br>`/admin/reviewers` | • Tạo & kích hoạt Học kỳ, thiết lập Đợt đồ án (ĐACS/ĐACN/KLTN)<br>• Tải mẫu Excel & Import danh sách SV đủ điều kiện từ PĐT<br>• Lọc sinh viên theo mã lớp (`CTK48`, `CTK46PM`...), theo đợt, theo tình trạng nhóm<br>• Xuất Excel sinh viên đối soát với PĐT<br>• Xuất file CSV Tờ trình giao đề tài chính thức<br>• Phân công GVPB thủ công hoặc chạy phân công tự động toàn khoa | • Không xóa học kỳ đã có dữ liệu<br>• Không thể xóa sinh viên đủ điều kiện nếu sinh viên đó đã lập nhóm đồ án<br>• Không chọn GVPB trùng GVHD |
-| **Giảng viên hướng dẫn (GVHD)** | `/lecturer/topics`<br>`/lecturer/outlines`<br>`/lecturer/groups`<br>`/lecturer/groups/[id]` | • Tạo đề tài mới, nhân bản đề tài cũ, chọn tổ CNPM/MMT, chọn số lượng 1–3 SV<br>• Xem file PDF scan Đề cương M03 có chữ ký sống của SV, bấm Phê duyệt/Yêu cầu sửa<br>• Duyệt đề tài SV đề xuất<br>• **Tiến độ:** Xem dòng thời gian nhật ký tuần của nhóm, bấm xác nhận & nhận xét<br>• **Đợt 1:** Chấm điểm tiến độ 1 (thang 10, trọng số 20%)<br>• **Đợt 2:** Chấm điểm tiến độ 2 (thang 10, trọng số 30%) và đánh giá khối lượng hoàn thành (≥ 50% đạt, < 50% cảnh báo đình chỉ) | • Chỉ thao tác trên các nhóm do chính mình hướng dẫn |
-| **Giảng viên phản biện (GVPB)** | `/lecturer/reviews` | • Nhận thông báo khi được phân công phản biện<br>• Xem danh sách nhóm được phân công phản biện<br>• Xem đề cương M03, tải báo cáo Đợt 1 & Đợt 2, xem repo source code/demo của nhóm SV | • Chỉ xem các đề tài do Bộ môn phân công mình phản biện |
-| **Tổ trưởng Bộ môn (TTBM)** | `/admin/topics`<br>`/admin/reviewers` | • Thẩm định và Chấp thuận / Yêu cầu sửa đề tài trong tổ<br>• **Phân công GVPB:** Phân công thủ công hoặc chạy phân công tự động min-load balancer cho toàn bộ đề tài trong tổ bộ môn mình phụ trách | • Chỉ thấy và phân công đề tài thuộc đúng chuyên ngành/tổ mình quản lý (CNPM hoặc MMT)<br>• Ràng buộc không trùng GVHD |
-| **Ban Chủ nhiệm Khoa (BCN Khoa)** | `/admin/topics`<br>`/admin/outlines`<br>`/admin/reviewers` | • Phê duyệt chính thức đề tài cấp Khoa để mở cổng đăng ký cho sinh viên<br>• Xem báo cáo tổng quan tiến độ duyệt Đề cương M03 toàn khoa<br>• Rà soát phân công GVPB toàn khoa | • Thẩm định sau khi TTBM đã chấp thuận |
-| **Sinh viên (Đủ điều kiện)** | `/student`<br>`/student/topics`<br>`/student/groups`<br>`/join/[code]` | • Thấy Banner xanh báo đủ điều kiện kèm mốc hạn M03<br>• Tra cứu đề tài theo đúng chuyên ngành của mình<br>• Đăng ký đề tài (làm Trưởng nhóm), nhận Join Code mời bạn<br>• Nhập Join Code gia nhập nhóm (1–3 bạn)<br>• Tải mẫu M03 PDF chuẩn, nộp file PDF scan có chữ ký sống của GVHD<br>• **Tiến độ tuần:** Tạo/sửa/xóa nhật ký tuần (tiến độ %, git commit, blockers)<br>• **Báo cáo Đợt 1 & 2:** Nộp file báo cáo + link mã nguồn/demo, theo dõi điểm và phản hồi của GVHD/Hội đồng | • Chỉ được tham gia tối đa 1 nhóm/đợt<br>• Nhóm tối đa 3 thành viên<br>• Bị khóa nộp lại M03 khi GVHD đã duyệt<br>• Không thể xóa nhật ký tuần khi GVHD đã xác nhận |
+| **Trợ lý Giáo vụ Khoa (TLGV) / Admin** | `/admin/semesters`<br>`/admin/students`<br>`/admin/outlines`<br>`/admin/reviewers`<br>`/admin/defense-eligibility`<br>`/admin/councils` | • Tạo & kích hoạt Học kỳ, thiết lập Đợt đồ án (ĐACS/ĐACN/KLTN)<br>• Tải mẫu Excel & Import danh sách SV đủ điều kiện từ PĐT<br>• Lọc sinh viên theo mã lớp (`CTK48`, `CTK46PM`...), theo đợt, theo tình trạng nhóm<br>• Xuất Excel sinh viên đối soát với PĐT<br>• Xuất file CSV Tờ trình giao đề tài chính thức<br>• Phân công GVPB thủ công hoặc chạy phân công tự động toàn khoa<br>• Thẩm định điều kiện ra bảo vệ và xuất danh sách đối soát<br>• **Thành lập Hội đồng bảo vệ, gán thành viên và xếp lịch bảo vệ cho nhóm đủ ĐK** | • Không xóa học kỳ đã có dữ liệu<br>• Không thể xóa sinh viên đủ điều kiện nếu sinh viên đó đã lập nhóm đồ án<br>• Không chọn GVPB trùng GVHD<br>• Chỉ xếp lịch cho nhóm đã đủ điều kiện bảo vệ |
+| **Giảng viên hướng dẫn (GVHD)** | `/lecturer/topics`<br>`/lecturer/outlines`<br>`/lecturer/groups`<br>`/lecturer/groups/[id]` | • Tạo đề tài mới, nhân bản đề tài cũ, chọn tổ CNPM/MMT, chọn số lượng 1–3 SV<br>• Xem file PDF scan Đề cương M03 có chữ ký sống của SV, bấm Phê duyệt/Yêu cầu sửa<br>• Duyệt đề tài SV đề xuất<br>• **Tiến độ:** Xem dòng thời gian nhật ký tuần của nhóm, bấm xác nhận & nhận xét<br>• **Đợt 1:** Chấm điểm tiến độ 1 (thang 10, trọng số 20%)<br>• **Đợt 2:** Chấm điểm tiến độ 2 (thang 10, trọng số 30%) và đánh giá khối lượng hoàn thành (≥ 50% đạt, < 50% cảnh báo đình chỉ)<br>• **Lập phiếu nhận xét GVHD M02/M04**, kết luận cho phép bảo vệ | • Chỉ thao tác trên các nhóm do chính mình hướng dẫn |
+| **Giảng viên phản biện (GVPB)** | `/lecturer/reviews` | • Nhận thông báo khi được phân công phản biện<br>• Xem danh sách nhóm được phân công phản biện<br>• Xem đề cương M03, tải báo cáo Đợt 1 & Đợt 2, xem repo source code/demo của nhóm SV<br>• **Lập phiếu nhận xét GVPB M05**, đặt câu hỏi chất vấn, kết luận cho phép bảo vệ | • Chỉ xem các đề tài do Bộ môn phân công mình phản biện |
+| **Thành viên Hội đồng bảo vệ** | `/lecturer/councils` | • Xem danh sách các Hội đồng bảo vệ mình tham gia (Chủ tịch / Thư ký / Ủy viên)<br>• Xem hồ sơ, báo cáo cuối kỳ, link demo của nhóm trong buổi bảo vệ<br>• **Nhập điểm đánh giá bảo vệ độc lập (thang 10)** cho từng nhóm | • Không thấy điểm của giảng viên khác trước khi công bố |
+| **Tổ trưởng Bộ môn (TTBM)** | `/admin/topics`<br>`/admin/reviewers`<br>`/admin/councils` | • Thẩm định và Chấp thuận / Yêu cầu sửa đề tài trong tổ<br>• **Phân công GVPB:** Phân công thủ công hoặc chạy phân công tự động min-load balancer cho toàn bộ đề tài trong tổ bộ môn mình phụ trách<br>• Rà soát danh sách Hội đồng bảo vệ theo Chuyên ngành | • Chỉ thấy và phân công đề tài thuộc đúng chuyên ngành/tổ mình quản lý (CNPM hoặc MMT)<br>• Ràng buộc không trùng GVHD |
+| **Ban Chủ nhiệm Khoa (BCN Khoa)** | `/admin/topics`<br>`/admin/outlines`<br>`/admin/reviewers`<br>`/admin/councils` | • Phê duyệt chính thức đề tài cấp Khoa để mở cổng đăng ký cho sinh viên<br>• Xem báo cáo tổng quan tiến độ duyệt Đề cương M03 toàn khoa<br>• Rà soát phân công GVPB & Phê duyệt Quyết định thành lập Hội đồng bảo vệ | • Thẩm định sau khi TTBM đã chấp thuận |
+| **Sinh viên (Đủ điều kiện)** | `/student`<br>`/student/topics`<br>`/student/groups`<br>`/join/[code]` | • Thấy Banner xanh báo đủ điều kiện kèm mốc hạn M03<br>• Tra cứu đề tài theo đúng chuyên ngành của mình<br>• Đăng ký đề tài (làm Trưởng nhóm), nhận Join Code mời bạn<br>• Nhập Join Code gia nhập nhóm (1–3 bạn)<br>• Tải mẫu M03 PDF chuẩn, nộp file PDF scan có chữ ký sống của GVHD<br>• **Tiến độ tuần:** Tạo/sửa/xóa nhật ký tuần (tiến độ %, git commit, blockers)<br>• **Báo cáo Đợt 1 & 2:** Nộp file báo cáo + link mã nguồn/demo, theo dõi điểm và phản hồi của GVHD/Hội đồng<br>• **Cuối kỳ:** Nộp báo cáo toàn văn, slide thuyết trình, link source demo<br>• **Lịch bảo vệ & Điểm tổng kết:** Xem ca thi, phòng bảo vệ và bảng điểm tổng kết chính thức | • Chỉ được tham gia tối đa 1 nhóm/đợt<br>• Nhóm tối đa 3 thành viên<br>• Bị khóa nộp lại M03 khi GVHD đã duyệt<br>• Không thể xóa nhật ký tuần khi GVHD đã xác nhận |
 | **Sinh viên (Chưa đủ điều kiện)** | `/student` | • Đăng nhập xem thông tin tài khoản<br>• Thấy Banner màu cam cảnh báo chưa đủ điều kiện | • **Bị chặn toàn bộ**: Không thể tạo nhóm, không thể đăng ký đề tài, không thể nộp đề cương |
 
 ---
 
 ## 5. TỔNG KẾT & ĐIỂM DỪNG KỸ THUẬT HIỆN TẠI
 
-* **Trạng thái kỹ thuật hiện tại:** Toàn bộ chu trình từ **Bước 0 đến Bước 7** đã được lập trình hoàn chỉnh, đồng bộ 100% giữa Database PostgreSQL, Backend NestJS (`probase-api`) và Frontend Next.js (`probase-app`).
-* **Các phân hệ tiếp theo (Giai đoạn Báo cáo cuối kỳ & Hội đồng bảo vệ - SẼ LÀM TIẾP THEO):**
-  1. **BR-15 (Quản lý thay đổi trong quá trình thực hiện - TopicChangeRequest):** Đổi tên đề tài, đổi thành viên nhóm, xin gia hạn nộp báo cáo.
-  2. **BR-16 $\rightarrow$ BR-21 (Đánh giá cuối kỳ & Hội đồng bảo vệ - 50% còn lại):** Sinh viên nộp báo cáo toàn văn cuối kỳ, GVHD nhận xét M02, GVPB nhận xét M05, thành lập Hội đồng chấm bảo vệ, tổng hợp điểm chính thức và lưu trữ số khóa luận.
+* **Trạng thái kỹ thuật hiện tại:** Toàn bộ chu trình từ **Bước 0 đến Bước 8** đã được lập trình hoàn chỉnh, đồng bộ 100% giữa Database PostgreSQL, Backend NestJS (`probase-api`) và Frontend Next.js (`probase-app`).
+* **Phân hệ đang triển khai tiếp theo:**
+  * **BR-18 (Thành lập Hội đồng, Xếp lịch bảo vệ & Chấm điểm cuối kỳ 50%):** Hoàn thiện API `councils` và giao diện `/admin/councils`, `/lecturer/councils`.
+* **Các phân hệ tiếp theo (Roadmap):**
+  1. **BR-19 & BR-20 (Gói nộp lưu trữ số hóa 3 thành phần & Thư viện số đồ án):** Nộp `SOURCE`, `DATABASE`, `THESIS` sau bảo vệ và mở kho tra cứu khóa sau.
+  2. **BR-15 (Quản lý thay đổi trong quá trình thực hiện - TopicChangeRequest):** Đổi tên đề tài, đổi thành viên nhóm, xin gia hạn nộp báo cáo.
+  3. **BR-21 (Thống kê & Xuất báo cáo giáo vụ toàn diện):** Định mức giờ GV, phổ điểm A/B/C/D/F.
 
 
 
