@@ -28,3 +28,56 @@ export function formatDate(dateString?: string | null): string {
   });
 }
 
+export interface SanitizedLecturer {
+  fullName: string;
+  title: string;
+  displayName: string;
+  departmentRole: string | null;
+}
+
+/**
+ * Chuẩn hóa tên giảng viên:
+ * - Tách chức danh/bộ môn trong ngoặc đơn (ví dụ: "Tổ trưởng BM Mạng máy tính")
+ * - Loại bỏ học vị bị duplicate ở đầu chuỗi (ví dụ: "ThS. ThS. Chu Định" -> "ThS. Chu Định")
+ * - Trả về displayName gọn gàng cho dropdown và 2 dòng chi tiết cho bảng
+ */
+export function sanitizeLecturerName(
+  fullName: string = '',
+  academicTitle?: string | null,
+): SanitizedLecturer {
+  let raw = (fullName ?? '').trim();
+  let departmentRole: string | null = null;
+
+  // Tách chức danh trong ngoặc đơn
+  const roleMatch = raw.match(/\((.*?)\)/);
+  if (roleMatch) {
+    departmentRole = roleMatch[1].trim();
+    raw = raw.replace(/\(.*?\)/, '').trim();
+  }
+
+  // Tách học vị ở đầu tên nếu có
+  const titlePattern =
+    /^(PGS\.TS|GS\.TS|ThS\.|TS\.|PGS\.|GS\.|ThS|TS|PGS|GS|Ths|Ts)\s+/i;
+  const match = raw.match(titlePattern);
+  let detectedTitle = (academicTitle ?? '').trim();
+
+  if (match) {
+    if (!detectedTitle) {
+      detectedTitle = match[1].replace(/\.?$/, '.');
+    }
+    raw = raw.replace(titlePattern, '').trim();
+  }
+
+  if (detectedTitle && !detectedTitle.endsWith('.')) {
+    detectedTitle += '.';
+  }
+
+  const displayName = detectedTitle ? `${detectedTitle} ${raw}` : raw;
+
+  return {
+    fullName: raw,
+    title: detectedTitle,
+    displayName,
+    departmentRole,
+  };
+}

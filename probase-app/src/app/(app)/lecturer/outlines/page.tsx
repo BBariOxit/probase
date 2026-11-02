@@ -172,7 +172,7 @@ export default function LecturerOutlinesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <PageHeading
           title="Duyệt Đề cương M03"
-          description="Kiểm tra và phê duyệt bản scan Đề cương thực hiện đồ án (Mẫu M03) của các nhóm hướng dẫn (BR-09)"
+          description="Kiểm tra và phê duyệt bản scan Đề cương thực hiện đồ án (Mẫu M03) của các nhóm hướng dẫn"
         />
 
         <div className="flex items-center gap-2">

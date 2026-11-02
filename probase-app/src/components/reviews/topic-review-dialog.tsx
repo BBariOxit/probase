@@ -510,21 +510,21 @@ export function TopicReviewDialog({
                     ) : (
                       <ShieldAlert className="size-4 text-destructive" />
                     )}
-                    Kết luận điều kiện bảo vệ (The Defense Gate)
+                    Kết luận thẩm định bảo vệ
                   </span>
                   <p className="text-sm font-semibold">
                     {isDefenseAllowed ? (
                       <span className="text-emerald-600 dark:text-emerald-400">
-                        ✓ ĐỒNG Ý CHO PHÉP SINH VIÊN BẢO VỆ TRƯỚC HỘI ĐỒNG
+                        Đồng ý cho phép sinh viên bảo vệ
                       </span>
                     ) : (
                       <span className="text-destructive">
-                        ✕ KHÔNG ĐỒNG Ý CHO PHÉP BẢO VỆ (CẢNH BÁO ĐÌNH CHỈ)
+                        Không đồng ý cho phép bảo vệ
                       </span>
                     )}
                   </p>
                   <p className="text-[11px] text-muted-foreground">
-                    Theo quy định DLU, sinh viên chỉ được xếp lịch bảo vệ khi CẢ GVHD và GVPB đều đồng ý.
+                    Yêu cầu sự đồng thuận của cả GVHD và GVPB để sinh viên được ra hội đồng.
                   </p>
                 </div>
 

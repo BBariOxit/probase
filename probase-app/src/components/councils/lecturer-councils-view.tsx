@@ -85,7 +85,7 @@ export function LecturerCouncilsView() {
       <div>
         <div className="flex items-center gap-2 mb-1">
           <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-            BR-18 • Đánh giá Hội đồng 50%
+             • Đánh giá Hội đồng 50%
           </span>
         </div>
         <h1 className="font-heading text-2xl font-bold tracking-tight">

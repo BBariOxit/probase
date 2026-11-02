@@ -7,15 +7,13 @@ import {
   CheckCircle2,
   Clock,
   ExternalLink,
+  FileEdit,
   FileText,
   Gavel,
   GitBranch,
-  GraduationCap,
   Loader2,
   MapPin,
   MessageSquare,
-  Scale,
-  Sparkles,
   TrendingUp,
 } from 'lucide-react';
 import { useMyGroupProgress } from '@/lib/api/progress';
@@ -30,7 +28,7 @@ export function StudentProgressSection() {
 
   if (isPending) {
     return (
-      <div className="flex justify-center py-8">
+      <div className="flex justify-center py-6">
         <Loader2 className="size-5 animate-spin text-muted-foreground" />
       </div>
     );
@@ -54,95 +52,78 @@ export function StudentProgressSection() {
     studentGrade?.finalGradeNum !== undefined;
 
   return (
-    <div className="space-y-6">
-      {/* ── BẢNG ĐIỂM TỔNG KẾT HỌC PHẦN CHÍNH THỨC (NẾU ĐÃ CÓ ĐIỂM) ── */}
+    <div className="space-y-4">
+      {/* ── BẢNG ĐIỂM TỔNG KẾT HỌC PHẦN (NẾU ĐÃ CÓ ĐIỂM) ── */}
       {hasFinalGrade && (
-        <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 via-card to-background p-5 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Award className="size-4" />
-                </span>
-                <h3 className="font-heading text-base font-bold text-foreground">
-                  Kết quả Tổng kết Học phần {projectTypeCode ?? 'Đồ án'}
+                <Award className="size-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">
+                  Kết quả tổng kết học phần {projectTypeCode ?? 'đồ án'}
                 </h3>
                 <Badge
                   className={
                     studentGrade?.finalGradeLetter === 'F'
-                      ? 'bg-destructive/10 text-destructive border-destructive/20 font-bold'
-                      : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 font-bold'
+                      ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                   }
                 >
                   Điểm chữ: {studentGrade?.finalGradeLetter}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground">
-                {isSubCouncilCourse ? (
-                  <>
-                    Công thức: <strong className="text-foreground">50% Điểm quá trình GVHD</strong> ({studentGrade?.progress1Grade ?? '—'}đ) +{' '}
-                    <strong className="text-foreground">50% Điểm Tiểu ban GVHD & GVPB</strong> ({studentGrade?.progress2Grade ?? '—'}đ).
-                  </>
-                ) : (
-                  <>
-                    Công thức: 20% TĐ1 + 30% TĐ2 + 50% Bảo vệ Hội đồng.
-                  </>
-                )}
+                {isSubCouncilCourse
+                  ? `50% Quá trình (${studentGrade?.progress1Grade ?? '—'}đ) + 50% Tiểu ban (${studentGrade?.progress2Grade ?? '—'}đ)`
+                  : '20% Tiến độ 1 + 30% Tiến độ 2 + 50% Hội đồng'}
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="rounded-xl border bg-background/90 px-4 py-2 text-center shadow-xs">
-                <span className="text-[11px] font-medium text-muted-foreground block">
-                  Điểm hệ 10
+              <div className="rounded-lg border border-border/40 bg-card/60 px-3 py-1.5 text-center">
+                <span className="text-[10px] text-muted-foreground block">
+                  Hệ 10
                 </span>
-                <span className="font-heading text-2xl font-black text-primary">
+                <span className="text-lg font-bold text-primary">
                   {studentGrade?.finalGradeNum?.toFixed(2)}
                 </span>
               </div>
-              <div className="rounded-xl border bg-background/90 px-4 py-2 text-center shadow-xs">
-                <span className="text-[11px] font-medium text-muted-foreground block">
-                  Thang chữ
+              <div className="rounded-lg border border-border/40 bg-card/60 px-3 py-1.5 text-center">
+                <span className="text-[10px] text-muted-foreground block">
+                  Chữ
                 </span>
-                <span className="font-heading text-2xl font-black text-foreground">
+                <span className="text-lg font-bold text-foreground">
                   {studentGrade?.finalGradeLetter ?? '—'}
                 </span>
               </div>
             </div>
           </div>
-
-          {studentGrade?.note && (
-            <div className="mt-3 rounded-lg border border-border/60 bg-background/60 p-2 text-xs text-muted-foreground">
-              <strong>Ghi chú:</strong> {studentGrade.note}
-            </div>
-          )}
         </div>
       )}
 
-      {/* ── CARD LỊCH BẢO VỆ CHÍNH THỨC (NẾU ĐÃ ĐƯỢC XẾP HỘI ĐỒNG) ── */}
+      {/* ── LỊCH BẢO VỆ CHÍNH THỨC (NẾU ĐÃ ĐƯỢC XẾP HỘI ĐỒNG) ── */}
       {(group as any)?.councilTopic && (
-        <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 shadow-xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="space-y-1">
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="space-y-0.5">
               <div className="flex items-center gap-2">
-                <span className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                  <Gavel className="size-3.5" />
-                </span>
-                <h4 className="font-bold text-sm text-foreground">
-                  Lịch Bảo vệ Khóa luận tốt nghiệp
+                <Gavel className="size-4 text-primary" />
+                <h4 className="text-xs font-semibold text-foreground">
+                  Lịch bảo vệ khóa luận
                 </h4>
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-[11px] h-5 px-2">
                   {(group as any).councilTopic.council.name}
                 </Badge>
               </div>
-              <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground pt-0.5">
-                <span className="inline-flex items-center gap-1 font-medium text-foreground">
+              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground pt-0.5">
+                <span className="inline-flex items-center gap-1 text-foreground">
                   <MapPin className="size-3 text-primary" />
-                  Phòng: {(group as any).councilTopic.council.location || 'Chưa định phòng'}
+                  {(group as any).councilTopic.council.location || 'Chưa định phòng'}
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <Calendar className="size-3 text-primary" />
-                  Ngày: {new Date((group as any).councilTopic.council.defenseDate).toLocaleString('vi-VN')}
+                  {new Date((group as any).councilTopic.council.defenseDate).toLocaleString('vi-VN')}
                 </span>
                 {(group as any).councilTopic.timeSlot && (
                   <span className="inline-flex items-center gap-1">
@@ -154,78 +135,72 @@ export function StudentProgressSection() {
             </div>
 
             {(group as any).councilTopic.isLocked ? (
-              <Badge className="bg-emerald-600 hover:bg-emerald-700 text-xs gap-1 self-start sm:self-center">
+              <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs gap-1">
                 <CheckCircle2 className="size-3" />
-                Đã hoàn thành bảo vệ
+                Đã bảo vệ
               </Badge>
             ) : (
-              <Badge variant="secondary" className="text-xs gap-1 self-start sm:self-center">
+              <Badge variant="secondary" className="text-xs gap-1">
                 <Clock className="size-3" />
-                Chuẩn bị bảo vệ
+                Sắp bảo vệ
               </Badge>
             )}
           </div>
         </div>
       )}
 
-      {/* ── CARD TỔNG QUAN TIẾN ĐỘ ── */}
-      <div className="rounded-xl border bg-card p-5 shadow-xs">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* ── TỔNG QUAN TIẾN ĐỘ ── */}
+      <div className="rounded-xl border border-border/60 bg-card/60 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <TrendingUp className="size-5 text-primary" />
-              <h3 className="font-semibold text-foreground">
-                Tiến độ thực hiện đồ án
+              <TrendingUp className="size-4 text-primary" />
+              <h3 className="text-sm font-semibold text-foreground">
+                Tiến độ thực hiện
               </h3>
-              <Badge variant="outline" className="font-mono text-xs">
-                {currentPercentage}% hoàn thành
+              <Badge variant="outline" className="text-xs font-mono h-5">
+                {currentPercentage}%
               </Badge>
-              {group?.topic.round?.targetCohort && (
-                <span className="rounded bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                  Lớp: {group.topic.round.targetCohort}
-                </span>
-              )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Đề tài: <span className="font-medium text-foreground">{group?.topic.title}</span> • GVHD:{' '}
-              {group?.topic.lecturer?.fullName}
+              GVHD: <span className="text-foreground">{group?.topic.lecturer?.fullName}</span>
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 text-xs">
             {/* Tag mốc Tiến độ 1 */}
-            <div className="flex items-center gap-1.5 rounded-lg border bg-muted/40 px-2.5 py-1 text-xs">
-              <span className="font-medium">
-                {isSubCouncilCourse ? 'TĐ1 (Quá trình 50%):' : 'Tiến độ 1 (20%):'}
+            <div className="flex items-center gap-1.5 rounded-md border border-border/40 bg-muted/20 px-2.5 py-1">
+              <span className="text-muted-foreground">
+                {isSubCouncilCourse ? 'TĐ1 (50%):' : 'TĐ1 (20%):'}
               </span>
               {stage1?.finalStageGrade !== null && stage1?.finalStageGrade !== undefined ? (
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                <span className="font-medium text-emerald-400">
                   {stage1.finalStageGrade}/10
                 </span>
               ) : stage1 ? (
-                <span className="text-blue-600 dark:text-blue-400">Đã nộp</span>
+                <span className="text-blue-400">Đã nộp</span>
               ) : (
                 <span className="text-muted-foreground">Chưa nộp</span>
               )}
             </div>
 
             {/* Tag mốc Tiến độ 2 */}
-            <div className="flex items-center gap-1.5 rounded-lg border bg-muted/40 px-2.5 py-1 text-xs">
-              <span className="font-medium">
-                {isSubCouncilCourse ? 'TĐ2 (Tiểu ban 50%):' : 'Tiến độ 2 (30%):'}
+            <div className="flex items-center gap-1.5 rounded-md border border-border/40 bg-muted/20 px-2.5 py-1">
+              <span className="text-muted-foreground">
+                {isSubCouncilCourse ? 'TĐ2 (50%):' : 'TĐ2 (30%):'}
               </span>
               {stage2?.finalStageGrade !== null && stage2?.finalStageGrade !== undefined ? (
                 stage2.isPassed === false ? (
-                  <span className="font-semibold text-destructive">
-                    {stage2.finalStageGrade}/10 (Chưa đạt)
+                  <span className="font-medium text-rose-400">
+                    {stage2.finalStageGrade}/10
                   </span>
                 ) : (
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                    {stage2.finalStageGrade}/10 (Đủ ĐK)
+                  <span className="font-medium text-emerald-400">
+                    {stage2.finalStageGrade}/10
                   </span>
                 )
               ) : stage2 ? (
-                <span className="text-blue-600 dark:text-blue-400">Đã nộp</span>
+                <span className="text-blue-400">Đã nộp</span>
               ) : (
                 <span className="text-muted-foreground">Chưa nộp</span>
               )}
@@ -233,255 +208,198 @@ export function StudentProgressSection() {
           </div>
         </div>
 
-        {/* Thanh tiến độ trực quan */}
-        <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
+        {/* Thanh tiến độ */}
+        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted/40">
           <div
-            className="h-full bg-primary transition-all duration-500 ease-out"
+            className="h-full bg-primary transition-all duration-300"
             style={{ width: `${Math.min(100, Math.max(0, currentPercentage))}%` }}
           />
         </div>
       </div>
 
-      {/* ── HAI ĐỢT KIỂM TRA TẬP TRUNG CỦA KHOA ── */}
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h4 className="text-sm font-semibold tracking-tight text-foreground flex items-center gap-2">
-            <Scale className="size-4 text-primary" />
-            <span>
-              {isSubCouncilCourse
-                ? 'Hai cột điểm đánh giá học phần (Khoa CNTT - DLU)'
-                : 'Hai đợt kiểm tra tiến độ tập trung (Bắt buộc)'}
-            </span>
-          </h4>
-          {isSubCouncilCourse && (
-            <span className="text-xs text-muted-foreground hidden sm:inline">
-              ĐACS / ĐACN hoàn thành bằng hình thức Tiểu ban 2 Giảng viên (Không thành lập Hội đồng lớn)
-            </span>
-          )}
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          {/* Card Đợt 1 */}
-          <div className="flex flex-col justify-between rounded-xl border bg-card p-4 transition-all">
-            <div className="space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm">Tiến độ lần 1</span>
-                    <Badge variant="secondary" className="text-[10px] font-semibold">
-                      Trọng số {isSubCouncilCourse ? '50%' : '20%'}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Tuần 5–6 • {isSubCouncilCourse ? 'Điểm quá trình GVHD đánh giá' : 'GVHD đánh giá trực tiếp'}
-                  </p>
+      {/* ── HAI ĐỢT KIỂM TRA ĐỊNH KỲ ── */}
+      <div className="grid gap-3 md:grid-cols-2">
+        {/* Đợt 1 */}
+        <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-card/60 p-4">
+          <div className="space-y-2.5">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-foreground">Tiến độ đợt 1</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    ({isSubCouncilCourse ? 'Trọng số 50%' : 'Trọng số 20%'})
+                  </span>
                 </div>
-
-                {stage1?.finalStageGrade !== null && stage1?.finalStageGrade !== undefined ? (
-                  <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 font-bold">
-                    {stage1.supervisorGrade}/10
-                  </Badge>
-                ) : stage1 ? (
-                  <Badge variant="outline" className="text-blue-600 border-blue-200">
-                    Chờ chấm
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-muted-foreground">
-                    Chưa nộp
-                  </Badge>
-                )}
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Tuần 5–6 • GVHD đánh giá
+                </p>
               </div>
 
-              {/* Chi tiết bài nộp đợt 1 */}
-              {stage1 ? (
-                <div className="space-y-1.5 rounded-lg bg-muted/30 p-2.5 text-xs">
-                  {stage1.reportFileName && (
-                    <div className="flex items-center gap-1.5 truncate">
-                      <FileText className="size-3.5 text-muted-foreground shrink-0" />
-                      <a
-                        href={stage1.reportFileUrl || '#'}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="truncate text-primary hover:underline font-medium"
-                      >
-                        {stage1.reportFileName}
-                      </a>
-                    </div>
-                  )}
-                  {stage1.sourceCodeUrl && (
-                    <div className="flex items-center gap-1.5 truncate">
-                      <GitBranch className="size-3.5 text-muted-foreground shrink-0" />
-                      <a
-                        href={stage1.sourceCodeUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="truncate text-primary hover:underline"
-                      >
-                        {stage1.sourceCodeUrl}
-                      </a>
-                    </div>
-                  )}
-                  <div className="text-[11px] text-muted-foreground pt-0.5">
-                    Nộp ngày: {formatDate(stage1.submittedAt)}
-                  </div>
-                  {stage1.supervisorFeedback && (
-                    <div className="mt-1.5 rounded border border-border/50 bg-background/80 p-2 text-xs">
-                      <span className="font-medium text-foreground">Nhận xét GVHD: </span>
-                      <span className="text-muted-foreground">{stage1.supervisorFeedback}</span>
-                    </div>
-                  )}
-                </div>
+              {stage1?.finalStageGrade !== null && stage1?.finalStageGrade !== undefined ? (
+                <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs">
+                  {stage1.supervisorGrade}/10
+                </Badge>
+              ) : stage1 ? (
+                <Badge variant="outline" className="text-blue-400 border-blue-400/30 text-xs">
+                  Chờ chấm
+                </Badge>
               ) : (
-                <p className="text-xs text-muted-foreground">
-                  Hồ sơ yêu cầu: Báo cáo phân tích thiết kế, mô hình CSDL và giao diện mẫu (prototype).
-                </p>
+                <Badge variant="outline" className="text-zinc-500 border-zinc-700/40 text-xs">
+                  Chưa nộp
+                </Badge>
               )}
             </div>
 
-            <div className="mt-4 pt-2 border-t">
-              <ProgressReportModal stage="STAGE_1" existingReport={stage1} />
-            </div>
+            {stage1 ? (
+              <div className="space-y-1.5 rounded-lg bg-muted/20 p-2.5 text-xs">
+                {stage1.reportFileName && (
+                  <div className="flex items-center gap-1.5 truncate">
+                    <FileText className="size-3.5 text-muted-foreground shrink-0" />
+                    <a
+                      href={stage1.reportFileUrl || '#'}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="truncate text-primary hover:underline"
+                    >
+                      {stage1.reportFileName}
+                    </a>
+                  </div>
+                )}
+                {stage1.sourceCodeUrl && (
+                  <div className="flex items-center gap-1.5 truncate">
+                    <GitBranch className="size-3.5 text-muted-foreground shrink-0" />
+                    <a
+                      href={stage1.sourceCodeUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="truncate text-primary hover:underline"
+                    >
+                      {stage1.sourceCodeUrl}
+                    </a>
+                  </div>
+                )}
+                {stage1.supervisorFeedback && (
+                  <p className="text-zinc-300 pt-1 text-[11px]">
+                    <span className="text-muted-foreground">GVHD: </span>
+                    {stage1.supervisorFeedback}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Báo cáo phân tích thiết kế, mô hình CSDL và giao diện mẫu.
+              </p>
+            )}
           </div>
 
-          {/* Card Đợt 2 */}
-          <div className="flex flex-col justify-between rounded-xl border bg-card p-4 transition-all">
-            <div className="space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm">Tiến độ lần 2</span>
-                    <Badge
-                      variant={isSubCouncilCourse ? 'default' : 'secondary'}
-                      className="text-[10px] font-semibold"
-                    >
-                      Trọng số {isSubCouncilCourse ? '50%' : '30%'}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Tuần 9–10 • {isSubCouncilCourse ? 'Tiểu ban 2 GV (GVHD + GVPB) chốt kết thúc môn' : 'Hội đồng Bộ môn (GVHD + GVPB)'}
-                  </p>
-                </div>
+          <div className="mt-3 pt-2 border-t border-border/40">
+            <ProgressReportModal stage="STAGE_1" existingReport={stage1} />
+          </div>
+        </div>
 
-                {stage2?.finalStageGrade !== null && stage2?.finalStageGrade !== undefined ? (
-                  <Badge
-                    className={
-                      stage2.isPassed === false
-                        ? 'bg-destructive/10 text-destructive border-destructive/20 font-bold'
-                        : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 font-bold'
-                    }
-                  >
-                    {stage2.finalStageGrade}/10
-                  </Badge>
-                ) : stage2 ? (
-                  <Badge variant="outline" className="text-blue-600 border-blue-200">
-                    Chờ Tiểu ban
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-muted-foreground">
-                    Chưa nộp
-                  </Badge>
-                )}
+        {/* Đợt 2 */}
+        <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-card/60 p-4">
+          <div className="space-y-2.5">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-foreground">Tiến độ đợt 2</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    ({isSubCouncilCourse ? 'Trọng số 50%' : 'Trọng số 30%'})
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Tuần 9–10 • Hội đồng Bộ môn
+                </p>
               </div>
 
-              {/* Chi tiết bài nộp đợt 2 */}
-              {stage2 ? (
-                <div className="space-y-1.5 rounded-lg bg-muted/30 p-2.5 text-xs">
-                  {stage2.reportFileName && (
-                    <div className="flex items-center gap-1.5 truncate">
-                      <FileText className="size-3.5 text-muted-foreground shrink-0" />
-                      <a
-                        href={stage2.reportFileUrl || '#'}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="truncate text-primary hover:underline font-medium"
-                      >
-                        {stage2.reportFileName}
-                      </a>
-                    </div>
-                  )}
-                  {stage2.sourceCodeUrl && (
-                    <div className="flex items-center gap-1.5 truncate">
-                      <GitBranch className="size-3.5 text-muted-foreground shrink-0" />
-                      <a
-                        href={stage2.sourceCodeUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="truncate text-primary hover:underline"
-                      >
-                        {stage2.sourceCodeUrl}
-                      </a>
-                    </div>
-                  )}
-
-                  {/* Trạng thái Pass/Fail 50% */}
-                  {stage2.workloadPercentage !== null && stage2.workloadPercentage !== undefined && (
-                    <div className="mt-1 flex items-center justify-between font-medium">
-                      <span>Đánh giá khối lượng:</span>
-                      <span
-                        className={
-                          stage2.workloadPercentage >= 50
-                            ? 'text-emerald-600 font-semibold'
-                            : 'text-destructive font-semibold'
-                        }
-                      >
-                        {stage2.workloadPercentage}% khối lượng
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Chi tiết điểm 2 giảng viên nếu có */}
-                  {stage2.supervisorGrade !== null &&
-                    stage2.supervisorGrade !== undefined &&
-                    stage2.reviewerGrade !== null &&
-                    stage2.reviewerGrade !== undefined && (
-                      <div className="mt-1 flex items-center justify-between rounded bg-background/80 p-1.5 text-[11px] text-muted-foreground">
-                        <span>GVHD: <strong className="text-foreground">{stage2.supervisorGrade}</strong></span>
-                        <span>GVPB: <strong className="text-foreground">{stage2.reviewerGrade}</strong></span>
-                        <span>TB: <strong className="text-primary font-bold">{stage2.finalStageGrade}</strong></span>
-                      </div>
-                    )}
-
-                  {stage2.isPassed === false && (
-                    <div className="mt-1 flex items-center gap-1.5 rounded bg-destructive/10 p-2 text-destructive">
-                      <AlertTriangle className="size-4 shrink-0" />
-                      <span>Cảnh báo: Chưa đạt 50% khối lượng, nguy cơ bị đình chỉ!</span>
-                    </div>
-                  )}
-
-                  {stage2.supervisorFeedback && (
-                    <div className="mt-1.5 rounded border border-border/50 bg-background/80 p-2 text-xs">
-                      <span className="font-medium text-foreground">Góp ý Tiểu ban: </span>
-                      <span className="text-muted-foreground">{stage2.supervisorFeedback}</span>
-                    </div>
-                  )}
-                </div>
+              {stage2?.finalStageGrade !== null && stage2?.finalStageGrade !== undefined ? (
+                <Badge
+                  className={
+                    stage2.isPassed === false
+                      ? 'bg-rose-500/10 text-rose-400 border-rose-500/20 text-xs'
+                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs'
+                  }
+                >
+                  {stage2.finalStageGrade}/10
+                </Badge>
+              ) : stage2 ? (
+                <Badge variant="outline" className="text-blue-400 border-blue-400/30 text-xs">
+                  Chờ chấm
+                </Badge>
               ) : (
-                <p className="text-xs text-muted-foreground">
-                  Hồ sơ yêu cầu: Demo source code chạy chức năng chính, CSDL hoàn chỉnh và dự thảo báo cáo. (Phải đạt ≥ 50% để được công nhận).
-                </p>
+                <Badge variant="outline" className="text-zinc-500 border-zinc-700/40 text-xs">
+                  Chưa nộp
+                </Badge>
               )}
             </div>
 
-            <div className="mt-4 pt-2 border-t">
-              <ProgressReportModal stage="STAGE_2" existingReport={stage2} />
-            </div>
+            {stage2 ? (
+              <div className="space-y-1.5 rounded-lg bg-muted/20 p-2.5 text-xs">
+                {stage2.reportFileName && (
+                  <div className="flex items-center gap-1.5 truncate">
+                    <FileText className="size-3.5 text-muted-foreground shrink-0" />
+                    <a
+                      href={stage2.reportFileUrl || '#'}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="truncate text-primary hover:underline"
+                    >
+                      {stage2.reportFileName}
+                    </a>
+                  </div>
+                )}
+                {stage2.sourceCodeUrl && (
+                  <div className="flex items-center gap-1.5 truncate">
+                    <GitBranch className="size-3.5 text-muted-foreground shrink-0" />
+                    <a
+                      href={stage2.sourceCodeUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="truncate text-primary hover:underline"
+                    >
+                      {stage2.sourceCodeUrl}
+                    </a>
+                  </div>
+                )}
+                {stage2.workloadPercentage !== null && stage2.workloadPercentage !== undefined && (
+                  <div className="flex items-center justify-between text-[11px] pt-0.5">
+                    <span className="text-muted-foreground">Khối lượng:</span>
+                    <span className={stage2.workloadPercentage >= 50 ? 'text-emerald-400 font-medium' : 'text-rose-400 font-medium'}>
+                      {stage2.workloadPercentage}%
+                    </span>
+                  </div>
+                )}
+                {stage2.isPassed === false && (
+                  <div className="flex items-center gap-1.5 text-rose-400 text-[11px] pt-1">
+                    <AlertTriangle className="size-3 shrink-0" />
+                    <span>Dưới 50% khối lượng — Nguy cơ đình chỉ</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Mã nguồn chạy thử (demo), CSDL hoàn chỉnh và dự thảo báo cáo.
+              </p>
+            )}
+          </div>
+
+          <div className="mt-3 pt-2 border-t border-border/40">
+            <ProgressReportModal stage="STAGE_2" existingReport={stage2} />
           </div>
         </div>
       </div>
 
-      {/* ── SỔ TAY TIẾN ĐỘ NỘI BỘ (WEEKLY LOG / SPRINT FEED) ── */}
-      <div className="rounded-xl border bg-card p-5 shadow-xs">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
-          <div>
-            <h4 className="font-semibold text-sm text-foreground flex items-center gap-1.5">
-              <span>Sổ tay tiến độ nội bộ với GVHD</span>
-              <span className="text-xs font-normal text-muted-foreground">
-                ({weeklyLogs.length} ghi nhận)
-              </span>
+      {/* ── NHẬT KÝ TIẾN ĐỘ TUẦN ── */}
+      <div className="rounded-xl border border-border/60 bg-card/60 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <h4 className="text-xs font-semibold text-foreground">
+              Nhật ký tiến độ
             </h4>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Kênh trao đổi định kỳ để GVHD theo dõi và xác nhận tiến độ thực tế.
-            </p>
+            <span className="text-xs text-muted-foreground">
+              ({weeklyLogs.length})
+            </span>
           </div>
 
           <WeeklyLogModal
@@ -491,77 +409,45 @@ export function StudentProgressSection() {
         </div>
 
         {weeklyLogs.length === 0 ? (
-          <div className="rounded-lg border border-dashed py-8 text-center text-xs text-muted-foreground">
-            Chưa có ghi nhận tiến độ nào. Bấm nút <strong>&ldquo;Ghi nhận tiến độ&rdquo;</strong> ở trên để cập nhật công việc đã làm.
+          <div className="flex flex-col items-center justify-center py-6 text-center">
+            <FileEdit className="size-7 text-muted-foreground/30 mb-1.5" />
+            <p className="text-xs font-medium text-muted-foreground">
+              Chưa có nhật ký tiến độ
+            </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {weeklyLogs.map((log) => (
               <div
                 key={log.id}
-                className="rounded-lg border bg-card/50 p-3.5 transition-colors hover:bg-muted/30"
+                className="rounded-lg border border-border/40 bg-muted/15 p-3 text-xs space-y-1.5"
               >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-xs text-foreground">
-                      Tuần {log.weekNumber}: {log.title ?? 'Báo cáo định kỳ'}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-medium text-foreground">
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                      Tuần {log.weekNumber}
                     </span>
-                    <Badge variant="outline" className="font-mono text-[10px]">
-                      {log.completionPercentage}%
-                    </Badge>
-                    {log.isAcknowledged ? (
-                      <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px]">
-                        <CheckCircle2 className="mr-1 size-3" />
-                        GVHD đã duyệt
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-amber-600 border-amber-300 dark:text-amber-400 text-[10px]">
-                        <Clock className="mr-1 size-3" />
-                        Chờ xác nhận
-                      </Badge>
-                    )}
+                    <span>{log.title}</span>
                   </div>
-
-                  <span className="text-[11px] text-muted-foreground">
-                    {formatDate(log.createdAt)} • bởi {log.submittedBy?.studentProfile?.fullName ?? 'Thành viên'}
+                  <span className="text-muted-foreground font-mono text-[11px]">
+                    {log.completionPercentage}%
                   </span>
                 </div>
 
-                <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
+                <p className="text-zinc-300 leading-relaxed">
                   {log.summaryNotes}
                 </p>
 
                 {log.blockers && (
-                  <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-                    <AlertTriangle className="size-3.5 shrink-0" />
-                    <span className="font-medium">Vướng mắc:</span>
-                    <span>{log.blockers}</span>
-                  </div>
-                )}
-
-                {log.gitCommitUrl && (
-                  <div className="mt-2">
-                    <a
-                      href={log.gitCommitUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
-                    >
-                      <GitBranch className="size-3" />
-                      Commit / Pull request
-                    </a>
-                  </div>
+                  <p className="text-amber-400/90 text-[11px]">
+                    Vướng mắc: {log.blockers}
+                  </p>
                 )}
 
                 {log.lecturerComment && (
-                  <div className="mt-2.5 rounded-lg border border-primary/20 bg-primary/5 p-2.5 text-xs text-foreground">
-                    <div className="flex items-center gap-1.5 font-semibold text-primary mb-1">
-                      <MessageSquare className="size-3" />
-                      <span>Phản hồi từ Giảng viên hướng dẫn:</span>
-                    </div>
-                    <p className="italic text-muted-foreground">
-                      &ldquo;{log.lecturerComment}&rdquo;
-                    </p>
+                  <div className="pt-1 text-[11px] text-muted-foreground border-t border-border/30">
+                    <span className="text-foreground font-medium">GVHD: </span>
+                    {log.lecturerComment}
                   </div>
                 )}
               </div>

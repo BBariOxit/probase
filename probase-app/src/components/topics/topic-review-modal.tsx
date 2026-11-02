@@ -244,7 +244,7 @@ export function TopicReviewModal({
               )}
             >
               <Sparkles className="size-3.5" />
-              Kiểm tra trùng lặp (BR-04)
+              Kiểm tra trùng lặp
               {maxSimilarityScore >= 0.4 ? (
                 <span className="ml-1 size-2 rounded-full bg-rose-500 animate-pulse" />
               ) : null}
@@ -350,13 +350,13 @@ export function TopicReviewModal({
               )}
             </div>
           ) : (
-            /* Similarity Check Tab (BR-04) */
+            /* Similarity Check Tab */
             <div className="space-y-4">
               <div className="rounded-lg border p-4 bg-muted/30">
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
                     <Sparkles className="size-4 text-primary" />
-                    <h4 className="text-sm font-semibold">Kết quả đối chiếu kho đề tài (BR-04)</h4>
+                    <h4 className="text-sm font-semibold">Kết quả đối chiếu kho đề tài</h4>
                   </div>
                   {similarityQuery.isFetching ? (
                     <span className="text-xs text-muted-foreground inline-flex items-center gap-1">

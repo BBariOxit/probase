@@ -13,15 +13,13 @@ interface GoogleLoginButtonProps {
   disabled?: boolean;
 }
 
-export function GoogleLoginButton({
+function GoogleLoginButtonInner({
   onSuccess,
   onError,
   isLoading = false,
   className,
   disabled = false,
 }: GoogleLoginButtonProps) {
-  const hasClientId = Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
-
   const loginWithGoogle = useGoogleLogin({
     onSuccess: (tokenResponse) => {
       if (tokenResponse?.access_token) {
@@ -34,14 +32,6 @@ export function GoogleLoginButton({
       onError('Đăng nhập Google thất bại hoặc cửa sổ đăng nhập đã bị đóng.');
     },
   });
-
-  if (!hasClientId) {
-    return (
-      <div className="rounded-lg border border-dashed border-amber-500/40 bg-amber-500/10 p-2.5 text-center text-xs text-amber-600 dark:text-amber-400">
-        Google Client ID chưa được cấu hình
-      </div>
-    );
-  }
 
   return (
     <button
@@ -92,4 +82,18 @@ export function GoogleLoginButton({
       )}
     </button>
   );
+}
+
+export function GoogleLoginButton(props: GoogleLoginButtonProps) {
+  const hasClientId = Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
+
+  if (!hasClientId) {
+    return (
+      <div className="rounded-lg border border-dashed border-amber-500/40 bg-amber-500/10 p-2.5 text-center text-xs text-amber-600 dark:text-amber-400">
+        Google Client ID chưa được cấu hình
+      </div>
+    );
+  }
+
+  return <GoogleLoginButtonInner {...props} />;
 }

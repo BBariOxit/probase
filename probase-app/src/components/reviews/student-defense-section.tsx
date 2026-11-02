@@ -14,8 +14,6 @@ import {
   Loader2,
   ShieldAlert,
   ShieldCheck,
-  Sparkles,
-  UserCheck,
   XCircle,
 } from 'lucide-react';
 import { useGroupReviews } from '@/lib/api/reviews';
@@ -31,7 +29,7 @@ export function StudentDefenseSection({ groupId }: StudentDefenseSectionProps) {
 
   if (isPending) {
     return (
-      <div className="rounded-xl border bg-card p-6 flex justify-center">
+      <div className="rounded-xl border border-border/60 bg-card/60 p-5 flex justify-center">
         <Loader2 className="size-5 animate-spin text-muted-foreground" />
       </div>
     );
@@ -46,99 +44,90 @@ export function StudentDefenseSection({ groupId }: StudentDefenseSectionProps) {
     reviewerReview,
     isDefenseEligible,
     eligibilityStatus,
-    recentSubmissions,
   } = data;
 
   const questions: string[] =
     reviewerReview?.evaluationCriteria?.defenseQuestions || [];
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="space-y-0.5">
-          <h2 className="font-heading text-sm font-semibold tracking-tight flex items-center gap-2">
-            <Award className="size-4 text-primary" />
-            Hồ sơ Cuối kỳ & Thẩm định ra Hội đồng Bảo vệ (BR-16, BR-17)
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Theo dõi trạng thái xét duyệt quyển báo cáo cuối kỳ từ GVHD & GVPB trước khi ra Hội đồng.
-          </p>
-        </div>
+    <section className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+          <Award className="size-3.5 text-primary" />
+          <span>Hồ sơ & Đánh giá bảo vệ</span>
+        </h2>
 
         <Button
           variant="outline"
           size="sm"
-          className="gap-1.5 text-xs"
+          className="h-7 text-xs gap-1.5"
           render={<Link href="/student/submissions" />}
         >
-          <FileDown className="size-3.5" />
-          Nộp quyển cuối kỳ & Slide
+          <FileDown className="size-3" />
+          Nộp quyển & slide
         </Button>
       </div>
 
-      {/* Main Eligibility Card */}
-      <div className="rounded-xl border bg-card p-4 space-y-4 shadow-sm">
-        {/* Banner Gate */}
+      <div className="rounded-xl border border-border/60 bg-card/60 p-4 space-y-3">
+        {/* Banner trạng thái điều kiện */}
         {eligibilityStatus === 'ELIGIBLE' ? (
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-1">
+          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 space-y-0.5">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="size-5 text-emerald-600 dark:text-emerald-400" />
-              <h3 className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
-                🎉 CHÚC MỪNG! ĐỀ TÀI ĐÃ ĐỦ ĐIỀU KIỆN RA BẢO VỆ TRƯỚC HỘI ĐỒNG
+              <ShieldCheck className="size-4 text-emerald-400" />
+              <h3 className="text-xs font-semibold text-emerald-300">
+                Đủ điều kiện ra bảo vệ trước hội đồng
               </h3>
             </div>
-            <p className="text-xs text-emerald-600/90 dark:text-emerald-400/90 pl-7">
-              Nhóm của bạn đã hoàn thành tiến độ giai đoạn 2 và nhận được sự đồng thuận cho phép bảo vệ
-              từ cả Giảng viên hướng dẫn và Giảng viên phản biện. Hãy chuẩn bị slide thuyết trình và ôn tập câu hỏi chất vấn.
+            <p className="text-[11px] text-zinc-300 pl-6">
+              Đề tài đã hoàn thành khối lượng tiến độ và nhận được sự đồng ý của cả GVHD và GVPB.
             </p>
           </div>
         ) : eligibilityStatus === 'NOT_ELIGIBLE' ? (
-          <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 space-y-1">
+          <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-3 space-y-0.5">
             <div className="flex items-center gap-2">
-              <ShieldAlert className="size-5 text-destructive" />
-              <h3 className="text-sm font-bold text-destructive">
-                ⚠️ CẢNH BÁO: ĐỀ TÀI CHƯA ĐỦ ĐIỀU KIỆN RA HỘI ĐỒNG BẢO VỆ
+              <ShieldAlert className="size-4 text-rose-400" />
+              <h3 className="text-xs font-semibold text-rose-300">
+                Chưa đủ điều kiện ra hội đồng bảo vệ
               </h3>
             </div>
-            <p className="text-xs text-destructive/90 pl-7">
-              Đề tài bị đình chỉ hoặc từ chối bảo vệ do khối lượng sản phẩm Tiến độ 2 chưa đạt 50%
-              hoặc giảng viên chưa đồng ý thông qua. Vui lòng liên hệ trực tiếp với GVHD để được hướng dẫn xử lý.
+            <p className="text-[11px] text-zinc-300 pl-6">
+              Khối lượng tiến độ 2 chưa đạt hoặc có ý kiến chưa đồng ý từ cán bộ đánh giá.
             </p>
           </div>
         ) : (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-1">
+          <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 space-y-0.5">
             <div className="flex items-center gap-2">
-              <Clock className="size-5 text-amber-600 dark:text-amber-400" />
-              <h3 className="text-sm font-bold text-amber-700 dark:text-amber-300">
-                ⏳ ĐANG THẨM ĐỊNH HỒ SƠ BẢO VỆ CUỐI KỲ
+              <Clock className="size-4 text-amber-400" />
+              <h3 className="text-xs font-semibold text-amber-300">
+                Đang thẩm định hồ sơ bảo vệ
               </h3>
             </div>
-            <p className="text-xs text-amber-600/90 dark:text-amber-400/90 pl-7">
-              Hệ thống đang chờ Cán bộ Hướng dẫn và Cán bộ Phản biện đọc quyển báo cáo và hoàn tất Phiếu nhận xét (M02/M04 & M05).
+            <p className="text-[11px] text-zinc-300 pl-6">
+              Hệ thống đang chờ cán bộ hướng dẫn và phản biện hoàn tất phiếu nhận xét.
             </p>
           </div>
         )}
 
-        {/* 3 Steps Overview Grid */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {/* Step 1: Progress Stage 2 */}
-          <div className="rounded-xl border bg-muted/20 p-3.5 space-y-2">
+        {/* 3 tiêu chí cốt lõi */}
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 pt-1">
+          {/* Tiêu chí 1: Tiến độ 2 */}
+          <div className="rounded-lg border border-border/40 bg-muted/15 p-3 space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">
-                1. Tiến độ Đợt 2 (≥ 50%)
+              <span className="text-[11px] text-muted-foreground">
+                Tiến độ đợt 2 (≥ 50%)
               </span>
               {stage2 ? (
                 <Badge
                   className={
                     stage2Passed
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[11px]'
-                      : 'bg-destructive/10 text-destructive border-destructive/20 text-[11px]'
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] h-4.5 px-1.5'
+                      : 'bg-rose-500/10 text-rose-400 border-rose-500/20 text-[10px] h-4.5 px-1.5'
                   }
                 >
-                  {stage2Passed ? '✓ Đạt' : '✕ Chưa đạt'}
+                  {stage2Passed ? 'Đạt' : 'Chưa đạt'}
                 </Badge>
               ) : (
-                <Badge variant="outline" className="text-muted-foreground text-[11px]">
+                <Badge variant="outline" className="text-zinc-500 border-zinc-700/40 text-[10px] h-4.5 px-1.5">
                   Chưa nộp
                 </Badge>
               )}
@@ -146,109 +135,78 @@ export function StudentDefenseSection({ groupId }: StudentDefenseSectionProps) {
             <p className="text-xs font-medium text-foreground">
               Khối lượng: {stage2?.workloadPercentage ?? 0}%
             </p>
-            {stage2?.sourceCodeUrl && (
-              <a
-                href={stage2.sourceCodeUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
-              >
-                <ExternalLink className="size-3" />
-                Kho mã nguồn Git
-              </a>
-            )}
           </div>
 
-          {/* Step 2: GVHD Review */}
-          <div className="rounded-xl border bg-muted/20 p-3.5 space-y-2">
+          {/* Tiêu chí 2: GVHD */}
+          <div className="rounded-lg border border-border/40 bg-muted/15 p-3 space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">
-                2. Nhận xét GVHD ({supervisorReview?.templateCode || 'M04'})
+              <span className="text-[11px] text-muted-foreground">
+                Ý kiến GVHD
               </span>
               {supervisorReview ? (
                 <Badge
                   className={
                     supervisorReview.isDefenseAllowed
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[11px]'
-                      : 'bg-destructive/10 text-destructive border-destructive/20 text-[11px]'
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] h-4.5 px-1.5'
+                      : 'bg-rose-500/10 text-rose-400 border-rose-500/20 text-[10px] h-4.5 px-1.5'
                   }
                 >
-                  {supervisorReview.isDefenseAllowed ? '✓ Cho bảo vệ' : '✕ Không cho'}
+                  {supervisorReview.isDefenseAllowed ? 'Đồng ý' : 'Không cho'}
                 </Badge>
               ) : (
-                <Badge variant="outline" className="text-amber-600 border-amber-300 text-[11px]">
-                  Đang chờ GVHD
+                <Badge variant="outline" className="text-amber-400 border-amber-500/30 text-[10px] h-4.5 px-1.5">
+                  Chờ duyệt
                 </Badge>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {data.group.supervisor?.fullName || 'Giảng viên hướng dẫn'}
+            <p className="text-xs text-foreground truncate">
+              {data.group.supervisor?.fullName || 'GVHD'}
             </p>
-            {supervisorReview?.signedAt && (
-              <p className="text-[10px] text-muted-foreground">
-                Ký ngày {new Date(supervisorReview.signedAt).toLocaleDateString('vi-VN')}
-              </p>
-            )}
           </div>
 
-          {/* Step 3: GVPB Review */}
-          <div className="rounded-xl border bg-muted/20 p-3.5 space-y-2">
+          {/* Tiêu chí 3: GVPB */}
+          <div className="rounded-lg border border-border/40 bg-muted/15 p-3 space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">
-                3. Nhận xét GVPB (M05)
+              <span className="text-[11px] text-muted-foreground">
+                Ý kiến GVPB
               </span>
               {reviewerReview ? (
                 <Badge
                   className={
                     reviewerReview.isDefenseAllowed
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[11px]'
-                      : 'bg-destructive/10 text-destructive border-destructive/20 text-[11px]'
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] h-4.5 px-1.5'
+                      : 'bg-rose-500/10 text-rose-400 border-rose-500/20 text-[10px] h-4.5 px-1.5'
                   }
                 >
-                  {reviewerReview.isDefenseAllowed ? '✓ Cho bảo vệ' : '✕ Không cho'}
+                  {reviewerReview.isDefenseAllowed ? 'Đồng ý' : 'Không cho'}
                 </Badge>
               ) : (
-                <Badge variant="outline" className="text-amber-600 border-amber-300 text-[11px]">
-                  Đang chờ GVPB
+                <Badge variant="outline" className="text-amber-400 border-amber-500/30 text-[10px] h-4.5 px-1.5">
+                  Chờ duyệt
                 </Badge>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {data.group.reviewer?.fullName || 'Giảng viên phản biện'}
+            <p className="text-xs text-foreground truncate">
+              {data.group.reviewer?.fullName || 'GVPB'}
             </p>
-            {reviewerReview?.signedAt && (
-              <p className="text-[10px] text-muted-foreground">
-                Ký ngày {new Date(reviewerReview.signedAt).toLocaleDateString('vi-VN')}
-              </p>
-            )}
           </div>
         </div>
 
-        {/* Feedback comments */}
+        {/* Ý kiến nhận xét */}
         {(supervisorReview?.generalComment || reviewerReview?.generalComment) && (
-          <div className="space-y-2 pt-2 border-t">
-            <h4 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-              <FileText className="size-3.5" />
-              Ý kiến nhận xét từ các Thầy/Cô:
-            </h4>
-
+          <div className="space-y-2 pt-2 border-t border-border/40">
             {supervisorReview?.generalComment && (
-              <div className="rounded-lg bg-muted/30 p-3 text-xs space-y-1">
-                <span className="font-semibold text-primary">
-                  GVHD ({data.group.supervisor?.fullName}):
-                </span>
-                <p className="italic leading-relaxed text-foreground">
+              <div className="text-xs space-y-0.5">
+                <span className="text-[11px] text-muted-foreground">Nhận xét GVHD:</span>
+                <p className="text-zinc-300 italic">
                   "{supervisorReview.generalComment}"
                 </p>
               </div>
             )}
-
             {reviewerReview?.generalComment && (
-              <div className="rounded-lg bg-muted/30 p-3 text-xs space-y-1">
-                <span className="font-semibold text-blue-600 dark:text-blue-400">
-                  GVPB ({data.group.reviewer?.fullName}):
-                </span>
-                <p className="italic leading-relaxed text-foreground">
+              <div className="text-xs space-y-0.5">
+                <span className="text-[11px] text-muted-foreground">Nhận xét GVPB:</span>
+                <p className="text-zinc-300 italic">
                   "{reviewerReview.generalComment}"
                 </p>
               </div>
@@ -256,30 +214,25 @@ export function StudentDefenseSection({ groupId }: StudentDefenseSectionProps) {
           </div>
         )}
 
-        {/* Defense Questions from Reviewer */}
+        {/* Câu hỏi phản biện */}
         {questions.length > 0 && (
-          <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 space-y-2">
-            <div className="flex items-center gap-2">
-              <HelpCircle className="size-4 text-blue-600 dark:text-blue-400" />
-              <h4 className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wide">
-                Câu hỏi chất vấn của Giảng viên Phản biện trước Hội đồng:
+          <div className="rounded-lg border border-border/40 bg-muted/10 p-3 space-y-2">
+            <div className="flex items-center gap-1.5">
+              <HelpCircle className="size-3.5 text-primary" />
+              <h4 className="text-xs font-semibold text-foreground">
+                Câu hỏi phản biện cần chuẩn bị
               </h4>
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              Nhóm sinh viên cần nghiên cứu kỹ và chuẩn bị câu trả lời vào phần trình bày bảo vệ:
-            </p>
-
-            <ol className="list-decimal pl-5 space-y-1.5 text-xs font-medium text-foreground">
+            <ul className="space-y-1.5 text-xs text-zinc-300 pl-4 list-decimal">
               {questions.map((q, idx) => (
                 <li key={idx} className="leading-relaxed">
                   {q}
                 </li>
               ))}
-            </ol>
+            </ul>
           </div>
         )}
       </div>
     </section>
   );
 }
-

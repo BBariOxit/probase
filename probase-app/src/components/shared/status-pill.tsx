@@ -1,11 +1,15 @@
 import { cn } from '@/lib/utils';
 
 const TONE_CLASS = {
-  waiting: 'bg-status-waiting-bg text-status-waiting',
-  active: 'bg-status-active-bg text-status-active',
-  success: 'bg-status-success-bg text-status-success',
-  danger: 'bg-status-danger-bg text-status-danger',
-  idle: 'bg-status-idle-bg text-status-idle',
+  waiting:
+    'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
+  active:
+    'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20',
+  success:
+    'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
+  danger:
+    'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',
+  idle: 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700',
 } as const;
 
 export type StatusTone = keyof typeof TONE_CLASS;
@@ -23,7 +27,7 @@ export function StatusPill({
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-xs font-medium whitespace-nowrap',
+        'inline-flex shrink-0 items-center rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap',
         TONE_CLASS[tone],
         className,
       )}

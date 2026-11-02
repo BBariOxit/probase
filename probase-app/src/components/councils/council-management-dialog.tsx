@@ -190,7 +190,7 @@ export function CouncilManagementDialog({
             <div>
               <div className="flex items-center gap-2">
                 <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                  BR-18 • Hội đồng Bảo vệ
+                   • Hội đồng Bảo vệ
                 </span>
                 {council?.major && (
                   <Badge variant="outline" className="text-xs">
