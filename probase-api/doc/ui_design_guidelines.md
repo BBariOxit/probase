@@ -78,3 +78,32 @@ Tránh lỗi dùng màu bão hòa cao hoặc nền màu đặc làm chữ bị c
 * **Lucide React:** Toàn bộ icon hệ thống đồng bộ stroke 1.5.
 * **Sonner:** Thông báo toast tinh tế góc màn hình.
 * **Progressive Disclosure:** Sheet / Drawer / Tooltip cho các thông tin hướng dẫn chi tiết.
+
+---
+
+## 5. NGUYÊN TẮC LIGHT MODE & ACADEMIC SLATE (CHỐNG LỖI "FLAT WASH")
+
+### 5.1. Khắc phục triệt để lỗi "Cháy sáng & Phẳng lì"
+* ❌ **LỖI CŨ:** Toàn bộ nền trang, sidebar, card và bảng đều dùng màu trắng tinh `#ffffff`, viền mờ nhạt và chữ phụ màu xám sáng (`gray-400`), vi phạm nghiêm trọng độ tương phản WCAG AA.
+* ✅ **CHUẨN ACADEMIC SLATE & NAVY BLUE:**
+  - **Màu nền trang (Body):** `bg-slate-50` (`#f8fafc`) cho Light mode, `bg-slate-950` (`#020617`) cho Dark mode.
+  - **Bề mặt Card & Bảng (Surface):** `bg-white` (`#ffffff`) kết hợp `shadow-xs border border-slate-200` (`#e2e8f0`). Trong Dark mode dùng `bg-slate-900 border-slate-800`.
+  - **Màu chữ:**
+    - Tiêu đề (Heading): `text-slate-900` (`#0f172a`, font-semibold) / Dark: `text-slate-100`.
+    - Thân bài (Body text): `text-slate-700` (`#334155`) / Dark: `text-slate-300`.
+    - Phụ chú / Metadata: `text-slate-500` hoặc `text-slate-600` (Tuyệt đối không dùng 400 ở Light mode) / Dark: `text-slate-400`.
+  - **Màu chủ đạo (Primary Accent):** Academic Blue `blue-700` (`#1d4ed8`) cho Light mode, `blue-600` (`#2563eb`) cho Dark mode.
+
+### 5.2. Chuẩn hóa tên Giảng viên & Học vị (Hàm `sanitizeLecturerName`)
+* ❌ **LỖI:** Dữ liệu seed hoặc người dùng nhập lặp học vị thành `ThS. ThS. Chu Định (Tổ trưởng BM Mạng máy tính)`. Đưa nguyên chuỗi dài vào dropdown làm vỡ giao diện, tràn text, cắt cụt (`...`).
+* ✅ **CHUẨN HÓA:**
+  - **Trong Dropdown bộ lọc:** Chỉ hiển thị `Học vị viết tắt + Họ tên` (VD: `ThS. Chu Định`, `TS. An Bình`). Bỏ toàn bộ chức danh dài trong ngoặc đơn, set độ rộng menu `min-w-[220px] w-max`.
+  - **Trong Bảng dữ liệu / Chi tiết:** Tách rõ 2 tầng thông tin:
+    - Dòng 1: `ThS. Chu Định` (`font-medium text-slate-800 dark:text-slate-200`)
+    - Dòng 2: `Tổ trưởng BM Mạng máy tính` (`text-xs text-slate-500 dark:text-slate-400`)
+
+### 5.3. Chuẩn Bảng dữ liệu (Data Table) & Callout Bar
+* **Thanh điều hướng / Callout Bar điều kiện:** Dùng Callout Bar viền trái mảnh nhấn màu: `border-l-4 border-l-emerald-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3.5 shadow-xs`.
+* **Khung bảng dữ liệu:** Tích hợp bộ lọc và bảng vào chung một Card container viền `border-slate-200 dark:border-slate-800`. Header bảng có nền phân biệt rõ `bg-slate-100/80 dark:bg-slate-800/60`, chữ `text-xs font-semibold text-slate-600 uppercase tracking-wider`.
+
+

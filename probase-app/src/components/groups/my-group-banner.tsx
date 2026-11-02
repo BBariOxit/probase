@@ -9,11 +9,11 @@ export function MyGroupBanner({ group }: { group: RegistrationGroup }) {
   return (
     <Link
       href="/student/groups"
-      className="group flex items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-colors hover:border-foreground/15 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="group flex items-center gap-3 rounded-xl border border-slate-200 border-l-4 border-l-blue-600 bg-white px-4 py-3 shadow-xs transition-colors hover:border-slate-300 dark:border-slate-800 dark:border-l-blue-500 dark:bg-slate-900 dark:hover:border-slate-700"
     >
       <div className="min-w-0 flex-1">
-        <p className="text-xs text-muted-foreground">Đề tài của bạn</p>
-        <p className="truncate text-sm font-medium">{group.topic.title}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">Đề tài nhóm bạn đã đăng ký</p>
+        <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{group.topic.title}</p>
       </div>
 
       <SeatDots
@@ -22,10 +22,10 @@ export function MyGroupBanner({ group }: { group: RegistrationGroup }) {
         held={group.heldSeats}
         className="shrink-0"
       />
-      <span className="shrink-0 text-sm text-muted-foreground">
-        {group.occupiedSeats}/{group.topic.maxStudents}
+      <span className="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">
+        {group.occupiedSeats}/{group.topic.maxStudents} thành viên
       </span>
-      <ArrowRight className="size-4 shrink-0 text-muted-foreground/50 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-foreground" />
+      <ArrowRight className="size-4 shrink-0 text-slate-400 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
     </Link>
   );
 }
