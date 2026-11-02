@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 export const FinalizeCouncilTopicSchema = z.object({
   minuteNotes: z.string().trim().optional().nullable(),
-  isLocked: z.boolean().default(true),
+  isLocked: z.boolean().optional(),
 });
 
 export class FinalizeCouncilTopicDto extends createZodDto(
