@@ -138,6 +138,18 @@ export class ProgressService {
             },
           },
         },
+        councilTopic: {
+          include: {
+            council: {
+              select: {
+                id: true,
+                name: true,
+                location: true,
+                defenseDate: true,
+              },
+            },
+          },
+        },
       },
     });
 
