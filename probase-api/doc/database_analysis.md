@@ -348,6 +348,11 @@ Danh sách đề tài được xếp lịch bảo vệ trong hội đồng (BR-1
 - `topic_id` (INT, FK → `topics.id`, Not Null)
 - `time_slot` (VARCHAR(50), Nullable): Ca bảo vệ (VD: *"08:00 - 08:45"*).
 - `defense_order` (INT, Default: 1): Thứ tự bảo vệ trong buổi.
+- `status` (VARCHAR(20), Default: `'SCHEDULED'`): Trạng thái bảo vệ (`'SCHEDULED'`, `'DEFENDING'`, `'COMPLETED'`).
+- `evaluations` (JSON, Nullable): Danh sách điểm chấm độc lập của từng thành viên Hội đồng `[{ lecturerId, lecturerName, score, feedback, submittedAt }]`.
+- `minute_notes` (TEXT, Nullable): Tóm tắt câu hỏi chất vấn & yêu cầu chỉnh sửa của Hội đồng.
+- `is_locked` (BOOLEAN, Default: false): Khóa bảng điểm sau khi chốt điểm Hội đồng.
+- **Tính năng nâng cao (Roadmap):** Bàn làm việc Thư ký (Secretary Console) để theo dõi nộp điểm, soạn biên bản và bấm chốt sổ.
 
 #### 21. `student_grades`
 Bảng điểm tổng hợp chính thức của từng sinh viên theo công thức chuẩn DLU (BR-18).

@@ -238,14 +238,18 @@ Tài liệu này định nghĩa chi tiết toàn bộ yêu cầu nghiệp vụ, 
 - **Đầu ra:** Tự động xuất file PDF trang nhận xét M02/M04 và M05 chuẩn format DLU; tự động chốt danh sách SV đủ điều kiện ra Hội đồng.
 
 #### BR-18: Lập Hội đồng, Xếp lịch bảo vệ & Chấm điểm cuối kỳ (50%)
-- **Tác nhân:** TLGV, BCN Khoa, GVHD, GVPB, Thành viên Hội đồng.
+- **Tác nhân:** TLGV, BCN Khoa, GVHD, GVPB, Thành viên Hội đồng (Chủ tịch, Thư ký, Ủy viên).
 - **Mô tả:**
-  - *Với ĐACS / ĐACN:* Bảo vệ theo tiểu ban gồm GVHD và GVPB.
-  - *Với KLTN:* Thành lập Hội đồng bảo vệ gồm 3–5 thành viên (Chủ tịch, Thư ký, GVPB, Ủy viên); xếp phòng thi, ngày giờ và thứ tự bảo vệ.
-  - Giảng viên nhập điểm bảo vệ (thang 10, **trọng số 50%**). Hỗ trợ chấm điểm riêng cho từng sinh viên trong nhóm dựa trên mức độ đóng góp.
+  - *Với ĐACS / ĐACN:* Đã hoàn tất đánh giá kết thúc môn tại Tiến độ 2 qua Tiểu ban gồm GVHD và GVPB (Sub-council).
+  - *Với KLTN:* Thành lập Hội đồng bảo vệ gồm 3–5 thành viên (Chủ tịch, Thư ký, GVPB, Ủy viên); xếp phòng thi, ngày giờ, ca bảo vệ (`timeSlot`) và thứ tự bảo vệ.
+  - **Chấm điểm thầm độc lập (Independent Scoring):** Từng thành viên Hội đồng nhập điểm đánh giá độc lập (thang 10, bước nhảy 0.1) trên giao diện riêng. Hệ thống bảo mật điểm số giữa các thành viên.
+  - **Điểm Hội đồng (50%):** Tự động tính điểm trung bình cộng của các thành viên Hội đồng đã chấm:
+    $$\text{Điểm HĐ} = \frac{\sum \text{Điểm thành viên}}{N}$$
   - **Công thức tính điểm tổng kết chính thức của DLU:**
-    $$\text{Điểm TK} = (20\% \times \text{Điểm TĐ1}) + (30\% \times \text{Điểm TĐ2}) + (50\% \times \text{Điểm BV})$$
-- **Đầu ra:** Bảng điểm tổng hợp chi tiết của từng sinh viên; Biên bản bảo vệ đồ án tự động sinh.
+    $$\text{Điểm TK} = (20\% \times \text{Điểm TĐ1}) + (30\% \times \text{Điểm TĐ2}) + (50\% \times \text{Điểm HĐ})$$
+  - Hệ thống tự động quy đổi điểm chữ (A, B+, B, C+, C, D+, D, F) và đồng bộ vào bảng điểm `student_grades`.
+  - **📌 Tính năng nâng cao (Roadmap):** Bàn làm việc Thư ký (Secretary Console) ghi chép biên bản câu hỏi chất vấn & yêu cầu chỉnh sửa của Hội đồng, và xuất file PDF Biên bản bảo vệ chuẩn DLU.
+- **Đầu ra:** Bảng điểm tổng hợp chi tiết của từng sinh viên; bảng điểm tổng kết toàn khóa được chốt khóa an toàn.
 
 ---
 

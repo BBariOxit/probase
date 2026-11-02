@@ -8,6 +8,7 @@ import { AppService } from './app.service';
 import { AuditModule } from './core/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CloudinaryModule } from './core/cloudinary/cloudinary.module';
+import { CouncilsModule } from './modules/councils/councils.module';
 import { LecturersModule } from './modules/lecturers/lecturers.module';
 import { MeModule } from './modules/me/me.module';
 import { MailModule } from './core/mail/mail.module';
@@ -79,6 +80,7 @@ import { UsersModule } from './modules/users/users.module';
     ReportsModule,
     ReviewersModule,
     ReviewsModule,
+    CouncilsModule,
     UsersModule,
     MailModule,
   ],

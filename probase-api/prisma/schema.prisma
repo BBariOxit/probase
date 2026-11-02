@@ -211,6 +211,8 @@ enum NotificationType {
   PROGRESS_REPORT_SUBMITTED
   PROGRESS_REPORT_GRADED
   REVIEWER_ASSIGNED
+  COUNCIL_SCHEDULED
+  COUNCIL_DEFENSE_COMPLETED
 }
 
 // ─────────────────────────────────────────────────────────
@@ -347,6 +349,7 @@ model Major {
   students  StudentProfile[]
   lecturers LecturerProfile[]
   topics    Topic[]
+  councils  Council[]
 
   @@map("majors")
 }
@@ -856,13 +859,16 @@ model Submission {
 model Council {
   id          Int      @id @default(autoincrement())
   semesterId  Int
+  majorId     Int?
   name        String
   location    String?
   defenseDate DateTime
+  status      String   @default("PREP") // PREP | IN_PROGRESS | COMPLETED
   createdAt   DateTime @default(now())
 
   // Relations
   semester Semester        @relation(fields: [semesterId], references: [id], onDelete: Restrict)
+  major    Major?          @relation(fields: [majorId], references: [id], onDelete: SetNull)
   members  CouncilMember[]
   topics   CouncilTopic[]
 
@@ -884,12 +890,17 @@ model CouncilMember {
 }
 
 model CouncilTopic {
-  id         Int     @id @default(autoincrement())
-  councilId  Int
-  topicId    Int     @unique // Each topic is defended in exactly one council session
-  groupId    Int     @unique // Each group presents in exactly one council session
-  reviewerId Int // Assigned reviewer (GV Phản biện)
-  timeSlot   String?
+  id           Int      @id @default(autoincrement())
+  councilId    Int
+  topicId      Int      @unique // Each topic is defended in exactly one council session
+  groupId      Int      @unique // Each group presents in exactly one council session
+  reviewerId   Int      // Assigned reviewer (GV Phản biện)
+  timeSlot     String?
+  defenseOrder Int      @default(1)
+  status       String   @default("SCHEDULED") // SCHEDULED | DEFENDING | COMPLETED
+  evaluations  Json?    // Array of { lecturerId, lecturerName, role, score, feedback, submittedAt }
+  minuteNotes  String?  @db.Text
+  isLocked     Boolean  @default(false)
 
   // Relations
   council  Council           @relation(fields: [councilId], references: [id], onDelete: Cascade)
