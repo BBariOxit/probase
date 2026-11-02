@@ -134,8 +134,12 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
     {
       label: 'Hội đồng',
       items: [
-        { href: '/lecturer/phan-bien', label: 'Phản biện', icon: FileSearch },
-        { href: '/lecturer/hoi-dong', label: 'Hội đồng của tôi', icon: Gavel },
+        {
+          href: '/lecturer/councils',
+          label: 'Hội đồng của tôi',
+          icon: Gavel,
+          ready: true,
+        },
       ],
     },
   ],
@@ -185,7 +189,12 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           icon: UserCheck,
           ready: true,
         },
-        { href: '/admin/hoi-dong', label: 'Hội đồng bảo vệ', icon: Gavel },
+        {
+          href: '/admin/councils',
+          label: 'Hội đồng bảo vệ',
+          icon: Gavel,
+          ready: true,
+        },
       ],
     },
     {

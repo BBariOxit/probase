@@ -3,13 +3,16 @@
 import {
   AlertTriangle,
   Award,
+  Calendar,
   CheckCircle2,
   Clock,
   ExternalLink,
   FileText,
+  Gavel,
   GitBranch,
   GraduationCap,
   Loader2,
+  MapPin,
   MessageSquare,
   Scale,
   Sparkles,
@@ -113,6 +116,55 @@ export function StudentProgressSection() {
               <strong>Ghi chú:</strong> {studentGrade.note}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── CARD LỊCH BẢO VỆ CHÍNH THỨC (NẾU ĐÃ ĐƯỢC XẾP HỘI ĐỒNG) ── */}
+      {(group as any)?.councilTopic && (
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                  <Gavel className="size-3.5" />
+                </span>
+                <h4 className="font-bold text-sm text-foreground">
+                  Lịch Bảo vệ Khóa luận tốt nghiệp
+                </h4>
+                <Badge variant="outline" className="text-xs">
+                  {(group as any).councilTopic.council.name}
+                </Badge>
+              </div>
+              <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground pt-0.5">
+                <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                  <MapPin className="size-3 text-primary" />
+                  Phòng: {(group as any).councilTopic.council.location || 'Chưa định phòng'}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <Calendar className="size-3 text-primary" />
+                  Ngày: {new Date((group as any).councilTopic.council.defenseDate).toLocaleString('vi-VN')}
+                </span>
+                {(group as any).councilTopic.timeSlot && (
+                  <span className="inline-flex items-center gap-1">
+                    <Clock className="size-3 text-primary" />
+                    Ca: {(group as any).councilTopic.timeSlot}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {(group as any).councilTopic.isLocked ? (
+              <Badge className="bg-emerald-600 hover:bg-emerald-700 text-xs gap-1 self-start sm:self-center">
+                <CheckCircle2 className="size-3" />
+                Đã hoàn thành bảo vệ
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="text-xs gap-1 self-start sm:self-center">
+                <Clock className="size-3" />
+                Chuẩn bị bảo vệ
+              </Badge>
+            )}
+          </div>
         </div>
       )}
 
