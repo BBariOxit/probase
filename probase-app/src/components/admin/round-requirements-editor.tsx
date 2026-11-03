@@ -138,11 +138,11 @@ export const RoundRequirementsEditor = forwardRef<
           </span>
         </h3>
 
-        {/* Nút thêm mốc nộp bài - Màu chủ đạo #3b82f6 */}
+        {/* Nút thêm mốc nộp bài - Màu chủ đạo primary */}
         <button
           type="button"
           onClick={() => add()}
-          className="flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-blue-600 px-3.5 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer"
+          className="flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 px-3.5 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer"
         >
           <Plus className="size-3.5" />
           Thêm mốc nộp bài

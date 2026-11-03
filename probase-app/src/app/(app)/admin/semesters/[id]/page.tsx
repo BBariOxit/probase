@@ -118,7 +118,7 @@ export default function SemesterRoundsPage({
               render={
                 <span
                   tabIndex={0}
-                  className="cursor-default text-primary hover:text-blue-600 dark:hover:text-blue-400 transition"
+                  className="cursor-default text-primary hover:opacity-80 transition"
                 >
                   <Info className="size-4" />
                 </span>
@@ -278,7 +278,7 @@ function PlanTabsForm({
           setActiveTypeId(Number(val));
         }}
       >
-        {/* Segmented Control Tabs - Matte Obsidian Style */}
+        {/* Segmented Control Tabs - Nhận diện màu chủ đạo text-primary & primary border rõ ràng */}
         <TabsList className="w-full h-auto p-1.5 bg-slate-200/80 dark:bg-[#141414] border border-slate-300 dark:border-neutral-800 rounded-xl grid grid-cols-3 gap-1.5">
           {rows.map(({ type }) => {
             const isActive = activeTypeId === type.id;
@@ -289,7 +289,7 @@ function PlanTabsForm({
                 className={cn(
                   'py-2.5 px-3 rounded-lg text-sm transition-all cursor-pointer font-medium',
                   isActive
-                    ? 'bg-white text-primary font-bold shadow-sm border border-slate-200/80 dark:bg-[#262626] dark:text-primary dark:border-neutral-700 dark:shadow-md'
+                    ? 'bg-white text-primary font-bold shadow-sm border border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/40 dark:shadow-md'
                     : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200',
                 )}
               >
@@ -326,8 +326,9 @@ function PlanTabsForm({
 
                     {round && <StatusPill {...PHASE[round.phase]} />}
 
+                    {/* Badge Khóa áp dụng - Sử dụng hoàn toàn màu chủ đạo Primary */}
                     {row.enabled && row.targetCohort && (
-                      <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 text-primary border border-primary/20 dark:bg-[#262626] dark:text-primary dark:border-neutral-700 px-2.5 py-1 text-xs font-semibold">
+                      <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 text-primary border border-primary/20 dark:bg-primary/15 dark:text-primary dark:border-primary/30 px-2.5 py-1 text-xs font-semibold">
                         <GraduationCap className="size-3.5 text-primary" />
                         Khóa: {row.targetCohort}
                       </span>
@@ -438,7 +439,7 @@ function PlanTabsForm({
                           </h3>
                         </div>
                         {daysDiff && (
-                          <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-[#262626] text-slate-700 dark:text-neutral-300 border border-slate-200 dark:border-neutral-700 px-2.5 py-0.5 text-xs font-medium">
+                          <span className="inline-flex items-center rounded-full bg-primary/10 text-primary border border-primary/20 dark:bg-primary/15 dark:text-primary dark:border-primary/30 px-2.5 py-0.5 text-xs font-medium">
                             Thời lượng: {daysDiff} ngày
                           </span>
                         )}
@@ -521,7 +522,7 @@ function PlanTabsForm({
                       </div>
                     )}
 
-                    {/* Footer: 1 nút Primary CTA duy nhất - Màu chủ đạo #3b82f6 */}
+                    {/* Footer: 1 nút Primary CTA duy nhất - Màu chủ đạo primary */}
                     <div className="flex items-center justify-between border-t border-slate-200 dark:border-neutral-800 pt-5 mt-6">
                       <span className="text-xs text-slate-500 dark:text-neutral-400">
                         {problems.length > 0 ? (
@@ -540,7 +541,7 @@ function PlanTabsForm({
                         type="button"
                         disabled={problems.length > 0 || isSaving}
                         onClick={handleSaveActiveTab}
-                        className="flex items-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-blue-600 px-5 py-2.5 text-sm font-bold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        className="flex items-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 px-5 py-2.5 text-sm font-bold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                       >
                         {isSaving ? (
                           <Loader2 className="size-4 animate-spin" />

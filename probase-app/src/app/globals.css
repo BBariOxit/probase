@@ -69,8 +69,10 @@
 }
 
 :root {
-  /* Light Mode */
-  --background: #f8fafc; /* slate-50 dịu mắt */
+  /* ==========================================================================
+     LIGHT MODE CONFIGURATION
+     ========================================================================== */
+  --background: #f8fafc; /* Canvas ngoài */
   --foreground: #0f172a;
 
   --card: #ffffff;
@@ -78,7 +80,10 @@
   --popover: #ffffff;
   --popover-foreground: #0f172a;
 
-  /* Màu chủ đạo #3b82f6 đồng nhất */
+  /* --------------------------------------------------------------------------
+     MÀU CHỦ ĐẠO TOÀN DỰ ÁN (LIGHT MODE)
+     -> Chỉnh sửa mã màu này để thay đổi toàn bộ nút, tab, icon, viền focus
+     -------------------------------------------------------------------------- */
   --primary: #3b82f6;
   --primary-foreground: #ffffff;
   --ring: #3b82f6;
@@ -112,7 +117,7 @@
 
   --radius: 0.625rem;
 
-  /* Sidebar: Midnight Dark (#090d16) đồng nhất */
+  /* Sidebar Midnight Dark */
   --sidebar: #090d16;
   --sidebar-foreground: #f8fafc;
   --sidebar-primary: #3b82f6;
@@ -124,9 +129,11 @@
 }
 
 .dark {
-  /* Matte Obsidian & Neutral Stone (Chuẩn Raycast / Craft — Tối ấm cao cấp) */
+  /* ==========================================================================
+     DARK MODE CONFIGURATION (Matte Obsidian & Neutral Stone — Chuẩn Raycast)
+     ========================================================================== */
   --background: #121212; /* Canvas ngoài: Đen nhám lì */
-  --foreground: #f5f5f5; /* Chữ chính: text-neutral-100 */
+  --foreground: #f5f5f5; /* Chữ chính: neutral-100 */
 
   /* Khối Card nội dung chính: Xám đen phẳng #1e1e1e */
   --card: #1e1e1e;
@@ -134,7 +141,10 @@
   --popover: #1e1e1e;
   --popover-foreground: #f5f5f5;
 
-  /* Màu chủ đạo #3b82f6 */
+  /* --------------------------------------------------------------------------
+     MÀU CHỦ ĐẠO TOÀN DỰ ÁN (DARK MODE)
+     -> Chỉnh sửa mã màu này để thay đổi toàn bộ nút, tab, icon, viền focus
+     -------------------------------------------------------------------------- */
   --primary: #3b82f6;
   --primary-foreground: #ffffff;
   --ring: #3b82f6;
@@ -142,12 +152,12 @@
   --secondary: #262626;
   --secondary-foreground: #f5f5f5;
   --muted: #262626;
-  --muted-foreground: #a3a3a3; /* text-neutral-400 */
+  --muted-foreground: #a3a3a3; /* neutral-400 */
   --accent: #262626;
   --accent-foreground: #3b82f6;
   --destructive: #f87171;
-  --border: #2e2e2e; /* border-neutral-800 */
-  --input: #404040; /* border-neutral-700 */
+  --border: #2e2e2e; /* neutral-800 */
+  --input: #404040; /* neutral-700 */
 
   --status-waiting: #fbbf24;
   --status-waiting-bg: rgba(245, 158, 11, 0.15);

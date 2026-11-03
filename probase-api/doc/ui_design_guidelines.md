@@ -93,8 +93,8 @@
   - Light: `bg-slate-200/80 border border-slate-300 p-1.5 rounded-xl`.
   - Dark: `bg-[#141414] border border-neutral-800 p-1.5 rounded-xl`.
 * **Trạng thái Active:**
-  - Light: `bg-white text-primary font-bold shadow-sm border border-slate-200/80`.
-  - Dark: `bg-[#262626] text-primary font-bold shadow-md border border-neutral-700`.
+  - Light: `bg-white text-primary font-bold shadow-sm border border-primary/30`.
+  - Dark: `bg-primary/15 text-primary font-bold shadow-md border border-primary/40`.
 * **Trạng thái Inactive:**
   - Light: `text-slate-600 hover:text-slate-900`.
   - Dark: `text-neutral-400 hover:text-neutral-200`.
@@ -106,10 +106,33 @@
   - **Đang xử lý / Gia hạn (Active):** Light `bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold` / Dark `dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-600/30 text-xs font-semibold`.
   - **Đã chốt / Tắt (Idle):** Light `bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold` / Dark `dark:bg-[#262626] dark:text-neutral-300 dark:border-neutral-700 text-xs font-medium`.
 
-### 4.3. Nút Thứ cấp & Tag Bắt buộc
-* **Nút '+ Thêm mốc nộp bài':** `bg-primary text-primary-foreground hover:bg-blue-600 px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition`.
+### 4.3. Nút Hành động & Badge Khóa
+* **Badge 'Khóa: CTK...':** Đồng bộ 100% màu chủ đạo: `bg-primary/10 text-primary border border-primary/20 dark:bg-primary/15 dark:text-primary dark:border-primary/30 px-2.5 py-1 text-xs font-semibold`.
+* **Nút '+ Thêm mốc nộp bài':** `bg-primary text-primary-foreground hover:bg-primary/90 px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition`.
 * **Tag 'Bắt buộc':** `bg-slate-100 text-slate-700 border border-slate-200 dark:bg-[#262626] dark:text-neutral-200 dark:border-neutral-700 text-xs px-2.5 py-1 rounded-md`.
 
 ### 4.4. Danh mục bài nộp (Deliverables Row Layout)
 * Hiển thị mỗi bài nộp trên **1 hàng ngang duy nhất (Single Row)**:
   - `[Grip Icon]` $\rightarrow$ `[Ô nhập tên bài (#141414 flex-1)]` $\rightarrow$ `[Ô chọn hạn nộp (#141414 w-40)]` $\rightarrow$ `[Pill Bắt buộc/Tùy chọn]` $\rightarrow$ `[Trash Icon trần]`.
+
+---
+
+## 5. HƯỚNG DẪN THAY ĐỔI MÀU CHỦ ĐẠO TOÀN DỰ ÁN (SINGLE SOURCE OF TRUTH)
+
+Màu chủ đạo được cấu hình tập trung tại **duy nhất 1 tệp tin**: `probase-app/src/app/globals.css`.
+
+Để thay đổi màu chủ đạo (ví dụ: chuyển từ xanh dương `#3b82f6` sang tím Indigo, xanh ngọc, hoặc cam):
+1. Mở file [globals.css](file:///d:/bao/workspace/probase/probase-app/src/app/globals.css).
+2. Tìm đến 2 dòng `--primary`:
+   - Dòng 87 (trong `:root` - Light Mode): `--primary: #3b82f6;`
+   - Dòng 148 (trong `.dark` - Dark Mode): `--primary: #3b82f6;`
+3. Đổi giá trị `#3b82f6` thành mã màu mong muốn (ví dụ: `#6366f1` cho Indigo, `#10b981` cho Emerald).
+4. Ngay lập tức, tất cả các thành phần sau sẽ tự động cập nhật:
+   - Chữ tab được chọn & viền tab (`text-primary`, `border-primary/40`)
+   - Badge Khóa sinh viên `Khóa: CTK...` (`text-primary`, icon `text-primary`, viền `border-primary/30`)
+   - Tag Thời lượng (`text-primary`, `bg-primary/15`)
+   - Nút `+ Thêm mốc nộp bài` (`bg-primary`, `hover:bg-primary/90`)
+   - Nút `Lưu cấu hình` (`bg-primary`, `hover:bg-primary/90`)
+   - Checkbox kích hoạt đợt đồ án (`accent-primary`)
+   - Viền xanh khi focus vào ô input (`focus:border-primary`, `focus:ring-primary`)
+   - Các icon mốc thời gian (`text-primary`)
