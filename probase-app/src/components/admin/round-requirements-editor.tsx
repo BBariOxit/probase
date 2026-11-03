@@ -130,23 +130,18 @@ export const RoundRequirementsEditor = forwardRef<
   return (
     <div className="space-y-4">
       {/* Header Danh mục bài nộp */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-4">
-        <div>
-          <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-zinc-100">
-            Danh mục bài phải nộp
-            <span className="rounded-full bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-zinc-400">
-              {rows.length}
-            </span>
-          </h3>
-          <p className="mt-0.5 text-xs text-slate-500 dark:text-zinc-400">
-            Quy định các mốc tài liệu sinh viên bắt buộc phải nộp
-          </p>
-        </div>
+      <div className="flex items-center justify-between pb-2">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-zinc-100">
+          Danh mục bài phải nộp
+          <span className="rounded-full bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-zinc-400">
+            {rows.length}
+          </span>
+        </h3>
 
         <button
           type="button"
           onClick={() => add()}
-          className="flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-white/10 bg-white hover:bg-slate-50 dark:bg-zinc-800/80 dark:hover:bg-zinc-700 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-zinc-200 hover:text-black dark:hover:text-white transition cursor-pointer"
+          className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white text-slate-800 dark:border-white/20 dark:bg-zinc-800 dark:text-zinc-100 px-3 py-1.5 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-zinc-700 transition cursor-pointer"
         >
           <Plus className="size-3.5" />
           Thêm mốc nộp bài
@@ -167,7 +162,7 @@ export const RoundRequirementsEditor = forwardRef<
             Chưa có mốc nộp bài nào
           </p>
           <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mx-auto">
-            Nhấn nút &ldquo;Thêm mốc nộp bài&rdquo; để thiết lập các hạn nộp tài liệu cho đợt này.
+            Nhấn &ldquo;Thêm mốc nộp bài&rdquo; để thiết lập các hạn nộp tài liệu cho đợt này.
           </p>
         </div>
       ) : (
@@ -183,7 +178,7 @@ export const RoundRequirementsEditor = forwardRef<
                 value={row.name}
                 onChange={(e) => patch(index, { name: e.target.value })}
                 placeholder="Tên tài liệu / bài nộp (ví dụ: Đề cương chi tiết)..."
-                className="h-9 flex-1 min-w-0 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-white/20 dark:bg-black dark:text-zinc-50 dark:placeholder:text-zinc-500 dark:focus:border-white dark:focus:ring-1 dark:focus:ring-white"
+                className="h-9 flex-1 min-w-0 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 dark:border-white/15 dark:bg-black dark:text-zinc-50 dark:placeholder:text-zinc-500 dark:focus:border-white dark:focus:ring-1 dark:focus:ring-white"
               />
 
               {/* Ô chọn hạn nộp (w-40) */}
@@ -191,29 +186,29 @@ export const RoundRequirementsEditor = forwardRef<
                 type="date"
                 value={row.due}
                 onChange={(e) => patch(index, { due: e.target.value })}
-                className="h-9 w-40 shrink-0 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 transition focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-white/20 dark:bg-black dark:text-zinc-50 dark:focus:border-white dark:focus:ring-1 dark:focus:ring-white"
+                className="h-9 w-40 shrink-0 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 transition focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 dark:border-white/15 dark:bg-black dark:text-zinc-50 dark:focus:border-white dark:focus:ring-1 dark:focus:ring-white"
               />
 
-              {/* Nút Bắt buộc (nhẹ dạng Pill Tag xám) */}
+              {/* Nút Bắt buộc (Pill Tag) */}
               <button
                 type="button"
                 onClick={() => patch(index, { isRequired: !row.isRequired })}
                 className={cn(
-                  'h-9 shrink-0 rounded-lg border text-xs font-medium px-3 transition cursor-pointer select-none',
+                  'h-8 shrink-0 text-xs font-medium px-2.5 py-1 transition cursor-pointer select-none rounded-md',
                   row.isRequired
-                    ? 'border-slate-300 bg-slate-100 text-slate-800 dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-200 hover:bg-slate-200 dark:hover:bg-zinc-700'
-                    : 'border-transparent bg-transparent text-slate-500 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800/40',
+                    ? 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-white/10'
+                    : 'border border-transparent bg-transparent text-slate-500 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800/40',
                 )}
                 title="Nhấn để chuyển đổi giữa Bắt buộc và Tùy chọn"
               >
                 {row.isRequired ? 'Bắt buộc' : 'Tùy chọn'}
               </button>
 
-              {/* Nút xóa (Ghost trash icon, không viền chữ nhật) */}
+              {/* Nút xóa (Icon dạng trần, không viền) */}
               <button
                 type="button"
                 onClick={() => remove(index)}
-                className="p-1.5 rounded-md text-slate-400 dark:text-zinc-500 transition hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-400 cursor-pointer"
+                className="p-1 text-slate-400 hover:text-red-600 dark:text-zinc-500 dark:hover:text-red-400 transition cursor-pointer"
                 title="Xóa mốc nộp này"
               >
                 <Trash2 className="h-4 w-4" />

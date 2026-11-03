@@ -12,13 +12,14 @@
 * ❌ **CẤM:** Tuyệt đối không bọc mọi thứ vào các thẻ có viền độc lập lồng nhau (`Card > Card > Card`). Hiện tượng này gây ngột ngạt thị giác và phân mảnh không gian.
 * ✅ **CHUẨN HÓA:**
   - Trên một màn hình/phân đoạn chỉ có **duy nhất 1 khung làm việc chính (Primary Surface Card)**.
-  - Các khối dữ liệu con bên trong được phân tách tự nhiên bằng khoảng trống nhịp nhàng (`gap-6`, `space-y-6`) hoặc đường kẻ ngang siêu mảnh (`divide-y`, `border-t border-slate-200 dark:border-white/10`), tuyệt đối không bọc thêm card con bo viền.
+  - Các khối dữ liệu con bên trong được phân tách tự nhiên bằng khoảng trống nhịp nhàng (`gap-6`, `space-y-6`) hoặc đường kẻ ngang chuẩn (`border-t border-slate-200 dark:border-white/10 my-6`), tuyệt đối không bọc thêm card con bo viền.
 
 ### 1.2. Loại bỏ Emoji & Văn phong AI kể lể
 * ❌ **CẤM:**
   - Cắt bỏ 100% emoji trong trạng thái và nhãn: ⏳, 📌, ✨, ⚖️, ✍️, 🎉, ⚠️.
   - Xóa bỏ các câu chú thích văn nói trong tiêu đề: `(CUỐN CHIẾU TRƯỚC 2 TUẦN)`, `(3 THÁNG THEO KẾ HOẠCH KHOA)`.
   - Bỏ các dòng chú thích thứ ngày thừa thãi bên dưới ô Date Picker (`Thứ 7, 24/10/2026`).
+  - Xóa các câu văn kể lể hướng dẫn: `"Quản lý lịch trình đăng ký, thời gian thực hiện..."`, `"Quy định các mốc tài liệu sinh viên bắt buộc phải nộp"`, `"Đang áp dụng trong học kỳ này"`.
   - Xóa các placeholder kiểu chatbot: `"Chưa khai mục nào. Thường có: + Đề cương..."`, `"Gợi ý thêm:..."`, `"Bấm nút ở trên để..."`.
 * ✅ **CHUẨN HÓA:**
   - Tiêu đề và nhãn form ngắn gọn chuẩn nghiệp vụ: `Giai đoạn 1: Đăng ký đề tài`, `Giai đoạn 2: Thực hiện đồ án`.
@@ -59,14 +60,14 @@ Tuyệt đối không áp dụng tư duy "Light mode toàn màu sáng, Dark mode
 ### 2.1. Light Mode (Crisp & Weighted)
 * **Nền Canvas (Mặt bàn):** `#f4f4f5` (`bg-zinc-100`) hoặc `#f1f5f9` (`bg-slate-100`). Tuyệt đối không dùng trắng tinh `#ffffff` cho toàn bộ màn hình.
 * **Bề mặt Card / Bảng (Tờ giấy làm việc):** `#ffffff` (`bg-white`) kết hợp đổ bóng nhẹ `shadow-sm` và viền mảnh `border border-slate-200/80`.
-* **Nút hành động chính (Primary CTA):** Dùng **ĐEN TUYỀN** `#000000` (`bg-black text-white hover:bg-zinc-800 font-medium`).
+* **Nút hành động chính (Primary CTA):** Dùng **ĐEN TUYỀN** `#000000` (`bg-black text-white hover:bg-zinc-800 font-bold`).
 * **Chữ nội dung:** Sắc sảo, rõ nét `#0f172a` (slate-900), phụ chú `#64748b` (slate-500).
 
 ### 2.2. Dark Mode (Recessed Deep Contrast - Vercel / Linear Style)
 * **Nền Canvas ngoài cùng:** Đen than chì trầm `#09090b` (`bg-zinc-950`). Khử hoàn toàn ám xanh tím Navy bão hòa đục mắt (`#0b1329/#0f172a`).
 * **Nền Card lớn:** Xám than cao cấp `#121215` hoặc `bg-zinc-900/90`.
 * **Ô Input, Select, Date:** Kỹ thuật **bề mặt khoét lõm (Recessed surface)** dùng **ĐEN TUYỀN** `#000000` (`bg-black`), tạo độ chìm so với Card cha, không tiệp màu với Card.
-* **Nút hành động chính (Primary CTA):** Đảo sang **TRẮNG TINH** `#ffffff` (`bg-white text-black hover:bg-zinc-200 font-semibold shadow-sm`).
+* **Nút hành động chính (Primary CTA):** Đảo sang **TRẮNG TINH** `#ffffff` (`bg-white text-zinc-950 hover:bg-zinc-200 font-bold shadow-md`).
 * **Chữ nội dung:** `#fafafa` (`text-zinc-50`), nhãn trường `text-slate-100`, mô tả phụ `#a1a1aa` (`text-zinc-400`).
 
 ### 2.3. Sidebar Midnight Thống nhất
@@ -79,16 +80,15 @@ Tuyệt đối không áp dụng tư duy "Light mode toàn màu sáng, Dark mode
 Tránh hiện tượng viền quá mờ khiến các bề mặt dính chùm vào nhau hoặc viền quá đậm gây rối mắt:
 
 * **Viền Ô Nhập liệu (Inputs, Select, Date):**
-  - Light: `border border-slate-300 bg-white text-slate-900`, khi focus: `focus:border-blue-600 focus:ring-2 focus:ring-blue-100`.
-  - Dark: `border border-white/20 bg-black text-zinc-50`, khi focus: `focus:border-white focus:ring-1 focus:ring-white`.
+  - Light: `border border-slate-300 bg-white text-slate-900`, khi focus: `focus:border-slate-900 focus:ring-1 focus:ring-slate-900`.
+  - Dark: `border border-white/15 bg-black text-zinc-50`, khi focus: `focus:border-white focus:ring-1 focus:ring-white`.
 * **Viền Thẻ Card:**
   - Light: `border border-slate-200/80`.
   - Dark: `border border-white/10`.
 * **Đường phân cách (Dividers):**
-  - Light: `border-t border-slate-200`.
-  - Dark: `border-t border-white/10`.
+  - Giữa các Giai đoạn và Danh mục bài nộp: `border-t border-slate-200 dark:border-white/10 my-6`.
 * **Nút Xóa (Delete/Trash Icon):**
-  - Dạng Ghost icon, tuyệt đối không đóng khung viền hình chữ nhật: `p-1.5 rounded-md text-slate-400 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-500/10 transition`.
+  - Dạng trần không viền: `p-1 text-slate-400 hover:text-red-600 dark:text-zinc-500 dark:hover:text-red-400 transition cursor-pointer`.
 * **Badge Đếm số lượng (Count Badges):**
   - Dạng Pill không viền: `rounded-full bg-slate-100 dark:bg-zinc-800 text-xs px-2 py-0.5 text-slate-600 dark:text-zinc-400 font-medium`.
 
@@ -96,26 +96,25 @@ Tránh hiện tượng viền quá mờ khiến các bề mặt dính chùm vào
 
 ## 4. QUY CHUẨN COMPONENT NÂNG CAO
 
-### 4.1. Segmented Control Tabs
-* Không đặt chấm tròn xanh Discord bên cạnh tên Tab.
-* Khung bọc danh sách Tab: `bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-white/10 p-1 rounded-xl`.
+### 4.1. Segmented Control Tabs (Chọn loại đồ án)
+* Container bọc ngoài: `bg-slate-200/80 dark:bg-zinc-900 border border-slate-300 dark:border-white/10 p-1.5 rounded-xl`.
 * **Trạng thái Active:**
-  - Light Mode: `bg-black text-white font-semibold shadow-sm border border-black`.
-  - Dark Mode: `bg-white text-black font-semibold shadow-sm border border-white`.
-* **Trạng thái Inactive:** `text-slate-500 dark:text-zinc-400 hover:text-black dark:hover:text-white transition`.
+  - Light Mode: `bg-white text-slate-900 font-bold shadow-sm`.
+  - Dark Mode: `bg-white text-zinc-950 font-bold shadow-md`.
+* **Trạng thái Inactive:** `text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition`.
 
-### 4.2. Status Badges & Pills
-* Thiết kế thanh mảnh, tinh tế:
-  - **Thành công / Đang mở (Success):** Light `bg-emerald-50 text-emerald-700 border border-emerald-200/80` / Dark `bg-emerald-500/10 text-emerald-400 border border-emerald-500/20`. Chấm tròn: `h-1.5 w-1.5 rounded-full bg-emerald-500`.
-  - **Chờ duyệt / Chưa mở (Waiting):** Light `bg-amber-50 text-amber-700 border border-amber-200/80` / Dark `bg-amber-500/10 text-amber-400 border border-amber-500/20`.
-  - **Đang xử lý / Gia hạn (Active):** Light `bg-blue-50 text-blue-700 border border-blue-200/80` / Dark `bg-blue-500/10 text-blue-400 border border-blue-500/20`.
-  - **Đã chốt / Tắt (Idle):** Light `bg-slate-100 text-slate-700 border border-slate-200` / Dark `bg-zinc-800 dark:text-zinc-300 dark:border-white/10`.
+### 4.2. Status Badges & Pills (Minimalist Tag)
+* Bỏ hoàn toàn dấu chấm tròn, chuyển sang bo nhẹ `rounded-md`:
+  - **Thành công / Đang mở (Success):** Light `bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold` / Dark `dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-500/20 text-xs font-medium`.
+  - **Chờ duyệt / Chưa mở (Waiting):** Light `bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold` / Dark `dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-500/20 text-xs font-medium`.
+  - **Đang xử lý / Gia hạn (Active):** Light `bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold` / Dark `dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-500/20 text-xs font-medium`.
+  - **Đã chốt / Tắt (Idle):** Light `bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold` / Dark `dark:bg-zinc-800 dark:text-zinc-300 dark:border-white/10 text-xs font-medium`.
 
-### 4.3. Nút Thứ cấp / Toggle Pill Tag (Bắt buộc / Tùy chọn)
-* Không dùng màu xanh dương đặc lặp lại nhiều lần.
-* Dùng Pill Tag trung tính: `bg-slate-100 text-slate-700 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-white/10 text-xs px-3 py-1.5 rounded-lg font-medium hover:bg-slate-200 dark:hover:bg-zinc-700`.
+### 4.3. Nút Thứ cấp & Tag Bắt buộc
+* **Nút '+ Thêm mốc nộp bài':** `border border-slate-300 bg-white text-slate-800 dark:border-white/20 dark:bg-zinc-800 dark:text-zinc-100 px-3 py-1.5 rounded-lg text-xs font-semibold`.
+* **Tag 'Bắt buộc':** `bg-slate-100 text-slate-700 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-white/10 text-xs px-2.5 py-1 rounded-md`.
 
 ### 4.4. Danh mục bài nộp (Deliverables Row Layout)
 * Hiển thị mỗi bài nộp trên **1 hàng ngang duy nhất (Single Row)**:
-  - `[Grip Icon]` $\rightarrow$ `[Ô nhập tên bài (flex-1)]` $\rightarrow$ `[Ô chọn hạn nộp (w-40)]` $\rightarrow$ `[Pill Bắt buộc/Tùy chọn]` $\rightarrow$ `[Ghost Trash Icon]`.
+  - `[Grip Icon]` $\rightarrow$ `[Ô nhập tên bài (flex-1)]` $\rightarrow$ `[Ô chọn hạn nộp (w-40)]` $\rightarrow$ `[Pill Bắt buộc/Tùy chọn]` $\rightarrow$ `[Trash Icon trần]`.
 * Không bọc thẻ con cho từng dòng, không lặp lại nút Primary CTA trong danh sách.

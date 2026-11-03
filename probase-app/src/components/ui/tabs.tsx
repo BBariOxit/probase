@@ -25,7 +25,7 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        'inline-flex h-11 items-center justify-start rounded-xl bg-slate-100 dark:bg-zinc-900 p-1 text-slate-500 dark:text-zinc-400 border border-slate-200 dark:border-white/10 gap-1',
+        'inline-flex h-auto items-center justify-start rounded-xl bg-slate-200/80 dark:bg-zinc-900 border border-slate-300 dark:border-white/10 p-1.5 text-slate-600 dark:text-zinc-400 gap-1',
         className,
       )}
       {...props}
@@ -41,10 +41,10 @@ function TabsTrigger({
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
       className={cn(
-        'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 cursor-pointer',
-        'text-slate-500 hover:text-black dark:text-zinc-400 dark:hover:text-white',
-        'data-[selected]:bg-black data-[selected]:text-white data-[selected]:font-semibold data-[selected]:shadow-sm data-[selected]:border data-[selected]:border-black',
-        'dark:data-[selected]:bg-white dark:data-[selected]:text-black dark:data-[selected]:font-semibold dark:data-[selected]:border-white',
+        'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 cursor-pointer',
+        'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white',
+        'data-[selected]:bg-white data-[selected]:text-slate-900 data-[selected]:font-bold data-[selected]:shadow-sm',
+        'dark:data-[selected]:bg-white dark:data-[selected]:text-zinc-950 dark:data-[selected]:font-bold dark:data-[selected]:shadow-md',
         className,
       )}
       {...props}

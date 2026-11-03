@@ -108,32 +108,29 @@ export default function SemesterRoundsPage({
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <div className="space-y-1">
-        <h1 className="flex items-center gap-2 font-heading text-xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
+      <div className="flex items-center gap-2">
+        <h1 className="font-heading text-xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
           Đợt đăng ký · {semester?.name ?? `Học kỳ #${semesterId}`}
-          <TooltipProvider delay={200}>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <span
-                    tabIndex={0}
-                    className="cursor-default text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300"
-                  >
-                    <Info className="size-4" />
-                  </span>
-                }
-              />
-              <TooltipContent>
-                Mỗi loại đồ án là một đợt riêng, mở và đóng theo lịch của nó.
-                <br />
-                Chỉ loại nào được kích hoạt mới mở đợt trong học kỳ này.
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         </h1>
-        <p className="text-xs text-slate-500 dark:text-zinc-400">
-          Quản lý lịch trình đăng ký, thời gian thực hiện và danh mục bài nộp cho từng loại đồ án.
-        </p>
+        <TooltipProvider delay={200}>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <span
+                  tabIndex={0}
+                  className="cursor-default text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300"
+                >
+                  <Info className="size-4" />
+                </span>
+              }
+            />
+            <TooltipContent>
+              Mỗi loại đồ án là một đợt riêng, mở và đóng theo lịch của nó.
+              <br />
+              Chỉ loại nào được kích hoạt mới mở đợt trong học kỳ này.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {roundsError ? (
@@ -281,13 +278,13 @@ function PlanTabsForm({
           setActiveTypeId(Number(val));
         }}
       >
-        {/* Segmented Control Tabs - Vercel / Linear Style */}
-        <TabsList className="w-full h-auto p-1 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl grid grid-cols-3 gap-1">
+        {/* Segmented Control Tabs */}
+        <TabsList className="w-full h-auto p-1.5 bg-slate-200/80 dark:bg-zinc-900 border border-slate-300 dark:border-white/10 rounded-xl grid grid-cols-3 gap-1.5">
           {rows.map(({ type }) => (
             <TabsTrigger
               key={type.id}
               value={String(type.id)}
-              className="py-2 px-3 rounded-lg text-sm transition-all cursor-pointer"
+              className="py-2.5 px-3 rounded-lg text-sm transition-all cursor-pointer"
             >
               <span className="truncate">{type.name}</span>
             </TabsTrigger>
@@ -305,31 +302,24 @@ function PlanTabsForm({
                 {/* Header của Tab: Bật/Tắt & Trạng thái */}
                 <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-white/10">
                   <div className="flex flex-wrap items-center gap-3">
-                    <label className="flex items-center gap-3 cursor-pointer select-none">
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
                       <input
                         type="checkbox"
-                        className="size-4.5 rounded accent-black dark:accent-white cursor-pointer"
+                        className="size-4 rounded accent-black dark:accent-white cursor-pointer"
                         checked={row.enabled}
                         onChange={(e) =>
                           patch(type.id, { enabled: e.target.checked })
                         }
                       />
-                      <div>
-                        <span className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                          {type.name}
-                        </span>
-                        <p className="text-xs text-slate-500 dark:text-zinc-400">
-                          {row.enabled
-                            ? 'Đang áp dụng trong học kỳ này'
-                            : 'Chưa kích hoạt cho học kỳ này'}
-                        </p>
-                      </div>
+                      <span className="text-base font-bold text-slate-900 dark:text-zinc-100">
+                        {type.name}
+                      </span>
                     </label>
 
                     {round && <StatusPill {...PHASE[round.phase]} />}
 
                     {row.enabled && row.targetCohort && (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-zinc-800 px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:text-zinc-300">
+                      <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 dark:bg-zinc-800 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-white/10">
                         <GraduationCap className="size-3.5" />
                         Khóa: {row.targetCohort}
                       </span>
@@ -354,7 +344,7 @@ function PlanTabsForm({
                         {type.name} chưa được kích hoạt trong học kỳ này
                       </p>
                       <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mx-auto">
-                        Tích chọn &ldquo;Đang áp dụng trong học kỳ này&rdquo; ở trên để thiết lập lịch mở đăng ký và kế hoạch thực hiện.
+                        Tích chọn để thiết lập lịch mở đăng ký và kế hoạch thực hiện.
                       </p>
                     </div>
                     <button
@@ -410,7 +400,7 @@ function PlanTabsForm({
                           >
                             <SelectTrigger
                               id={`cohorts-${type.id}`}
-                              className="w-full h-9 text-sm rounded-lg border border-slate-300 bg-white px-3 text-slate-900 transition focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-white/20 dark:bg-black dark:text-zinc-50 dark:focus:border-white dark:focus:ring-1 dark:focus:ring-white"
+                              className="w-full h-9 text-sm rounded-lg border border-slate-300 bg-white px-3 text-slate-900 transition focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 dark:border-white/15 dark:bg-black dark:text-zinc-50 dark:focus:border-white dark:focus:ring-1 dark:focus:ring-white"
                             >
                               <SelectValue placeholder="Chọn khoá" />
                             </SelectTrigger>
@@ -426,8 +416,8 @@ function PlanTabsForm({
                       </div>
                     </div>
 
-                    {/* Đường phân cách mảnh border-t */}
-                    <div className="border-t border-slate-200 dark:border-white/10" />
+                    {/* Đường phân cách ngang chuẩn */}
+                    <div className="border-t border-slate-200 dark:border-white/10 my-6" />
 
                     {/* Giai đoạn 2: Thực hiện đồ án */}
                     <div className="space-y-4">
@@ -468,7 +458,7 @@ function PlanTabsForm({
                             onChange={(e) =>
                               patch(type.id, { targetCohort: e.target.value })
                             }
-                            className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-white/20 dark:bg-black dark:text-zinc-50 dark:placeholder:text-zinc-500 dark:focus:border-white dark:focus:ring-1 dark:focus:ring-white disabled:opacity-50"
+                            className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 dark:border-white/15 dark:bg-black dark:text-zinc-50 dark:placeholder:text-zinc-500 dark:focus:border-white dark:focus:ring-1 dark:focus:ring-white disabled:opacity-50"
                           />
                         </div>
 
@@ -505,8 +495,8 @@ function PlanTabsForm({
                       </div>
                     </div>
 
-                    {/* Đường phân cách mảnh border-t */}
-                    <div className="border-t border-slate-200 dark:border-white/10" />
+                    {/* Đường phân cách ngang chuẩn */}
+                    <div className="border-t border-slate-200 dark:border-white/10 my-6" />
 
                     {/* Danh mục bài phải nộp */}
                     {round ? (
@@ -521,7 +511,7 @@ function PlanTabsForm({
                     )}
 
                     {/* Footer: 1 nút Primary CTA duy nhất */}
-                    <div className="flex items-center justify-between border-t border-slate-200 dark:border-white/10 pt-5">
+                    <div className="flex items-center justify-between border-t border-slate-200 dark:border-white/10 pt-5 mt-6">
                       <span className="text-xs text-slate-500 dark:text-zinc-400">
                         {problems.length > 0 ? (
                           <span className="text-destructive font-medium">• {problems[0]}</span>
@@ -539,7 +529,7 @@ function PlanTabsForm({
                         type="button"
                         disabled={problems.length > 0 || isSaving}
                         onClick={handleSaveActiveTab}
-                        className="flex items-center gap-2 rounded-lg bg-black text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 px-4 py-2 text-sm font-semibold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        className="flex items-center gap-2 rounded-lg bg-black text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200 px-4 py-2 text-sm font-bold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                       >
                         {isSaving ? (
                           <Loader2 className="size-4 animate-spin" />
