@@ -43,8 +43,13 @@ function TabsTrigger({
       className={cn(
         'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 cursor-pointer',
         'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white',
-        'data-[selected]:bg-white data-[selected]:text-slate-900 data-[selected]:font-bold data-[selected]:shadow-sm',
-        'dark:data-[selected]:bg-white dark:data-[selected]:text-zinc-950 dark:data-[selected]:font-bold dark:data-[selected]:shadow-md',
+        // Support Base UI data-active & aria-selected, plus standard data-selected
+        'data-[active]:bg-white data-[active]:text-primary data-[active]:font-bold data-[active]:shadow-sm data-[active]:border data-[active]:border-slate-200/80',
+        'dark:data-[active]:bg-zinc-800 dark:data-[active]:text-primary dark:data-[active]:font-bold dark:data-[active]:shadow-md dark:data-[active]:border dark:data-[active]:border-white/10',
+        'aria-selected:bg-white aria-selected:text-primary aria-selected:font-bold aria-selected:shadow-sm aria-selected:border aria-selected:border-slate-200/80',
+        'dark:aria-selected:bg-zinc-800 dark:aria-selected:text-primary dark:aria-selected:font-bold dark:aria-selected:shadow-md dark:aria-selected:border dark:aria-selected:border-white/10',
+        'data-[selected]:bg-white data-[selected]:text-primary data-[selected]:font-bold data-[selected]:shadow-sm data-[selected]:border data-[selected]:border-slate-200/80',
+        'dark:data-[selected]:bg-zinc-800 dark:data-[selected]:text-primary dark:data-[selected]:font-bold dark:data-[selected]:shadow-md dark:data-[selected]:border dark:data-[selected]:border-white/10',
         className,
       )}
       {...props}

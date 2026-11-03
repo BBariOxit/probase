@@ -138,10 +138,11 @@ export const RoundRequirementsEditor = forwardRef<
           </span>
         </h3>
 
+        {/* Nút thêm mốc nộp bài - Sử dụng màu chủ đạo Primary Brand */}
         <button
           type="button"
           onClick={() => add()}
-          className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white text-slate-800 dark:border-white/20 dark:bg-zinc-800 dark:text-zinc-100 px-3 py-1.5 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-zinc-700 transition cursor-pointer"
+          className="flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer"
         >
           <Plus className="size-3.5" />
           Thêm mốc nộp bài
@@ -178,7 +179,7 @@ export const RoundRequirementsEditor = forwardRef<
                 value={row.name}
                 onChange={(e) => patch(index, { name: e.target.value })}
                 placeholder="Tên tài liệu / bài nộp (ví dụ: Đề cương chi tiết)..."
-                className="h-9 flex-1 min-w-0 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 dark:border-white/15 dark:bg-black dark:text-zinc-50 dark:placeholder:text-zinc-500 dark:focus:border-white dark:focus:ring-1 dark:focus:ring-white"
+                className="h-9 flex-1 min-w-0 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-white/15 dark:bg-black dark:text-zinc-50 dark:placeholder:text-zinc-500 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary"
               />
 
               {/* Ô chọn hạn nộp (w-40) */}
@@ -186,7 +187,7 @@ export const RoundRequirementsEditor = forwardRef<
                 type="date"
                 value={row.due}
                 onChange={(e) => patch(index, { due: e.target.value })}
-                className="h-9 w-40 shrink-0 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 transition focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 dark:border-white/15 dark:bg-black dark:text-zinc-50 dark:focus:border-white dark:focus:ring-1 dark:focus:ring-white"
+                className="h-9 w-40 shrink-0 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-white/15 dark:bg-black dark:text-zinc-50 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary"
               />
 
               {/* Nút Bắt buộc (Pill Tag) */}

@@ -32,42 +32,39 @@
   - Hàm `sanitizeLecturerName` phải dùng vòng lặp bóc tách triệt để mọi tiền tố học vị lặp ở đầu chuỗi (`while (titlePattern.test(raw))`).
   - Tách học vị ngắn gọn và đưa chức vụ bộ môn dài vào dòng phụ hoặc tooltip, tránh làm tràn dropdown và vỡ layout bảng.
 
-### 1.4. Quy tắc 1 Primary CTA duy nhất (1 Primary Action per View)
-* Trên một khung nhìn/form chỉ có **duy nhất 1 nút hành động chính** có màu nền nổi bật (Lưu, Kích hoạt, Xác nhận).
-* Tất cả các nút thao tác con bên trong (ví dụ: chuyển trạng thái Bắt buộc/Tùy chọn, Thêm mốc, Xóa) phải dùng dạng **Outline / Ghost / Pill Tag** trung tính.
+### 1.4. Quy tắc Màu chủ đạo thống nhất bằng CSS Variables
+* Toàn bộ các thành phần mang sắc thái nhận diện thương hiệu (Primary CTA, Tab Active, Nút thêm mốc, Icon tiêu đề, Focus Ring, Checkbox) **bắt buộc dùng biến hệ thống `--primary`** (`bg-primary`, `text-primary`, `border-primary`, `accent-primary`, `ring-primary`).
+* Tuyệt đối không hardcode mã màu `#1d4ed8` hay `#2563eb` rải rác trong component để đảm bảo **chỉ cần đổi màu ở 1 chỗ duy nhất trong `globals.css` là toàn hệ thống tự động đổi màu đồng bộ**.
 
 ---
 
-## 2. HỆ THỐNG TƯƠNG PHẢN NGHỊCH ĐẢO (HYBRID INVERTED THEMING)
-
-Tuyệt đối không áp dụng tư duy "Light mode toàn màu sáng, Dark mode toàn màu tối xỉn". Hệ thống dùng độ tương phản nghịch đảo sắc nét để tạo lực neo thị giác:
+## 2. HỆ THỐNG MÀU SẮC THƯƠNG HIỆU (BRAND THEME SYSTEM)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│                        HYBRID INVERTED THEMING                         │
+│                        PROBASE BRAND THEME SYSTEM                      │
 ├──────────────────────┬─────────────────────────────────────────────────┤
-│ LIGHT MODE (Crisp)   │ DARK MODE (Recessed Deep Contrast)              │
+│ LIGHT MODE           │ DARK MODE (Recessed Deep Contrast)              │
 ├──────────────────────┼─────────────────────────────────────────────────┤
-│ Canvas: #f4f4f5 /    │ Canvas: Than chì sâu thẳm #09090b (bg-zinc-950) │
-│         #f1f5f9      │                                                 │
-│ Card:   #ffffff      │ Card:   Xám than cao cấp #121215 (zinc-900/90)  │
-│ CTA:    #000000 (Đen)│ CTA:    #ffffff (Trắng tinh)                    │
+│ Canvas: #f4f4f5      │ Canvas: Than chì sâu thẳm #09090b (bg-zinc-950) │
+│ Card:   #ffffff      │ Card:   Xám than cao cấp #121215                │
+│ Primary: #1d4ed8     │ Primary: #3b82f6 (DLU Blue sáng trong nền tối)  │
 │ Inputs: #ffffff      │ Inputs: Recessed #000000 (Đen khoét lõm)        │
 │ Text:   #0f172a      │ Text:   #fafafa (Chữ chính) / #a1a1aa (Phụ)     │
 └──────────────────────┴─────────────────────────────────────────────────┘
 ```
 
 ### 2.1. Light Mode (Crisp & Weighted)
-* **Nền Canvas (Mặt bàn):** `#f4f4f5` (`bg-zinc-100`) hoặc `#f1f5f9` (`bg-slate-100`). Tuyệt đối không dùng trắng tinh `#ffffff` cho toàn bộ màn hình.
+* **Nền Canvas (Mặt bàn):** `#f4f4f5` (`bg-zinc-100`). Tuyệt đối không dùng trắng tinh `#ffffff` cho toàn bộ màn hình.
 * **Bề mặt Card / Bảng (Tờ giấy làm việc):** `#ffffff` (`bg-white`) kết hợp đổ bóng nhẹ `shadow-sm` và viền mảnh `border border-slate-200/80`.
-* **Nút hành động chính (Primary CTA):** Dùng **ĐEN TUYỀN** `#000000` (`bg-black text-white hover:bg-zinc-800 font-bold`).
+* **Nút hành động chính (Primary CTA):** `bg-primary text-primary-foreground hover:bg-primary/90 font-bold`.
 * **Chữ nội dung:** Sắc sảo, rõ nét `#0f172a` (slate-900), phụ chú `#64748b` (slate-500).
 
 ### 2.2. Dark Mode (Recessed Deep Contrast - Vercel / Linear Style)
-* **Nền Canvas ngoài cùng:** Đen than chì trầm `#09090b` (`bg-zinc-950`). Khử hoàn toàn ám xanh tím Navy bão hòa đục mắt (`#0b1329/#0f172a`).
-* **Nền Card lớn:** Xám than cao cấp `#121215` hoặc `bg-zinc-900/90`.
+* **Nền Canvas ngoài cùng:** Đen than chì trầm `#09090b` (`bg-zinc-950`). Khử hoàn toàn ám xanh tím Navy bão hòa đục mắt.
+* **Nền Card lớn:** Xám than cao cấp `#121215`.
 * **Ô Input, Select, Date:** Kỹ thuật **bề mặt khoét lõm (Recessed surface)** dùng **ĐEN TUYỀN** `#000000` (`bg-black`), tạo độ chìm so với Card cha, không tiệp màu với Card.
-* **Nút hành động chính (Primary CTA):** Đảo sang **TRẮNG TINH** `#ffffff` (`bg-white text-zinc-950 hover:bg-zinc-200 font-bold shadow-md`).
+* **Màu chủ đạo (Primary CTA):** `bg-primary text-primary-foreground hover:bg-primary/90 font-bold shadow-md`.
 * **Chữ nội dung:** `#fafafa` (`text-zinc-50`), nhãn trường `text-slate-100`, mô tả phụ `#a1a1aa` (`text-zinc-400`).
 
 ### 2.3. Sidebar Midnight Thống nhất
@@ -77,11 +74,9 @@ Tuyệt đối không áp dụng tư duy "Light mode toàn màu sáng, Dark mode
 
 ## 3. PHÂN TẦNG ĐỘ TƯƠNG PHẢN VIỀN (BORDER HIERARCHY)
 
-Tránh hiện tượng viền quá mờ khiến các bề mặt dính chùm vào nhau hoặc viền quá đậm gây rối mắt:
-
 * **Viền Ô Nhập liệu (Inputs, Select, Date):**
-  - Light: `border border-slate-300 bg-white text-slate-900`, khi focus: `focus:border-slate-900 focus:ring-1 focus:ring-slate-900`.
-  - Dark: `border border-white/15 bg-black text-zinc-50`, khi focus: `focus:border-white focus:ring-1 focus:ring-white`.
+  - Light: `border border-slate-300 bg-white text-slate-900`, khi focus: `focus:border-primary focus:ring-1 focus:ring-primary`.
+  - Dark: `border border-white/15 bg-black text-zinc-50`, khi focus: `dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary`.
 * **Viền Thẻ Card:**
   - Light: `border border-slate-200/80`.
   - Dark: `border border-white/10`.
@@ -99,8 +94,7 @@ Tránh hiện tượng viền quá mờ khiến các bề mặt dính chùm vào
 ### 4.1. Segmented Control Tabs (Chọn loại đồ án)
 * Container bọc ngoài: `bg-slate-200/80 dark:bg-zinc-900 border border-slate-300 dark:border-white/10 p-1.5 rounded-xl`.
 * **Trạng thái Active:**
-  - Light Mode: `bg-white text-slate-900 font-bold shadow-sm`.
-  - Dark Mode: `bg-white text-zinc-950 font-bold shadow-md`.
+  - Nền trắng tinh / dark card, chữ màu chủ đạo thương hiệu: `bg-white text-primary font-bold shadow-sm border border-slate-200/80 dark:bg-zinc-800 dark:text-primary dark:border-white/10 dark:shadow-md`.
 * **Trạng thái Inactive:** `text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition`.
 
 ### 4.2. Status Badges & Pills (Minimalist Tag)
@@ -111,10 +105,9 @@ Tránh hiện tượng viền quá mờ khiến các bề mặt dính chùm vào
   - **Đã chốt / Tắt (Idle):** Light `bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold` / Dark `dark:bg-zinc-800 dark:text-zinc-300 dark:border-white/10 text-xs font-medium`.
 
 ### 4.3. Nút Thứ cấp & Tag Bắt buộc
-* **Nút '+ Thêm mốc nộp bài':** `border border-slate-300 bg-white text-slate-800 dark:border-white/20 dark:bg-zinc-800 dark:text-zinc-100 px-3 py-1.5 rounded-lg text-xs font-semibold`.
+* **Nút '+ Thêm mốc nộp bài':** `bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition`.
 * **Tag 'Bắt buộc':** `bg-slate-100 text-slate-700 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-white/10 text-xs px-2.5 py-1 rounded-md`.
 
 ### 4.4. Danh mục bài nộp (Deliverables Row Layout)
 * Hiển thị mỗi bài nộp trên **1 hàng ngang duy nhất (Single Row)**:
   - `[Grip Icon]` $\rightarrow$ `[Ô nhập tên bài (flex-1)]` $\rightarrow$ `[Ô chọn hạn nộp (w-40)]` $\rightarrow$ `[Pill Bắt buộc/Tùy chọn]` $\rightarrow$ `[Trash Icon trần]`.
-* Không bọc thẻ con cho từng dòng, không lặp lại nút Primary CTA trong danh sách.
