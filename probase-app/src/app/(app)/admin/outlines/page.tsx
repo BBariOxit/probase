@@ -285,7 +285,7 @@ export default function AdminOutlinesPage() {
       ) : (
         <div className="rounded-xl border bg-card overflow-hidden shadow-2xs">
           <Table>
-            <TableHeader className="bg-muted/40">
+            <TableHeader>
               <TableRow>
                 <TableHead className="w-[180px]">Nhóm & Thành viên</TableHead>
                 <TableHead>Tên đề tài</TableHead>
