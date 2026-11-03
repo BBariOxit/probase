@@ -70,16 +70,15 @@
 
 :root {
   /* Light Mode */
-  --background: #f8fafc; /* slate-50 dịu mắt, chống chói lóa */
+  --background: #f8fafc; /* slate-50 dịu mắt */
   --foreground: #0f172a;
 
-  /* Card Surface */
   --card: #ffffff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
 
-  /* Màu chủ đạo #3b82f6 đồng nhất cho cả Light và Dark mode */
+  /* Màu chủ đạo #3b82f6 đồng nhất */
   --primary: #3b82f6;
   --primary-foreground: #ffffff;
   --ring: #3b82f6;
@@ -113,7 +112,7 @@
 
   --radius: 0.625rem;
 
-  /* Sidebar: Midnight Dark (#090d16) đồng nhất cả Light & Dark */
+  /* Sidebar: Midnight Dark (#090d16) đồng nhất */
   --sidebar: #090d16;
   --sidebar-foreground: #f8fafc;
   --sidebar-primary: #3b82f6;
@@ -125,30 +124,30 @@
 }
 
 .dark {
-  /* Dark Mode: Phân tầng màu sắc sâu sắc, khử hoàn toàn cảm giác toàn đen xám */
-  --background: #0b0f19; /* slate-950 có ánh than cao cấp, không bị đen kịt */
-  --foreground: #f8fafc;
+  /* Matte Obsidian & Neutral Stone (Chuẩn Raycast / Craft — Tối ấm cao cấp) */
+  --background: #121212; /* Canvas ngoài: Đen nhám lì */
+  --foreground: #f5f5f5; /* Chữ chính: text-neutral-100 */
 
-  /* Card Surface: Nâng sáng lên slate-900 (#111827), nổi bật rõ trên nền canvas */
-  --card: #111827;
-  --card-foreground: #f8fafc;
-  --popover: #111827;
-  --popover-foreground: #f8fafc;
+  /* Khối Card nội dung chính: Xám đen phẳng #1e1e1e */
+  --card: #1e1e1e;
+  --card-foreground: #f5f5f5;
+  --popover: #1e1e1e;
+  --popover-foreground: #f5f5f5;
 
-  /* Màu chủ đạo giống hệt Light mode: #3b82f6 */
+  /* Màu chủ đạo #3b82f6 */
   --primary: #3b82f6;
   --primary-foreground: #ffffff;
   --ring: #3b82f6;
 
-  --secondary: #1e293b;
-  --secondary-foreground: #f8fafc;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #1e293b;
-  --accent-foreground: #60a5fa;
+  --secondary: #262626;
+  --secondary-foreground: #f5f5f5;
+  --muted: #262626;
+  --muted-foreground: #a3a3a3; /* text-neutral-400 */
+  --accent: #262626;
+  --accent-foreground: #3b82f6;
   --destructive: #f87171;
-  --border: #1e293b;
-  --input: #334155;
+  --border: #2e2e2e; /* border-neutral-800 */
+  --input: #404040; /* border-neutral-700 */
 
   --status-waiting: #fbbf24;
   --status-waiting-bg: rgba(245, 158, 11, 0.15);
@@ -158,8 +157,8 @@
   --status-success-bg: rgba(16, 185, 129, 0.15);
   --status-danger: #f87171;
   --status-danger-bg: rgba(239, 68, 68, 0.15);
-  --status-idle: #94a3b8;
-  --status-idle-bg: rgba(51, 65, 85, 0.5);
+  --status-idle: #a3a3a3;
+  --status-idle-bg: rgba(38, 38, 38, 0.6);
 
   --chart-1: #3b82f6;
   --chart-2: #38bdf8;

@@ -37,18 +37,18 @@ export function DateField({
   return (
     <div className="space-y-1.5">
       {label && (
-        <Label htmlFor={id} className="text-xs font-medium text-slate-800 dark:text-slate-200">
+        <Label htmlFor={id} className="text-xs font-medium text-slate-800 dark:text-neutral-300">
           {label}
         </Label>
       )}
-      {hint && <p className="-mt-1 text-xs text-slate-500 dark:text-slate-400">{hint}</p>}
+      {hint && <p className="-mt-1 text-xs text-slate-500 dark:text-neutral-400">{hint}</p>}
 
       <Input
         id={id}
         type="date"
         className={cn(
           'text-sm h-9 rounded-lg border border-slate-300 bg-white text-slate-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
-          'dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary disabled:opacity-50',
+          'dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary disabled:opacity-50',
           className,
         )}
         value={value}
@@ -58,7 +58,7 @@ export function DateField({
       />
 
       {showWeekday && value && (
-        <p className="text-xs text-slate-500 dark:text-slate-400">{spell(value)}</p>
+        <p className="text-xs text-slate-500 dark:text-neutral-400">{spell(value)}</p>
       )}
 
       {error && <p className="text-xs text-destructive">{error}</p>}

@@ -109,7 +109,7 @@ export default function SemesterRoundsPage({
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex items-center gap-2">
-        <h1 className="font-heading text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+        <h1 className="font-heading text-xl font-bold tracking-tight text-slate-900 dark:text-neutral-100">
           Đợt đăng ký · {semester?.name ?? `Học kỳ #${semesterId}`}
         </h1>
         <TooltipProvider delay={200}>
@@ -278,8 +278,8 @@ function PlanTabsForm({
           setActiveTypeId(Number(val));
         }}
       >
-        {/* Segmented Control Tabs - Nhận diện rõ ràng Tab đang chọn bằng màu chủ đạo Primary #3b82f6 */}
-        <TabsList className="w-full h-auto p-1.5 bg-slate-200/80 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl grid grid-cols-3 gap-1.5">
+        {/* Segmented Control Tabs - Matte Obsidian Style */}
+        <TabsList className="w-full h-auto p-1.5 bg-slate-200/80 dark:bg-[#141414] border border-slate-300 dark:border-neutral-800 rounded-xl grid grid-cols-3 gap-1.5">
           {rows.map(({ type }) => {
             const isActive = activeTypeId === type.id;
             return (
@@ -289,8 +289,8 @@ function PlanTabsForm({
                 className={cn(
                   'py-2.5 px-3 rounded-lg text-sm transition-all cursor-pointer font-medium',
                   isActive
-                    ? 'bg-white text-primary font-bold shadow-sm border border-slate-200/80 dark:bg-slate-800 dark:text-primary dark:border-primary/40 dark:shadow-md'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200',
+                    ? 'bg-white text-primary font-bold shadow-sm border border-slate-200/80 dark:bg-[#262626] dark:text-primary dark:border-neutral-700 dark:shadow-md'
+                    : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200',
                 )}
               >
                 <span className="truncate">{type.name}</span>
@@ -305,10 +305,10 @@ function PlanTabsForm({
 
           return (
             <TabsContent key={type.id} value={String(type.id)} className="mt-4">
-              {/* Duy nhất 1 Primary Surface Card - Phân tầng rõ rệt, không bị đen kịt */}
-              <div className="space-y-6 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-6 shadow-sm">
+              {/* Khối Card nội dung chính: Xám đen phẳng #1e1e1e, viền border-neutral-800 */}
+              <div className="space-y-6 rounded-xl border border-slate-200/80 dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] p-6 shadow-sm">
                 {/* Header của Tab: Bật/Tắt & Trạng thái */}
-                <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+                <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-neutral-800">
                   <div className="flex flex-wrap items-center gap-3">
                     <label className="flex items-center gap-2.5 cursor-pointer select-none">
                       <input
@@ -319,7 +319,7 @@ function PlanTabsForm({
                           patch(type.id, { enabled: e.target.checked })
                         }
                       />
-                      <span className="text-base font-bold text-slate-900 dark:text-slate-100">
+                      <span className="text-base font-bold text-slate-900 dark:text-neutral-100">
                         {type.name}
                       </span>
                     </label>
@@ -327,7 +327,7 @@ function PlanTabsForm({
                     {round && <StatusPill {...PHASE[round.phase]} />}
 
                     {row.enabled && row.targetCohort && (
-                      <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 text-primary border border-primary/20 px-2.5 py-1 text-xs font-semibold">
+                      <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 text-primary border border-primary/20 dark:bg-[#262626] dark:text-primary dark:border-neutral-700 px-2.5 py-1 text-xs font-semibold">
                         <GraduationCap className="size-3.5 text-primary" />
                         Khóa: {row.targetCohort}
                       </span>
@@ -344,14 +344,14 @@ function PlanTabsForm({
 
                 {!row.enabled ? (
                   <div className="py-12 text-center space-y-3">
-                    <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-primary">
+                    <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-slate-100 dark:bg-[#262626] text-primary">
                       <Calendar className="size-6" />
                     </div>
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-neutral-200">
                         {type.name} chưa được kích hoạt trong học kỳ này
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                      <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-sm mx-auto">
                         Tích chọn để thiết lập lịch mở đăng ký và kế hoạch thực hiện.
                       </p>
                     </div>
@@ -369,7 +369,7 @@ function PlanTabsForm({
                     <div className="space-y-4">
                       <div className="flex items-center gap-2">
                         <Calendar className="size-4 text-primary" />
-                        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-300">
                           Giai đoạn 1: Đăng ký đề tài
                         </h3>
                       </div>
@@ -395,7 +395,7 @@ function PlanTabsForm({
                         <div className="space-y-1.5">
                           <Label
                             htmlFor={`cohorts-${type.id}`}
-                            className="text-xs font-medium text-slate-800 dark:text-slate-200"
+                            className="text-xs font-medium text-slate-800 dark:text-neutral-300"
                           >
                             Khóa tuyển sinh đủ điều kiện
                           </Label>
@@ -406,13 +406,14 @@ function PlanTabsForm({
                               if (value) patch(type.id, { cohorts: value });
                             }}
                           >
+                            {/* Ô Select: Khoét lõm #141414, viền border-neutral-700 */}
                             <SelectTrigger
                               id={`cohorts-${type.id}`}
-                              className="w-full h-9 text-sm rounded-lg border border-slate-300 bg-white px-3 text-slate-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary"
+                              className="w-full h-9 text-sm rounded-lg border border-slate-300 bg-white px-3 text-slate-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary"
                             >
                               <SelectValue placeholder="Chọn khoá" />
                             </SelectTrigger>
-                            <SelectContent className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                            <SelectContent className="border-slate-200 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e]">
                               {cohortOptions.map((opt) => (
                                 <SelectItem key={opt.value} value={opt.value}>
                                   {opt.label}
@@ -424,20 +425,20 @@ function PlanTabsForm({
                       </div>
                     </div>
 
-                    {/* Đường phân cách ngang chuẩn */}
-                    <div className="border-t border-slate-200 dark:border-slate-800 my-6" />
+                    {/* Đường phân cách các giai đoạn: border-t border-neutral-800 */}
+                    <div className="border-t border-slate-200 dark:border-neutral-800 my-6" />
 
                     {/* Giai đoạn 2: Thực hiện đồ án */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Clock className="size-4 text-primary" />
-                          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-300">
                             Giai đoạn 2: Thực hiện đồ án
                           </h3>
                         </div>
                         {daysDiff && (
-                          <span className="inline-flex items-center rounded-full bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 text-xs font-medium">
+                          <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-[#262626] text-slate-700 dark:text-neutral-300 border border-slate-200 dark:border-neutral-700 px-2.5 py-0.5 text-xs font-medium">
                             Thời lượng: {daysDiff} ngày
                           </span>
                         )}
@@ -447,11 +448,12 @@ function PlanTabsForm({
                         <div className="space-y-1.5">
                           <Label
                             htmlFor={`targetCohort-${type.id}`}
-                            className="text-xs font-medium text-slate-800 dark:text-slate-200 flex items-center gap-1.5"
+                            className="text-xs font-medium text-slate-800 dark:text-neutral-300 flex items-center gap-1.5"
                           >
                             <GraduationCap className="size-3.5 text-primary" />
                             Mã Lớp / Khóa áp dụng
                           </Label>
+                          {/* Ô Input: Khoét lõm #141414, viền border-neutral-700 */}
                           <input
                             id={`targetCohort-${type.id}`}
                             placeholder={
@@ -466,7 +468,7 @@ function PlanTabsForm({
                             onChange={(e) =>
                               patch(type.id, { targetCohort: e.target.value })
                             }
-                            className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary disabled:opacity-50"
+                            className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary disabled:opacity-50"
                           />
                         </div>
 
@@ -503,8 +505,8 @@ function PlanTabsForm({
                       </div>
                     </div>
 
-                    {/* Đường phân cách ngang chuẩn */}
-                    <div className="border-t border-slate-200 dark:border-slate-800 my-6" />
+                    {/* Đường phân cách các giai đoạn: border-t border-neutral-800 */}
+                    <div className="border-t border-slate-200 dark:border-neutral-800 my-6" />
 
                     {/* Danh mục bài phải nộp */}
                     {round ? (
@@ -513,20 +515,21 @@ function PlanTabsForm({
                         round={round}
                       />
                     ) : (
-                      <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-800 p-5 text-center text-xs text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/40">
+                      /* Khối nộp bài nét đứt (Empty State): #181818, viền border-dashed border-neutral-600 */
+                      <div className="rounded-xl border border-dashed border-slate-300 dark:border-neutral-600 p-5 text-center text-xs text-slate-500 dark:text-neutral-400 bg-slate-50/50 dark:bg-[#181818]">
                         Đợt đồ án này chưa được lưu trong cơ sở dữ liệu. Nhấn <strong>Lưu cấu hình</strong> bên dưới để tạo đợt, sau đó danh mục bài nộp sẽ sẵn sàng để thiết lập.
                       </div>
                     )}
 
-                    {/* Footer: 1 nút Primary CTA duy nhất - Màu chủ đạo thương hiệu #3b82f6 */}
-                    <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 pt-5 mt-6">
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                    {/* Footer: 1 nút Primary CTA duy nhất - Màu chủ đạo #3b82f6 */}
+                    <div className="flex items-center justify-between border-t border-slate-200 dark:border-neutral-800 pt-5 mt-6">
+                      <span className="text-xs text-slate-500 dark:text-neutral-400">
                         {problems.length > 0 ? (
                           <span className="text-destructive font-medium">• {problems[0]}</span>
                         ) : (
                           <>
                             Áp dụng cho đợt:{' '}
-                            <strong className="text-slate-800 dark:text-slate-200">
+                            <strong className="text-slate-800 dark:text-neutral-200">
                               {type.name} {row.targetCohort ? `(${row.targetCohort})` : ''}
                             </strong>
                           </>
