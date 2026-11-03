@@ -37,11 +37,11 @@ function NavEntry({ item }: { item: NavItem }) {
           disabled
           tooltip={`${item.label} — chưa xây dựng`}
           className={cn(
-            'h-9 rounded-lg font-medium cursor-not-allowed opacity-35 text-slate-500',
+            'h-9 rounded-lg font-medium cursor-not-allowed opacity-35 text-neutral-500',
             'group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:justify-center',
           )}
         >
-          <Icon className="size-4 shrink-0 text-slate-500" />
+          <Icon className="size-4 shrink-0 text-neutral-500" />
           <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -57,8 +57,8 @@ function NavEntry({ item }: { item: NavItem }) {
           'h-9 rounded-lg font-medium transition-all duration-150',
           'group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:justify-center',
           active
-            ? 'bg-blue-600 font-semibold text-white shadow-xs [&_svg]:text-white hover:bg-blue-600 hover:text-white'
-            : 'text-slate-400 hover:bg-white/8 hover:text-white [&_svg]:text-slate-400 hover:[&_svg]:text-white',
+            ? 'bg-white/10 font-medium text-white shadow-xs [&_svg]:text-white hover:bg-white/12 hover:text-white'
+            : 'text-neutral-400 hover:bg-white/6 hover:text-white [&_svg]:text-neutral-400 hover:[&_svg]:text-white',
         )}
         render={<Link href={item.href} />}
       >
@@ -93,7 +93,7 @@ export function AppSidebar({ user }: { user: SessionUser }) {
             className="px-3 py-0 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-0"
           >
             {group.label && (
-              <SidebarGroupLabel className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500 group-data-[collapsible=icon]:hidden">
+              <SidebarGroupLabel className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-500 group-data-[collapsible=icon]:hidden">
                 {group.label}
               </SidebarGroupLabel>
             )}

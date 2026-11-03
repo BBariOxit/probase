@@ -118,8 +118,8 @@
   --radius: 0.625rem;
 
   /* Sidebar Midnight Dark */
-  --sidebar: #090d16;
-  --sidebar-foreground: #f8fafc;
+  --sidebar: #0e0e0e;
+  --sidebar-foreground: #f5f5f5;
   --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(255, 255, 255, 0.08);
@@ -176,8 +176,8 @@
   --chart-4: #fbbf24;
   --chart-5: #f87171;
 
-  --sidebar: #090d16;
-  --sidebar-foreground: #f8fafc;
+  --sidebar: #0e0e0e;
+  --sidebar-foreground: #f5f5f5;
   --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(255, 255, 255, 0.08);
