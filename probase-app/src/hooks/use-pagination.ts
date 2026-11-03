@@ -15,6 +15,18 @@ export interface UsePaginationOptions {
   syncUrl?: boolean;
 }
 
+function getInitialPage(): number {
+  if (typeof window === 'undefined') return 1;
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const pageParam = urlParams.get('page');
+    if (pageParam && Number(pageParam) >= 1) {
+      return Number(pageParam);
+    }
+  } catch {}
+  return 1;
+}
+
 function getInitialPageSize(fallback: number, storageKey: string): number {
   if (typeof window === 'undefined') return fallback;
   try {
@@ -37,14 +49,36 @@ export function usePagination({
   storageKey = STORAGE_KEY,
   syncUrl = true,
 }: UsePaginationOptions = {}) {
-  const [page, setPage] = useState(initialPage);
+  const [page, setPageState] = useState(() => {
+    if (!syncUrl) return initialPage;
+    return getInitialPage();
+  });
+
   const [pageSize, setPageSizeState] = useState(() =>
     getInitialPageSize(initialPageSize, storageKey),
   );
 
+  const setPage = useCallback(
+    (newPage: number) => {
+      setPageState(newPage);
+      if (typeof window !== 'undefined' && syncUrl) {
+        try {
+          const url = new URL(window.location.href);
+          if (newPage <= 1) {
+            url.searchParams.delete('page');
+          } else {
+            url.searchParams.set('page', String(newPage));
+          }
+          window.history.replaceState(null, '', url.pathname + url.search);
+        } catch {}
+      }
+    },
+    [syncUrl],
+  );
+
   const resetPage = useCallback(() => {
     setPage(1);
-  }, []);
+  }, [setPage]);
 
   const setPageSize = useCallback(
     (newSize: number) => {
@@ -56,12 +90,13 @@ export function usePagination({
           if (syncUrl) {
             const url = new URL(window.location.href);
             url.searchParams.set('size', String(newSize));
+            url.searchParams.delete('page');
             window.history.replaceState(null, '', url.pathname + url.search);
           }
         } catch {}
       }
     },
-    [storageKey, syncUrl],
+    [storageKey, syncUrl, setPage],
   );
 
   useEffect(() => {
@@ -71,6 +106,12 @@ export function usePagination({
       const sizeParam = urlParams.get('size');
       if (sizeParam && PAGE_SIZE_OPTIONS.includes(Number(sizeParam) as PageSizeOption)) {
         setPageSizeState(Number(sizeParam));
+      }
+      const pageParam = urlParams.get('page');
+      if (pageParam && Number(pageParam) >= 1) {
+        setPageState(Number(pageParam));
+      } else {
+        setPageState(1);
       }
     };
     window.addEventListener('popstate', handlePopState);
