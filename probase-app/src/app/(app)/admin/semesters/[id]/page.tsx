@@ -8,7 +8,6 @@ import {
   Info,
   Loader2,
   Lock,
-  Save,
 } from 'lucide-react';
 import { ApiError } from '@/lib/api/client';
 import {
@@ -34,7 +33,6 @@ import {
 } from '@/components/admin/round-requirements-editor';
 import { StatusPill, type StatusTone } from '@/components/shared/status-pill';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -111,7 +109,7 @@ export default function SemesterRoundsPage({
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="space-y-1">
-        <h1 className="flex items-center gap-2 font-heading text-xl font-bold tracking-tight text-foreground">
+        <h1 className="flex items-center gap-2 font-heading text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
           Đợt đăng ký · {semester?.name ?? `Học kỳ #${semesterId}`}
           <TooltipProvider delay={200}>
             <Tooltip>
@@ -119,7 +117,7 @@ export default function SemesterRoundsPage({
                 render={
                   <span
                     tabIndex={0}
-                    className="cursor-default text-muted-foreground hover:text-foreground"
+                    className="cursor-default text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                   >
                     <Info className="size-4" />
                   </span>
@@ -133,7 +131,7 @@ export default function SemesterRoundsPage({
             </Tooltip>
           </TooltipProvider>
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Quản lý lịch trình đăng ký, thời gian thực hiện và danh mục bài nộp cho từng loại đồ án.
         </p>
       </div>
@@ -154,7 +152,7 @@ export default function SemesterRoundsPage({
         </div>
       ) : isPending || !projectTypes || !rounds ? (
         <div className="flex justify-center py-16">
-          <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          <Loader2 className="size-5 animate-spin text-slate-400" />
         </div>
       ) : (
         <PlanTabsForm
@@ -181,7 +179,6 @@ function PlanTabsForm({
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Map to hold editor ref for current active tab
   const editorRef = useRef<RoundRequirementsEditorRef>(null);
 
   const cohortOptions = getRecentCohorts(5);
@@ -232,12 +229,6 @@ function PlanTabsForm({
 
   const enabled = rows.filter((entry) => entry.row.enabled);
   const activeEntry = rows.find((entry) => entry.type.id === activeTypeId) ?? rows[0];
-
-  const activeProblems = activeEntry.row.enabled
-    ? describeProblems(activeEntry)
-    : [];
-
-  const isFormValid = enabled.every((entry) => describeProblems(entry).length === 0);
 
   async function handleSaveActiveTab() {
     setError(null);
@@ -290,35 +281,17 @@ function PlanTabsForm({
           setActiveTypeId(Number(val));
         }}
       >
-        <TabsList className="w-full h-auto p-1 bg-muted/50 border border-border/60 rounded-xl grid grid-cols-3 gap-1">
-          {rows.map(({ type, row, round }) => {
-            const isTabActive = activeTypeId === type.id;
-            return (
-              <TabsTrigger
-                key={type.id}
-                value={String(type.id)}
-                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm transition-all"
-              >
-                <span className="truncate">{type.name}</span>
-                {row.enabled ? (
-                  <span
-                    className={cn(
-                      'size-2 rounded-full shrink-0',
-                      round?.phase === 'OPEN'
-                        ? 'bg-emerald-500'
-                        : 'bg-blue-500',
-                    )}
-                    title={round ? PHASE[round.phase]?.label : 'Đang áp dụng'}
-                  />
-                ) : (
-                  <span
-                    className="size-1.5 rounded-full bg-muted-foreground/40 shrink-0"
-                    title="Chưa kích hoạt"
-                  />
-                )}
-              </TabsTrigger>
-            );
-          })}
+        {/* Segmented Control Tabs - Bỏ toàn bộ chấm xanh Discord */}
+        <TabsList className="w-full h-auto p-1 bg-slate-100 dark:bg-[#090c13] border border-slate-200 dark:border-white/10 rounded-xl grid grid-cols-3 gap-1">
+          {rows.map(({ type }) => (
+            <TabsTrigger
+              key={type.id}
+              value={String(type.id)}
+              className="py-2 px-3 rounded-lg text-sm transition-all"
+            >
+              <span className="truncate">{type.name}</span>
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         {rows.map(({ type, row, round, locked }) => {
@@ -327,24 +300,25 @@ function PlanTabsForm({
 
           return (
             <TabsContent key={type.id} value={String(type.id)} className="mt-4">
-              <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-xs space-y-6">
+              {/* Card lớn bao bọc: Chuẩn hóa hệ màu Dark Mode than chì #131926 và viền border-white/[0.12] */}
+              <div className="space-y-6 rounded-xl border border-slate-200 dark:border-white/[0.12] bg-white dark:bg-[#131926] p-6 shadow-xl">
                 {/* Header của Tab: Bật/Tắt & Trạng thái */}
-                <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-border/50">
+                <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-white/[0.08]">
                   <div className="flex flex-wrap items-center gap-3">
                     <label className="flex items-center gap-3 cursor-pointer select-none">
                       <input
                         type="checkbox"
-                        className="size-4.5 rounded accent-primary cursor-pointer"
+                        className="size-4.5 rounded accent-blue-600 cursor-pointer"
                         checked={row.enabled}
                         onChange={(e) =>
                           patch(type.id, { enabled: e.target.checked })
                         }
                       />
                       <div>
-                        <span className="text-base font-bold text-foreground">
+                        <span className="text-base font-bold text-slate-900 dark:text-slate-100">
                           {type.name}
                         </span>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
                           {row.enabled
                             ? 'Đang áp dụng trong học kỳ này'
                             : 'Chưa kích hoạt cho học kỳ này'}
@@ -355,7 +329,7 @@ function PlanTabsForm({
                     {round && <StatusPill {...PHASE[round.phase]} />}
 
                     {row.enabled && row.targetCohort && (
-                      <span className="inline-flex items-center gap-1.5 rounded-md bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400">
+                      <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 px-2.5 py-0.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
                         <GraduationCap className="size-3.5" />
                         Khóa: {row.targetCohort}
                       </span>
@@ -372,33 +346,32 @@ function PlanTabsForm({
 
                 {!row.enabled ? (
                   <div className="py-12 text-center space-y-3">
-                    <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-muted/60 text-muted-foreground">
+                    <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500">
                       <Calendar className="size-6" />
                     </div>
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-foreground">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                         {type.name} chưa được kích hoạt trong học kỳ này
                       </p>
-                      <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
                         Tích chọn &ldquo;Đang áp dụng trong học kỳ này&rdquo; ở trên để thiết lập lịch mở đăng ký và kế hoạch thực hiện.
                       </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
+                    <button
+                      type="button"
                       onClick={() => patch(type.id, { enabled: true })}
-                      className="mt-2 text-xs font-medium cursor-pointer"
+                      className="mt-2 inline-flex items-center rounded-lg border border-slate-300 dark:border-white/15 bg-slate-100 dark:bg-slate-800 px-4 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
                     >
                       Kích hoạt {type.name}
-                    </Button>
+                    </button>
                   </div>
                 ) : (
                   <>
                     {/* Giai đoạn 1: Đăng ký đề tài */}
                     <div className="space-y-4">
                       <div className="flex items-center gap-2">
-                        <Calendar className="size-4 text-primary" />
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        <Calendar className="size-4 text-blue-500" />
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                           Giai đoạn 1: Đăng ký đề tài
                         </h3>
                       </div>
@@ -424,7 +397,7 @@ function PlanTabsForm({
                         <div className="space-y-1.5">
                           <Label
                             htmlFor={`cohorts-${type.id}`}
-                            className="text-xs font-medium text-foreground"
+                            className="text-xs font-medium text-slate-800 dark:text-slate-100"
                           >
                             Khóa tuyển sinh đủ điều kiện
                           </Label>
@@ -437,11 +410,11 @@ function PlanTabsForm({
                           >
                             <SelectTrigger
                               id={`cohorts-${type.id}`}
-                              className="w-full h-9 text-sm"
+                              className="w-full h-9 text-sm rounded-lg border border-slate-300 dark:border-white/[0.16] bg-slate-50 dark:bg-[#090c13] px-3 text-slate-900 dark:text-slate-100 transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                             >
                               <SelectValue placeholder="Chọn khoá" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#131926]">
                               {cohortOptions.map((opt) => (
                                 <SelectItem key={opt.value} value={opt.value}>
                                   {opt.label}
@@ -453,19 +426,20 @@ function PlanTabsForm({
                       </div>
                     </div>
 
-                    <div className="border-t border-border/50" />
+                    {/* Đường phân cách mảnh border-b border-white/[0.08] */}
+                    <div className="border-b border-slate-200 dark:border-white/[0.08]" />
 
                     {/* Giai đoạn 2: Thực hiện đồ án */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Clock className="size-4 text-primary" />
-                          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                          <Clock className="size-4 text-blue-500" />
+                          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                             Giai đoạn 2: Thực hiện đồ án
                           </h3>
                         </div>
                         {daysDiff && (
-                          <span className="inline-flex items-center rounded-md bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground border border-border/40">
+                          <span className="inline-flex items-center rounded-md border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                             Thời lượng: {daysDiff} ngày
                           </span>
                         )}
@@ -475,12 +449,12 @@ function PlanTabsForm({
                         <div className="space-y-1.5">
                           <Label
                             htmlFor={`targetCohort-${type.id}`}
-                            className="text-xs font-medium text-foreground flex items-center gap-1.5"
+                            className="text-xs font-medium text-slate-800 dark:text-slate-100 flex items-center gap-1.5"
                           >
-                            <GraduationCap className="size-3.5 text-muted-foreground" />
+                            <GraduationCap className="size-3.5 text-slate-400" />
                             Mã Lớp / Khóa áp dụng
                           </Label>
-                          <Input
+                          <input
                             id={`targetCohort-${type.id}`}
                             placeholder={
                               type.code === 'DACS'
@@ -494,7 +468,7 @@ function PlanTabsForm({
                             onChange={(e) =>
                               patch(type.id, { targetCohort: e.target.value })
                             }
-                            className="h-9 text-sm"
+                            className="h-9 w-full rounded-lg border border-slate-300 dark:border-white/[0.16] bg-slate-50 dark:bg-[#090c13] px-3 text-sm text-slate-900 dark:text-slate-100 transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                           />
                         </div>
 
@@ -531,7 +505,8 @@ function PlanTabsForm({
                       </div>
                     </div>
 
-                    <div className="border-t border-border/50" />
+                    {/* Đường phân cách mảnh border-b border-white/[0.08] */}
+                    <div className="border-b border-slate-200 dark:border-white/[0.08]" />
 
                     {/* Danh mục bài phải nộp */}
                     {round ? (
@@ -540,33 +515,37 @@ function PlanTabsForm({
                         round={round}
                       />
                     ) : (
-                      <div className="rounded-xl border border-dashed border-border/80 p-5 text-center text-xs text-muted-foreground bg-muted/10">
-                        Đợt đồ án này chưa được lưu trong cơ sở dữ liệu. Bấm <strong>Lưu cấu hình</strong> bên dưới để tạo đợt, sau đó danh mục bài nộp sẽ sẵn sàng để thiết lập.
+                      <div className="rounded-xl border border-dashed border-slate-200 dark:border-white/10 p-5 text-center text-xs text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-[#090c13]/50">
+                        Đợt đồ án này chưa được lưu trong cơ sở dữ liệu. Nhấn <strong>Lưu cấu hình</strong> bên dưới để tạo đợt, sau đó danh mục bài nộp sẽ sẵn sàng để thiết lập.
                       </div>
                     )}
 
-                    {/* Bottom Action Bar */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-5 border-t border-border/50">
-                      <div className="text-xs text-muted-foreground">
+                    {/* Footer: 1 nút lưu chính duy nhất chuẩn Đoạn 5 */}
+                    <div className="flex items-center justify-between border-t border-slate-200 dark:border-white/[0.08] pt-5">
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
                         {problems.length > 0 ? (
                           <span className="text-destructive font-medium">• {problems[0]}</span>
                         ) : (
-                          <span>Cấu hình sẽ được lưu cho đợt <strong>{type.name}</strong></span>
+                          <>
+                            Áp dụng cho đợt:{' '}
+                            <strong className="text-slate-800 dark:text-slate-200">
+                              {type.name} {row.targetCohort ? `(${row.targetCohort})` : ''}
+                            </strong>
+                          </>
                         )}
-                      </div>
+                      </span>
 
-                      <Button
+                      <button
+                        type="button"
                         disabled={problems.length > 0 || isSaving}
                         onClick={handleSaveActiveTab}
-                        className="h-9 px-5 gap-2 font-medium cursor-pointer shadow-xs"
+                        className="flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                       >
                         {isSaving ? (
                           <Loader2 className="size-4 animate-spin" />
-                        ) : (
-                          <Save className="size-4" />
-                        )}
-                        Lưu cấu hình {type.name}
-                      </Button>
+                        ) : null}
+                        Lưu cấu hình
+                      </button>
                     </div>
                   </>
                 )}

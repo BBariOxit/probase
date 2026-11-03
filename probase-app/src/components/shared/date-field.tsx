@@ -24,7 +24,7 @@ export function DateField({
   showWeekday = false,
 }: {
   id: string;
-  label: string;
+  label?: string;
   hint?: string;
   value: string;
   onChange: (value: string) => void;
@@ -36,15 +36,20 @@ export function DateField({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-xs font-medium text-foreground">
-        {label}
-      </Label>
-      {hint && <p className="-mt-1 text-xs text-muted-foreground">{hint}</p>}
+      {label && (
+        <Label htmlFor={id} className="text-xs font-medium text-slate-800 dark:text-slate-100">
+          {label}
+        </Label>
+      )}
+      {hint && <p className="-mt-1 text-xs text-slate-500 dark:text-slate-400">{hint}</p>}
 
       <Input
         id={id}
         type="date"
-        className={cn('text-sm h-9', className)}
+        className={cn(
+          'text-sm h-9 rounded-lg border border-slate-300 dark:border-white/[0.16] bg-slate-50 dark:bg-[#090c13] px-3 text-slate-900 dark:text-slate-100 transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50',
+          className,
+        )}
         value={value}
         disabled={disabled}
         aria-invalid={invalid}
@@ -52,7 +57,7 @@ export function DateField({
       />
 
       {showWeekday && value && (
-        <p className="text-xs text-muted-foreground">{spell(value)}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{spell(value)}</p>
       )}
 
       {error && <p className="text-xs text-destructive">{error}</p>}

@@ -1,19 +1,15 @@
 'use client';
 
 import { forwardRef, useImperativeHandle, useState } from 'react';
-import { FileText, Loader2, Plus, Trash2 } from 'lucide-react';
+import { GripVertical, Loader2, Plus, Trash2 } from 'lucide-react';
 import { ApiError } from '@/lib/api/client';
 import {
   useRoundRequirements,
   useSetRoundRequirements,
 } from '@/lib/api/master-data';
 import type { RegistrationRound, SubmissionRequirement } from '@/lib/api/types';
-import { DateField } from '@/components/shared/date-field';
 import { FormError } from '@/components/shared/form-error';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
 
 export interface RoundRequirementsEditorRef {
   submit: () => Promise<boolean>;
@@ -27,8 +23,6 @@ interface Row {
   due: string;
   isRequired: boolean;
 }
-
-const SUGGESTED = ['Đề cương', 'Báo cáo tiến độ', 'Toàn văn & Slide', 'Mã nguồn'];
 
 function toDateInput(iso: string): string {
   return iso.slice(0, 10);
@@ -70,7 +64,6 @@ export const RoundRequirementsEditor = forwardRef<
   }
 
   function add(name = '') {
-    // Default due date: if round has officialEndDate, suggest 7 days before
     let defaultDue = '';
     if (round.officialEndDate) {
       defaultDue = round.officialEndDate.slice(0, 10);
@@ -136,27 +129,28 @@ export const RoundRequirementsEditor = forwardRef<
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FileText className="size-4 text-primary" />
-          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+      {/* Header Danh mục bài nộp */}
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/[0.08] pb-4">
+        <div>
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
             Danh mục bài phải nộp
+            <span className="rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs text-slate-600 dark:text-slate-400">
+              {rows.length}
+            </span>
           </h3>
-          <span className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-            {rows.length}
-          </span>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            Quy định các mốc tài liệu sinh viên bắt buộc phải nộp
+          </p>
         </div>
 
-        <Button
+        <button
           type="button"
-          variant="outline"
-          size="sm"
           onClick={() => add()}
-          className="h-8 gap-1.5 text-xs font-medium cursor-pointer"
+          className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-white/15 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
         >
           <Plus className="size-3.5" />
           Thêm mốc nộp bài
-        </Button>
+        </button>
       </div>
 
       <FormError message={error} />
@@ -168,138 +162,64 @@ export const RoundRequirementsEditor = forwardRef<
       )}
 
       {rows.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border/80 p-6 text-center space-y-3 bg-muted/10">
-          <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <FileText className="size-5" />
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-foreground">
-              Chưa có mốc nộp bài nào
-            </p>
-            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-              Thêm các mốc nộp đề cương, báo cáo tiến độ hoặc khóa luận để sinh viên và giảng viên theo dõi.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-            <span className="text-xs text-muted-foreground mr-1">Thêm nhanh:</span>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="h-7 text-xs font-medium cursor-pointer"
-              onClick={() => add('Đề cương chi tiết (M03)')}
-            >
-              + Đề cương (M03)
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="h-7 text-xs font-medium cursor-pointer"
-              onClick={() => add('Báo cáo tiến độ 1')}
-            >
-              + Báo cáo tiến độ 1
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="h-7 text-xs font-medium cursor-pointer"
-              onClick={() => add('Báo cáo toàn văn & Slide')}
-            >
-              + Toàn văn & Slide
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="h-7 text-xs font-medium cursor-pointer"
-              onClick={() => add('Mã nguồn')}
-            >
-              + Mã nguồn
-            </Button>
-          </div>
+        <div className="rounded-xl border border-dashed border-slate-200 dark:border-white/10 p-8 text-center space-y-2 bg-slate-50/50 dark:bg-[#090c13]/50">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            Chưa có mốc nộp bài nào
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+            Nhấn nút &ldquo;Thêm mốc nộp bài&rdquo; ở trên để thiết lập các hạn nộp tài liệu cho đợt này.
+          </p>
         </div>
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {rows.map((row, index) => (
-            <div
-              key={row.id ?? `new-${index}`}
-              className="group flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-3 rounded-xl border border-border/60 bg-card hover:border-border transition-all shadow-2xs"
-            >
-              {/* Index & Name */}
-              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-muted-foreground">
-                  {index + 1}
-                </span>
-                <Input
-                  placeholder="Tên bài nộp (ví dụ: Đề cương chi tiết)..."
-                  value={row.name}
-                  onChange={(e) => patch(index, { name: e.target.value })}
-                  className="h-9 text-sm bg-background/60"
-                />
-              </div>
+            <div key={row.id ?? `new-${index}`} className="flex items-center gap-3">
+              <span className="cursor-grab text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 shrink-0">
+                <GripVertical className="h-4 w-4" />
+              </span>
 
-              {/* Due Date */}
-              <div className="w-full sm:w-44 shrink-0">
-                <DateField
-                  id={`req-due-${round.id}-${index}`}
-                  label=""
-                  value={row.due}
-                  onChange={(due) => patch(index, { due })}
-                  className="h-9 text-xs bg-background/60"
-                />
-              </div>
+              {/* Ô nhập tên bài (flex-1) */}
+              <input
+                value={row.name}
+                onChange={(e) => patch(index, { name: e.target.value })}
+                placeholder="Tên tài liệu / bài nộp (ví dụ: Đề cương chi tiết)..."
+                className="h-9 flex-1 min-w-0 rounded-lg border border-slate-300 dark:border-white/[0.16] bg-slate-50 dark:bg-[#090c13] px-3 text-sm text-slate-900 dark:text-slate-100 transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
 
-              {/* Required toggle & Delete button */}
-              <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => patch(index, { isRequired: !row.isRequired })}
-                  className={cn(
-                    'px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer border select-none',
-                    row.isRequired
-                      ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
-                      : 'bg-muted text-muted-foreground border-border/60 hover:text-foreground'
-                  )}
-                  title="Nhấn để chuyển đổi giữa Bắt buộc và Tùy chọn"
-                >
-                  {row.isRequired ? 'Bắt buộc' : 'Tùy chọn'}
-                </button>
+              {/* Ô chọn hạn nộp (w-40) */}
+              <input
+                type="date"
+                value={row.due}
+                onChange={(e) => patch(index, { due: e.target.value })}
+                className="h-9 w-40 shrink-0 rounded-lg border border-slate-300 dark:border-white/[0.16] bg-slate-50 dark:bg-[#090c13] px-3 text-xs text-slate-700 dark:text-slate-300 transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => remove(index)}
-                  className="size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-                  title="Xóa mốc nộp này"
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
+              {/* Nút Bắt buộc (nhẹ dạng Pill Tag xám) */}
+              <button
+                type="button"
+                onClick={() => patch(index, { isRequired: !row.isRequired })}
+                className={cn(
+                  'h-9 shrink-0 rounded-lg border border-slate-300 dark:border-white/10 px-3 text-xs font-medium transition cursor-pointer select-none',
+                  row.isRequired
+                    ? 'bg-slate-200 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700'
+                    : 'bg-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/40',
+                )}
+                title="Nhấn để chuyển đổi giữa Bắt buộc và Tùy chọn"
+              >
+                {row.isRequired ? 'Bắt buộc' : 'Tùy chọn'}
+              </button>
+
+              {/* Nút xóa (icon Trash2) */}
+              <button
+                type="button"
+                onClick={() => remove(index)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 dark:text-slate-500 transition hover:bg-red-500/10 hover:text-red-400 cursor-pointer"
+                title="Xóa mốc nộp này"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             </div>
           ))}
-
-          {/* Quick add chips */}
-          <div className="flex items-center justify-between pt-1">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs text-muted-foreground mr-1">Gợi ý thêm:</span>
-              {SUGGESTED.filter((s) => !rows.some((r) => r.name.includes(s))).map(
-                (name) => (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => add(name)}
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted px-2 py-0.5 rounded-md border border-border/40 transition-colors cursor-pointer"
-                  >
-                    <Plus className="size-3" />
-                    {name}
-                  </button>
-                ),
-              )}
-            </div>
-          </div>
         </div>
       )}
     </div>
