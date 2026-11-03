@@ -78,15 +78,6 @@ function toDateInput(iso: string | null | undefined): string {
   return iso ? iso.slice(0, 10) : '';
 }
 
-function getDaysDifference(start: string, end: string): number | null {
-  if (!start || !end) return null;
-  const d1 = new Date(start);
-  const d2 = new Date(end);
-  const diffTime = d2.getTime() - d1.getTime();
-  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays > 0 ? diffDays : null;
-}
-
 export default function SemesterRoundsPage({
   params,
 }: {
@@ -278,7 +269,7 @@ function PlanTabsForm({
           setActiveTypeId(Number(val));
         }}
       >
-        {/* Segmented Control Tabs - Nhận diện màu chủ đạo text-primary & primary border rõ ràng */}
+        {/* Segmented Control Tabs - Active nền primary chữ trắng sắc nét */}
         <TabsList className="w-full h-auto p-1.5 bg-slate-200/80 dark:bg-[#141414] border border-slate-300 dark:border-neutral-800 rounded-xl grid grid-cols-3 gap-1.5">
           {rows.map(({ type }) => {
             const isActive = activeTypeId === type.id;
@@ -289,8 +280,8 @@ function PlanTabsForm({
                 className={cn(
                   'py-2.5 px-3 rounded-lg text-sm transition-all cursor-pointer font-medium',
                   isActive
-                    ? 'bg-white text-primary font-bold shadow-sm border border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/40 dark:shadow-md'
-                    : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200',
+                    ? 'bg-primary text-primary-foreground font-bold shadow-sm'
+                    : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-100 hover:bg-slate-300/40 dark:hover:bg-neutral-800/40',
                 )}
               >
                 <span className="truncate">{type.name}</span>
@@ -300,7 +291,6 @@ function PlanTabsForm({
         </TabsList>
 
         {rows.map(({ type, row, round, locked }) => {
-          const daysDiff = getDaysDifference(row.officialStart, row.officialEnd);
           const problems = describeProblems({ type, row });
 
           return (
@@ -325,14 +315,6 @@ function PlanTabsForm({
                     </label>
 
                     {round && <StatusPill {...PHASE[round.phase]} />}
-
-                    {/* Badge Khóa áp dụng - Sử dụng hoàn toàn màu chủ đạo Primary */}
-                    {row.enabled && row.targetCohort && (
-                      <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 text-primary border border-primary/20 dark:bg-primary/15 dark:text-primary dark:border-primary/30 px-2.5 py-1 text-xs font-semibold">
-                        <GraduationCap className="size-3.5 text-primary" />
-                        Khóa: {row.targetCohort}
-                      </span>
-                    )}
                   </div>
 
                   {locked && (
@@ -431,18 +413,11 @@ function PlanTabsForm({
 
                     {/* Giai đoạn 2: Thực hiện đồ án */}
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Clock className="size-4 text-primary" />
-                          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-300">
-                            Giai đoạn 2: Thực hiện đồ án
-                          </h3>
-                        </div>
-                        {daysDiff && (
-                          <span className="inline-flex items-center rounded-full bg-primary/10 text-primary border border-primary/20 dark:bg-primary/15 dark:text-primary dark:border-primary/30 px-2.5 py-0.5 text-xs font-medium">
-                            Thời lượng: {daysDiff} ngày
-                          </span>
-                        )}
+                      <div className="flex items-center gap-2">
+                        <Clock className="size-4 text-primary" />
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-300">
+                          Giai đoạn 2: Thực hiện đồ án
+                        </h3>
                       </div>
 
                       <div className="grid gap-4 sm:grid-cols-3">

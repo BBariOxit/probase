@@ -43,13 +43,10 @@ function TabsTrigger({
       className={cn(
         'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 cursor-pointer',
         'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200',
-        // Trạng thái Active - Đồng bộ màu chủ đạo text-primary và nền primary tint
-        'data-[active]:bg-white data-[active]:text-primary data-[active]:font-bold data-[active]:shadow-sm data-[active]:border data-[active]:border-primary/30',
-        'dark:data-[active]:bg-primary/15 dark:data-[active]:text-primary dark:data-[active]:font-bold dark:data-[active]:shadow-md dark:data-[active]:border dark:data-[active]:border-primary/40',
-        'aria-selected:bg-white aria-selected:text-primary aria-selected:font-bold aria-selected:shadow-sm aria-selected:border aria-selected:border-primary/30',
-        'dark:aria-selected:bg-primary/15 dark:aria-selected:text-primary dark:aria-selected:font-bold dark:aria-selected:shadow-md dark:aria-selected:border dark:aria-selected:border-primary/40',
-        'data-[selected]:bg-white data-[selected]:text-primary data-[selected]:font-bold data-[selected]:shadow-sm data-[selected]:border data-[selected]:border-primary/30',
-        'dark:data-[selected]:bg-primary/15 dark:data-[selected]:text-primary dark:data-[selected]:font-bold dark:data-[selected]:shadow-md dark:data-[selected]:border dark:data-[selected]:border-primary/40',
+        // Trạng thái Active: Nền màu chủ đạo primary với chữ trắng sắc nét
+        'data-[active]:bg-primary data-[active]:text-primary-foreground data-[active]:font-bold data-[active]:shadow-sm',
+        'aria-selected:bg-primary aria-selected:text-primary-foreground aria-selected:font-bold aria-selected:shadow-sm',
+        'data-[selected]:bg-primary data-[selected]:text-primary-foreground data-[selected]:font-bold data-[selected]:shadow-sm',
         className,
       )}
       {...props}

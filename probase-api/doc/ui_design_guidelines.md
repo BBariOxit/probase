@@ -93,11 +93,10 @@
   - Light: `bg-slate-200/80 border border-slate-300 p-1.5 rounded-xl`.
   - Dark: `bg-[#141414] border border-neutral-800 p-1.5 rounded-xl`.
 * **Trạng thái Active:**
-  - Light: `bg-white text-primary font-bold shadow-sm border border-primary/30`.
-  - Dark: `bg-primary/15 text-primary font-bold shadow-md border border-primary/40`.
+  - Đồng nhất cả Light & Dark: **Nền màu chủ đạo Solid `bg-primary` + chữ trắng `text-primary-foreground` font-bold shadow-sm**, cho hiệu ứng nhận diện nổi bật, sắc nét và dứt khoát như nút CTA chính.
 * **Trạng thái Inactive:**
-  - Light: `text-slate-600 hover:text-slate-900`.
-  - Dark: `text-neutral-400 hover:text-neutral-200`.
+  - Light: `text-slate-600 hover:text-slate-900 hover:bg-slate-300/40`.
+  - Dark: `text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800/40`.
 
 ### 4.2. Status Badges & Pills (Minimalist Tag)
 * Bỏ hoàn toàn dấu chấm tròn, chuyển sang bo nhẹ `rounded-md`:
@@ -106,8 +105,11 @@
   - **Đang xử lý / Gia hạn (Active):** Light `bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold` / Dark `dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-600/30 text-xs font-semibold`.
   - **Đã chốt / Tắt (Idle):** Light `bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold` / Dark `dark:bg-[#262626] dark:text-neutral-300 dark:border-neutral-700 text-xs font-medium`.
 
-### 4.3. Nút Hành động & Badge Khóa
-* **Badge 'Khóa: CTK...':** Đồng bộ 100% màu chủ đạo: `bg-primary/10 text-primary border border-primary/20 dark:bg-primary/15 dark:text-primary dark:border-primary/30 px-2.5 py-1 text-xs font-semibold`.
+### 4.3. Loại bỏ các Pill Viền Mờ / Tránh Hội chứng "Card-in-Card Mini"
+* **Triệt tiêu các badge viền mờ rải rác:**
+  - Bỏ hoàn toàn badge `Thời lượng: 90 ngày` (tính toán ngày đã hiển thị rõ ở các mốc bắt đầu/kết thúc).
+  - Bỏ badge `Khóa: CTK...` lặp lại ở đầu thẻ (đã có trường nhập liệu chính thức `Mã Lớp / Khóa áp dụng` bên dưới).
+  - Hạn chế tối đa kiểu pill nền mờ viền mờ (`bg-primary/15 border-primary/30`) gây rối mắt trên nền Dark Mode.
 * **Nút '+ Thêm mốc nộp bài':** `bg-primary text-primary-foreground hover:bg-primary/90 px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition`.
 * **Tag 'Bắt buộc':** `bg-slate-100 text-slate-700 border border-slate-200 dark:bg-[#262626] dark:text-neutral-200 dark:border-neutral-700 text-xs px-2.5 py-1 rounded-md`.
 
