@@ -37,8 +37,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex min-h-svh flex-1 bg-sidebar">
         <div className="hidden w-64 shrink-0 md:block" />
-        <div className="m-2 ml-0 flex flex-1 flex-col rounded-xl bg-background shadow-sm">
-          <div className="h-14 border-b" />
+        <div className="flex flex-1 flex-col bg-background">
+          <div className="h-14 border-b border-border bg-card" />
           <div className="flex flex-1 items-center justify-center">
             <div className="size-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
           </div>

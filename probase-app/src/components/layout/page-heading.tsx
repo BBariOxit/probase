@@ -3,14 +3,16 @@ export function PageHeading({
   description,
 }: {
   title: string;
-  description: string;
+  description?: string;
 }) {
   return (
-    <div className="space-y-1.5">
-      <h1 className="font-heading text-2xl font-semibold tracking-tight">
+    <div className="space-y-1">
+      <h1 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-2xl">
         {title}
       </h1>
-      <p className="text-sm text-muted-foreground">{description}</p>
+      {description && (
+        <p className="text-sm text-muted-foreground">{description}</p>
+      )}
     </div>
   );
 }

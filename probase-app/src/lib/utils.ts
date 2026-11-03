@@ -55,14 +55,14 @@ export function sanitizeLecturerName(
     raw = raw.replace(/\(.*?\)/, '').trim();
   }
 
-  // Tách học vị ở đầu tên nếu có
+  // Tách học vị ở đầu tên nếu có (dùng vòng lặp để bóc tách triệt để nếu bị duplicate: "ThS. ThS.")
   const titlePattern =
     /^(PGS\.TS|GS\.TS|ThS\.|TS\.|PGS\.|GS\.|ThS|TS|PGS|GS|Ths|Ts)\s+/i;
-  const match = raw.match(titlePattern);
   let detectedTitle = (academicTitle ?? '').trim();
 
-  if (match) {
-    if (!detectedTitle) {
+  while (titlePattern.test(raw)) {
+    const match = raw.match(titlePattern);
+    if (match && !detectedTitle) {
       detectedTitle = match[1].replace(/\.?$/, '.');
     }
     raw = raw.replace(titlePattern, '').trim();

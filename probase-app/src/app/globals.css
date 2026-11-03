@@ -7,9 +7,19 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-geist-sans);
+  --font-sans: var(--font-sans), 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-mono), monospace;
+  --font-heading: var(--font-sans), 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* DLU Brand Colors */
+  --color-dlu-50: #eff6ff;
+  --color-dlu-100: #dbeafe;
+  --color-dlu-500: #3b82f6;
+  --color-dlu-600: #2563eb;
+  --color-dlu-700: #1d4ed8;
+  --color-dlu-800: #1e40af;
+  --color-dlu-900: #1e3a8a;
+
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -59,83 +69,106 @@
 }
 
 :root {
-  --background: #f8fafc;
+  /* ==========================================================================
+     LIGHT MODE CONFIGURATION
+     ========================================================================== */
+  --background: #f8fafc; /* Canvas ngoài */
   --foreground: #0f172a;
+
   --card: #ffffff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  --primary: #1d4ed8;
+
+  /* --------------------------------------------------------------------------
+     MÀU CHỦ ĐẠO TOÀN DỰ ÁN (LIGHT MODE)
+     -> Chỉnh sửa mã màu này để thay đổi toàn bộ nút, tab, icon, viền focus
+     -------------------------------------------------------------------------- */
+  --primary: #3b82f6;
   --primary-foreground: #ffffff;
+  --ring: #3b82f6;
+
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
-  --accent: #f1f5f9;
-  --accent-foreground: #0f172a;
+  --accent: #eff6ff;
+  --accent-foreground: #3b82f6;
   --destructive: #ef4444;
   --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #1d4ed8;
+  --input: #cbd5e1;
 
-  --status-waiting: #b45309;
+  --status-waiting: #d97706;
   --status-waiting-bg: #fef3c7;
-  --status-active: #1d4ed8;
+  --status-active: #3b82f6;
   --status-active-bg: #eff6ff;
-  --status-success: #047857;
+  --status-success: #059669;
   --status-success-bg: #ecfdf5;
-  --status-danger: #b91c1c;
+  --status-danger: #dc2626;
   --status-danger-bg: #fef2f2;
-  --status-idle: #475569;
+  --status-idle: #64748b;
   --status-idle-bg: #f1f5f9;
 
-  --chart-1: #1d4ed8;
+  --chart-1: #3b82f6;
   --chart-2: #0284c7;
   --chart-3: #0d9488;
   --chart-4: #d97706;
   --chart-5: #dc2626;
 
   --radius: 0.625rem;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #0f172a;
-  --sidebar-primary: #1d4ed8;
+
+  /* Sidebar Midnight Dark */
+  --sidebar: #090d16;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f5f9;
-  --sidebar-accent-foreground: #0f172a;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #1d4ed8;
+  --sidebar-accent: rgba(255, 255, 255, 0.08);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #3b82f6;
 }
 
 .dark {
-  --background: #020617;
-  --foreground: #f1f5f9;
-  --card: #0f172a;
-  --card-foreground: #f1f5f9;
-  --popover: #0f172a;
-  --popover-foreground: #f1f5f9;
-  --primary: #2563eb;
+  /* ==========================================================================
+     DARK MODE CONFIGURATION (Matte Obsidian & Neutral Stone — Chuẩn Raycast)
+     ========================================================================== */
+  --background: #121212; /* Canvas ngoài: Đen nhám lì */
+  --foreground: #f5f5f5; /* Chữ chính: neutral-100 */
+
+  /* Khối Card nội dung chính: Xám đen phẳng #1e1e1e */
+  --card: #1e1e1e;
+  --card-foreground: #f5f5f5;
+  --popover: #1e1e1e;
+  --popover-foreground: #f5f5f5;
+
+  /* --------------------------------------------------------------------------
+     MÀU CHỦ ĐẠO TOÀN DỰ ÁN (DARK MODE)
+     -> Chỉnh sửa mã màu này để thay đổi toàn bộ nút, tab, icon, viền focus
+     -------------------------------------------------------------------------- */
+  --primary: #3b82f6;
   --primary-foreground: #ffffff;
-  --secondary: #1e293b;
-  --secondary-foreground: #f1f5f9;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #1e293b;
-  --accent-foreground: #f1f5f9;
+  --ring: #3b82f6;
+
+  --secondary: #262626;
+  --secondary-foreground: #f5f5f5;
+  --muted: #262626;
+  --muted-foreground: #a3a3a3; /* neutral-400 */
+  --accent: #262626;
+  --accent-foreground: #3b82f6;
   --destructive: #f87171;
-  --border: #1e293b;
-  --input: #1e293b;
-  --ring: #2563eb;
+  --border: #2e2e2e; /* neutral-800 */
+  --input: #404040; /* neutral-700 */
 
   --status-waiting: #fbbf24;
-  --status-waiting-bg: rgba(245, 158, 11, 0.1);
+  --status-waiting-bg: rgba(245, 158, 11, 0.15);
   --status-active: #60a5fa;
-  --status-active-bg: rgba(59, 130, 246, 0.1);
+  --status-active-bg: rgba(59, 130, 246, 0.15);
   --status-success: #34d399;
-  --status-success-bg: rgba(16, 185, 129, 0.1);
+  --status-success-bg: rgba(16, 185, 129, 0.15);
   --status-danger: #f87171;
-  --status-danger-bg: rgba(239, 68, 68, 0.1);
-  --status-idle: #94a3b8;
-  --status-idle-bg: rgba(30, 41, 59, 0.6);
+  --status-danger-bg: rgba(239, 68, 68, 0.15);
+  --status-idle: #a3a3a3;
+  --status-idle-bg: rgba(38, 38, 38, 0.6);
 
   --chart-1: #3b82f6;
   --chart-2: #38bdf8;
@@ -143,14 +176,14 @@
   --chart-4: #fbbf24;
   --chart-5: #f87171;
 
-  --sidebar: #020617;
-  --sidebar-foreground: #f1f5f9;
-  --sidebar-primary: #2563eb;
+  --sidebar: #090d16;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1e293b;
-  --sidebar-accent-foreground: #f1f5f9;
-  --sidebar-border: #1e293b;
-  --sidebar-ring: #2563eb;
+  --sidebar-accent: rgba(255, 255, 255, 0.08);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #3b82f6;
 }
 
 @layer base {
