@@ -47,7 +47,8 @@ export function DateField({
         id={id}
         type="date"
         className={cn(
-          'text-sm h-9 rounded-lg border border-slate-300 dark:border-white/[0.16] bg-slate-50 dark:bg-[#090c13] px-3 text-slate-900 dark:text-slate-100 transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50',
+          'text-sm h-9 rounded-lg border border-slate-300 bg-white text-slate-900 transition focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100',
+          'dark:border-white/20 dark:bg-black dark:text-zinc-50 dark:focus:border-white dark:focus:ring-1 dark:focus:ring-white disabled:opacity-50',
           className,
         )}
         value={value}

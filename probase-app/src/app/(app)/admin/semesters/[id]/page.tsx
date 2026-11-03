@@ -23,7 +23,7 @@ import type {
 } from '@/lib/api/types';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useBreadcrumbLabel } from '@/lib/breadcrumb-context';
-import { cn, getRecentCohorts } from '@/lib/utils';
+import { getRecentCohorts } from '@/lib/utils';
 import { toast } from 'sonner';
 import { DateField } from '@/components/shared/date-field';
 import { FormError } from '@/components/shared/form-error';
@@ -109,7 +109,7 @@ export default function SemesterRoundsPage({
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="space-y-1">
-        <h1 className="flex items-center gap-2 font-heading text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+        <h1 className="flex items-center gap-2 font-heading text-xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
           Đợt đăng ký · {semester?.name ?? `Học kỳ #${semesterId}`}
           <TooltipProvider delay={200}>
             <Tooltip>
@@ -117,7 +117,7 @@ export default function SemesterRoundsPage({
                 render={
                   <span
                     tabIndex={0}
-                    className="cursor-default text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    className="cursor-default text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300"
                   >
                     <Info className="size-4" />
                   </span>
@@ -131,7 +131,7 @@ export default function SemesterRoundsPage({
             </Tooltip>
           </TooltipProvider>
         </h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-slate-500 dark:text-zinc-400">
           Quản lý lịch trình đăng ký, thời gian thực hiện và danh mục bài nộp cho từng loại đồ án.
         </p>
       </div>
@@ -281,13 +281,13 @@ function PlanTabsForm({
           setActiveTypeId(Number(val));
         }}
       >
-        {/* Segmented Control Tabs - Bỏ toàn bộ chấm xanh Discord */}
-        <TabsList className="w-full h-auto p-1 bg-slate-100 dark:bg-[#090c13] border border-slate-200 dark:border-white/10 rounded-xl grid grid-cols-3 gap-1">
+        {/* Segmented Control Tabs - Vercel / Linear Style */}
+        <TabsList className="w-full h-auto p-1 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl grid grid-cols-3 gap-1">
           {rows.map(({ type }) => (
             <TabsTrigger
               key={type.id}
               value={String(type.id)}
-              className="py-2 px-3 rounded-lg text-sm transition-all"
+              className="py-2 px-3 rounded-lg text-sm transition-all cursor-pointer"
             >
               <span className="truncate">{type.name}</span>
             </TabsTrigger>
@@ -300,25 +300,25 @@ function PlanTabsForm({
 
           return (
             <TabsContent key={type.id} value={String(type.id)} className="mt-4">
-              {/* Card lớn bao bọc: Chuẩn hóa hệ màu Dark Mode than chì #131926 và viền border-white/[0.12] */}
-              <div className="space-y-6 rounded-xl border border-slate-200 dark:border-white/[0.12] bg-white dark:bg-[#131926] p-6 shadow-xl">
+              {/* Duy nhất 1 Primary Surface Card - Chuẩn hóa Hybrid Theming */}
+              <div className="space-y-6 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#121215] p-6 shadow-sm">
                 {/* Header của Tab: Bật/Tắt & Trạng thái */}
-                <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-white/[0.08]">
+                <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-white/10">
                   <div className="flex flex-wrap items-center gap-3">
                     <label className="flex items-center gap-3 cursor-pointer select-none">
                       <input
                         type="checkbox"
-                        className="size-4.5 rounded accent-blue-600 cursor-pointer"
+                        className="size-4.5 rounded accent-black dark:accent-white cursor-pointer"
                         checked={row.enabled}
                         onChange={(e) =>
                           patch(type.id, { enabled: e.target.checked })
                         }
                       />
                       <div>
-                        <span className="text-base font-bold text-slate-900 dark:text-slate-100">
+                        <span className="text-base font-bold text-slate-900 dark:text-zinc-100">
                           {type.name}
                         </span>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                        <p className="text-xs text-slate-500 dark:text-zinc-400">
                           {row.enabled
                             ? 'Đang áp dụng trong học kỳ này'
                             : 'Chưa kích hoạt cho học kỳ này'}
@@ -329,7 +329,7 @@ function PlanTabsForm({
                     {round && <StatusPill {...PHASE[round.phase]} />}
 
                     {row.enabled && row.targetCohort && (
-                      <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 px-2.5 py-0.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-zinc-800 px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:text-zinc-300">
                         <GraduationCap className="size-3.5" />
                         Khóa: {row.targetCohort}
                       </span>
@@ -346,21 +346,21 @@ function PlanTabsForm({
 
                 {!row.enabled ? (
                   <div className="py-12 text-center space-y-3">
-                    <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500">
+                    <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500">
                       <Calendar className="size-6" />
                     </div>
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-zinc-200">
                         {type.name} chưa được kích hoạt trong học kỳ này
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                      <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mx-auto">
                         Tích chọn &ldquo;Đang áp dụng trong học kỳ này&rdquo; ở trên để thiết lập lịch mở đăng ký và kế hoạch thực hiện.
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => patch(type.id, { enabled: true })}
-                      className="mt-2 inline-flex items-center rounded-lg border border-slate-300 dark:border-white/15 bg-slate-100 dark:bg-slate-800 px-4 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+                      className="mt-2 inline-flex items-center rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-zinc-800 px-4 py-2 text-xs font-medium text-slate-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-700 transition cursor-pointer"
                     >
                       Kích hoạt {type.name}
                     </button>
@@ -370,8 +370,8 @@ function PlanTabsForm({
                     {/* Giai đoạn 1: Đăng ký đề tài */}
                     <div className="space-y-4">
                       <div className="flex items-center gap-2">
-                        <Calendar className="size-4 text-blue-500" />
-                        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        <Calendar className="size-4 text-slate-500 dark:text-zinc-400" />
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
                           Giai đoạn 1: Đăng ký đề tài
                         </h3>
                       </div>
@@ -410,11 +410,11 @@ function PlanTabsForm({
                           >
                             <SelectTrigger
                               id={`cohorts-${type.id}`}
-                              className="w-full h-9 text-sm rounded-lg border border-slate-300 dark:border-white/[0.16] bg-slate-50 dark:bg-[#090c13] px-3 text-slate-900 dark:text-slate-100 transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              className="w-full h-9 text-sm rounded-lg border border-slate-300 bg-white px-3 text-slate-900 transition focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-white/20 dark:bg-black dark:text-zinc-50 dark:focus:border-white dark:focus:ring-1 dark:focus:ring-white"
                             >
                               <SelectValue placeholder="Chọn khoá" />
                             </SelectTrigger>
-                            <SelectContent className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#131926]">
+                            <SelectContent className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#121215]">
                               {cohortOptions.map((opt) => (
                                 <SelectItem key={opt.value} value={opt.value}>
                                   {opt.label}
@@ -426,20 +426,20 @@ function PlanTabsForm({
                       </div>
                     </div>
 
-                    {/* Đường phân cách mảnh border-b border-white/[0.08] */}
-                    <div className="border-b border-slate-200 dark:border-white/[0.08]" />
+                    {/* Đường phân cách mảnh border-t */}
+                    <div className="border-t border-slate-200 dark:border-white/10" />
 
                     {/* Giai đoạn 2: Thực hiện đồ án */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Clock className="size-4 text-blue-500" />
-                          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                          <Clock className="size-4 text-slate-500 dark:text-zinc-400" />
+                          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
                             Giai đoạn 2: Thực hiện đồ án
                           </h3>
                         </div>
                         {daysDiff && (
-                          <span className="inline-flex items-center rounded-md border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                          <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-zinc-800 px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:text-zinc-400">
                             Thời lượng: {daysDiff} ngày
                           </span>
                         )}
@@ -468,7 +468,7 @@ function PlanTabsForm({
                             onChange={(e) =>
                               patch(type.id, { targetCohort: e.target.value })
                             }
-                            className="h-9 w-full rounded-lg border border-slate-300 dark:border-white/[0.16] bg-slate-50 dark:bg-[#090c13] px-3 text-sm text-slate-900 dark:text-slate-100 transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                            className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-white/20 dark:bg-black dark:text-zinc-50 dark:placeholder:text-zinc-500 dark:focus:border-white dark:focus:ring-1 dark:focus:ring-white disabled:opacity-50"
                           />
                         </div>
 
@@ -505,8 +505,8 @@ function PlanTabsForm({
                       </div>
                     </div>
 
-                    {/* Đường phân cách mảnh border-b border-white/[0.08] */}
-                    <div className="border-b border-slate-200 dark:border-white/[0.08]" />
+                    {/* Đường phân cách mảnh border-t */}
+                    <div className="border-t border-slate-200 dark:border-white/10" />
 
                     {/* Danh mục bài phải nộp */}
                     {round ? (
@@ -515,20 +515,20 @@ function PlanTabsForm({
                         round={round}
                       />
                     ) : (
-                      <div className="rounded-xl border border-dashed border-slate-200 dark:border-white/10 p-5 text-center text-xs text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-[#090c13]/50">
+                      <div className="rounded-xl border border-dashed border-slate-200 dark:border-white/10 p-5 text-center text-xs text-slate-500 dark:text-zinc-400 bg-slate-50/50 dark:bg-zinc-950/30">
                         Đợt đồ án này chưa được lưu trong cơ sở dữ liệu. Nhấn <strong>Lưu cấu hình</strong> bên dưới để tạo đợt, sau đó danh mục bài nộp sẽ sẵn sàng để thiết lập.
                       </div>
                     )}
 
-                    {/* Footer: 1 nút lưu chính duy nhất chuẩn Đoạn 5 */}
-                    <div className="flex items-center justify-between border-t border-slate-200 dark:border-white/[0.08] pt-5">
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                    {/* Footer: 1 nút Primary CTA duy nhất */}
+                    <div className="flex items-center justify-between border-t border-slate-200 dark:border-white/10 pt-5">
+                      <span className="text-xs text-slate-500 dark:text-zinc-400">
                         {problems.length > 0 ? (
                           <span className="text-destructive font-medium">• {problems[0]}</span>
                         ) : (
                           <>
                             Áp dụng cho đợt:{' '}
-                            <strong className="text-slate-800 dark:text-slate-200">
+                            <strong className="text-slate-800 dark:text-zinc-200">
                               {type.name} {row.targetCohort ? `(${row.targetCohort})` : ''}
                             </strong>
                           </>
@@ -539,7 +539,7 @@ function PlanTabsForm({
                         type="button"
                         disabled={problems.length > 0 || isSaving}
                         onClick={handleSaveActiveTab}
-                        className="flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        className="flex items-center gap-2 rounded-lg bg-black text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 px-4 py-2 text-sm font-semibold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                       >
                         {isSaving ? (
                           <Loader2 className="size-4 animate-spin" />

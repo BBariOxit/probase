@@ -2,14 +2,14 @@ import { cn } from '@/lib/utils';
 
 const TONE_CLASS = {
   waiting:
-    'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
+    'bg-amber-50 text-amber-700 border border-amber-200/80 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
   active:
-    'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20',
+    'bg-blue-50 text-blue-700 border border-blue-200/80 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20',
   success:
-    'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
+    'bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
   danger:
-    'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',
-  idle: 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700',
+    'bg-rose-50 text-rose-700 border border-rose-200/80 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',
+  idle: 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-white/10',
 } as const;
 
 const DOT_CLASS = {
@@ -17,7 +17,7 @@ const DOT_CLASS = {
   active: 'bg-blue-600 dark:bg-blue-400',
   success: 'bg-emerald-500',
   danger: 'bg-rose-500',
-  idle: 'bg-slate-400',
+  idle: 'bg-slate-400 dark:bg-zinc-500',
 } as const;
 
 export type StatusTone = keyof typeof TONE_CLASS;
@@ -40,7 +40,7 @@ export function StatusPill({
         className,
       )}
     >
-      <span className={cn('size-1.5 rounded-full shrink-0', DOT_CLASS[tone])} />
+      <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', DOT_CLASS[tone])} />
       <span>{label}</span>
     </span>
   );
