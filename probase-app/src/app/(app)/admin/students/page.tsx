@@ -23,6 +23,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { sanitizeLecturerName } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Combobox } from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -103,6 +104,16 @@ export default function StudentRosterPage() {
 
   const students = data?.items ?? [];
 
+  const lecturerOptions = (lecturers ?? []).map((l) => ({
+    value: String(l.id),
+    label: sanitizeLecturerName(l.fullName, l.academicTitle).displayName,
+  }));
+
+  const majorOptions = (majors ?? []).map((m) => ({
+    value: String(m.id),
+    label: m.name,
+  }));
+
   // Tính số lượng bộ lọc nâng cao đang kích hoạt (không tính ô tìm kiếm text chính)
   const activeSecondaryCount =
     (classCode ? 1 : 0) +
@@ -161,7 +172,18 @@ export default function StudentRosterPage() {
             {/* 2. Nút "Bộ lọc" gộp với Popover chứa các filter thứ cấp */}
             <Popover
               open={filterPopoverOpen}
-              onOpenChange={setFilterPopoverOpen}
+              onOpenChange={(nextOpen, eventDetails) => {
+                if (!nextOpen && eventDetails?.reason === 'outside-press') {
+                  const target = eventDetails?.event?.target as HTMLElement | null;
+                  if (
+                    target?.closest?.('[data-combobox-content]') ||
+                    target?.closest?.('[data-combobox-trigger]')
+                  ) {
+                    return;
+                  }
+                }
+                setFilterPopoverOpen(nextOpen);
+              }}
             >
               <PopoverTrigger
                 render={
@@ -246,7 +268,7 @@ export default function StudentRosterPage() {
                           }
                         </SelectValue>
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="max-h-64">
                         {GROUP_FILTERS.map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
                             {opt.label}
@@ -277,7 +299,7 @@ export default function StudentRosterPage() {
                           }
                         </SelectValue>
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="max-h-64">
                         <SelectItem value={ANY}>Mọi đợt</SelectItem>
                         {rounds?.map((round) => (
                           <SelectItem key={round.id} value={round.id}>
@@ -298,31 +320,18 @@ export default function StudentRosterPage() {
                     <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
                       Chuyên ngành
                     </Label>
-                    <Select
-                      value={majorId}
-                      onValueChange={(val) =>
-                        refilter(() => setMajorId(val as number))
+                    <Combobox
+                      options={majorOptions}
+                      value={String(majorId)}
+                      onChange={(val) =>
+                        refilter(() => setMajorId(Number(val) || ANY))
                       }
-                    >
-                      <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700">
-                        <SelectValue>
-                          {(v) =>
-                            v === ANY
-                              ? 'Mọi chuyên ngành'
-                              : (majors?.find((m) => m.id === v)?.name ??
-                                'Mọi chuyên ngành')
-                          }
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={ANY}>Mọi chuyên ngành</SelectItem>
-                        {majors?.map((major) => (
-                          <SelectItem key={major.id} value={major.id}>
-                            {major.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      allLabel="Mọi chuyên ngành"
+                      allValue={String(ANY)}
+                      placeholder="Chọn chuyên ngành..."
+                      searchPlaceholder="Tìm chuyên ngành..."
+                      emptyText="Không tìm thấy chuyên ngành nào."
+                    />
                   </div>
 
                   {/* Lọc theo giảng viên hướng dẫn */}
@@ -330,30 +339,18 @@ export default function StudentRosterPage() {
                     <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
                       Giảng viên hướng dẫn
                     </Label>
-                    <Select
-                      value={lecturerId}
-                      onValueChange={(val) =>
-                        refilter(() => setLecturerId(val as number))
+                    <Combobox
+                      options={lecturerOptions}
+                      value={String(lecturerId)}
+                      onChange={(val) =>
+                        refilter(() => setLecturerId(Number(val) || ANY))
                       }
-                    >
-                      <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700">
-                        <SelectValue>
-                          {(v) => {
-                            const l = lecturers?.find((one) => one.id === v);
-                            if (!l) return 'Mọi giảng viên';
-                            return sanitizeLecturerName(l.fullName, l.academicTitle).displayName;
-                          }}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={ANY}>Mọi giảng viên</SelectItem>
-                        {lecturers?.map((l) => (
-                          <SelectItem key={l.id} value={l.id}>
-                            {sanitizeLecturerName(l.fullName, l.academicTitle).displayName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      allLabel="Mọi giảng viên"
+                      allValue={String(ANY)}
+                      placeholder="Chọn giảng viên..."
+                      searchPlaceholder="Tìm theo tên giảng viên..."
+                      emptyText="Không tìm thấy giảng viên nào."
+                    />
                   </div>
                 </div>
 
