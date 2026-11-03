@@ -216,7 +216,7 @@ export default function StudentRosterPage() {
                   {/* Lọc theo lớp sinh hoạt */}
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
-                      Mã Lớp (VD: CTK46PM, CTK47...)
+                      Mã lớp
                     </Label>
                     <Input
                       value={classCode}
