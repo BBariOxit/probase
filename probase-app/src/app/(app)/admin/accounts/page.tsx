@@ -156,7 +156,7 @@ export default function AccountsPage() {
             value={search}
             onChange={(event) => refilter(() => setSearch(event.target.value))}
             placeholder="Tìm theo tên hoặc email…"
-            className="pl-8"
+            className="pl-8 h-9 text-xs rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] focus-visible:border-primary"
             aria-label="Tìm tài khoản"
           />
         </div>
@@ -165,7 +165,7 @@ export default function AccountsPage() {
           value={role}
           onValueChange={(value) => refilter(() => setRole(value as string))}
         >
-          <SelectTrigger className="w-40" aria-label="Lọc theo vai trò">
+          <SelectTrigger className="w-40 h-9 text-xs rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700" aria-label="Lọc theo vai trò">
             <SelectValue>
               {(value) =>
                 ROLE_FILTERS.find((option) => option.value === value)?.label
@@ -185,7 +185,7 @@ export default function AccountsPage() {
           value={status}
           onValueChange={(value) => refilter(() => setStatus(value as string))}
         >
-          <SelectTrigger className="w-44" aria-label="Lọc theo trạng thái">
+          <SelectTrigger className="w-44 h-9 text-xs rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700" aria-label="Lọc theo trạng thái">
             <SelectValue>
               {(value) =>
                 STATUS_FILTERS.find((option) => option.value === value)?.label
@@ -203,8 +203,11 @@ export default function AccountsPage() {
 
         <div className="ml-auto flex items-center gap-2">
           {data && (
-            <span className="text-sm text-muted-foreground">
-              {data.meta.total} tài khoản
+            <span className="text-sm font-medium text-slate-600 dark:text-neutral-400 select-none">
+              <strong className="text-primary font-bold text-sm">
+                {data.meta.total}
+              </strong>{' '}
+              tài khoản
             </span>
           )}
           <UserImportDialog />
@@ -221,7 +224,7 @@ export default function AccountsPage() {
         </p>
       )}
 
-      <div className="overflow-hidden rounded-xl border">
+      <div className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] shadow-2xs">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -237,21 +240,45 @@ export default function AccountsPage() {
               {users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
-                    {nameOf(user)}
-                    <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-                      {user.email}
+                    <span
+                      onClick={() => setEditing(user)}
+                      className="font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary transition-colors cursor-pointer"
+                    >
+                      {nameOf(user)}
                     </span>
+                    <a
+                      href={`mailto:${user.email}`}
+                      className="mt-0.5 block text-xs font-mono text-primary hover:underline hover:text-primary/80 transition-colors w-fit"
+                    >
+                      {user.email}
+                    </a>
                   </TableCell>
-                  <TableCell className="text-muted-foreground tabular-nums">
-                    {codeOf(user) ?? '—'}
+                  <TableCell className="tabular-nums">
+                    <span className="font-mono text-xs font-semibold text-primary">
+                      {codeOf(user) ?? '—'}
+                    </span>
                     {user.studentProfile?.class && (
-                      <span className="mt-0.5 block text-xs">
+                      <span className="mt-0.5 block text-xs font-medium text-muted-foreground">
                         {user.studentProfile.class}
                       </span>
                     )}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {ROLE_LABEL[user.role]}
+                  <TableCell>
+                    {user.role === 'ADMIN' && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60">
+                        Quản trị viên
+                      </span>
+                    )}
+                    {user.role === 'LECTURER' && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary border border-primary/20">
+                        Giảng viên
+                      </span>
+                    )}
+                    {user.role === 'STUDENT' && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 dark:bg-neutral-800 dark:text-neutral-300 border border-slate-200/80 dark:border-neutral-700/80">
+                        Sinh viên
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell>
                     {user.isActive ? (

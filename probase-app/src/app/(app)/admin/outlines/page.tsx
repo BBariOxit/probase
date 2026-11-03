@@ -283,7 +283,7 @@ export default function AdminOutlinesPage() {
           />
         </Card>
       ) : (
-        <div className="rounded-xl border bg-card overflow-hidden shadow-2xs">
+        <div className="rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] overflow-hidden shadow-2xs">
           <Table>
             <TableHeader>
               <TableRow>
@@ -302,13 +302,13 @@ export default function AdminOutlinesPage() {
                   <TableRow key={group.id} className="hover:bg-muted/20">
                     <TableCell className="align-top py-3">
                       <div className="space-y-1">
-                        <p className="font-semibold text-foreground text-sm">
+                        <p className="font-semibold text-foreground text-sm hover:text-primary transition-colors cursor-pointer">
                           {group.name ?? `Nhóm ${group.id}`}
                         </p>
                         <div className="space-y-0.5 text-xs text-muted-foreground">
                           {group.members.map((m) => (
                             <div key={m.id}>
-                              {m.student.fullName} ({m.student.studentCode})
+                              {m.student.fullName} (<span className="font-mono text-primary font-semibold">{m.student.studentCode}</span>)
                             </div>
                           ))}
                         </div>

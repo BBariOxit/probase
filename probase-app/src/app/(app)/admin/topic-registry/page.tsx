@@ -294,8 +294,8 @@ export default function AdminTopicRegistryPage() {
         </Select>
 
         {data && (
-          <span className="ml-auto text-sm text-muted-foreground">
-            {data.total} đề tài
+          <span className="ml-auto text-sm font-medium text-slate-600 dark:text-neutral-400 select-none">
+            <strong className="text-primary font-bold text-sm">{data.total}</strong> đề tài
           </span>
         )}
       </div>
@@ -305,7 +305,7 @@ export default function AdminTopicRegistryPage() {
       )}
 
       {/* ── Table ── */}
-      <div className="overflow-hidden rounded-xl border">
+      <div className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] shadow-2xs">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -328,7 +328,7 @@ export default function AdminTopicRegistryPage() {
                   onClick={() => setSelectedTopicId(topic.id)}
                 >
                   <TableCell className="font-medium">
-                    {topic.title}
+                    <span className="font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary transition-colors">{topic.title}</span>
                     <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
                       {topic.semester.name}
                     </span>
