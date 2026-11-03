@@ -16,14 +16,14 @@ export function AppHeader({
   onSignOut: () => void;
 }) {
   return (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-      <SidebarTrigger className="-ml-1 text-muted-foreground" />
+    <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card/95 backdrop-blur-md px-4 sm:px-6 shadow-2xs">
+      <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground cursor-pointer" />
       <Separator orientation="vertical" className="mr-1 !h-4" />
 
       {/* Breadcrumb trail — single-segment paths degrade to a plain h1. */}
       <AppBreadcrumb role={user.role} />
 
-      <div className="ml-auto flex items-center gap-1.5">
+      <div className="ml-auto flex items-center gap-2">
         <NotificationBell role={user.role} />
         <ThemeToggle />
         <UserMenu user={user} onSignOut={onSignOut} />

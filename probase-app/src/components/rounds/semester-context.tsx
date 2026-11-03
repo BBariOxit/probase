@@ -29,7 +29,7 @@ export function SemesterContext() {
       <Tooltip>
         <TooltipTrigger
           render={
-            <div className="flex h-8 items-center justify-center text-muted-foreground">
+            <div className="flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-white/8 hover:text-white transition-colors cursor-pointer">
               <CalendarClock className="size-4" />
             </div>
           }
@@ -43,12 +43,12 @@ export function SemesterContext() {
   }
 
   return (
-    <div className="rounded-lg bg-sidebar-accent/70 px-2.5 py-2">
-      <p className="flex items-center gap-1.5 text-xs font-medium">
-        <CalendarClock className="size-3.5 shrink-0 text-muted-foreground" />
+    <div className="rounded-lg bg-white/5 border border-white/8 px-2.5 py-2">
+      <p className="flex items-center gap-1.5 text-xs font-medium text-slate-200">
+        <CalendarClock className="size-3.5 shrink-0 text-blue-400" />
         <span className="truncate">{active.name}</span>
       </p>
-      <p className="mt-0.5 pl-5 text-xs text-muted-foreground">
+      <p className="mt-0.5 pl-5 text-xs text-slate-400">
         {subject}
         {line}
       </p>

@@ -32,32 +32,38 @@ function NavEntry({ item }: { item: NavItem }) {
 
   if (!item.ready) {
     return (
-      <SidebarMenuItem>
+      <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
         <SidebarMenuButton
           disabled
           tooltip={`${item.label} — chưa xây dựng`}
-          className="h-9 cursor-not-allowed opacity-45"
+          className={cn(
+            'h-9 rounded-lg font-medium cursor-not-allowed opacity-35 text-slate-500',
+            'group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:justify-center',
+          )}
         >
-          <Icon />
-          <span>{item.label}</span>
+          <Icon className="size-4 shrink-0 text-slate-500" />
+          <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
     );
   }
 
   return (
-    <SidebarMenuItem>
+    <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
       <SidebarMenuButton
         isActive={active}
         tooltip={item.label}
         className={cn(
-          'h-9',
-          active && 'text-sidebar-primary [&_svg]:text-sidebar-primary',
+          'h-9 rounded-lg font-medium transition-all duration-150',
+          'group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:justify-center',
+          active
+            ? 'bg-blue-600 font-semibold text-white shadow-xs [&_svg]:text-white hover:bg-blue-600 hover:text-white'
+            : 'text-slate-400 hover:bg-white/8 hover:text-white [&_svg]:text-slate-400 hover:[&_svg]:text-white',
         )}
         render={<Link href={item.href} />}
       >
-        <Icon />
-        <span>{item.label}</span>
+        <Icon className="size-4 shrink-0" />
+        <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
       </SidebarMenuButton>
     </SidebarMenuItem>
   );
@@ -65,26 +71,34 @@ function NavEntry({ item }: { item: NavItem }) {
 
 export function AppSidebar({ user }: { user: SessionUser }) {
   return (
-    <Sidebar variant="inset" collapsible="icon">
-      <SidebarHeader className="px-3 py-3 group-data-[collapsible=icon]:hidden">
+    <Sidebar variant="sidebar" collapsible="icon">
+      <SidebarHeader className="h-14 flex items-center justify-between px-4 border-b border-white/8 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
         <Link
           href="/"
-          className="rounded-sm focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
+          className="flex items-center justify-center rounded-md focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
         >
-          <Brand />
+          <div className="group-data-[collapsible=icon]:hidden">
+            <Brand invert />
+          </div>
+          <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center size-8 rounded-lg bg-blue-600/20 text-blue-400 font-bold text-sm border border-blue-500/30">
+            PB
+          </div>
         </Link>
       </SidebarHeader>
 
-      <SidebarContent className="gap-4 group-data-[collapsible=icon]:pt-3">
+      <SidebarContent className="gap-4 px-1 py-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-2 group-data-[collapsible=icon]:gap-1">
         {NAV_BY_ROLE[user.role].map((group, index) => (
-          <SidebarGroup key={group.label ?? index} className="px-3 py-0">
+          <SidebarGroup
+            key={group.label ?? index}
+            className="px-3 py-0 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-0"
+          >
             {group.label && (
-              <SidebarGroupLabel className="mb-1">
+              <SidebarGroupLabel className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500 group-data-[collapsible=icon]:hidden">
                 {group.label}
               </SidebarGroupLabel>
             )}
-            <SidebarGroupContent>
-              <SidebarMenu className="gap-1">
+            <SidebarGroupContent className="group-data-[collapsible=icon]:w-full">
+              <SidebarMenu className="gap-1 group-data-[collapsible=icon]:gap-1 group-data-[collapsible=icon]:items-center">
                 {group.items.map((item) => (
                   <NavEntry key={item.href} item={item} />
                 ))}
@@ -94,7 +108,7 @@ export function AppSidebar({ user }: { user: SessionUser }) {
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="px-3 pb-3">
+      <SidebarFooter className="px-3 py-3 border-t border-white/8 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-2 flex items-center justify-center">
         <SemesterContext />
       </SidebarFooter>
 

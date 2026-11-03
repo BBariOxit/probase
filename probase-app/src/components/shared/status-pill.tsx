@@ -12,6 +12,14 @@ const TONE_CLASS = {
   idle: 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700',
 } as const;
 
+const DOT_CLASS = {
+  waiting: 'bg-amber-500',
+  active: 'bg-blue-600 dark:bg-blue-400',
+  success: 'bg-emerald-500',
+  danger: 'bg-rose-500',
+  idle: 'bg-slate-400',
+} as const;
+
 export type StatusTone = keyof typeof TONE_CLASS;
 
 export interface StatusLabel {
@@ -27,12 +35,13 @@ export function StatusPill({
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap',
+        'inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap',
         TONE_CLASS[tone],
         className,
       )}
     >
-      {label}
+      <span className={cn('size-1.5 rounded-full shrink-0', DOT_CLASS[tone])} />
+      <span>{label}</span>
     </span>
   );
 }

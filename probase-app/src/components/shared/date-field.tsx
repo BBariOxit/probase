@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -20,6 +21,7 @@ export function DateField({
   invalid = false,
   error,
   className,
+  showWeekday = false,
 }: {
   id: string;
   label: string;
@@ -30,28 +32,28 @@ export function DateField({
   invalid?: boolean;
   error?: string;
   className?: string;
+  showWeekday?: boolean;
 }) {
   return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-xs font-medium text-foreground">
+        {label}
+      </Label>
       {hint && <p className="-mt-1 text-xs text-muted-foreground">{hint}</p>}
 
       <Input
         id={id}
         type="date"
-        className={className}
+        className={cn('text-sm h-9', className)}
         value={value}
         disabled={disabled}
         aria-invalid={invalid}
         onChange={(event) => onChange(event.target.value)}
       />
 
-      {/*
-        Parsed as a plain calendar day rather than through `new Date(value)`,
-        which reads `yyyy-mm-dd` as UTC midnight and can render the day before
-        for anybody east of Greenwich — which is everybody here.
-      */}
-      {value && <p className="text-xs text-muted-foreground">{spell(value)}</p>}
+      {showWeekday && value && (
+        <p className="text-xs text-muted-foreground">{spell(value)}</p>
+      )}
 
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>

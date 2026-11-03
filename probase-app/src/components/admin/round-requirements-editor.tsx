@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Loader2, Plus, Trash2, Pencil } from 'lucide-react';
+import { forwardRef, useImperativeHandle, useState } from 'react';
+import { FileText, Loader2, Plus, Trash2 } from 'lucide-react';
 import { ApiError } from '@/lib/api/client';
 import {
   useRoundRequirements,
@@ -11,15 +11,15 @@ import type { RegistrationRound, SubmissionRequirement } from '@/lib/api/types';
 import { DateField } from '@/components/shared/date-field';
 import { FormError } from '@/components/shared/form-error';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+
+export interface RoundRequirementsEditorRef {
+  submit: () => Promise<boolean>;
+  hasChanges: boolean;
+  isValid: boolean;
+}
 
 interface Row {
   id?: number;
@@ -28,7 +28,7 @@ interface Row {
   isRequired: boolean;
 }
 
-const SUGGESTED = ['Đề cương', 'Báo cáo', 'Mã nguồn', 'Slide'];
+const SUGGESTED = ['Đề cương', 'Báo cáo tiến độ', 'Toàn văn & Slide', 'Mã nguồn'];
 
 function toDateInput(iso: string): string {
   return iso.slice(0, 10);
@@ -43,90 +43,48 @@ function toRow(requirement: SubmissionRequirement): Row {
   };
 }
 
-export function RoundRequirementsEditor({
-  round,
-}: {
-  round: RegistrationRound;
-}) {
+export const RoundRequirementsEditor = forwardRef<
+  RoundRequirementsEditorRef,
+  {
+    round: RegistrationRound;
+    onDirtyChange?: (isDirty: boolean) => void;
+  }
+>(function RoundRequirementsEditor({ round, onDirtyChange }, ref) {
   const { data, isPending } = useRoundRequirements(round.id);
   const save = useSetRoundRequirements();
   const [draft, setDraft] = useState<Row[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
-  const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  /*
-    What the server said, until the office types something — then their draft,
-    for good. Derived rather than copied into state by an effect: a refetch
-    landing mid-edit would otherwise wipe what they were in the middle of
-    writing.
-  */
-  const rows = draft ?? data?.map(toRow) ?? null;
+  const rows = draft ?? data?.map(toRow) ?? [];
+  const hasChanges = draft !== null;
 
   function edit(next: Row[]) {
-    setSaved(false);
-    setHasSubmitted(false);
     setDraft(next);
+    onDirtyChange?.(true);
   }
 
   function patch(index: number, changes: Partial<Row>) {
     edit(
-      (rows ?? []).map((row, at) =>
-        at === index ? { ...row, ...changes } : row,
-      ),
+      rows.map((row, at) => (at === index ? { ...row, ...changes } : row)),
     );
   }
 
   function add(name = '') {
-    edit([...(rows ?? []), { name, due: '', isRequired: true }]);
+    // Default due date: if round has officialEndDate, suggest 7 days before
+    let defaultDue = '';
+    if (round.officialEndDate) {
+      defaultDue = round.officialEndDate.slice(0, 10);
+    }
+    edit([...rows, { name, due: defaultDue, isRequired: true }]);
   }
 
   function remove(index: number) {
-    edit((rows ?? []).filter((_, at) => at !== index));
-  }
-
-  async function submit() {
-    setHasSubmitted(true);
-    setError(null);
-    setSaved(false);
-
-    if (problems.length > 0 || duplicated) return;
-
-    try {
-      const next = await save.mutateAsync({
-        roundId: round.id,
-        requirements: (rows ?? []).map((row) => ({
-          id: row.id,
-          name: row.name.trim(),
-          dueAt: new Date(row.due).toISOString(),
-          isRequired: row.isRequired,
-        })),
-      });
-
-      setDraft(next.map(toRow));
-      setSaved(true);
-      toast.success('Đã lưu danh sách bài nộp.');
-    } catch (err) {
-      // The refusal worth reading comes from the API: a document groups have
-      // already handed work in against cannot be taken off the list.
-      setError(
-        err instanceof ApiError ? err.message : 'Không kết nối được máy chủ',
-      );
-    }
-  }
-
-  if (isPending || rows === null) {
-    return (
-      <div className="flex justify-center py-8">
-        <Loader2 className="size-4 animate-spin text-muted-foreground" />
-      </div>
-    );
+    edit(rows.filter((_, at) => at !== index));
   }
 
   const problems = rows.flatMap((row, index) => {
     if (row.name.trim() === '') return [`Mục ${index + 1}: chưa có tên.`];
-    if (row.due === '') return [`${row.name} chưa có hạn nộp.`];
-
+    if (row.due === '') return [`"${row.name || `Mục ${index + 1}`}" chưa có hạn nộp.`];
     return [];
   });
 
@@ -134,162 +92,216 @@ export function RoundRequirementsEditor({
     new Set(rows.map((row) => row.name.trim().toLowerCase())).size !==
     rows.length;
 
-  const isCompact =
-    saved || (data != null && data.length > 0 && draft === null);
+  const isValid = problems.length === 0 && !duplicated;
+
+  async function submitInternal(): Promise<boolean> {
+    if (!isValid) return false;
+    setError(null);
+
+    try {
+      const next = await save.mutateAsync({
+        roundId: round.id,
+        requirements: rows.map((row) => ({
+          id: row.id,
+          name: row.name.trim(),
+          dueAt: new Date(row.due).toISOString(),
+          isRequired: row.isRequired,
+        })),
+      });
+
+      setDraft(null);
+      onDirtyChange?.(false);
+      return true;
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : 'Không kết nối được máy chủ',
+      );
+      return false;
+    }
+  }
+
+  useImperativeHandle(ref, () => ({
+    submit: submitInternal,
+    hasChanges,
+    isValid,
+  }));
+
+  if (isPending) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
-    <div
-      className={
-        isCompact
-          ? 'flex flex-wrap items-center justify-between gap-4 rounded-xl border p-4'
-          : 'space-y-2.5 rounded-xl border p-4'
-      }
-    >
-      <h3 className="text-sm font-medium">{round.projectType.name}</h3>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FileText className="size-4 text-primary" />
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Danh mục bài phải nộp
+          </h3>
+          <span className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+            {rows.length}
+          </span>
+        </div>
 
-      {isCompact ? (
-        <div className="inline-flex items-center gap-3 rounded-lg border bg-muted/30 pl-4 pr-1.5 py-1.5">
-          <p className="text-sm">
-            {rows.length === 0 ? (
-              <span className="text-muted-foreground">
-                Không có bài nộp nào.
-              </span>
-            ) : (
-              rows.map((r) => r.name).join(', ')
-            )}
-          </p>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 shrink-0 text-muted-foreground hover:bg-background hover:text-foreground"
-            onClick={() => {
-              setDraft(rows);
-              setSaved(false);
-            }}
-          >
-            <Pencil className="size-3.5" />
-          </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => add()}
+          className="h-8 gap-1.5 text-xs font-medium cursor-pointer"
+        >
+          <Plus className="size-3.5" />
+          Thêm mốc nộp bài
+        </Button>
+      </div>
+
+      <FormError message={error} />
+
+      {duplicated && (
+        <p className="text-xs font-medium text-destructive">
+          Có tên bài nộp bị trùng lặp. Vui lòng đặt tên phân biệt.
+        </p>
+      )}
+
+      {rows.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border/80 p-6 text-center space-y-3 bg-muted/10">
+          <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <FileText className="size-5" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-foreground">
+              Chưa có mốc nộp bài nào
+            </p>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+              Thêm các mốc nộp đề cương, báo cáo tiến độ hoặc khóa luận để sinh viên và giảng viên theo dõi.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+            <span className="text-xs text-muted-foreground mr-1">Thêm nhanh:</span>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="h-7 text-xs font-medium cursor-pointer"
+              onClick={() => add('Đề cương chi tiết (M03)')}
+            >
+              + Đề cương (M03)
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="h-7 text-xs font-medium cursor-pointer"
+              onClick={() => add('Báo cáo tiến độ 1')}
+            >
+              + Báo cáo tiến độ 1
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="h-7 text-xs font-medium cursor-pointer"
+              onClick={() => add('Báo cáo toàn văn & Slide')}
+            >
+              + Toàn văn & Slide
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="h-7 text-xs font-medium cursor-pointer"
+              onClick={() => add('Mã nguồn')}
+            >
+              + Mã nguồn
+            </Button>
+          </div>
         </div>
       ) : (
-        <div className="space-y-3 pt-1">
-          <FormError message={error} />
+        <div className="space-y-2.5">
+          {rows.map((row, index) => (
+            <div
+              key={row.id ?? `new-${index}`}
+              className="group flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-3 rounded-xl border border-border/60 bg-card hover:border-border transition-all shadow-2xs"
+            >
+              {/* Index & Name */}
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-muted-foreground">
+                  {index + 1}
+                </span>
+                <Input
+                  placeholder="Tên bài nộp (ví dụ: Đề cương chi tiết)..."
+                  value={row.name}
+                  onChange={(e) => patch(index, { name: e.target.value })}
+                  className="h-9 text-sm bg-background/60"
+                />
+              </div>
 
-          {rows.length === 0 ? (
-            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed px-3 py-3">
-              <span className="text-sm text-muted-foreground">
-                Chưa khai mục nào. Thường có:
-              </span>
-              {SUGGESTED.map((name) => (
+              {/* Due Date */}
+              <div className="w-full sm:w-44 shrink-0">
+                <DateField
+                  id={`req-due-${round.id}-${index}`}
+                  label=""
+                  value={row.due}
+                  onChange={(due) => patch(index, { due })}
+                  className="h-9 text-xs bg-background/60"
+                />
+              </div>
+
+              {/* Required toggle & Delete button */}
+              <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => patch(index, { isRequired: !row.isRequired })}
+                  className={cn(
+                    'px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer border select-none',
+                    row.isRequired
+                      ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
+                      : 'bg-muted text-muted-foreground border-border/60 hover:text-foreground'
+                  )}
+                  title="Nhấn để chuyển đổi giữa Bắt buộc và Tùy chọn"
+                >
+                  {row.isRequired ? 'Bắt buộc' : 'Tùy chọn'}
+                </button>
+
                 <Button
-                  key={name}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => add(name)}
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => remove(index)}
+                  className="size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                  title="Xóa mốc nộp này"
                 >
-                  <Plus />
-                  {name}
+                  <Trash2 className="size-4" />
                 </Button>
-              ))}
+              </div>
             </div>
-          ) : (
-            <ul className="space-y-2">
-              {rows.map((row, index) => (
-                <li
-                  key={row.id ?? `new-${index}`}
-                  className="grid items-start gap-3 sm:grid-cols-[minmax(0,1fr)_12rem_auto]"
-                >
-                  <div className="space-y-2">
-                    <Label htmlFor={`name-${round.id}-${index}`}>
-                      Tên mục nộp
-                    </Label>
-                    <Select
-                      value={row.name}
-                      onValueChange={(value) =>
-                        patch(index, { name: value as string })
-                      }
-                    >
-                      <SelectTrigger
-                        id={`name-${round.id}-${index}`}
-                        aria-label={`Tên mục ${index + 1}`}
-                        className="w-full"
-                        aria-invalid={hasSubmitted && row.name.trim() === ''}
-                      >
-                        <SelectValue placeholder="Chọn mục nộp" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SUGGESTED.map((name) => (
-                          <SelectItem key={name} value={name}>
-                            {name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <label className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
-                      <input
-                        type="checkbox"
-                        className="size-3.5 accent-primary"
-                        checked={row.isRequired}
-                        onChange={(event) =>
-                          patch(index, { isRequired: event.target.checked })
-                        }
-                      />
-                      Bắt buộc
-                    </label>
-                  </div>
+          ))}
 
-                  <DateField
-                    id={`due-${round.id}-${index}`}
-                    label="Hạn nộp"
-                    value={row.due}
-                    invalid={hasSubmitted && row.due === ''}
-                    onChange={(due) => patch(index, { due })}
-                  />
-
-                  <div className="flex flex-col space-y-2">
-                    <Label className="invisible">X</Label>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-muted-foreground hover:text-destructive"
-                      aria-label={`Xoá ${row.name || `mục ${index + 1}`}`}
-                      onClick={() => remove(index)}
-                    >
-                      <Trash2 />
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {hasSubmitted && duplicated && (
-            <p className="text-sm text-destructive">
-              Hai mục trùng tên — sinh viên sẽ không biết chọn cái nào.
-            </p>
-          )}
-
-          {hasSubmitted &&
-            problems.map((problem) => (
-              <p key={problem} className="text-sm text-destructive">
-                {problem}
-              </p>
-            ))}
-
-          <div className="flex items-center gap-4 pt-4">
-            {rows.length > 0 && (
-              <Button variant="outline" size="sm" onClick={() => add()}>
-                <Plus />
-                Thêm mục
-              </Button>
-            )}
-
-            <Button disabled={save.isPending} onClick={submit}>
-              {save.isPending ? <Loader2 className="animate-spin" /> : null}
-              Lưu danh sách
-            </Button>
+          {/* Quick add chips */}
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs text-muted-foreground mr-1">Gợi ý thêm:</span>
+              {SUGGESTED.filter((s) => !rows.some((r) => r.name.includes(s))).map(
+                (name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => add(name)}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted px-2 py-0.5 rounded-md border border-border/40 transition-colors cursor-pointer"
+                  >
+                    <Plus className="size-3" />
+                    {name}
+                  </button>
+                ),
+              )}
+            </div>
           </div>
         </div>
       )}
     </div>
   );
-}
+});
