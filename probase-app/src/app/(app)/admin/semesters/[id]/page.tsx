@@ -280,11 +280,13 @@ function PlanTabsForm({
                 className={cn(
                   'py-2.5 px-3 rounded-lg text-sm transition-all cursor-pointer font-medium',
                   isActive
-                    ? 'bg-primary text-primary-foreground font-bold shadow-sm'
+                    ? 'bg-primary text-white dark:text-white font-bold shadow-sm'
                     : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-100 hover:bg-slate-300/40 dark:hover:bg-neutral-800/40',
                 )}
               >
-                <span className="truncate">{type.name}</span>
+                <span className={cn('truncate', isActive ? 'text-white dark:text-white font-bold' : '')}>
+                  {type.name}
+                </span>
               </TabsTrigger>
             );
           })}

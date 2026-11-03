@@ -43,10 +43,10 @@ function TabsTrigger({
       className={cn(
         'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 cursor-pointer',
         'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200',
-        // Trạng thái Active: Nền màu chủ đạo primary với chữ trắng sắc nét
-        'data-[active]:bg-primary data-[active]:text-primary-foreground data-[active]:font-bold data-[active]:shadow-sm',
-        'aria-selected:bg-primary aria-selected:text-primary-foreground aria-selected:font-bold aria-selected:shadow-sm',
-        'data-[selected]:bg-primary data-[selected]:text-primary-foreground data-[selected]:font-bold data-[selected]:shadow-sm',
+        // Trạng thái Active: Nền màu chủ đạo primary với chữ trắng sắc nét (cả Light và Dark)
+        'data-[active]:bg-primary data-[active]:text-white dark:data-[active]:text-white data-[active]:font-bold data-[active]:shadow-sm',
+        'aria-selected:bg-primary aria-selected:text-white dark:aria-selected:text-white aria-selected:font-bold aria-selected:shadow-sm',
+        'data-[selected]:bg-primary data-[selected]:text-white dark:data-[selected]:text-white data-[selected]:font-bold data-[selected]:shadow-sm',
         className,
       )}
       {...props}
