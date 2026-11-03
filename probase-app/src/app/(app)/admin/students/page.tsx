@@ -537,24 +537,24 @@ export default function StudentRosterPage() {
         <div className="rounded-xl border border-[#d1d5e0] dark:border-neutral-800 bg-white dark:bg-[#1a1d26] shadow-2xs overflow-hidden">
           <div className="overflow-x-auto">
             <Table className="relative w-full text-left text-sm">
-              <TableHeader className="sticky top-0 z-20 bg-slate-50/95 dark:bg-[#141414]/95 backdrop-blur-xs border-b border-[#d1d5e0] dark:border-neutral-800 shadow-2xs">
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="min-w-44 px-5 py-3 font-semibold text-slate-700 dark:text-neutral-300">
+              <TableHeader className="sticky top-0 z-20 bg-slate-900 text-slate-100 dark:bg-slate-100 dark:text-slate-900 border-b border-slate-800 dark:border-slate-300 shadow-2xs">
+                <TableRow className="hover:bg-transparent border-b-0">
+                  <TableHead className="min-w-44 px-5 py-3.5 font-bold uppercase tracking-wider text-slate-100 dark:text-slate-900">
                     Sinh viên
                   </TableHead>
-                  <TableHead className="w-28 px-4 py-3 font-semibold text-slate-700 dark:text-neutral-300">
+                  <TableHead className="w-28 px-4 py-3.5 font-bold uppercase tracking-wider text-slate-200 dark:text-slate-800">
                     Lớp
                   </TableHead>
-                  <TableHead className="w-40 px-4 py-3 font-semibold text-slate-700 dark:text-neutral-300">
+                  <TableHead className="w-40 px-4 py-3.5 font-bold uppercase tracking-wider text-slate-200 dark:text-slate-800">
                     Chuyên ngành
                   </TableHead>
-                  <TableHead className="w-80 max-w-[320px] px-5 py-3 font-semibold text-slate-700 dark:text-neutral-300">
+                  <TableHead className="w-80 max-w-[320px] px-5 py-3.5 font-bold uppercase tracking-wider text-slate-200 dark:text-slate-800">
                     Đề tài
                   </TableHead>
-                  <TableHead className="w-44 px-4 py-3 font-semibold text-slate-700 dark:text-neutral-300">
+                  <TableHead className="w-44 px-4 py-3.5 font-bold uppercase tracking-wider text-slate-200 dark:text-slate-800">
                     GV hướng dẫn
                   </TableHead>
-                  <TableHead className="min-w-36 px-4 py-3 font-semibold text-slate-700 dark:text-neutral-300">
+                  <TableHead className="min-w-36 px-4 py-3.5 font-bold uppercase tracking-wider text-slate-200 dark:text-slate-800">
                     Ghi chú
                   </TableHead>
                 </TableRow>
