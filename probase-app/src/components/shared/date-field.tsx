@@ -37,7 +37,7 @@ export function DateField({
   return (
     <div className="space-y-1.5">
       {label && (
-        <Label htmlFor={id} className="text-xs font-medium text-slate-800 dark:text-slate-100">
+        <Label htmlFor={id} className="text-xs font-medium text-slate-800 dark:text-slate-200">
           {label}
         </Label>
       )}
@@ -48,7 +48,7 @@ export function DateField({
         type="date"
         className={cn(
           'text-sm h-9 rounded-lg border border-slate-300 bg-white text-slate-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
-          'dark:border-white/15 dark:bg-black dark:text-zinc-50 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary disabled:opacity-50',
+          'dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary disabled:opacity-50',
           className,
         )}
         value={value}

@@ -2,14 +2,14 @@ import { cn } from '@/lib/utils';
 
 const TONE_CLASS = {
   waiting:
-    'bg-amber-50 text-amber-700 border border-amber-200 font-semibold dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-500/20 dark:font-medium',
+    'bg-amber-50 text-amber-700 border border-amber-300 font-semibold dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 dark:font-semibold',
   active:
-    'bg-blue-50 text-blue-700 border border-blue-200 font-semibold dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-500/20 dark:font-medium',
+    'bg-blue-50 text-blue-700 border border-blue-200 font-semibold dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30 dark:font-semibold',
   success:
-    'bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-500/20 dark:font-medium',
+    'bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30 dark:font-semibold',
   danger:
-    'bg-rose-50 text-rose-700 border border-rose-200 font-semibold dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-500/20 dark:font-medium',
-  idle: 'bg-slate-100 text-slate-700 border border-slate-200 font-semibold dark:bg-zinc-800 dark:text-zinc-300 dark:border-white/10 dark:font-medium',
+    'bg-rose-50 text-rose-700 border border-rose-300 font-semibold dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30 dark:font-semibold',
+  idle: 'bg-slate-100 text-slate-700 border border-slate-200 font-semibold dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:font-medium',
 } as const;
 
 export type StatusTone = keyof typeof TONE_CLASS;

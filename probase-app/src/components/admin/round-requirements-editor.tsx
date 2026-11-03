@@ -122,7 +122,7 @@ export const RoundRequirementsEditor = forwardRef<
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+        <Loader2 className="size-5 animate-spin text-primary" />
       </div>
     );
   }
@@ -131,18 +131,18 @@ export const RoundRequirementsEditor = forwardRef<
     <div className="space-y-4">
       {/* Header Danh mục bài nộp */}
       <div className="flex items-center justify-between pb-2">
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-zinc-100">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
           Danh mục bài phải nộp
-          <span className="rounded-full bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-zinc-400">
+          <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-semibold">
             {rows.length}
           </span>
         </h3>
 
-        {/* Nút thêm mốc nộp bài - Sử dụng màu chủ đạo Primary Brand */}
+        {/* Nút thêm mốc nộp bài - Màu chủ đạo #3b82f6 */}
         <button
           type="button"
           onClick={() => add()}
-          className="flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer"
+          className="flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-blue-600 px-3.5 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer"
         >
           <Plus className="size-3.5" />
           Thêm mốc nộp bài
@@ -158,11 +158,11 @@ export const RoundRequirementsEditor = forwardRef<
       )}
 
       {rows.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-200 dark:border-white/10 p-8 text-center space-y-1 bg-slate-50/50 dark:bg-zinc-950/30">
-          <p className="text-sm font-medium text-slate-700 dark:text-zinc-300">
+        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700/80 p-8 text-center space-y-1 bg-slate-50/50 dark:bg-slate-900/40">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
             Chưa có mốc nộp bài nào
           </p>
-          <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mx-auto">
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
             Nhấn &ldquo;Thêm mốc nộp bài&rdquo; để thiết lập các hạn nộp tài liệu cho đợt này.
           </p>
         </div>
@@ -170,7 +170,7 @@ export const RoundRequirementsEditor = forwardRef<
         <div className="space-y-3">
           {rows.map((row, index) => (
             <div key={row.id ?? `new-${index}`} className="flex items-center gap-3">
-              <span className="cursor-grab text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 shrink-0">
+              <span className="cursor-grab text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 shrink-0">
                 <GripVertical className="h-4 w-4" />
               </span>
 
@@ -179,7 +179,7 @@ export const RoundRequirementsEditor = forwardRef<
                 value={row.name}
                 onChange={(e) => patch(index, { name: e.target.value })}
                 placeholder="Tên tài liệu / bài nộp (ví dụ: Đề cương chi tiết)..."
-                className="h-9 flex-1 min-w-0 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-white/15 dark:bg-black dark:text-zinc-50 dark:placeholder:text-zinc-500 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary"
+                className="h-9 flex-1 min-w-0 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary"
               />
 
               {/* Ô chọn hạn nộp (w-40) */}
@@ -187,7 +187,7 @@ export const RoundRequirementsEditor = forwardRef<
                 type="date"
                 value={row.due}
                 onChange={(e) => patch(index, { due: e.target.value })}
-                className="h-9 w-40 shrink-0 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-white/15 dark:bg-black dark:text-zinc-50 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary"
+                className="h-9 w-40 shrink-0 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary"
               />
 
               {/* Nút Bắt buộc (Pill Tag) */}
@@ -197,8 +197,8 @@ export const RoundRequirementsEditor = forwardRef<
                 className={cn(
                   'h-8 shrink-0 text-xs font-medium px-2.5 py-1 transition cursor-pointer select-none rounded-md',
                   row.isRequired
-                    ? 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-white/10'
-                    : 'border border-transparent bg-transparent text-slate-500 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800/40',
+                    ? 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    : 'border border-transparent bg-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/40',
                 )}
                 title="Nhấn để chuyển đổi giữa Bắt buộc và Tùy chọn"
               >
@@ -209,7 +209,7 @@ export const RoundRequirementsEditor = forwardRef<
               <button
                 type="button"
                 onClick={() => remove(index)}
-                className="p-1 text-slate-400 hover:text-red-600 dark:text-zinc-500 dark:hover:text-red-400 transition cursor-pointer"
+                className="p-1 text-slate-400 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400 transition cursor-pointer"
                 title="Xóa mốc nộp này"
               >
                 <Trash2 className="h-4 w-4" />
