@@ -298,9 +298,9 @@ function PlanTabsForm({
           return (
             <TabsContent key={type.id} value={String(type.id)} className="mt-4">
               {/* Khối Card nội dung chính: Xám đen phẳng #1e1e1e, viền border-neutral-800 */}
-              <div className="space-y-6 rounded-xl border border-slate-200/80 dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] p-6 shadow-sm">
+              <div className="space-y-6 rounded-xl border border-[#d1d5e0] dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] p-6 shadow-sm">
                 {/* Header của Tab: Bật/Tắt & Trạng thái */}
-                <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-neutral-800">
+                <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#d1d5e0] dark:border-neutral-800">
                   <div className="flex flex-wrap items-center gap-3">
                     <label className="flex items-center gap-2.5 cursor-pointer select-none">
                       <input
@@ -394,7 +394,7 @@ function PlanTabsForm({
                             {/* Ô Select: Khoét lõm #141414, viền border-neutral-700 */}
                             <SelectTrigger
                               id={`cohorts-${type.id}`}
-                              className="w-full h-9 text-sm rounded-lg border border-slate-300 bg-white px-3 text-slate-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary"
+                              className="w-full h-9 text-sm rounded-lg border-[1.5px] border-[#c4c9d9] bg-white px-3 text-slate-900 transition focus:border-[#2563eb] focus:outline-none focus:ring-1 focus:ring-[#2563eb] dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary"
                             >
                               <SelectValue placeholder="Chọn khoá" />
                             </SelectTrigger>
@@ -411,7 +411,7 @@ function PlanTabsForm({
                     </div>
 
                     {/* Đường phân cách các giai đoạn: border-t border-neutral-800 */}
-                    <div className="border-t border-slate-200 dark:border-neutral-800 my-6" />
+                    <div className="border-t border-[#d1d5e0] dark:border-neutral-800 my-6" />
 
                     {/* Giai đoạn 2: Thực hiện đồ án */}
                     <div className="space-y-4">
@@ -446,7 +446,7 @@ function PlanTabsForm({
                             onChange={(e) =>
                               patch(type.id, { targetCohort: e.target.value })
                             }
-                            className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary disabled:opacity-50"
+                            className="h-9 w-full rounded-lg border-[1.5px] border-[#c4c9d9] bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-[#2563eb] focus:outline-none focus:ring-1 focus:ring-[#2563eb] dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary disabled:opacity-50"
                           />
                         </div>
 
@@ -484,7 +484,7 @@ function PlanTabsForm({
                     </div>
 
                     {/* Đường phân cách các giai đoạn: border-t border-neutral-800 */}
-                    <div className="border-t border-slate-200 dark:border-neutral-800 my-6" />
+                    <div className="border-t border-[#d1d5e0] dark:border-neutral-800 my-6" />
 
                     {/* Danh mục bài phải nộp */}
                     {round ? (
@@ -494,13 +494,13 @@ function PlanTabsForm({
                       />
                     ) : (
                       /* Khối nộp bài nét đứt (Empty State): #181818, viền border-dashed border-neutral-600 */
-                      <div className="rounded-xl border border-dashed border-slate-300 dark:border-neutral-600 p-5 text-center text-xs text-slate-500 dark:text-neutral-400 bg-slate-50/50 dark:bg-[#181818]">
+                      <div className="rounded-xl border-[1.5px] border-dashed border-[#b0b8cc] dark:border-neutral-600 p-5 text-center text-xs text-slate-500 dark:text-neutral-400 bg-slate-50/50 dark:bg-[#181818]">
                         Đợt đồ án này chưa được lưu trong cơ sở dữ liệu. Nhấn <strong>Lưu cấu hình</strong> bên dưới để tạo đợt, sau đó danh mục bài nộp sẽ sẵn sàng để thiết lập.
                       </div>
                     )}
 
                     {/* Footer: 1 nút Primary CTA duy nhất - Màu chủ đạo primary */}
-                    <div className="flex items-center justify-between border-t border-slate-200 dark:border-neutral-800 pt-5 mt-6">
+                    <div className="flex items-center justify-between border-t border-[#d1d5e0] dark:border-neutral-800 pt-5 mt-6">
                       <span className="text-xs text-slate-500 dark:text-neutral-400">
                         {problems.length > 0 ? (
                           <span className="text-destructive font-medium">• {problems[0]}</span>
