@@ -531,7 +531,7 @@ export default function StudentRosterPage() {
         )}
 
         {/* BẢNG DỮ LIỆU: SCROLL Ở BẢNG RIÊNG (MAX HEIGHT + STICKY HEADER), KHÔNG SCROLL CẢ TRANG */}
-        <div className="rounded-xl border border-[#d1d5e0] dark:border-neutral-800 bg-white dark:bg-[#1a1d26] shadow-2xs overflow-hidden">
+        <div className="rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] shadow-2xs overflow-hidden">
           <div className="overflow-x-auto">
             <Table className="relative w-full text-left text-sm">
               <TableHeader className="sticky top-0 z-20 bg-slate-900 text-slate-100 dark:bg-slate-100 dark:text-slate-900 border-b border-slate-800 dark:border-slate-300 shadow-2xs">
@@ -557,7 +557,7 @@ export default function StudentRosterPage() {
                 </TableRow>
               </TableHeader>
 
-              <TableBody className="divide-y divide-slate-100 dark:divide-neutral-800/80">
+              <TableBody className="divide-y divide-slate-100 dark:divide-neutral-700/50">
                 {students.map((student) => (
                   <StudentRow key={student.id} student={student} />
                 ))}
@@ -566,7 +566,7 @@ export default function StudentRosterPage() {
 
             {isPending &&
               Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="flex gap-4 border-t border-slate-100 dark:border-neutral-800 px-5 py-3.5">
+                <div key={i} className="flex gap-4 border-t border-slate-100 dark:border-neutral-700/50 px-5 py-3.5">
                   <Skeleton className="h-4 w-44" />
                   <Skeleton className="h-4 w-20" />
                   <Skeleton className="h-4 w-32" />
