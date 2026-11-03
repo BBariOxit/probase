@@ -308,7 +308,7 @@ export default function AdminOutlinesPage() {
                         <div className="space-y-0.5 text-xs text-muted-foreground">
                           {group.members.map((m) => (
                             <div key={m.id}>
-                              {m.student.fullName} (<span className="font-mono text-primary font-semibold">{m.student.studentCode}</span>)
+                              {m.student.fullName} (<span className="font-mono text-muted-foreground">{m.student.studentCode}</span>)
                             </div>
                           ))}
                         </div>

@@ -4,11 +4,17 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-function Table({ className, ...props }: React.ComponentProps<'table'>) {
+function Table({
+  className,
+  containerClassName,
+  ...props
+}: React.ComponentProps<'table'> & {
+  containerClassName?: string;
+}) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto bg-card"
+      className={cn('relative w-full overflow-auto bg-card', containerClassName)}
     >
       <table
         data-slot="table"
@@ -37,7 +43,7 @@ function TableBody({ className, ...props }: React.ComponentProps<'tbody'>) {
     <tbody
       data-slot="table-body"
       className={cn(
-        'divide-y divide-slate-100 dark:divide-neutral-700/50 [&_tr:last-child]:border-b-0',
+        'divide-y divide-slate-200 dark:divide-neutral-700/80 [&_tr:last-child]:border-b-0',
         className,
       )}
       {...props}
@@ -63,7 +69,7 @@ function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
     <tr
       data-slot="table-row"
       className={cn(
-        'border-b border-slate-100 dark:border-neutral-700/50 transition-colors hover:bg-slate-50/70 dark:hover:bg-white/4 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted',
+        'border-b border-slate-200 dark:border-neutral-700/80 transition-colors hover:bg-slate-50/70 dark:hover:bg-white/4 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted',
         className,
       )}
       {...props}

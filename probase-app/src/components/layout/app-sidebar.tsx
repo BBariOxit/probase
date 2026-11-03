@@ -23,25 +23,22 @@ import {
 
 function NavEntry({ item }: { item: NavItem }) {
   const pathname = usePathname();
-  const active =
-    item.href.split('/').length === 2
-      ? pathname === item.href
-      : pathname === item.href || pathname.startsWith(`${item.href}/`);
+  const isRootRole = ['/', '/admin', '/lecturer', '/student'].includes(item.href);
+  const active = isRootRole
+    ? pathname === item.href
+    : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
   const Icon = item.icon;
 
   if (!item.ready) {
     return (
-      <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
+      <SidebarMenuItem>
         <SidebarMenuButton
           disabled
           tooltip={`${item.label} — chưa xây dựng`}
-          className={cn(
-            'h-9 rounded-lg font-medium cursor-not-allowed opacity-35 text-neutral-500',
-            'group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:justify-center',
-          )}
+          className="cursor-not-allowed opacity-35"
         >
-          <Icon className="size-4 shrink-0 text-neutral-500" />
+          <Icon className="size-4 shrink-0" />
           <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -49,17 +46,10 @@ function NavEntry({ item }: { item: NavItem }) {
   }
 
   return (
-    <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
+    <SidebarMenuItem>
       <SidebarMenuButton
         isActive={active}
         tooltip={item.label}
-        className={cn(
-          'h-9 rounded-lg font-medium transition-all duration-150',
-          'group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:justify-center',
-          active
-            ? 'bg-white/10 font-medium text-white shadow-xs [&_svg]:text-white hover:bg-white/12 hover:text-white'
-            : 'text-neutral-400 hover:bg-white/6 hover:text-white [&_svg]:text-neutral-400 hover:[&_svg]:text-white',
-        )}
         render={<Link href={item.href} />}
       >
         <Icon className="size-4 shrink-0" />
@@ -72,12 +62,12 @@ function NavEntry({ item }: { item: NavItem }) {
 export function AppSidebar({ user }: { user: SessionUser }) {
   return (
     <Sidebar variant="sidebar" collapsible="icon">
-      <SidebarHeader className="h-14 flex items-center justify-between px-4 border-b border-white/8 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
+      <SidebarHeader className="h-14 flex flex-row items-center justify-start px-4 border-b border-white/8 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
         <Link
           href="/"
-          className="flex items-center justify-center rounded-md focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
+          className="flex items-center gap-2.5 rounded-lg px-3 py-1.5 focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none hover:opacity-90 transition-opacity group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:justify-center"
         >
-          <div className="group-data-[collapsible=icon]:hidden">
+          <div className="group-data-[collapsible=icon]:hidden flex items-center">
             <Brand invert />
           </div>
           <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center size-8 rounded-lg">

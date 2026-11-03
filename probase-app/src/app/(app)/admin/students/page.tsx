@@ -21,6 +21,7 @@ import { useDebouncedValue } from '@/lib/use-debounced-value';
 import { EligibleStudentsImportDialog } from '@/components/admin/eligible-students-import-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
+import { usePagination } from '@/hooks/use-pagination';
 import { sanitizeLecturerName } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
@@ -54,7 +55,6 @@ import {
 } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const PAGE_SIZE = 8;
 const ANY = 0;
 
 const GROUP_FILTERS = [
@@ -70,7 +70,7 @@ export default function StudentRosterPage() {
   const { data: majors } = useMajors();
   const { data: lecturers } = useTopicLecturers(semester?.id);
 
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, setPageSize } = usePagination();
   const [search, setSearch] = useState('');
   const [classCode, setClassCode] = useState('');
   const [roundId, setRoundId] = useState(ANY);
@@ -96,7 +96,7 @@ export default function StudentRosterPage() {
   const { data, isPending, error } = useStudents({
     ...query,
     page,
-    limit: PAGE_SIZE,
+    limit: pageSize,
   });
   const exportRoster = useExportStudents();
 
@@ -141,9 +141,9 @@ export default function StudentRosterPage() {
 
   return (
     <TooltipProvider delay={200}>
-      <div className="space-y-3.5">
+      <div className="flex flex-col gap-3 md:h-[calc(100dvh-6.5rem)] md:max-h-[calc(100dvh-6.5rem)]">
         {/* THANH CÔNG CỤ: TÌM KIẾM + BỘ LỌC GỘP (CÁCH A) + NÚT THAO TÁC */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-1 items-center gap-2.5 min-w-[320px]">
             {/* 1. Ô tìm kiếm theo tên hoặc MSSV */}
             <div className="relative flex-1 max-w-sm">
@@ -530,10 +530,10 @@ export default function StudentRosterPage() {
           </p>
         )}
 
-        {/* BẢNG DỮ LIỆU: SCROLL Ở BẢNG RIÊNG (MAX HEIGHT + STICKY HEADER), KHÔNG SCROLL CẢ TRANG */}
-        <div className="rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] shadow-2xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <Table className="relative w-full text-left text-sm">
+        {/* BẢNG DỮ LIỆU: VÙNG BẢNG (flex-1 min-h-0 overflow-auto), STICKY HEADER z-10 */}
+        <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] shadow-2xs overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-auto">
+            <Table containerClassName="overflow-visible" className="relative w-full text-left text-sm">
               <TableHeader>
                 <TableRow>
                   <TableHead className="min-w-44 px-5">
@@ -566,7 +566,7 @@ export default function StudentRosterPage() {
 
             {isPending &&
               Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="flex gap-4 border-t border-slate-100 dark:border-neutral-700/50 px-5 py-3.5">
+                <div key={i} className="flex gap-4 border-t border-slate-200 dark:border-neutral-700/80 px-5 py-3.5">
                   <Skeleton className="h-4 w-44" />
                   <Skeleton className="h-4 w-20" />
                   <Skeleton className="h-4 w-32" />
@@ -591,16 +591,17 @@ export default function StudentRosterPage() {
           </div>
         </div>
 
-        {data && (
+        <div className="shrink-0">
           <PaginationBar
-            page={data.page}
-            totalPages={data.totalPages}
-            total={data.total}
-            pageSize={PAGE_SIZE}
+            page={data?.page ?? page}
+            totalPages={data?.totalPages ?? 1}
+            total={data?.total}
+            pageSize={pageSize}
             itemName="sinh viên"
             onPageChange={setPage}
+            onPageSizeChange={setPageSize}
           />
-        )}
+        </div>
 
         <EligibleStudentsImportDialog
           open={importOpen}

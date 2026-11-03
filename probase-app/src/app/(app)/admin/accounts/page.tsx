@@ -53,6 +53,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PaginationBar } from '@/components/shared/pagination-bar';
+import { usePagination } from '@/hooks/use-pagination';
 import {
   Select,
   SelectContent,
@@ -70,7 +71,6 @@ import {
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const PAGE_SIZE = 20;
 
 const ROLE_LABEL: Record<Role, string> = {
   ADMIN: 'Quản trị',
@@ -109,7 +109,7 @@ function codeOf(user: UserAccount): string | null {
 
 export default function AccountsPage() {
   const allowed = useRequireRole('ADMIN');
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, setPageSize } = usePagination();
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('ALL');
   const [status, setStatus] = useState('ALL');
@@ -126,7 +126,7 @@ export default function AccountsPage() {
 
   const { data, isPending, error } = useUsers({
     page,
-    limit: PAGE_SIZE,
+    limit: pageSize,
     search: debouncedSearch || undefined,
     role: role === 'ALL' ? undefined : (role as Role),
     isActive: status === 'ALL' ? undefined : status === 'true',
@@ -148,7 +148,7 @@ export default function AccountsPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-3 md:h-[calc(100dvh-6.5rem)] md:max-h-[calc(100dvh-6.5rem)]">
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-52 flex-1 sm:max-w-xs">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -224,9 +224,9 @@ export default function AccountsPage() {
         </p>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] shadow-2xs">
-        <div className="overflow-x-auto">
-          <Table>
+      <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] shadow-2xs overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-auto">
+          <Table containerClassName="overflow-visible">
             <TableHeader>
               <TableRow>
                 <TableHead className="min-w-56">Người dùng</TableHead>
@@ -254,7 +254,7 @@ export default function AccountsPage() {
                     </a>
                   </TableCell>
                   <TableCell className="tabular-nums">
-                    <span className="font-mono text-xs font-semibold text-primary">
+                    <span className="font-mono text-xs font-medium text-slate-800 dark:text-neutral-200">
                       {codeOf(user) ?? '—'}
                     </span>
                     {user.studentProfile?.class && (
@@ -264,19 +264,13 @@ export default function AccountsPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {user.role === 'ADMIN' && (
+                    {user.role === 'ADMIN' ? (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60">
                         Quản trị viên
                       </span>
-                    )}
-                    {user.role === 'LECTURER' && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary border border-primary/20">
-                        Giảng viên
-                      </span>
-                    )}
-                    {user.role === 'STUDENT' && (
+                    ) : (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 dark:bg-neutral-800 dark:text-neutral-300 border border-slate-200/80 dark:border-neutral-700/80">
-                        Sinh viên
+                        {ROLE_LABEL[user.role]}
                       </span>
                     )}
                   </TableCell>
@@ -365,13 +359,17 @@ export default function AccountsPage() {
         )}
       </div>
 
-      {data && (
+      <div className="shrink-0">
         <PaginationBar
-          page={data.meta.page}
-          totalPages={data.meta.totalPages}
+          page={data?.meta.page ?? page}
+          totalPages={data?.meta.totalPages ?? 1}
+          total={data?.meta.total}
+          pageSize={pageSize}
+          itemName="tài khoản"
           onPageChange={setPage}
+          onPageSizeChange={setPageSize}
         />
-      )}
+      </div>
 
       {creating && <CreateUserDialog onClose={() => setCreating(false)} />}
       {editingProfile && (
