@@ -25,6 +25,14 @@ export const metadata: Metadata = {
   description:
     'Hệ thống quản lý đồ án sinh viên: đăng ký đề tài, nộp bài, theo dõi tiến độ.',
   keywords: ['đồ án', 'quản lý đề tài', 'sinh viên', 'giảng viên'],
+  icons: {
+    icon: [
+      { url: '/images/logo.svg', type: 'image/svg+xml' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/images/logo.svg',
+    apple: '/images/logo.svg',
+  },
   openGraph: {
     title: 'ProBase — Quản lý đồ án',
     description: 'Hệ thống quản lý đồ án sinh viên',

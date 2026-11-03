@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import type { SessionUser } from '@/lib/api/types';
 import { NAV_BY_ROLE, type NavItem } from '@/lib/nav';
 import { cn } from '@/lib/utils';
-import { Brand } from '@/components/layout/brand';
+import { Brand, Logo } from '@/components/layout/brand';
 import { SemesterContext } from '@/components/rounds/semester-context';
 import {
   Sidebar,
@@ -80,8 +80,8 @@ export function AppSidebar({ user }: { user: SessionUser }) {
           <div className="group-data-[collapsible=icon]:hidden">
             <Brand invert />
           </div>
-          <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center size-8 rounded-lg bg-blue-600/20 text-blue-400 font-bold text-sm border border-blue-500/30">
-            PB
+          <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center size-8 rounded-lg">
+            <Logo className="size-6 shrink-0" invert />
           </div>
         </Link>
       </SidebarHeader>
