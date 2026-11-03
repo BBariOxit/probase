@@ -493,7 +493,19 @@ async function main() {
   const dacnRound = roundByCode.get('DACN');
   const dacsRound = roundByCode.get('DACS');
 
-  // Làm sạch các đề tài cũ của học kỳ hiện tại
+  // Dọn dẹp dữ liệu phụ thuộc của học kỳ hiện tại trước khi tạo mới
+  await prisma.councilTopicGrade.deleteMany({ where: { councilTopic: { council: { semesterId: semester.id } } } });
+  await prisma.councilTopic.deleteMany({ where: { council: { semesterId: semester.id } } });
+  await prisma.councilMember.deleteMany({ where: { council: { semesterId: semester.id } } });
+  await prisma.council.deleteMany({ where: { semesterId: semester.id } });
+  await prisma.topicReview.deleteMany({ where: { group: { semesterId: semester.id } } });
+  await prisma.topicAssignment.deleteMany({ where: { group: { semesterId: semester.id } } });
+  await prisma.topicOutline.deleteMany({ where: { group: { semesterId: semester.id } } });
+  await prisma.submission.deleteMany({ where: { group: { semesterId: semester.id } } });
+  await prisma.progressReport.deleteMany({ where: { group: { semesterId: semester.id } } });
+  await prisma.registrationGroupMember.deleteMany({ where: { semesterId: semester.id } });
+  await prisma.registrationGroup.deleteMany({ where: { semesterId: semester.id } });
+  await prisma.topicProposal.deleteMany({ where: { semesterId: semester.id } });
   await prisma.topic.deleteMany({ where: { semesterId: semester.id } });
 
   const topicsData = [

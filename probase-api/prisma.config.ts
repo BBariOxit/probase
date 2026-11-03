@@ -10,7 +10,7 @@ export default defineConfig({
     // Prisma 7 generates its client as .ts source whose internal imports carry
     // .js extensions, which ts-node's CJS resolver will not map back — so the
     // seed runs from compiled output rather than through ts-node.
-    seed: 'nest build && node dist/prisma/seed.js',
+    seed: 'node dist/prisma/seed.js',
   },
   datasource: {
     url: process.env['DATABASE_URL'],
