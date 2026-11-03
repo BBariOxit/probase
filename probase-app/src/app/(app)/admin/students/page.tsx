@@ -53,7 +53,7 @@ import {
 } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 8;
 const ANY = 0;
 
 const GROUP_FILTERS = [
@@ -535,7 +535,7 @@ export default function StudentRosterPage() {
 
         {/* BẢNG DỮ LIỆU: SCROLL Ở BẢNG RIÊNG (MAX HEIGHT + STICKY HEADER), KHÔNG SCROLL CẢ TRANG */}
         <div className="rounded-xl border border-[#d1d5e0] dark:border-neutral-800 bg-white dark:bg-[#1a1d26] shadow-2xs overflow-hidden">
-          <div className="max-h-[calc(100vh-270px)] min-h-[340px] overflow-auto">
+          <div className="overflow-x-auto">
             <Table className="relative w-full text-left text-sm">
               <TableHeader className="sticky top-0 z-20 bg-slate-50/95 dark:bg-[#141414]/95 backdrop-blur-xs border-b border-[#d1d5e0] dark:border-neutral-800 shadow-2xs">
                 <TableRow className="hover:bg-transparent">
@@ -598,6 +598,9 @@ export default function StudentRosterPage() {
           <PaginationBar
             page={data.page}
             totalPages={data.totalPages}
+            total={data.total}
+            pageSize={PAGE_SIZE}
+            itemName="sinh viên"
             onPageChange={setPage}
           />
         )}
