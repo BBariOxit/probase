@@ -9,7 +9,7 @@ const TONE_CLASS = {
     'bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30 dark:font-semibold',
   danger:
     'bg-rose-50 text-rose-700 border border-rose-300 font-semibold dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30 dark:font-semibold',
-  idle: 'bg-slate-100 text-slate-700 border border-slate-200 font-semibold dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:font-medium',
+  idle: 'bg-slate-100 text-slate-700 border border-slate-200 font-semibold dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700 dark:font-medium',
 } as const;
 
 export type StatusTone = keyof typeof TONE_CLASS;

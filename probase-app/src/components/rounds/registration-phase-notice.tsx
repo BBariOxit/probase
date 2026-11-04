@@ -15,7 +15,7 @@ export function RegistrationPhaseNotice({
   const status = describeRound(round, hasGroup);
 
   return (
-    <div className="flex items-start justify-between gap-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white px-4 py-3 shadow-2xs dark:bg-[#1a1d26]">
+    <div className="flex items-start justify-between gap-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white px-4 py-3 shadow-2xs dark:bg-[#1e1e1e]">
       <div className="flex items-start gap-3">
         <status.icon className="mt-0.5 size-4.5 shrink-0 text-primary" />
         <div className="space-y-0.5 text-sm">

@@ -283,7 +283,7 @@ export default function AdminOutlinesPage() {
           />
         </Card>
       ) : (
-        <div className="rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] overflow-hidden shadow-2xs">
+        <div className="rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] overflow-hidden shadow-2xs">
           <Table>
             <TableHeader>
               <TableRow>

@@ -136,7 +136,7 @@ export function PaginationBar({
               value={String(pageSize)}
               onValueChange={(val) => onPageSizeChange(Number(val))}
             >
-              <SelectTrigger className="h-8 w-[92px] text-xs bg-white dark:bg-[#1a1d26] border-[#d1d5e0] dark:border-neutral-700 font-medium cursor-pointer shadow-2xs">
+              <SelectTrigger className="h-8 w-[92px] text-xs bg-white dark:bg-[#1e1e1e] border-[#d1d5e0] dark:border-neutral-700 font-medium cursor-pointer shadow-2xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent align="end" className="min-w-[100px]">
@@ -158,7 +158,7 @@ export function PaginationBar({
             aria-label="Trang đầu"
             disabled={page <= 1}
             onClick={() => onPageChange(1)}
-            className="size-8 rounded-lg border border-[#d1d5e0] dark:border-neutral-700 bg-white dark:bg-[#1a1d26] flex items-center justify-center text-slate-600 dark:text-neutral-300 hover:bg-primary/10 hover:text-primary hover:border-primary/40 disabled:opacity-35 disabled:pointer-events-none transition cursor-pointer shadow-2xs"
+            className="size-8 rounded-lg border border-[#d1d5e0] dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] flex items-center justify-center text-slate-600 dark:text-neutral-300 hover:bg-primary/10 hover:text-primary hover:border-primary/40 disabled:opacity-35 disabled:pointer-events-none transition cursor-pointer shadow-2xs"
           >
             <ChevronsLeft className="size-4" />
           </button>
@@ -169,7 +169,7 @@ export function PaginationBar({
             aria-label="Trang trước"
             disabled={page <= 1}
             onClick={() => onPageChange(page - 1)}
-            className="size-8 rounded-lg border border-[#d1d5e0] dark:border-neutral-700 bg-white dark:bg-[#1a1d26] flex items-center justify-center text-slate-600 dark:text-neutral-300 hover:bg-primary/10 hover:text-primary hover:border-primary/40 disabled:opacity-35 disabled:pointer-events-none transition cursor-pointer shadow-2xs"
+            className="size-8 rounded-lg border border-[#d1d5e0] dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] flex items-center justify-center text-slate-600 dark:text-neutral-300 hover:bg-primary/10 hover:text-primary hover:border-primary/40 disabled:opacity-35 disabled:pointer-events-none transition cursor-pointer shadow-2xs"
           >
             <ChevronLeft className="size-4" />
           </button>
@@ -192,7 +192,7 @@ export function PaginationBar({
                   'size-8 rounded-lg text-xs font-semibold flex items-center justify-center transition shadow-2xs cursor-pointer',
                   p === page
                     ? 'bg-primary text-white border border-primary font-bold shadow-xs'
-                    : 'border border-[#d1d5e0] dark:border-neutral-700 bg-white dark:bg-[#1a1d26] text-slate-700 dark:text-neutral-300 hover:bg-primary/10 hover:text-primary hover:border-primary/40',
+                    : 'border border-[#d1d5e0] dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] text-slate-700 dark:text-neutral-300 hover:bg-primary/10 hover:text-primary hover:border-primary/40',
                 )}
               >
                 {p}
@@ -206,7 +206,7 @@ export function PaginationBar({
             aria-label="Trang sau"
             disabled={page >= safeTotalPages}
             onClick={() => onPageChange(page + 1)}
-            className="size-8 rounded-lg border border-[#d1d5e0] dark:border-neutral-700 bg-white dark:bg-[#1a1d26] flex items-center justify-center text-slate-600 dark:text-neutral-300 hover:bg-primary/10 hover:text-primary hover:border-primary/40 disabled:opacity-35 disabled:pointer-events-none transition cursor-pointer shadow-2xs"
+            className="size-8 rounded-lg border border-[#d1d5e0] dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] flex items-center justify-center text-slate-600 dark:text-neutral-300 hover:bg-primary/10 hover:text-primary hover:border-primary/40 disabled:opacity-35 disabled:pointer-events-none transition cursor-pointer shadow-2xs"
           >
             <ChevronRight className="size-4" />
           </button>
@@ -217,7 +217,7 @@ export function PaginationBar({
             aria-label="Trang cuối"
             disabled={page >= safeTotalPages}
             onClick={() => onPageChange(safeTotalPages)}
-            className="size-8 rounded-lg border border-[#d1d5e0] dark:border-neutral-700 bg-white dark:bg-[#1a1d26] flex items-center justify-center text-slate-600 dark:text-neutral-300 hover:bg-primary/10 hover:text-primary hover:border-primary/40 disabled:opacity-35 disabled:pointer-events-none transition cursor-pointer shadow-2xs"
+            className="size-8 rounded-lg border border-[#d1d5e0] dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] flex items-center justify-center text-slate-600 dark:text-neutral-300 hover:bg-primary/10 hover:text-primary hover:border-primary/40 disabled:opacity-35 disabled:pointer-events-none transition cursor-pointer shadow-2xs"
           >
             <ChevronsRight className="size-4" />
           </button>
@@ -241,7 +241,7 @@ export function PaginationBar({
               }}
               onBlur={handleJump}
               placeholder={String(page)}
-              className="h-8 w-16 px-1.5 text-center text-xs rounded-lg border-[#d1d5e0] dark:border-neutral-700 bg-white dark:bg-[#1a1d26] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none shadow-2xs"
+              className="h-8 w-16 px-1.5 text-center text-xs rounded-lg border-[#d1d5e0] dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none shadow-2xs"
               aria-label="Đến trang số"
             />
           </div>

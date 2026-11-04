@@ -305,7 +305,7 @@ export default function AdminTopicRegistryPage() {
       )}
 
       {/* ── Table ── */}
-      <div className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] shadow-2xs">
+      <div className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>

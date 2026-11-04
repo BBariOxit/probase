@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, Search } from 'lucide-react';
+import { BookOpen, Copy, Eye, MoreHorizontal, Search } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   useActiveSemester,
   useMyEligibleProjectTypes,
@@ -13,16 +14,21 @@ import { useMyGroup } from '@/lib/api/registration';
 import { useTopicLecturers, useTopics } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebounce, usePagination } from '@/hooks';
-import { sanitizeLecturerName } from '@/lib/utils';
+import { cn, sanitizeLecturerName } from '@/lib/utils';
 import { EmptyState } from '@/components/shared/empty-state';
 import { MyGroupBanner } from '@/components/groups/my-group-banner';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { RegistrationPhaseNotice } from '@/components/rounds/registration-phase-notice';
 import { SeatBadge } from '@/components/groups/seat-indicator';
-import { StudentEligibilityBanner } from '@/components/students/student-eligibility-banner';
 import { TopicRegisterButton } from '@/components/topics/topic-register-button';
 import { TopicDetailSheet } from '@/components/topics/topic-detail-sheet';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -97,9 +103,6 @@ export default function StudentTopicsPage() {
 
   return (
     <div className="space-y-4">
-      {/* ── Banner đủ điều kiện ── */}
-      <StudentEligibilityBanner />
-
       {/* ── Banner nhóm đã đăng ký ── */}
       {myGroup && <MyGroupBanner group={myGroup} />}
 
@@ -125,7 +128,7 @@ export default function StudentTopicsPage() {
                 resetPage();
               }}
               placeholder="Tìm tên đề tài, mô tả…"
-              className="pl-9 h-9 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500"
+              className="pl-9 h-9 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
               aria-label="Tìm đề tài"
             />
           </div>
@@ -138,7 +141,7 @@ export default function StudentTopicsPage() {
             }}
           >
             <SelectTrigger
-              className="h-9 min-w-44 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-200"
+              className="h-9 min-w-44 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
               aria-label="Lọc theo loại đồ án"
             >
               <SelectValue>
@@ -151,7 +154,7 @@ export default function StudentTopicsPage() {
                 }}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-[#1a1d26] border-slate-200 dark:border-neutral-700">
+            <SelectContent className="bg-white dark:bg-[#1e1e1e] border-slate-200 dark:border-neutral-700">
               <SelectItem value={MY_COHORT}>
                 <span className="flex flex-col items-start">
                   <span>Khóa của bạn</span>
@@ -179,7 +182,7 @@ export default function StudentTopicsPage() {
             }}
           >
             <SelectTrigger
-              className="h-9 min-w-48 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-200"
+              className="h-9 min-w-48 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
               aria-label="Lọc theo giảng viên"
             >
               <SelectValue>
@@ -190,7 +193,7 @@ export default function StudentTopicsPage() {
                 }}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="min-w-[220px] w-max bg-white dark:bg-[#1a1d26] border-slate-200 dark:border-neutral-700">
+            <SelectContent className="min-w-[220px] w-max bg-white dark:bg-[#1e1e1e] border-slate-200 dark:border-neutral-700">
               <SelectItem value={ANY}>Mọi giảng viên</SelectItem>
               {sanitizedLecturers.map((lecturer) => (
                 <SelectItem key={lecturer.id} value={lecturer.id}>
@@ -217,125 +220,175 @@ export default function StudentTopicsPage() {
       )}
 
       {/* ── Bảng dữ liệu dùng chung (Shared Table Component) ── */}
-      <div className="flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table containerClassName="overflow-visible" className="relative w-full text-left text-sm">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-[320px] px-5">Tên đề tài</TableHead>
-                <TableHead className="w-64 px-4">Cán bộ hướng dẫn</TableHead>
-                <TableHead className="w-40 px-4 text-center">Tình trạng</TableHead>
-                <TableHead className="w-36 px-5 text-right">Thao tác</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {topics.map((topic) => {
-                const lecturerInfo = sanitizeLecturerName(
-                  topic.lecturer.fullName,
-                  topic.lecturer.academicTitle,
-                );
+      <div className="flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-card shadow-2xs overflow-hidden">
+        <Table className="relative w-full text-left text-sm">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="min-w-[280px] px-5">Tên đề tài</TableHead>
+              <TableHead className="w-52 px-4">Loại đồ án</TableHead>
+              <TableHead className="w-56 px-4">Cán bộ hướng dẫn</TableHead>
+              <TableHead className="w-40 px-4 text-center">Tình trạng</TableHead>
+              <TableHead className="w-44 px-5 text-right">Thao tác</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {topics.map((topic) => {
+              const lecturerInfo = sanitizeLecturerName(
+                topic.lecturer.fullName,
+                topic.lecturer.academicTitle,
+              );
+              const isEligibleForTopic = myTypes?.some(
+                (t) => t.id === topic.projectTypeId,
+              );
 
-                return (
-                  <TableRow
-                    key={topic.id}
-                    className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-white/4"
-                    onClick={() => setSelectedTopicId(topic.id)}
-                  >
-                    <TableCell className="px-5 py-3.5">
-                      <Link
-                        href={`/student/topics/${topic.id}`}
-                        className="font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors line-clamp-2"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setSelectedTopicId(topic.id);
-                        }}
-                      >
-                        {topic.title}
-                      </Link>
-                      <div className="mt-1 flex items-center gap-2">
-                        <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-neutral-800 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:text-neutral-400 border border-slate-200/80 dark:border-neutral-700/80">
-                          {topic.projectType.name}
-                        </span>
-                      </div>
-                    </TableCell>
+              return (
+                <TableRow
+                  key={topic.id}
+                  className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
+                  onClick={() => setSelectedTopicId(topic.id)}
+                >
+                  <TableCell className="px-5 py-3.5">
+                    <Link
+                      href={`/student/topics/${topic.id}`}
+                      className="font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors line-clamp-2"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setSelectedTopicId(topic.id);
+                      }}
+                    >
+                      {topic.title}
+                    </Link>
+                  </TableCell>
 
-                    <TableCell className="px-4 py-3.5">
-                      <span className="font-medium text-slate-800 dark:text-neutral-200">
-                        {lecturerInfo.displayName}
-                      </span>
-                      {lecturerInfo.departmentRole && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {lecturerInfo.departmentRole}
-                        </p>
+                  <TableCell className="px-4 py-3.5 whitespace-nowrap">
+                    <span
+                      className={cn(
+                        'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium border',
+                        isEligibleForTopic
+                          ? 'bg-primary/10 text-primary border-primary/25 font-semibold'
+                          : 'bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-neutral-400 border-slate-200/80 dark:border-neutral-700/80',
                       )}
-                    </TableCell>
+                    >
+                      {topic.projectType.name}
+                    </span>
+                  </TableCell>
 
-                    <TableCell className="px-4 py-3.5 text-center">
-                      <SeatBadge topic={topic} />
-                    </TableCell>
+                  <TableCell className="px-4 py-3.5">
+                    <span className="font-medium text-slate-800 dark:text-neutral-200">
+                      {lecturerInfo.displayName}
+                    </span>
+                    {lecturerInfo.departmentRole && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {lecturerInfo.departmentRole}
+                      </p>
+                    )}
+                  </TableCell>
 
-                    <TableCell className="px-5 py-3.5 text-right">
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <TopicRegisterButton
-                          topic={topic}
-                          idle={
+                  <TableCell className="px-4 py-3.5 text-center">
+                    <SeatBadge topic={topic} />
+                  </TableCell>
+
+                  <TableCell className="px-5 py-3.5 text-right whitespace-nowrap">
+                    <div
+                      className="flex items-center justify-end gap-1.5"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <TopicRegisterButton
+                        topic={topic}
+                        idle={
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled
+                            className="text-xs cursor-not-allowed opacity-50 border-slate-300 dark:border-neutral-700 bg-transparent text-slate-400 dark:text-neutral-500 select-none"
+                          >
+                            Đăng ký
+                          </Button>
+                        }
+                      />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
                             <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedTopicId(topic.id)}
-                              className="h-8 px-3 text-xs font-medium border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-700 dark:text-neutral-200 hover:bg-slate-50 dark:hover:bg-neutral-700 hover:text-primary dark:hover:text-primary transition cursor-pointer shadow-2xs"
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label={`Thao tác khác cho đề tài ${topic.title}`}
+                              className="text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-100"
                             >
-                              Xem chi tiết
+                              <MoreHorizontal className="size-4" />
                             </Button>
                           }
                         />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                        <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuItem
+                            onClick={() => setSelectedTopicId(topic.id)}
+                          >
+                            <Eye className="size-4 shrink-0 text-slate-500 dark:text-neutral-400" />
+                            <span>Xem chi tiết</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              const url = `${window.location.origin}/student/topics/${topic.id}`;
+                              navigator.clipboard.writeText(url);
+                              toast.success('Đã sao chép liên kết đề tài');
+                            }}
+                          >
+                            <Copy className="size-4 shrink-0 text-slate-500 dark:text-neutral-400" />
+                            <span>Sao chép liên kết</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
 
-          {isPending &&
-            Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-4 border-t border-slate-200 dark:border-neutral-700/80 px-5 py-3.5"
-              >
-                <div className="flex-1 space-y-1.5">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-3 w-28" />
-                </div>
-                <div className="w-56 space-y-1">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-3 w-20" />
-                </div>
-                <div className="w-36 flex justify-center">
-                  <Skeleton className="h-5 w-24 rounded-full" />
-                </div>
-                <div className="w-32 flex justify-end">
-                  <Skeleton className="h-8 w-24 rounded-md" />
-                </div>
-              </div>
-            ))}
+            {isPending &&
+              Array.from({ length: 6 }).map((_, i) => (
+                <TableRow key={i} className="hover:bg-transparent">
+                  <TableCell className="px-5 py-3.5">
+                    <Skeleton className="h-4 w-3/4 mb-1.5" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </TableCell>
+                  <TableCell className="px-4 py-3.5">
+                    <Skeleton className="h-6 w-28 rounded-md" />
+                  </TableCell>
+                  <TableCell className="px-4 py-3.5">
+                    <Skeleton className="h-4 w-32 mb-1" />
+                    <Skeleton className="h-3 w-20" />
+                  </TableCell>
+                  <TableCell className="px-4 py-3.5 text-center">
+                    <div className="flex justify-center">
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-5 py-3.5 text-right">
+                    <div className="flex justify-end gap-1.5">
+                      <Skeleton className="h-8 w-20 rounded-md" />
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+          </TableBody>
+        </Table>
 
-          {!isPending && topics.length === 0 && (
-            <div className="py-12">
-              <EmptyState
-                icon={BookOpen}
-                title={
-                  filtering
-                    ? 'Không có đề tài nào khớp bộ lọc.'
-                    : projectTypeId === MY_COHORT
-                      ? 'Chưa có đề tài nào mở cho khóa của bạn. Chọn "Mọi loại đồ án" để xem toàn bộ.'
-                      : 'Chưa có đề tài nào được mở đăng ký.'
-                }
-              />
-            </div>
-          )}
-        </div>
+        {!isPending && topics.length === 0 && (
+          <div className="py-12">
+            <EmptyState
+              icon={BookOpen}
+              title={
+                filtering
+                  ? 'Không có đề tài nào khớp bộ lọc.'
+                  : projectTypeId === MY_COHORT
+                    ? 'Chưa có đề tài nào mở cho khóa của bạn. Chọn "Mọi loại đồ án" để xem toàn bộ.'
+                    : 'Chưa có đề tài nào được mở đăng ký.'
+              }
+            />
+          </div>
+        )}
       </div>
 
       {/* ── Phân trang ── */}

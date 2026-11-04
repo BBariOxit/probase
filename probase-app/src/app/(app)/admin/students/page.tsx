@@ -209,7 +209,7 @@ export default function StudentRosterPage() {
               <PopoverContent
                 align="start"
                 sideOffset={8}
-                className="w-88 p-4 space-y-4 shadow-xl border border-[#d1d5e0] dark:border-neutral-700 bg-white dark:bg-[#1a1d26] rounded-xl"
+                className="w-88 p-4 space-y-4 shadow-xl border border-[#d1d5e0] dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] rounded-xl"
               >
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
                   <div className="flex items-center gap-1.5 font-semibold text-sm text-slate-900 dark:text-neutral-100">
@@ -531,7 +531,7 @@ export default function StudentRosterPage() {
         )}
 
         {/* BẢNG DỮ LIỆU: VÙNG BẢNG (flex-1 min-h-0 overflow-auto), STICKY HEADER z-10 */}
-        <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] shadow-2xs overflow-hidden">
+        <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs overflow-hidden">
           <div className="flex-auto min-h-0 overflow-auto">
             <Table containerClassName="overflow-visible" className="relative w-full text-left text-sm">
               <TableHeader>

@@ -15,7 +15,7 @@ export function StudentEligibilityBanner() {
     const nearestDeadline = status.rounds.find((r) => r.deadline)?.deadline;
 
     return (
-      <div className="rounded-xl border border-slate-300 dark:border-neutral-700 border-l-4 border-l-emerald-500 bg-white p-3.5 shadow-2xs dark:bg-[#1a1d26]">
+      <div className="rounded-xl border border-slate-300 dark:border-neutral-700 border-l-4 border-l-emerald-500 bg-white p-3.5 shadow-2xs dark:bg-[#1e1e1e]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <CheckCircle2 className="size-4.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
@@ -44,7 +44,7 @@ export function StudentEligibilityBanner() {
   }
 
   return (
-    <div className="rounded-xl border border-slate-300 dark:border-neutral-700 border-l-4 border-l-amber-500 bg-white p-3.5 shadow-2xs dark:bg-[#1a1d26]">
+    <div className="rounded-xl border border-slate-300 dark:border-neutral-700 border-l-4 border-l-amber-500 bg-white p-3.5 shadow-2xs dark:bg-[#1e1e1e]">
       <div className="flex items-center gap-3">
         <AlertTriangle className="size-4.5 shrink-0 text-amber-500" />
         <div className="space-y-0.5">

@@ -73,7 +73,7 @@ export function TopicRegisterButton({
               size="sm"
               onClick={act}
               disabled={pending}
-              className="relative z-10"
+              className="relative z-10 font-semibold shadow-xs"
             >
               {pending && <Loader2 className="size-4 animate-spin" />}
               {registering ? 'Đăng ký' : 'Tham gia'}
