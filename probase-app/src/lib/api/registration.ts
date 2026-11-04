@@ -179,6 +179,23 @@ export function useRemoveMember(id: number) {
   });
 }
 
+export function useInviteMember(id: number) {
+  const queryClient = useQueryClient();
+  const invalidate = useInvalidateRegistration();
+
+  return useMutation({
+    mutationFn: (studentCode: string) =>
+      api<RegistrationGroup>(`/registration-groups/${id}/invite`, {
+        method: 'POST',
+        body: { studentCode },
+      }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(groupKeys.mine(), data);
+      return invalidate();
+    },
+  });
+}
+
 export function useDisbandGroup(id: number) {
   const queryClient = useQueryClient();
   const invalidate = useInvalidateRegistration();

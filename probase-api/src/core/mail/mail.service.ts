@@ -55,6 +55,37 @@ export class MailService {
     });
   }
 
+  async sendGroupInvitation(payload: {
+    to: string;
+    studentName: string;
+    leaderName: string;
+    topicTitle: string;
+    groupUrl?: string;
+  }): Promise<boolean> {
+    const url = payload.groupUrl ?? `${this.frontendUrl}/student/groups`;
+    return this.send({
+      to: payload.to,
+      fullName: payload.studentName,
+      subject: `[ProBase] Bạn được mời tham gia nhóm đề tài: ${payload.topicTitle}`,
+      logLabel: 'Group-invitation',
+      html: this.renderShell({
+        fullName: payload.studentName,
+        introText: `Sinh viên <strong>${escapeHtml(payload.leaderName)}</strong> đã thêm bạn vào nhóm thực hiện đề tài tốt nghiệp:`,
+        bodyHtml: `
+            <table width="100%" style="background:#eff6ff;border-left:4px solid #3b82f6;border-radius:4px;margin:20px 0 28px;">
+              <tr><td style="padding:14px 18px;font-size:14px;color:#1e40af;">
+                <p style="margin:0 0 6px 0;"><strong>Đề tài:</strong> ${escapeHtml(payload.topicTitle)}</p>
+                <p style="margin:0;"><strong>Trưởng nhóm:</strong> ${escapeHtml(payload.leaderName)}</p>
+              </td></tr>
+            </table>
+            <p style="font-size:13px;color:#64748b;margin-bottom:20px;">
+              Đăng nhập vào hệ thống ProBase để xem chi tiết nhóm và kế hoạch thực hiện.
+            </p>
+            ${this.renderButton(url, 'Xem nhóm của bạn')}`,
+      }),
+    });
+  }
+
   async sendPasswordReset(payload: CredentialsEmailPayload): Promise<boolean> {
     return this.sendCredentialsEmail({
       payload,

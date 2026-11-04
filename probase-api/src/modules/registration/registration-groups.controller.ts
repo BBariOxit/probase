@@ -12,6 +12,7 @@ import {
 import { Role } from '../../../generated/prisma/client';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { InviteMemberDto } from './dto/invite-member.dto';
 import { QueryMyGroupDto } from './dto/query-my-group.dto';
 import { QuerySupervisedGroupsDto } from './dto/query-supervised-groups.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
@@ -20,6 +21,16 @@ import { RegistrationGroupsService } from './registration-groups.service';
 @Controller('registration-groups')
 export class RegistrationGroupsController {
   constructor(private readonly groups: RegistrationGroupsService) {}
+
+  @Roles('STUDENT')
+  @Post(':id/invite')
+  inviteMember(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: InviteMemberDto,
+    @GetUser('id') userId: number,
+  ) {
+    return this.groups.inviteByStudentCode(id, dto.studentCode, userId);
+  }
 
   @Roles('STUDENT')
   @Get('me')

@@ -2,14 +2,17 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { EllipsisVertical, GraduationCap, Layers } from 'lucide-react';
+import { EllipsisVertical, GraduationCap, Layers, Loader2, UserPlus } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   useDisbandGroup,
+  useInviteMember,
   useLeaveGroup,
   useUpdateGroup,
 } from '@/lib/api/registration';
 import type { RegistrationGroup } from '@/lib/api/types';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +22,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { GroupSeatList } from '@/components/groups/group-seat-list';
-import { JoinLinkField } from '@/components/shared/join-link-field';
 
 export function MyGroupPanel({
   group,
@@ -31,9 +33,24 @@ export function MyGroupPanel({
   const [confirming, setConfirming] = useState<'disband' | 'leave' | null>(
     null,
   );
+  const [studentCode, setStudentCode] = useState('');
   const update = useUpdateGroup(group.id);
   const disband = useDisbandGroup(group.id);
   const leave = useLeaveGroup(group.id);
+  const invite = useInviteMember(group.id);
+
+  async function handleInvite(e: React.FormEvent) {
+    e.preventDefault();
+    const code = studentCode.trim();
+    if (!code) return;
+    try {
+      await invite.mutateAsync(code);
+      toast.success(`Đã thêm sinh viên ${code} vào nhóm thành công!`);
+      setStudentCode('');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Không thể mời sinh viên');
+    }
+  }
 
   const { topic } = group;
 
@@ -116,10 +133,42 @@ export function MyGroupPanel({
 
       <GroupSeatList group={group} canEdit={canEdit} />
 
-      {canEdit && group.isLeader && group.joinCode && !group.isFull && (
-        <div className="space-y-1.5 pt-1 border-t border-border/40">
-          <p className="text-xs font-medium text-foreground">Link mời thành viên</p>
-          <JoinLinkField code={group.joinCode} />
+      {canEdit && group.isLeader && !group.isFull && (
+        <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-neutral-700/80">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-slate-800 dark:text-neutral-200 flex items-center gap-1.5">
+              <UserPlus className="size-3.5 text-primary" />
+              Mời thành viên bằng MSSV
+            </p>
+            <span className="text-xs text-muted-foreground">
+              Còn {group.topic.maxStudents - group.occupiedSeats} chỗ trống
+            </span>
+          </div>
+          <form onSubmit={handleInvite} className="flex gap-2">
+            <Input
+              value={studentCode}
+              onChange={(e) => setStudentCode(e.target.value)}
+              placeholder="Nhập MSSV (ví dụ: 2212345)…"
+              className="h-9 text-xs sm:text-sm bg-white dark:bg-[#141414] border-slate-300 dark:border-neutral-700"
+              disabled={invite.isPending}
+            />
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!studentCode.trim() || invite.isPending}
+              className="shrink-0 h-9 px-4 font-medium"
+            >
+              {invite.isPending ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <UserPlus className="size-3.5 mr-1" />
+              )}
+              Mời
+            </Button>
+          </form>
+          <p className="text-2xs text-muted-foreground">
+            Hệ thống sẽ gửi thông báo và email đến sinh viên được mời.
+          </p>
         </div>
       )}
 

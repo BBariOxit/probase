@@ -20,7 +20,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { GroupSeatList } from '@/components/groups/group-seat-list';
-import { JoinLinkField } from '@/components/shared/join-link-field';
 
 interface TopicLike extends TopicAvailability {
   id: number;
@@ -50,8 +49,7 @@ export function TopicRegisterButton({
   function act() {
     if (registering) {
       register.mutate(
-        // Every seat, so nothing is exposed while the leader decides.
-        { topicId: topic.id, declaredSize: topic.maxStudents },
+        { topicId: topic.id },
         { onSuccess: () => setConfirming(true) },
       );
       return;
@@ -156,15 +154,14 @@ function Result() {
       <div className="space-y-4">
         {group.topic.maxStudents > 1 && <GroupSeatList group={group} />}
 
-        {/*
-          A topic for one student can never take a second, so an invite link
-          there leads only to a refusal — and a list of one seat holding the
-          person reading it is not worth drawing either.
-        */}
-        {group.isLeader && group.joinCode && group.topic.maxStudents > 1 && (
-          <div className="space-y-1.5">
-            <p className="text-sm font-medium">Link mời</p>
-            <JoinLinkField code={group.joinCode} />
+        {group.isLeader && group.topic.maxStudents > 1 && (
+          <div className="rounded-lg border border-slate-200 dark:border-neutral-700/80 bg-slate-50 dark:bg-neutral-800/40 p-3 text-xs text-muted-foreground">
+            <p className="font-medium text-slate-800 dark:text-neutral-200 mb-1">
+              Mời thành viên vào nhóm
+            </p>
+            <p>
+              Bạn có thể vào trang nhóm để mời thêm bạn cùng làm bằng MSSV (tối đa {group.topic.maxStudents} sinh viên).
+            </p>
           </div>
         )}
       </div>

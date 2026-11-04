@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { MailModule } from '../../core/mail/mail.module';
 import { NotificationsModule } from '../../core/notifications/notifications.module';
 import { RoundsModule } from '../rounds/rounds.module';
 import { StudentsModule } from '../students/students.module';
@@ -9,7 +10,7 @@ import { RegistrationGroupsService } from './registration-groups.service';
 import { TopicRegistrationController } from './topic-registration.controller';
 
 @Module({
-  imports: [RoundsModule, NotificationsModule, StudentsModule],
+  imports: [RoundsModule, NotificationsModule, StudentsModule, MailModule],
   controllers: [
     RegistrationGroupsController,
     TopicRegistrationController,

@@ -19,6 +19,7 @@ import {
   isUniqueViolation,
   uniqueConstraintName,
 } from '../../common/utils/prisma-error.util';
+import { MailService } from '../../core/mail/mail.service';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { REQUIREMENT_SELECT } from '../rounds/requirements.service';
@@ -148,7 +149,100 @@ export class RegistrationGroupsService {
     private readonly prisma: PrismaService,
     private readonly phases: RoundPhaseService,
     private readonly notifications: NotificationsService,
+    private readonly mail: MailService,
   ) {}
+
+  // ── invite by student code ────────────────────────────────
+  async inviteByStudentCode(
+    groupId: number,
+    studentCode: string,
+    userId: number,
+  ) {
+    const leader = await this.requireStudent(userId);
+    const group = await this.prisma.registrationGroup.findUnique({
+      where: { id: groupId },
+      select: GROUP_SELECT,
+    });
+
+    if (!group || group.status === RegistrationGroupStatus.REJECTED) {
+      throw new NotFoundException('Không tìm thấy nhóm đăng ký');
+    }
+
+    if (group.leaderId !== leader.id) {
+      throw new ForbiddenException(
+        'Chỉ trưởng nhóm mới có quyền mời thành viên',
+      );
+    }
+
+    const cleanCode = studentCode.trim();
+    if (!cleanCode) {
+      throw new BadRequestException('Vui lòng nhập mã số sinh viên');
+    }
+
+    // 1. Find target student by studentCode
+    const targetStudent = await this.prisma.studentProfile.findUnique({
+      where: { studentCode: cleanCode },
+      select: {
+        id: true,
+        fullName: true,
+        cohort: true,
+        studentCode: true,
+        user: { select: { id: true, email: true } },
+      },
+    });
+
+    if (!targetStudent) {
+      throw new NotFoundException(
+        `Không tìm thấy sinh viên với MSSV "${cleanCode}"`,
+      );
+    }
+
+    if (targetStudent.id === leader.id) {
+      throw new ConflictException('Bạn đã là trưởng nhóm của nhóm này');
+    }
+
+    // 2. Check group capacity
+    const seats = seatBreakdown(group);
+    if (seats.occupied >= seats.capacity) {
+      throw new ConflictException(
+        `Nhóm đã đủ số lượng thành viên tối đa (${seats.capacity} SV)`,
+      );
+    }
+
+    // 3. Check joinable conditions (eligibility, round phases, no existing group)
+    await this.assertJoinable(group, targetStudent, { allowHeldSeats: true });
+
+    // 4. Add member directly
+    const result = await this.addMember(
+      group.id,
+      targetStudent,
+      GroupJoinSource.SELF,
+      { allowHeldSeats: true },
+    );
+
+    // 5. Send notification to the invited student
+    await this.notifications.notify([
+      {
+        userId: targetStudent.user.id,
+        type: NotificationType.GROUP_MEMBER_JOINED,
+        title: 'Bạn đã được thêm vào nhóm đề tài',
+        content: `Trưởng nhóm ${leader.fullName} đã thêm bạn vào nhóm đề tài "${group.topic.title}".`,
+        targetId: group.id,
+      },
+    ]);
+
+    // 6. Send email to the invited student
+    if (targetStudent.user?.email) {
+      await this.mail.sendGroupInvitation({
+        to: targetStudent.user.email,
+        studentName: targetStudent.fullName,
+        leaderName: leader.fullName,
+        topicTitle: group.topic.title,
+      });
+    }
+
+    return result;
+  }
 
   // ── register ──────────────────────────────────────────────
 
