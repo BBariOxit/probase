@@ -355,7 +355,7 @@ function StudentTopicsContent() {
                     <span className="font-semibold text-slate-900 dark:text-neutral-100">
                       {abbr.full}
                     </span>
-                    <span className="text-xs text-muted-foreground ml-1.5 font-normal">
+                    <span className="text-muted-foreground font-normal">
                       ({abbr.short})
                     </span>
                   </SelectItem>
