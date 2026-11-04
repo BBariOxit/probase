@@ -15,6 +15,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { InviteMemberDto } from './dto/invite-member.dto';
 import { QueryMyGroupDto } from './dto/query-my-group.dto';
 import { QuerySupervisedGroupsDto } from './dto/query-supervised-groups.dto';
+import { SwitchTopicDto } from './dto/switch-topic.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { RegistrationGroupsService } from './registration-groups.service';
 
@@ -76,6 +77,16 @@ export class RegistrationGroupsController {
     @GetUser('id') userId: number,
   ) {
     return this.groups.update(id, dto, userId);
+  }
+
+  @Roles('STUDENT')
+  @Post(':id/switch-topic')
+  switchTopic(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: SwitchTopicDto,
+    @GetUser('id') userId: number,
+  ) {
+    return this.groups.switchTopic(id, dto.newTopicId, userId);
   }
 
   @Roles('STUDENT')

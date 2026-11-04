@@ -1,8 +1,18 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, CalendarClock, Copy, Eye, MoreHorizontal, Search } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  BookOpen,
+  CalendarClock,
+  Copy,
+  Eye,
+  Loader2,
+  MoreHorizontal,
+  RotateCcw,
+  Search,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useActiveSemester,
@@ -10,17 +20,19 @@ import {
   useMyRounds,
   useProjectTypes,
 } from '@/lib/api/master-data';
-import { useMyGroup } from '@/lib/api/registration';
+import { useMyGroup, useSwitchTopic } from '@/lib/api/registration';
 import { useInfiniteTopics, useTopicLecturers } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebounce } from '@/hooks';
 import { cn, sanitizeLecturerName } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { LecturerCombobox } from '@/components/shared/lecturer-combobox';
 import { RegistrationPhaseNotice } from '@/components/rounds/registration-phase-notice';
 import { StatusPill } from '@/components/shared/status-pill';
 import { TopicRegisterButton } from '@/components/topics/topic-register-button';
 import { TopicDetailSheet } from '@/components/topics/topic-detail-sheet';
+import type { TopicListItem } from '@/lib/api/types';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -72,14 +84,26 @@ function getProjectTypeAbbr(projectType: { name: string; code?: string }): {
   return { short: projectType.code || name, full: name };
 }
 
-export default function StudentTopicsPage() {
+function StudentTopicsContent() {
   const allowed = useRequireRole('STUDENT');
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const activeSemester = useActiveSemester();
   const { data: rounds } = useMyRounds(activeSemester?.id);
   const { data: projectTypes } = useProjectTypes();
   const { data: myTypes } = useMyEligibleProjectTypes(activeSemester?.id);
   const { data: lecturers } = useTopicLecturers(activeSemester?.id);
   const { data: myGroup } = useMyGroup();
+
+  const switchTopicForGroupId = searchParams.get('switchTopicForGroup');
+  const isSwitchingTopic = Boolean(
+    switchTopicForGroupId &&
+      myGroup &&
+      String(myGroup.id) === switchTopicForGroupId &&
+      myGroup.isLeader,
+  );
+  const switchTopicMutation = useSwitchTopic(myGroup?.id ?? 0);
+  const [topicToSwitch, setTopicToSwitch] = useState<TopicListItem | null>(null);
 
   const [search, setSearch] = useState('');
   const [projectTypeId, setProjectTypeId] = useState<number | null>(null);
@@ -234,6 +258,33 @@ export default function StudentTopicsPage() {
 
   return (
     <div className="space-y-4">
+      {/* ── Banner đổi đề tài cho nhóm ── */}
+      {isSwitchingTopic && myGroup && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-white">
+              <RotateCcw className="size-4.5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-900 dark:text-neutral-100">
+                Đang đổi đề tài cho nhóm ({myGroup.members.length} thành viên)
+              </p>
+              <p className="text-xs text-slate-600 dark:text-neutral-400">
+                Đề tài hiện tại: <span className="font-semibold text-slate-800 dark:text-neutral-200">{myGroup.topic.title}</span>. Chọn một đề tài còn trống bên dưới để đổi sang.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push('/student/groups')}
+            className="shrink-0 h-8.5 text-xs font-semibold"
+          >
+            Hủy đổi đề tài
+          </Button>
+        </div>
+      )}
+
       {/* ── Thông báo tiến trình đợt ── */}
       {rounds?.map((round) => (
         <RegistrationPhaseNotice
@@ -455,57 +506,89 @@ export default function StudentTopicsPage() {
                   </TableCell>
 
                   <TableCell className="w-32 px-5 py-3.5 text-right whitespace-nowrap align-middle">
-                    <div
-                      className="flex items-center justify-end gap-1.5"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <TopicRegisterButton
-                        topic={topic}
-                        idle={
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled
-                            className="text-xs cursor-not-allowed opacity-50 border-slate-300 dark:border-neutral-700 bg-transparent text-slate-400 dark:text-neutral-500 select-none"
+                    {isSwitchingTopic && myGroup ? (
+                      <div
+                        className="flex items-center justify-end"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {topic.id === myGroup.topic.id ? (
+                          <span className="text-xs font-semibold text-primary">
+                            Đề tài hiện tại
+                          </span>
+                        ) : isTaken ? (
+                          <span className="text-xs text-slate-400 dark:text-neutral-500 font-medium">
+                            Đã có nhóm
+                          </span>
+                        ) : topic.maxStudents < myGroup.members.length ? (
+                          <span
+                            className="text-xs text-slate-400 dark:text-neutral-500 font-medium"
+                            title="Đề tài không đủ chỗ cho số thành viên nhóm hiện tại"
                           >
-                            Đăng ký
+                            Không đủ chỗ
+                          </span>
+                        ) : (
+                          <Button
+                            size="sm"
+                            className="h-8 px-3 text-xs font-bold bg-primary hover:bg-primary/90 text-white shadow-xs cursor-pointer"
+                            onClick={() => setTopicToSwitch(topic)}
+                          >
+                            Đổi sang đề tài này
                           </Button>
-                        }
-                      />
-                      <DropdownMenu>
-                        <DropdownMenuTrigger
-                          render={
+                        )}
+                      </div>
+                    ) : (
+                      <div
+                        className="flex items-center justify-end gap-1.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <TopicRegisterButton
+                          topic={topic}
+                          idle={
                             <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label={`Thao tác khác cho đề tài ${topic.title}`}
-                              className="text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-100"
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled
+                              className="text-xs cursor-not-allowed opacity-50 border-slate-300 dark:border-neutral-700 bg-transparent text-slate-400 dark:text-neutral-500 select-none"
                             >
-                              <MoreHorizontal className="size-4" />
+                              Đăng ký
                             </Button>
                           }
                         />
-                        <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuItem
-                            onClick={() => setSelectedTopicId(topic.id)}
-                          >
-                            <Eye className="size-4 shrink-0 text-slate-500 dark:text-neutral-400" />
-                            <span>Xem chi tiết</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              const url = `${window.location.origin}/student/topics/${topic.id}`;
-                              navigator.clipboard.writeText(url);
-                              toast.success('Đã sao chép liên kết đề tài');
-                            }}
-                          >
-                            <Copy className="size-4 shrink-0 text-slate-500 dark:text-neutral-400" />
-                            <span>Sao chép liên kết</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            render={
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label={`Thao tác khác cho đề tài ${topic.title}`}
+                                className="text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-100"
+                              >
+                                <MoreHorizontal className="size-4" />
+                              </Button>
+                            }
+                          />
+                          <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuItem
+                              onClick={() => setSelectedTopicId(topic.id)}
+                            >
+                              <Eye className="size-4 shrink-0 text-slate-500 dark:text-neutral-400" />
+                              <span>Xem chi tiết</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                const url = `${window.location.origin}/student/topics/${topic.id}`;
+                                navigator.clipboard.writeText(url);
+                                toast.success('Đã sao chép liên kết đề tài');
+                              }}
+                            >
+                              <Copy className="size-4 shrink-0 text-slate-500 dark:text-neutral-400" />
+                              <span>Sao chép liên kết</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    )}
                   </TableCell>
                 </TableRow>
               );
@@ -611,6 +694,64 @@ export default function StudentTopicsPage() {
         topicId={selectedTopicId}
         onClose={() => setSelectedTopicId(null)}
       />
+
+      {/* ── Dialog xác nhận đổi đề tài ── */}
+      <ConfirmDialog
+        open={topicToSwitch !== null}
+        onOpenChange={(open) => !open && setTopicToSwitch(null)}
+        title="Đổi sang đề tài mới?"
+        description={
+          myGroup && topicToSwitch ? (
+            <div className="space-y-3 pt-1 text-left">
+              <p className="text-xs text-slate-600 dark:text-neutral-400">
+                Bạn có chắc chắn muốn đổi sang đề tài <strong className="text-slate-900 dark:text-neutral-100 font-bold">&ldquo;{topicToSwitch.title}&rdquo;</strong>?
+              </p>
+              <div className="rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-2.5 text-xs text-amber-800 dark:text-amber-300">
+                ⚠️ Đề tài cũ <strong className="font-semibold">&ldquo;{myGroup.topic.title}&rdquo;</strong> sẽ được nhả ra cho nhóm khác ngay khi đổi.
+              </div>
+              <div className="rounded-lg border border-slate-200 dark:border-neutral-800 p-2.5 space-y-1.5 bg-slate-50 dark:bg-neutral-900">
+                <p className="text-[11px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
+                  Giữ nguyên {myGroup.members.length} thành viên nhóm:
+                </p>
+                <div className="space-y-1">
+                  {myGroup.members.map((m) => (
+                    <div key={m.id} className="text-xs flex items-center justify-between text-slate-800 dark:text-neutral-200">
+                      <span>{m.student.fullName}</span>
+                      <span className="font-mono text-primary font-semibold text-[11px]">{m.student.studentCode}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : ''
+        }
+        confirmLabel={switchTopicMutation.isPending ? 'Đang đổi...' : 'Xác nhận đổi đề tài'}
+        onConfirm={async () => {
+          if (!topicToSwitch) return;
+          try {
+            await switchTopicMutation.mutateAsync(topicToSwitch.id);
+            toast.success('Đã đổi sang đề tài mới thành công!');
+            setTopicToSwitch(null);
+            router.push('/student/groups');
+          } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : 'Không thể đổi đề tài');
+          }
+        }}
+      />
     </div>
+  );
+}
+
+export default function StudentTopicsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-16">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <StudentTopicsContent />
+    </Suspense>
   );
 }
