@@ -139,7 +139,7 @@ export function useDeactivateSemester() {
 
   return useMutation({
     mutationFn: (id: number) =>
-      api<Semester>(/semesters//deactivate, { method: 'PATCH' }),
+      api<Semester>(`/semesters/${id}/deactivate`, { method: 'PATCH' }),
     onSuccess: () => queryClient.invalidateQueries(),
   });
 }
