@@ -63,6 +63,31 @@ const GROUP_FILTERS = [
   { value: 'true', label: 'Đã có đề tài' },
 ];
 
+function getProjectTypeAbbr(projectType?: { name: string; code?: string } | null): {
+  short: string;
+  full: string;
+} {
+  if (!projectType) return { short: '—', full: '' };
+  const code = projectType.code?.toUpperCase() ?? '';
+  const name = projectType.name ?? '';
+
+  if (
+    code === 'DATN' ||
+    code === 'KLTN' ||
+    name.toLowerCase().includes('khóa luận') ||
+    name.toLowerCase().includes('tốt nghiệp')
+  ) {
+    return { short: 'KLTN', full: name || 'Khóa luận tốt nghiệp' };
+  }
+  if (code === 'DACN' || name.toLowerCase().includes('chuyên ngành')) {
+    return { short: 'ĐACN', full: name || 'Đồ án chuyên ngành' };
+  }
+  if (code === 'DACS' || name.toLowerCase().includes('cơ sở')) {
+    return { short: 'ĐACS', full: name || 'Đồ án cơ sở' };
+  }
+  return { short: projectType.code || name, full: name };
+}
+
 export default function StudentRosterPage() {
   const allowed = useRequireRole('ADMIN');
   const semester = useActiveSemester();
@@ -539,19 +564,22 @@ export default function StudentRosterPage() {
                   <TableHead className="min-w-44 px-5">
                     Sinh viên
                   </TableHead>
-                  <TableHead className="w-28">
+                  <TableHead className="w-28 px-4">
                     Lớp
                   </TableHead>
-                  <TableHead className="w-40">
+                  <TableHead className="w-40 px-4">
                     Chuyên ngành
                   </TableHead>
-                  <TableHead className="w-80 max-w-[320px] px-5">
+                  <TableHead className="min-w-[280px] px-5">
                     Đề tài
                   </TableHead>
-                  <TableHead className="w-44">
+                  <TableHead className="w-28 px-4 whitespace-nowrap">
+                    Loại đồ án
+                  </TableHead>
+                  <TableHead className="w-44 px-4 whitespace-nowrap">
                     GV hướng dẫn
                   </TableHead>
-                  <TableHead className="min-w-36">
+                  <TableHead className="w-32 px-4 whitespace-nowrap">
                     Ghi chú
                   </TableHead>
                 </TableRow>
@@ -571,8 +599,9 @@ export default function StudentRosterPage() {
                   <Skeleton className="h-4 w-20" />
                   <Skeleton className="h-4 w-32" />
                   <Skeleton className="h-4 flex-1" />
+                  <Skeleton className="h-4 w-16" />
                   <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-20" />
                 </div>
               ))}
 
@@ -617,7 +646,7 @@ function StudentRow({ student }: { student: StudentRosterRow }) {
   return (
     <TableRow className="hover:bg-slate-50/70 dark:hover:bg-white/4 transition-colors">
       {/* 1. Sinh viên */}
-      <TableCell className="px-5 py-3.5">
+      <TableCell className="px-5 py-3.5 align-middle">
         <p className="font-semibold text-slate-900 dark:text-neutral-100">
           {student.fullName}
         </p>
@@ -630,42 +659,22 @@ function StudentRow({ student }: { student: StudentRosterRow }) {
       </TableCell>
 
       {/* 2. Lớp */}
-      <TableCell className="px-4 py-3.5 font-medium text-slate-700 dark:text-neutral-300">
+      <TableCell className="px-4 py-3.5 font-medium text-slate-700 dark:text-neutral-300 align-middle">
         {student.class ?? '—'}
       </TableCell>
 
       {/* 3. Chuyên ngành */}
-      <TableCell className="px-4 py-3.5 text-slate-700 dark:text-neutral-300">
+      <TableCell className="px-4 py-3.5 text-slate-700 dark:text-neutral-300 align-middle">
         {student.major?.name ?? '—'}
       </TableCell>
 
-      {/* 4. Đề tài: Clamp 2 dòng + Tooltip hiển thị đầy đủ (Vấn đề 1) */}
-      <TableCell className="px-5 py-3.5 max-w-[320px]">
+      {/* 4. Đề tài: Xuống dòng tự nhiên, không line-clamp, không whitespace-nowrap, bỏ badge */}
+      <TableCell className="px-5 py-3.5 align-middle">
         {student.group ? (
-          <div className="space-y-1">
-            <Tooltip>
-              <TooltipTrigger render={<div className="block cursor-default text-left" />}>
-                <p className="line-clamp-2 text-sm font-semibold text-slate-900 dark:text-neutral-100 leading-snug hover:text-primary transition-colors">
-                  {student.group.topic.title}
-                </p>
-              </TooltipTrigger>
-              <TooltipContent
-                side="top"
-                align="start"
-                className="max-w-md p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-neutral-800 dark:text-neutral-100 rounded-lg shadow-xl border border-slate-700 dark:border-neutral-700"
-              >
-                <p className="font-semibold text-primary mb-1">Tên đề tài đầy đủ:</p>
-                <p className="text-slate-200 dark:text-neutral-200">
-                  {student.group.topic.title}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-            <span className="inline-block text-[11px] font-medium text-slate-600 dark:text-neutral-400 bg-slate-100 dark:bg-white/6 px-2 py-0.5 rounded border border-slate-200/60 dark:border-white/8">
-              {student.group.topic.projectType.name}
-            </span>
-          </div>
+          <p className="text-sm font-semibold text-slate-900 dark:text-neutral-100 leading-snug break-words">
+            {student.group.topic.title}
+          </p>
         ) : (
-          /* Vấn đề 3: "Chưa có đề tài" tinh gọn, chuyên nghiệp, không màu mè AI */
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-neutral-400 bg-slate-100/80 dark:bg-neutral-800/60 border border-slate-200/80 dark:border-neutral-700/60">
             <span className="size-1.5 rounded-full bg-slate-400 dark:bg-neutral-500" />
             Chưa có đề tài
@@ -673,8 +682,19 @@ function StudentRow({ student }: { student: StudentRosterRow }) {
         )}
       </TableCell>
 
-      {/* 5. Giảng viên hướng dẫn */}
-      <TableCell className="px-4 py-3.5 text-slate-700 dark:text-neutral-300 font-medium">
+      {/* 5. Loại đồ án (KLTN / DACN / DACS - chữ thường không badge, w-28) */}
+      <TableCell className="w-28 px-4 py-3.5 font-medium text-slate-700 dark:text-neutral-300 align-middle whitespace-nowrap">
+        {student.group ? (
+          <span title={getProjectTypeAbbr(student.group.topic.projectType).full}>
+            {getProjectTypeAbbr(student.group.topic.projectType).short}
+          </span>
+        ) : (
+          '—'
+        )}
+      </TableCell>
+
+      {/* 6. Giảng viên hướng dẫn */}
+      <TableCell className="w-44 px-4 py-3.5 text-slate-700 dark:text-neutral-300 font-medium align-middle whitespace-nowrap">
         {student.group
           ? sanitizeLecturerName(
               student.group.topic.lecturer.fullName,
@@ -683,8 +703,8 @@ function StudentRow({ student }: { student: StudentRosterRow }) {
           : '—'}
       </TableCell>
 
-      {/* 6. Ghi chú */}
-      <TableCell className="px-4 py-3.5 text-xs text-muted-foreground">
+      {/* 7. Ghi chú (w-32 cố định) */}
+      <TableCell className="w-32 px-4 py-3.5 text-xs text-muted-foreground align-middle">
         {student.note ?? '—'}
       </TableCell>
     </TableRow>
