@@ -14,7 +14,7 @@ import { useMyGroup } from '@/lib/api/registration';
 import { useInfiniteTopics, useTopicLecturers } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebounce } from '@/hooks';
-import { cn, sanitizeLecturerName } from '@/lib/utils';
+import { sanitizeLecturerName } from '@/lib/utils';
 import { EmptyState } from '@/components/shared/empty-state';
 import { MyGroupBanner } from '@/components/groups/my-group-banner';
 import { RegistrationPhaseNotice } from '@/components/rounds/registration-phase-notice';
@@ -49,6 +49,29 @@ import {
 const PAGE_SIZE = 12;
 const ANY = 0;
 const MY_COHORT = -1;
+
+function getProjectTypeAbbr(projectType: { name: string; code?: string }): {
+  short: string;
+  full: string;
+} {
+  const code = projectType.code?.toUpperCase() ?? '';
+  const name = projectType.name ?? '';
+
+  if (
+    code === 'DATN' ||
+    name.toLowerCase().includes('khóa luận') ||
+    name.toLowerCase().includes('tốt nghiệp')
+  ) {
+    return { short: 'KLTN', full: name || 'Khóa luận tốt nghiệp' };
+  }
+  if (code === 'DACN' || name.toLowerCase().includes('chuyên ngành')) {
+    return { short: 'ĐACN', full: name || 'Đồ án chuyên ngành' };
+  }
+  if (code === 'DACS' || name.toLowerCase().includes('cơ sở')) {
+    return { short: 'ĐACS', full: name || 'Đồ án cơ sở' };
+  }
+  return { short: projectType.code || name, full: name };
+}
 
 export default function StudentTopicsPage() {
   const allowed = useRequireRole('STUDENT');
@@ -309,8 +332,8 @@ export default function StudentTopicsPage() {
         <Table className="relative w-full text-left text-sm">
           <TableHeader>
             <TableRow>
-              <TableHead className="min-w-[280px] px-5">Tên đề tài</TableHead>
-              <TableHead className="w-52 px-4">Loại đồ án</TableHead>
+              <TableHead className="min-w-[280px] max-w-[380px] w-[380px] px-5">Tên đề tài</TableHead>
+              <TableHead className="w-28 px-4">Loại đồ án</TableHead>
               <TableHead className="w-56 px-4">Cán bộ hướng dẫn</TableHead>
               <TableHead className="w-40 px-4 text-center">Tình trạng</TableHead>
               <TableHead className="w-44 px-5 text-right">Thao tác</TableHead>
@@ -322,9 +345,7 @@ export default function StudentTopicsPage() {
                 topic.lecturer.fullName,
                 topic.lecturer.academicTitle,
               );
-              const isEligibleForTopic = myTypes?.some(
-                (t) => t.id === topic.projectTypeId,
-              );
+              const typeInfo = getProjectTypeAbbr(topic.projectType);
 
               return (
                 <TableRow
@@ -332,10 +353,10 @@ export default function StudentTopicsPage() {
                   className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                   onClick={() => setSelectedTopicId(topic.id)}
                 >
-                  <TableCell className="px-5 py-3.5">
+                  <TableCell className="min-w-[280px] max-w-[380px] w-[380px] px-5 py-3.5 align-middle">
                     <Link
                       href={`/student/topics/${topic.id}`}
-                      className="font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors line-clamp-2"
+                      className="font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words"
                       onClick={(e) => {
                         if (!e.metaKey && !e.ctrlKey) {
                           e.preventDefault();
@@ -347,20 +368,16 @@ export default function StudentTopicsPage() {
                     </Link>
                   </TableCell>
 
-                  <TableCell className="px-4 py-3.5 whitespace-nowrap">
+                  <TableCell className="w-28 px-4 py-3.5 align-middle">
                     <span
-                      className={cn(
-                        'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium border',
-                        isEligibleForTopic
-                          ? 'bg-primary/10 text-primary border-primary/25 font-semibold'
-                          : 'bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-neutral-400 border-slate-200/80 dark:border-neutral-700/80',
-                      )}
+                      className="font-medium text-slate-700 dark:text-neutral-300"
+                      title={typeInfo.full}
                     >
-                      {topic.projectType.name}
+                      {typeInfo.short}
                     </span>
                   </TableCell>
 
-                  <TableCell className="px-4 py-3.5">
+                  <TableCell className="px-4 py-3.5 align-middle">
                     <span className="font-medium text-slate-800 dark:text-neutral-200">
                       {lecturerInfo.displayName}
                     </span>
@@ -371,11 +388,11 @@ export default function StudentTopicsPage() {
                     )}
                   </TableCell>
 
-                  <TableCell className="px-4 py-3.5 text-center">
+                  <TableCell className="px-4 py-3.5 text-center align-middle">
                     <SeatBadge topic={topic} />
                   </TableCell>
 
-                  <TableCell className="px-5 py-3.5 text-right whitespace-nowrap">
+                  <TableCell className="px-5 py-3.5 text-right whitespace-nowrap align-middle">
                     <div
                       className="flex items-center justify-end gap-1.5"
                       onClick={(e) => e.stopPropagation()}
@@ -436,12 +453,12 @@ export default function StudentTopicsPage() {
             {isPending &&
               Array.from({ length: 6 }).map((_, i) => (
                 <TableRow key={`skeleton-init-${i}`} className="hover:bg-transparent">
-                  <TableCell className="px-5 py-3.5">
+                  <TableCell className="min-w-[280px] max-w-[380px] w-[380px] px-5 py-3.5">
                     <Skeleton className="h-4 w-3/4 mb-1.5" />
                     <Skeleton className="h-3 w-1/2" />
                   </TableCell>
-                  <TableCell className="px-4 py-3.5">
-                    <Skeleton className="h-6 w-28 rounded-md" />
+                  <TableCell className="w-28 px-4 py-3.5">
+                    <Skeleton className="h-4 w-12" />
                   </TableCell>
                   <TableCell className="px-4 py-3.5">
                     <Skeleton className="h-4 w-32 mb-1" />
@@ -465,12 +482,12 @@ export default function StudentTopicsPage() {
             {isFetchingNextPage &&
               Array.from({ length: 3 }).map((_, i) => (
                 <TableRow key={`skeleton-more-${i}`} className="hover:bg-transparent">
-                  <TableCell className="px-5 py-3.5">
+                  <TableCell className="min-w-[280px] max-w-[380px] w-[380px] px-5 py-3.5">
                     <Skeleton className="h-4 w-3/4 mb-1.5" />
                     <Skeleton className="h-3 w-1/2" />
                   </TableCell>
-                  <TableCell className="px-4 py-3.5">
-                    <Skeleton className="h-6 w-28 rounded-md" />
+                  <TableCell className="w-28 px-4 py-3.5">
+                    <Skeleton className="h-4 w-12" />
                   </TableCell>
                   <TableCell className="px-4 py-3.5">
                     <Skeleton className="h-4 w-32 mb-1" />
