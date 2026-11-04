@@ -11,33 +11,19 @@ import {
   Settings2,
   Trash2,
 } from 'lucide-react';
-import { ApiError } from '@/lib/api/client';
 import {
   useActivateSemester,
   useCreateSemester,
   useDeleteSemester,
   useSemesters,
   useUpdateSemester,
-  type SemesterInput,
 } from '@/lib/api/master-data';
 import type { Semester } from '@/lib/api/types';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { DateField } from '@/components/shared/date-field';
 import { EmptyState } from '@/components/shared/empty-state';
-import { FormError } from '@/components/shared/form-error';
 import { StatusPill } from '@/components/shared/status-pill';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Table,
   TableBody,
@@ -46,16 +32,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { SemesterDialog } from './semester-dialog';
 
 const dateFormat = new Intl.DateTimeFormat('vi-VN', {
   day: '2-digit',
   month: '2-digit',
   year: 'numeric',
 });
-
-function toDateInput(iso: string | null): string {
-  return iso ? iso.slice(0, 10) : '';
-}
 
 export default function SemestersPage() {
   const allowed = useRequireRole('ADMIN');
@@ -207,6 +190,7 @@ export default function SemestersPage() {
       {editing && (
         <SemesterDialog
           semester={editing === 'new' ? null : editing}
+          existingSemesters={data ?? []}
           onClose={() => setEditing(null)}
           onSubmit={(input) =>
             editing === 'new'
@@ -225,139 +209,5 @@ export default function SemestersPage() {
         onConfirm={() => remove.mutateAsync(deleting!.id)}
       />
     </div>
-  );
-}
-
-function SemesterDialog({
-  semester,
-  onClose,
-  onSubmit,
-}: {
-  semester: Semester | null;
-  onClose: () => void;
-  onSubmit: (input: SemesterInput) => Promise<unknown>;
-}) {
-  const [name, setName] = useState(semester?.name ?? '');
-  const [code, setCode] = useState(semester?.code ?? '');
-  const [startDate, setStartDate] = useState(
-    toDateInput(semester?.startDate ?? null),
-  );
-  const [endDate, setEndDate] = useState(
-    toDateInput(semester?.endDate ?? null),
-  );
-  const [gradeDeadline, setGradeDeadline] = useState(
-    toDateInput(semester?.gradeSubmissionDeadline ?? null),
-  );
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
-
-  const ordered = startDate !== '' && endDate !== '' && endDate > startDate;
-  const ready = name.trim() !== '' && code.trim() !== '' && ordered;
-
-  async function submit() {
-    setPending(true);
-    setError(null);
-    try {
-      await onSubmit({
-        name: name.trim(),
-        code: code.trim(),
-        startDate: new Date(startDate).toISOString(),
-        endDate: new Date(endDate).toISOString(),
-        // Null rather than omitted, so clearing the box actually clears the
-        // field — an omitted key on a PATCH means "leave it alone".
-        gradeSubmissionDeadline: gradeDeadline
-          ? new Date(gradeDeadline).toISOString()
-          : null,
-      });
-      onClose();
-    } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : 'Không kết nối được máy chủ',
-      );
-    } finally {
-      setPending(false);
-    }
-  }
-
-  return (
-    <Dialog open onOpenChange={(next) => !next && !pending && onClose()}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{semester ? 'Sửa học kỳ' : 'Thêm học kỳ'}</DialogTitle>
-          <DialogDescription className="sr-only">
-            Thêm hoặc sửa học kỳ
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <FormError message={error} />
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="semester-name">Tên học kỳ</Label>
-              <Input
-                id="semester-name"
-                autoFocus
-                maxLength={100}
-                placeholder="Học kỳ 1 năm học 2026-2027"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="semester-code">Mã</Label>
-              <Input
-                id="semester-code"
-                className="uppercase"
-                maxLength={20}
-                placeholder="HK1-2026-2027"
-                value={code}
-                onChange={(event) => setCode(event.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <DateField
-              id="semester-start"
-              label="Bắt đầu"
-              value={startDate}
-              onChange={setStartDate}
-            />
-            <DateField
-              id="semester-end"
-              label="Kết thúc"
-              value={endDate}
-              onChange={setEndDate}
-              invalid={endDate !== '' && !ordered}
-              error={
-                endDate !== '' && !ordered
-                  ? 'Ngày kết thúc phải sau ngày bắt đầu.'
-                  : undefined
-              }
-            />
-          </div>
-
-          <DateField
-            id="semester-grade"
-            label="Hạn nhập điểm"
-            hint="Không bắt buộc. Để trống nếu khoa chưa chốt."
-            className="w-48"
-            value={gradeDeadline}
-            onChange={setGradeDeadline}
-          />
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" disabled={pending} onClick={onClose}>
-            Huỷ
-          </Button>
-          <Button disabled={!ready || pending} onClick={submit}>
-            {pending && <Loader2 className="animate-spin" />}
-            {semester ? 'Lưu' : 'Thêm'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }

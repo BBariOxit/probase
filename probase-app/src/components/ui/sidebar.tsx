@@ -421,7 +421,7 @@ function SidebarGroupAction({
 }: useRender.ComponentProps<'button'> & React.ComponentProps<'button'>) {
   return useRender({
     defaultTagName: 'button',
-    props: mergeProps<'button'>(
+    props: (mergeProps as any)(
       {
         className: cn(
           'absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground ring-sidebar-ring outline-hidden transition-transform group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 md:after:hidden [&>svg]:size-4 [&>svg]:shrink-0',
@@ -515,7 +515,7 @@ function SidebarMenuButton({
   const { isMobile, state } = useSidebar();
   const comp = useRender({
     defaultTagName: 'button',
-    props: mergeProps<'button'>(
+    props: (mergeProps as any)(
       {
         className: cn(sidebarMenuButtonVariants({ variant, size }), className),
         'data-active': isActive ? '' : undefined,
@@ -566,7 +566,7 @@ function SidebarMenuAction({
   }) {
   return useRender({
     defaultTagName: 'button',
-    props: mergeProps<'button'>(
+    props: (mergeProps as any)(
       {
         className: cn(
           'absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground ring-sidebar-ring outline-hidden transition-transform group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 after:absolute after:-inset-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 md:after:hidden [&>svg]:size-4 [&>svg]:shrink-0',
