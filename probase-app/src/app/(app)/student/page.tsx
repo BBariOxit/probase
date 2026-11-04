@@ -16,7 +16,6 @@ import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebounce } from '@/hooks';
 import { sanitizeLecturerName } from '@/lib/utils';
 import { EmptyState } from '@/components/shared/empty-state';
-import { MyGroupBanner } from '@/components/groups/my-group-banner';
 import { RegistrationPhaseNotice } from '@/components/rounds/registration-phase-notice';
 import { SeatBadge } from '@/components/groups/seat-indicator';
 import { TopicRegisterButton } from '@/components/topics/topic-register-button';
@@ -213,9 +212,6 @@ export default function StudentTopicsPage() {
 
   return (
     <div className="space-y-4">
-      {/* ── Banner nhóm đã đăng ký ── */}
-      {myGroup && <MyGroupBanner group={myGroup} />}
-
       {/* ── Thông báo tiến trình đợt ── */}
       {rounds?.map((round) => (
         <RegistrationPhaseNotice
