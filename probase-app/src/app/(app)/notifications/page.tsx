@@ -73,13 +73,13 @@ export default function NotificationsPage() {
         <div className="flex items-center gap-2 self-start sm:self-auto">
           {unread > 0 && (
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               disabled={markAllRead.isPending}
               onClick={() => markAllRead.mutate()}
-              className="gap-1.5 text-xs font-medium cursor-pointer shadow-xs"
+              className="gap-1.5 text-xs font-semibold cursor-pointer shadow-xs"
             >
-              <CheckCheck className="size-3.5 text-primary" />
+              <CheckCheck className="size-3.5" />
               <span>Đánh dấu đã đọc hết</span>
             </Button>
           )}
