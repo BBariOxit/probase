@@ -608,6 +608,83 @@ export class RegistrationGroupsService {
     return { message: 'Group disbanded and the topic is available again' };
   }
 
+  // ── switchTopic ───────────────────────────────────────────
+
+  async switchTopic(groupId: number, newTopicId: number, userId: number) {
+    const student = await this.requireStudent(userId);
+    const group = await this.requireLeadership(groupId, student.id);
+
+    if (group.topicId === newTopicId) {
+      throw new BadRequestException('Nhóm hiện đang đăng ký đề tài này rồi');
+    }
+
+    const newTopic = await this.requireRegistrableTopic(newTopicId);
+
+    if (newTopic.semesterId !== group.semesterId) {
+      throw new BadRequestException('Đề tài mới không thuộc cùng học kỳ với nhóm hiện tại');
+    }
+
+    // 1. Phải trong thời gian đợt đăng ký còn mở (cho phép rời đề tài cũ và tham gia đề tài mới)
+    await this.phases.requireCanLeave(group.topic.roundId);
+    await this.phases.requireCanJoin(newTopic.roundId, student.id);
+
+    // 2. Kiểm tra nếu đề tài mới là do sinh viên khác đề xuất
+    requireProposerOrFree(newTopic, student.id);
+
+    // 3. Kiểm tra số lượng thành viên nhóm hiện tại so với sức chứa tối đa của đề tài mới
+    const activeMembers = group.members.filter(
+      (m) => m.status === GroupMemberStatus.ACCEPTED,
+    );
+    if (activeMembers.length > newTopic.maxStudents) {
+      throw new BadRequestException(
+        `Đề tài mới chỉ cho phép tối đa ${newTopic.maxStudents} sinh viên, nhưng nhóm hiện có ${activeMembers.length} thành viên.`,
+      );
+    }
+
+    // 4. Kiểm tra điều kiện tham gia đợt đồ án của từng thành viên trong nhóm
+    for (const member of activeMembers) {
+      await this.requireEligible(newTopic, member.student);
+    }
+
+    // 5. Đảm bảo đề tài mới còn trống (chưa có nhóm nào đăng ký)
+    const claimingGroup = await this.prisma.registrationGroup.findFirst({
+      where: {
+        topicId: newTopic.id,
+        status: { not: RegistrationGroupStatus.REJECTED },
+      },
+      select: { id: true },
+    });
+    if (claimingGroup) {
+      throw new ConflictException('Đề tài mới này đã có nhóm khác đăng ký');
+    }
+
+    // 6. Cập nhật nhóm sang đề tài mới (ngay lập tức nhả đề tài cũ)
+    await this.prisma.$transaction(async (tx) => {
+      await tx.registrationGroup.update({
+        where: { id: group.id },
+        data: {
+          topicId: newTopic.id,
+          status: statusForSeats(activeMembers.length, newTopic.maxStudents),
+        },
+      });
+    });
+
+    // 7. Thông báo cho các thành viên khác trong nhóm
+    await this.notifications.notify(
+      activeMembers
+        .filter((member) => member.student.user.id !== userId)
+        .map((member) => ({
+          userId: member.student.user.id,
+          type: NotificationType.GROUP_MEMBER_JOINED,
+          title: 'Nhóm đã đổi sang đề tài mới',
+          content: `Trưởng nhóm đã đổi đề tài nhóm sang "${newTopic.title}". Đề tài cũ đã được nhả ra.`,
+          targetId: newTopic.id,
+        })),
+    );
+
+    return this.present(group.id, { studentId: student.id });
+  }
+
   // ── member actions ────────────────────────────────────────
 
   async leave(id: number, userId: number) {
@@ -935,6 +1012,7 @@ export class RegistrationGroupsService {
       where: { id },
       select: {
         id: true,
+        title: true,
         semesterId: true,
         roundId: true,
         maxStudents: true,

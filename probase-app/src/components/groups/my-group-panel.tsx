@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { EllipsisVertical, GraduationCap, Layers, Loader2, UserPlus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { EllipsisVertical, GraduationCap, Layers, Loader2, RotateCcw, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useDisbandGroup,
@@ -31,6 +32,7 @@ export function MyGroupPanel({
   group: RegistrationGroup;
   canEdit?: boolean;
 }) {
+  const router = useRouter();
   const [confirming, setConfirming] = useState<'disband' | 'leave' | null>(
     null,
   );
@@ -94,19 +96,18 @@ export function MyGroupPanel({
                   <>
                     <DropdownMenuItem
                       onClick={() =>
-                        update.mutate({ openForJoin: !group.openForJoin })
+                        router.push(`/student?switchTopicForGroup=${group.id}`)
                       }
                     >
-                      {group.openForJoin
-                        ? 'Đóng nhóm, không nhận thêm'
-                        : 'Mở lại cho người khác vào'}
+                      <RotateCcw className="size-4 mr-1 text-slate-500" />
+                      Đổi đề tài
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       variant="destructive"
                       onClick={() => setConfirming('disband')}
                     >
-                      Giải tán nhóm
+                      Hủy đăng ký
                     </DropdownMenuItem>
                   </>
                 ) : (
@@ -200,9 +201,9 @@ export function MyGroupPanel({
       <ConfirmDialog
         open={confirming === 'disband'}
         onOpenChange={(open) => setConfirming(open ? 'disband' : null)}
-        title="Giải tán nhóm?"
-        description={`Đề tài "${topic.title}" sẽ trở lại danh sách cho sinh viên khác đăng ký, và cả nhóm sẽ không còn đề tài nào.`}
-        confirmLabel="Giải tán"
+        title="Hủy đăng ký đề tài?"
+        description={`Nhóm của bạn sẽ hủy đăng ký đề tài "${topic.title}". Đề tài sẽ trở lại danh sách cho sinh viên khác đăng ký.`}
+        confirmLabel="Hủy đăng ký"
         onConfirm={() => disband.mutateAsync()}
       />
 

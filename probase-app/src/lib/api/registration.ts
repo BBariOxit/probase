@@ -211,3 +211,21 @@ export function useDisbandGroup(id: number) {
     },
   });
 }
+
+export function useSwitchTopic(id: number) {
+  const queryClient = useQueryClient();
+  const invalidate = useInvalidateRegistration();
+
+  return useMutation({
+    mutationFn: (newTopicId: number) =>
+      api<RegistrationGroup>(`/registration-groups/${id}/switch-topic`, {
+        method: 'POST',
+        body: JSON.stringify({ newTopicId }),
+      }),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(groupKeys.mine(), updated);
+      queryClient.setQueryData(groupKeys.detail(id), updated);
+      return invalidate();
+    },
+  });
+}
