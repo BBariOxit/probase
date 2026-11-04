@@ -1,6 +1,7 @@
 'use client';
 
-import { use, useRef, useState } from 'react';
+import { use, useMemo, useState } from 'react';
+import { useQueries, useQueryClient } from '@tanstack/react-query';
 import {
   Calendar,
   Clock,
@@ -9,7 +10,8 @@ import {
   Loader2,
   Lock,
 } from 'lucide-react';
-import { ApiError } from '@/lib/api/client';
+import { toast } from 'sonner';
+import { api, ApiError } from '@/lib/api/client';
 import {
   useProjectTypes,
   useSemesterRounds,
@@ -20,16 +22,16 @@ import type {
   ProjectType,
   RegistrationRound,
   RoundPlanInput,
+  SubmissionRequirement,
 } from '@/lib/api/types';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useBreadcrumbLabel } from '@/lib/breadcrumb-context';
 import { cn, getRecentCohorts } from '@/lib/utils';
-import { toast } from 'sonner';
 import { DateField } from '@/components/shared/date-field';
 import { FormError } from '@/components/shared/form-error';
 import {
   RoundRequirementsEditor,
-  type RoundRequirementsEditorRef,
+  type RequirementRow,
 } from '@/components/admin/round-requirements-editor';
 import { StatusPill, type StatusTone } from '@/components/shared/status-pill';
 import { Button } from '@/components/ui/button';
@@ -64,7 +66,7 @@ const PHASE: Record<string, { label: string; tone: StatusTone }> = {
   FINALIZED: { label: 'Đã chốt', tone: 'idle' },
 };
 
-interface RowState {
+interface TabFormState {
   enabled: boolean;
   start: string;
   end: string;
@@ -72,10 +74,128 @@ interface RowState {
   targetCohort: string;
   officialStart: string;
   officialEnd: string;
+  requirements: RequirementRow[];
 }
 
 function toDateInput(iso: string | null | undefined): string {
   return iso ? iso.slice(0, 10) : '';
+}
+
+interface ValidationError {
+  typeId: number;
+  elementId: string;
+  message: string;
+}
+
+function validateAllTabs(
+  projectTypes: ProjectType[],
+  formState: Record<number, TabFormState>,
+): ValidationError | null {
+  for (const type of projectTypes) {
+    const tab = formState[type.id];
+    if (!tab || !tab.enabled) continue;
+
+    if (!tab.start) {
+      return {
+        typeId: type.id,
+        elementId: `start-${type.id}`,
+        message: `${type.name}: Chưa nhập ngày bắt đầu đăng ký.`,
+      };
+    }
+
+    if (!tab.end) {
+      return {
+        typeId: type.id,
+        elementId: `end-${type.id}`,
+        message: `${type.name}: Chưa nhập hạn chốt đăng ký.`,
+      };
+    }
+
+    if (tab.end <= tab.start) {
+      return {
+        typeId: type.id,
+        elementId: `end-${type.id}`,
+        message: `${type.name}: Hạn đăng ký phải sau ngày mở.`,
+      };
+    }
+
+    if (
+      tab.officialStart !== '' &&
+      tab.officialEnd !== '' &&
+      tab.officialEnd <= tab.officialStart
+    ) {
+      return {
+        typeId: type.id,
+        elementId: `officialEnd-${type.id}`,
+        message: `${type.name}: Ngày kết thúc phải sau ngày bắt đầu.`,
+      };
+    }
+
+    const seenNames = new Map<string, number>();
+    for (let i = 0; i < tab.requirements.length; i++) {
+      const req = tab.requirements[i];
+      const trimmedName = req.name.trim();
+
+      if (!trimmedName) {
+        return {
+          typeId: type.id,
+          elementId: `req-name-${type.id}-${i}`,
+          message: `${type.name}: Mục bài nộp #${i + 1} chưa có tên.`,
+        };
+      }
+
+      if (!req.due) {
+        return {
+          typeId: type.id,
+          elementId: `req-due-${type.id}-${i}`,
+          message: `${type.name}: "${trimmedName}" chưa có hạn nộp.`,
+        };
+      }
+
+      const lowerName = trimmedName.toLowerCase();
+      if (seenNames.has(lowerName)) {
+        return {
+          typeId: type.id,
+          elementId: `req-name-${type.id}-${i}`,
+          message: `${type.name}: Tên bài nộp "${trimmedName}" bị trùng lặp.`,
+        };
+      }
+      seenNames.set(lowerName, i);
+    }
+  }
+
+  return null;
+}
+
+function checkTabDirty(
+  current: TabFormState | undefined,
+  initial: TabFormState | undefined,
+): boolean {
+  if (!current || !initial) return false;
+
+  if (current.enabled !== initial.enabled) return true;
+  if (current.start !== initial.start) return true;
+  if (current.end !== initial.end) return true;
+  if (current.cohorts !== initial.cohorts) return true;
+  if (current.targetCohort !== initial.targetCohort) return true;
+  if (current.officialStart !== initial.officialStart) return true;
+  if (current.officialEnd !== initial.officialEnd) return true;
+
+  if (current.requirements.length !== initial.requirements.length) return true;
+  for (let i = 0; i < current.requirements.length; i++) {
+    const cReq = current.requirements[i];
+    const iReq = initial.requirements[i];
+    if (
+      cReq.id !== iReq.id ||
+      cReq.name !== iReq.name ||
+      cReq.due !== iReq.due ||
+      cReq.isRequired !== iReq.isRequired
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 export default function SemesterRoundsPage({
@@ -89,11 +209,52 @@ export default function SemesterRoundsPage({
 
   const { data: semesters } = useSemesters();
   const { data: projectTypes } = useProjectTypes();
-  const { data: rounds, isPending, error: roundsError, refetch } = useSemesterRounds(semesterId);
+  const {
+    data: rounds,
+    isPending: roundsPending,
+    error: roundsError,
+    refetch: refetchRounds,
+  } = useSemesterRounds(semesterId);
 
   const semester = semesters?.find((one) => one.id === semesterId);
 
   useBreadcrumbLabel(id, semester?.name);
+
+  const requirementsQueries = useQueries({
+    queries: (rounds ?? []).map((round) => ({
+      queryKey: ['rounds', round.id, 'requirements'],
+      queryFn: () =>
+        api<SubmissionRequirement[]>(`/rounds/${round.id}/requirements`),
+      staleTime: 60_000,
+    })),
+  });
+
+  const isPending =
+    roundsPending ||
+    !projectTypes ||
+    !rounds ||
+    requirementsQueries.some((q) => q.isPending);
+
+  const [version, setVersion] = useState(0);
+
+  const initialRequirements = useMemo(() => {
+    const map = new Map<number, RequirementRow[]>();
+    (rounds ?? []).forEach((round, idx) => {
+      const q = requirementsQueries[idx];
+      if (q?.data) {
+        map.set(
+          round.projectTypeId,
+          q.data.map((r) => ({
+            id: r.id,
+            name: r.name,
+            due: r.dueAt.slice(0, 10),
+            isRequired: r.isRequired,
+          })),
+        );
+      }
+    });
+    return map;
+  }, [rounds, requirementsQueries]);
 
   if (!allowed) return null;
 
@@ -132,21 +293,28 @@ export default function SemesterRoundsPage({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => refetch()}
+            onClick={() => refetchRounds()}
             className="cursor-pointer"
           >
             Thử lại
           </Button>
         </div>
-      ) : isPending || !projectTypes || !rounds ? (
+      ) : isPending ? (
         <div className="flex justify-center py-16">
           <Loader2 className="size-5 animate-spin text-primary" />
         </div>
       ) : (
         <PlanTabsForm
+          key={`${semesterId}-${version}`}
           semesterId={semesterId}
           projectTypes={projectTypes}
           rounds={rounds}
+          initialRequirements={initialRequirements}
+          onSaved={async () => {
+            await refetchRounds();
+            requirementsQueries.forEach((q) => q.refetch());
+            setVersion((v) => v + 1);
+          }}
         />
       )}
     </div>
@@ -157,25 +325,34 @@ function PlanTabsForm({
   semesterId,
   projectTypes,
   rounds,
+  initialRequirements,
+  onSaved,
 }: {
   semesterId: number;
   projectTypes: ProjectType[];
   rounds: RegistrationRound[];
+  initialRequirements: Map<number, RequirementRow[]>;
+  onSaved: () => void;
 }) {
+  const queryClient = useQueryClient();
   const savePlanMutation = useSetSemesterRounds();
-  const [activeTypeId, setActiveTypeId] = useState<number>(() => projectTypes[0]?.id ?? 1);
+  const [activeTypeId, setActiveTypeId] = useState<number>(
+    () => projectTypes[0]?.id ?? 1,
+  );
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const editorRef = useRef<RoundRequirementsEditorRef>(null);
-
   const cohortOptions = getRecentCohorts(5);
-  const byType = new Map(rounds.map((round) => [round.projectTypeId, round]));
+  const byType = useMemo(
+    () => new Map(rounds.map((round) => [round.projectTypeId, round])),
+    [rounds],
+  );
 
-  const [state, setState] = useState<Record<number, RowState>>(() =>
-    Object.fromEntries(
+  const initialFormState: Record<number, TabFormState> = useMemo(() => {
+    return Object.fromEntries(
       projectTypes.map((type) => {
         const round = byType.get(type.id);
+        const reqs = initialRequirements.get(type.id) ?? [];
 
         return [
           type.id,
@@ -193,21 +370,31 @@ function PlanTabsForm({
                   : 'CTK46'),
             officialStart: toDateInput(round?.officialStartDate),
             officialEnd: toDateInput(round?.officialEndDate),
-          } satisfies RowState,
+            requirements: reqs,
+          } satisfies TabFormState,
         ];
       }),
-    ),
-  );
+    );
+  }, [projectTypes, byType, initialRequirements, cohortOptions]);
 
-  function patch(typeId: number, changes: Partial<RowState>) {
-    setState((current) => ({
+  const [formState, setFormState] =
+    useState<Record<number, TabFormState>>(initialFormState);
+
+  function patch(typeId: number, changes: Partial<TabFormState>) {
+    setFormState((current) => ({
       ...current,
       [typeId]: { ...current[typeId], ...changes },
     }));
   }
 
+  function isTabDirty(typeId: number): boolean {
+    return checkTabDirty(formState[typeId], initialFormState[typeId]);
+  }
+
+  const hasAnyChanges = projectTypes.some((type) => isTabDirty(type.id));
+
   const rows = projectTypes.map((type) => {
-    const row = state[type.id];
+    const row = formState[type.id];
     const round = byType.get(type.id);
     const locked =
       round !== undefined && !SCHEDULE_EDITABLE.includes(round.phase);
@@ -215,42 +402,89 @@ function PlanTabsForm({
     return { type, row, round, locked };
   });
 
-  const enabled = rows.filter((entry) => entry.row.enabled);
-  const activeEntry = rows.find((entry) => entry.type.id === activeTypeId) ?? rows[0];
-
-  async function handleSaveActiveTab() {
+  async function handleSaveAll() {
     setError(null);
-    setIsSaving(true);
 
+    const validationError = validateAllTabs(projectTypes, formState);
+    if (validationError) {
+      setActiveTypeId(validationError.typeId);
+      setError(validationError.message);
+      toast.error('Vui lòng kiểm tra lại thông tin ở các tab');
+      setTimeout(() => {
+        const el = document.getElementById(validationError.elementId);
+        if (el) {
+          el.focus();
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      return;
+    }
+
+    const enabledTabs = projectTypes
+      .map((type) => ({ type, tab: formState[type.id] }))
+      .filter((entry) => entry.tab?.enabled);
+
+    if (enabledTabs.length === 0) {
+      toast.error('Cần kích hoạt ít nhất một đợt đồ án');
+      return;
+    }
+
+    setIsSaving(true);
     try {
-      // 1. Lưu kế hoạch đợt cho các loại đồ án được bật
-      const plan: RoundPlanInput[] = enabled.map((entry) => ({
+      const plan: RoundPlanInput[] = enabledTabs.map((entry) => ({
         projectTypeId: entry.type.id,
-        registrationStart: new Date(entry.row.start).toISOString(),
-        registrationEnd: new Date(entry.row.end).toISOString(),
-        targetCohort: entry.row.targetCohort?.trim() || undefined,
-        officialStartDate: entry.row.officialStart
-          ? new Date(entry.row.officialStart).toISOString()
+        registrationStart: new Date(entry.tab.start).toISOString(),
+        registrationEnd: new Date(entry.tab.end).toISOString(),
+        targetCohort: entry.tab.targetCohort?.trim() || undefined,
+        officialStartDate: entry.tab.officialStart
+          ? new Date(entry.tab.officialStart).toISOString()
           : undefined,
-        officialEndDate: entry.row.officialEnd
-          ? new Date(entry.row.officialEnd).toISOString()
+        officialEndDate: entry.tab.officialEnd
+          ? new Date(entry.tab.officialEnd).toISOString()
           : undefined,
-        cohorts: [entry.row.cohorts],
+        cohorts: [entry.tab.cohorts],
       }));
 
-      await savePlanMutation.mutateAsync({ semesterId, rounds: plan });
+      const savedRounds = await savePlanMutation.mutateAsync({
+        semesterId,
+        rounds: plan,
+      });
 
-      // 2. Lưu danh mục bài nộp nếu có thay đổi trong tab hiện tại
-      if (editorRef.current?.hasChanges) {
-        const ok = await editorRef.current.submit();
-        if (!ok) {
-          throw new Error('Không thể lưu danh mục bài nộp. Vui lòng kiểm tra lại hạn nộp và tên bài.');
-        }
-      }
+      const savedRoundMap = new Map(savedRounds.map((r) => [r.projectTypeId, r]));
 
-      toast.success(`Đã lưu cấu hình ${activeEntry.type.name} thành công.`);
+      await Promise.all(
+        enabledTabs.map(async (entry) => {
+          const savedRound = savedRoundMap.get(entry.type.id);
+          if (!savedRound) return;
+
+          await api(`/rounds/${savedRound.id}/requirements`, {
+            method: 'PUT',
+            body: {
+              requirements: entry.tab.requirements.map((req) => ({
+                id: req.id,
+                name: req.name.trim(),
+                dueAt: new Date(req.due).toISOString(),
+                isRequired: req.isRequired,
+              })),
+            },
+          });
+        }),
+      );
+
+      await queryClient.invalidateQueries({
+        queryKey: ['semesters', semesterId, 'rounds'],
+      });
+      await queryClient.invalidateQueries({ queryKey: ['rounds'] });
+
+      toast.success('Đã lưu cấu hình đợt đăng ký thành công');
+      onSaved();
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : (err instanceof Error ? err.message : 'Không kết nối được máy chủ');
+      const msg =
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : 'Không kết nối được máy chủ';
       setError(msg);
       toast.error(msg);
     } finally {
@@ -259,7 +493,7 @@ function PlanTabsForm({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <FormError message={error} />
 
       <Tabs
@@ -269,37 +503,48 @@ function PlanTabsForm({
           setActiveTypeId(Number(val));
         }}
       >
-        {/* Segmented Control Tabs - Active nền primary chữ trắng sắc nét */}
         <TabsList className="w-full h-auto p-1.5 bg-slate-200/80 dark:bg-[#141414] border border-slate-300 dark:border-neutral-800 rounded-xl grid grid-cols-3 gap-1.5">
           {rows.map(({ type }) => {
             const isActive = activeTypeId === type.id;
+            const dirty = isTabDirty(type.id);
+
             return (
               <TabsTrigger
                 key={type.id}
                 value={String(type.id)}
                 className={cn(
-                  'py-2.5 px-3 rounded-lg text-sm transition-all cursor-pointer font-medium',
+                  'py-2.5 px-3 rounded-lg text-sm transition-all cursor-pointer font-medium flex items-center justify-center gap-2',
                   isActive
                     ? 'bg-primary text-white dark:text-white font-bold shadow-sm'
                     : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-100 hover:bg-slate-300/40 dark:hover:bg-neutral-800/40',
                 )}
               >
-                <span className={cn('truncate', isActive ? 'text-white dark:text-white font-bold' : '')}>
+                <span
+                  className={cn(
+                    'truncate',
+                    isActive ? 'text-white dark:text-white font-bold' : '',
+                  )}
+                >
                   {type.name}
                 </span>
+                {dirty && (
+                  <span
+                    className={cn(
+                      'size-2 rounded-full shrink-0',
+                      isActive ? 'bg-white' : 'bg-primary',
+                    )}
+                    title="Có thay đổi chưa lưu"
+                  />
+                )}
               </TabsTrigger>
             );
           })}
         </TabsList>
 
         {rows.map(({ type, row, round, locked }) => {
-          const problems = describeProblems({ type, row });
-
           return (
             <TabsContent key={type.id} value={String(type.id)} className="mt-4">
-              {/* Khối Card nội dung chính: Xám đen phẳng #1e1e1e, viền border-neutral-800 */}
               <div className="space-y-6 rounded-xl border border-[#d1d5e0] dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] p-6 shadow-sm">
-                {/* Header của Tab: Bật/Tắt & Trạng thái */}
                 <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#d1d5e0] dark:border-neutral-800">
                   <div className="flex flex-wrap items-center gap-3">
                     <label className="flex items-center gap-2.5 cursor-pointer select-none">
@@ -345,7 +590,6 @@ function PlanTabsForm({
                   </div>
                 ) : (
                   <>
-                    {/* Giai đoạn 1: Đăng ký đề tài */}
                     <div className="space-y-4">
                       <div className="flex items-center gap-2">
                         <Calendar className="size-4 text-primary" />
@@ -368,7 +612,9 @@ function PlanTabsForm({
                           disabled={locked}
                           value={row.end}
                           invalid={
-                            row.start !== '' && row.end !== '' && row.end <= row.start
+                            row.start !== '' &&
+                            row.end !== '' &&
+                            row.end <= row.start
                           }
                           onChange={(end) => patch(type.id, { end })}
                         />
@@ -386,7 +632,6 @@ function PlanTabsForm({
                               if (value) patch(type.id, { cohorts: value });
                             }}
                           >
-                            {/* Ô Select: Khoét lõm #141414, viền border-neutral-700 */}
                             <SelectTrigger
                               id={`cohorts-${type.id}`}
                               className="w-full h-9 text-sm rounded-lg border-[1.5px] border-[#c4c9d9] bg-white px-3 text-slate-900 transition focus:border-[#2563eb] focus:outline-none focus:ring-1 focus:ring-[#2563eb] dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary"
@@ -405,10 +650,8 @@ function PlanTabsForm({
                       </div>
                     </div>
 
-                    {/* Đường phân cách các giai đoạn: border-t border-neutral-800 */}
                     <div className="border-t border-[#d1d5e0] dark:border-neutral-800 my-6" />
 
-                    {/* Giai đoạn 2: Thực hiện đồ án */}
                     <div className="space-y-4">
                       <div className="flex items-center gap-2">
                         <Clock className="size-4 text-primary" />
@@ -426,7 +669,6 @@ function PlanTabsForm({
                             <GraduationCap className="size-3.5 text-primary" />
                             Mã Lớp / Khóa áp dụng
                           </Label>
-                          {/* Ô Input: Khoét lõm #141414, viền border-neutral-700 */}
                           <input
                             id={`targetCohort-${type.id}`}
                             placeholder={
@@ -478,48 +720,24 @@ function PlanTabsForm({
                       </div>
                     </div>
 
-                    {/* Đường phân cách các giai đoạn: border-t border-neutral-800 */}
                     <div className="border-t border-[#d1d5e0] dark:border-neutral-800 my-6" />
 
-                    {/* Danh mục bài phải nộp */}
-                    {round ? (
-                      <RoundRequirementsEditor
-                        ref={editorRef}
-                        round={round}
-                      />
-                    ) : (
-                      /* Khối nộp bài nét đứt (Empty State): #181818, viền border-dashed border-neutral-600 */
-                      <div className="rounded-xl border-[1.5px] border-dashed border-[#b0b8cc] dark:border-neutral-600 p-5 text-center text-xs text-slate-500 dark:text-neutral-400 bg-slate-50/50 dark:bg-[#181818]">
-                        Lưu cấu hình đợt để thiết lập danh mục bài nộp.
-                      </div>
-                    )}
+                    <RoundRequirementsEditor
+                      typeId={type.id}
+                      requirements={row.requirements}
+                      disabled={locked}
+                      defaultDue={row.officialEnd || row.end}
+                      onChange={(requirements) =>
+                        patch(type.id, { requirements })
+                      }
+                    />
 
-                    {/* Footer: 1 nút Primary CTA duy nhất - Màu chủ đạo primary */}
-                    <div className="flex items-center justify-between border-t border-[#d1d5e0] dark:border-neutral-800 pt-5 mt-6">
-                      <span className="text-xs text-slate-500 dark:text-neutral-400">
-                        {problems.length > 0 ? (
-                          <span className="text-destructive font-medium">• {problems[0]}</span>
-                        ) : (
-                          <>
-                            Áp dụng cho đợt:{' '}
-                            <strong className="text-slate-800 dark:text-neutral-200">
-                              {type.name} {row.targetCohort ? `(${row.targetCohort})` : ''}
-                            </strong>
-                          </>
-                        )}
-                      </span>
-
-                      <button
-                        type="button"
-                        disabled={problems.length > 0 || isSaving}
-                        onClick={handleSaveActiveTab}
-                        className="flex items-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 px-5 py-2.5 text-sm font-bold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                      >
-                        {isSaving ? (
-                          <Loader2 className="size-4 animate-spin" />
-                        ) : null}
-                        Lưu cấu hình
-                      </button>
+                    <div className="pt-2 text-xs text-slate-500 dark:text-neutral-400">
+                      Áp dụng cho đợt:{' '}
+                      <strong className="text-slate-800 dark:text-neutral-200">
+                        {type.name}{' '}
+                        {row.targetCohort ? `(${row.targetCohort})` : ''}
+                      </strong>
                     </div>
                   </>
                 )}
@@ -528,34 +746,29 @@ function PlanTabsForm({
           );
         })}
       </Tabs>
+
+      <div className="flex items-center justify-between pt-6 border-t border-[#d1d5e0] dark:border-neutral-800">
+        <div className="text-xs text-slate-500 dark:text-neutral-400">
+          {hasAnyChanges ? (
+            <span className="flex items-center gap-1.5 text-primary font-medium">
+              <span className="size-1.5 rounded-full bg-primary animate-pulse" />
+              Có thay đổi chưa lưu trên các tab
+            </span>
+          ) : (
+            <span>Đã lưu tất cả thay đổi</span>
+          )}
+        </div>
+
+        <button
+          type="button"
+          disabled={isSaving}
+          onClick={handleSaveAll}
+          className="flex items-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-2.5 text-sm font-bold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        >
+          {isSaving && <Loader2 className="size-4 animate-spin" />}
+          Lưu cấu hình
+        </button>
+      </div>
     </div>
   );
-}
-
-function describeProblems({
-  type,
-  row,
-}: {
-  type: ProjectType;
-  row: RowState;
-}): string[] {
-  const problems: string[] = [];
-
-  if (row.start === '' || row.end === '') {
-    problems.push('Chưa nhập đủ ngày mở và hạn đăng ký.');
-  } else if (row.end <= row.start) {
-    problems.push('Hạn đăng ký phải sau ngày mở.');
-  }
-
-  if (
-    row.officialStart !== '' &&
-    row.officialEnd !== '' &&
-    row.officialEnd <= row.officialStart
-  ) {
-    problems.push(
-      'Ngày kết thúc phải sau ngày bắt đầu.',
-    );
-  }
-
-  return problems;
 }
