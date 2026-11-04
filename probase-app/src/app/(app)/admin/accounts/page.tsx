@@ -148,7 +148,7 @@ export default function AccountsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-3 md:h-[calc(100dvh-6.5rem)] md:max-h-[calc(100dvh-6.5rem)]">
+    <div className="flex flex-col gap-3 md:max-h-[calc(100dvh-6.5rem)]">
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-52 flex-1 sm:max-w-xs">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -224,8 +224,8 @@ export default function AccountsPage() {
         </p>
       )}
 
-      <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] shadow-2xs overflow-hidden">
-        <div className="flex-1 min-h-0 overflow-auto">
+      <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] shadow-2xs overflow-hidden">
+        <div className="flex-auto min-h-0 overflow-auto">
           <Table containerClassName="overflow-visible">
             <TableHeader>
               <TableRow>

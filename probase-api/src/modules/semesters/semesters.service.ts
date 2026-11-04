@@ -9,6 +9,7 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 import { RoundsService } from '../rounds/rounds.service';
 import { CreateSemesterDto } from './dto/create-semester.dto';
 import { UpdateSemesterDto } from './dto/update-semester.dto';
+import { buildSemester, getDefaultSemesterDates } from './semester-utils';
 
 @Injectable()
 export class SemestersService {
@@ -53,10 +54,47 @@ export class SemestersService {
   }
 
   async create(dto: CreateSemesterDto, actorId: number) {
-    await this.checkDuplicateCode(dto.code);
+    let finalCode = dto.code;
+    let finalName = dto.name;
+    let finalStartDate = dto.startDate;
+    let finalEndDate = dto.endDate;
+    let finalGradeDeadline = dto.gradeSubmissionDeadline;
+
+    if (dto.academicYear && dto.term) {
+      const generated = buildSemester(dto.academicYear, dto.term, dto.name);
+      finalCode = generated.code;
+      finalName = generated.name;
+
+      if (!finalStartDate || !finalEndDate) {
+        const defaults = getDefaultSemesterDates(dto.academicYear, dto.term);
+        if (!finalStartDate) finalStartDate = new Date(defaults.startDate);
+        if (!finalEndDate) finalEndDate = new Date(defaults.endDate);
+        if (!finalGradeDeadline && defaults.gradeDeadline) {
+          finalGradeDeadline = new Date(defaults.gradeDeadline);
+        }
+      }
+    }
+
+    if (!finalCode || !finalName || !finalStartDate || !finalEndDate) {
+      throw new BadRequestException('Thông tin học kỳ không hợp lệ');
+    }
+
+    if (finalEndDate <= finalStartDate) {
+      throw new BadRequestException('Ngày kết thúc phải sau ngày bắt đầu');
+    }
+
+    await this.checkDuplicateCode(finalCode);
 
     return this.prisma.$transaction(async (tx) => {
-      const semester = await tx.semester.create({ data: dto });
+      const semester = await tx.semester.create({
+        data: {
+          name: finalName,
+          code: finalCode,
+          startDate: finalStartDate!,
+          endDate: finalEndDate!,
+          gradeSubmissionDeadline: finalGradeDeadline,
+        },
+      });
 
       await recordAudit(tx, {
         userId: actorId,
@@ -73,8 +111,17 @@ export class SemestersService {
   async update(id: number, dto: UpdateSemesterDto, actorId: number) {
     const semester = await this.requireSemester(id);
 
-    if (dto.code) {
-      await this.checkDuplicateCode(dto.code, id);
+    let finalCode = dto.code;
+    let finalName = dto.name;
+
+    if (dto.academicYear && dto.term) {
+      const generated = buildSemester(dto.academicYear, dto.term, dto.name);
+      finalCode = generated.code;
+      finalName = generated.name;
+    }
+
+    if (finalCode) {
+      await this.checkDuplicateCode(finalCode, id);
     }
 
     // Checked against the merged row rather than the payload. A PATCH that sends
@@ -88,8 +135,22 @@ export class SemestersService {
       throw new BadRequestException('Ngày kết thúc phải sau ngày bắt đầu');
     }
 
+    const updateData: {
+      name?: string;
+      code?: string;
+      startDate?: Date;
+      endDate?: Date;
+      gradeSubmissionDeadline?: Date | null;
+    } = {};
+    if (finalName !== undefined) updateData.name = finalName;
+    if (finalCode !== undefined) updateData.code = finalCode;
+    if (dto.startDate !== undefined) updateData.startDate = dto.startDate;
+    if (dto.endDate !== undefined) updateData.endDate = dto.endDate;
+    if (dto.gradeSubmissionDeadline !== undefined)
+      updateData.gradeSubmissionDeadline = dto.gradeSubmissionDeadline;
+
     return this.prisma.$transaction(async (tx) => {
-      const updated = await tx.semester.update({ where: { id }, data: dto });
+      const updated = await tx.semester.update({ where: { id }, data: updateData });
 
       await recordAudit(tx, {
         userId: actorId,
@@ -103,8 +164,8 @@ export class SemestersService {
         newValue: {
           startDate: updated.startDate.toISOString(),
           endDate: updated.endDate.toISOString(),
-          ...(dto.code !== undefined && { code: updated.code }),
-          ...(dto.name !== undefined && { name: updated.name }),
+          ...(finalCode !== undefined && { code: updated.code }),
+          ...(finalName !== undefined && { name: updated.name }),
         },
       });
 
@@ -173,6 +234,25 @@ export class SemestersService {
           oldValue: { activeSemesterId: previous.id, code: previous.code },
         }),
         newValue: { activeSemesterId: id },
+      });
+    });
+
+    return this.prisma.semester.findUnique({ where: { id } });
+  }
+
+  async deactivate(id: number, actorId: number) {
+    await this.requireSemester(id);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.semester.update({ where: { id }, data: { isActive: false } });
+
+      await recordAudit(tx, {
+        userId: actorId,
+        action: 'DEACTIVATE_SEMESTER',
+        targetTable: 'semesters',
+        targetId: id,
+        oldValue: { isActive: true },
+        newValue: { isActive: false },
       });
     });
 

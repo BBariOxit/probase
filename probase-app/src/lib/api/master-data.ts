@@ -84,6 +84,8 @@ function useInvalidate(key: readonly unknown[]) {
 }
 
 export interface SemesterInput {
+  academicYear?: string;
+  term?: string;
   name: string;
   code: string;
 
@@ -128,6 +130,16 @@ export function useActivateSemester() {
   return useMutation({
     mutationFn: (id: number) =>
       api<Semester>(`/semesters/${id}/activate`, { method: 'PATCH' }),
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
+}
+
+export function useDeactivateSemester() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) =>
+      api<Semester>(`/semesters/${id}/deactivate`, { method: 'PATCH' }),
     onSuccess: () => queryClient.invalidateQueries(),
   });
 }

@@ -4,12 +4,20 @@ import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ApiError } from '@/lib/api/client';
 import type { SemesterInput } from '@/lib/api/master-data';
 import type { Semester } from '@/lib/api/types';
+import {
+  buildSemester,
+  getAcademicYearOptions,
+  getDefaultSemesterDates,
+  parseSemesterCode,
+  suggestNextTerm,
+  type SemesterTerm,
+} from '@/lib/semester-utils';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -38,12 +46,19 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-// Constant / TODO note for grade deadline rule relative to endDate.
-// Currently, grade deadline must be >= startDate.
-// If future academic regulations strictly require grade deadline >= endDate, set this to false.
-export const GRADE_DEADLINE_ALLOW_BEFORE_END_DATE = true;
+const TERM_OPTIONS: { value: SemesterTerm; label: string }[] = [
+  { value: '1', label: 'Học kỳ 1' },
+  { value: '2', label: 'Học kỳ 2' },
+  { value: 'summer', label: 'Học kỳ hè' },
+];
 
 /**
  * Pure function to automatically generate semester code from its Vietnamese name.
@@ -59,32 +74,6 @@ export function generateSemesterCode(name: string): string | null {
 }
 
 /**
- * Pure function to find date overlaps between the given date range and existing semesters.
- * Returns an array of existing semesters whose date intervals intersect with [startDate, endDate].
- */
-export function findOverlaps(
-  range: { startDate?: string | null; endDate?: string | null },
-  existing: Semester[] = [],
-  excludeId?: number,
-): Semester[] {
-  if (!range.startDate || !range.endDate || range.endDate <= range.startDate)
-    return [];
-  const start = new Date(range.startDate).getTime();
-  const end = new Date(range.endDate).getTime();
-  if (isNaN(start) || isNaN(end)) return [];
-
-  return existing.filter((sem) => {
-    if (excludeId !== undefined && sem.id === excludeId) return false;
-    const semStart = new Date(sem.startDate).getTime();
-    const semEnd = new Date(sem.endDate).getTime();
-    if (isNaN(semStart) || isNaN(semEnd)) return false;
-
-    // Two intervals [start, end] and [semStart, semEnd] overlap if:
-    return start <= semEnd && end >= semStart;
-  });
-}
-
-/**
  * Creates the Zod validation schema for the semester form.
  */
 export const createSemesterFormSchema = (
@@ -93,6 +82,12 @@ export const createSemesterFormSchema = (
 ) =>
   z
     .object({
+      academicYear: z
+        .string({ error: 'Vui lòng chọn năm học' })
+        .min(1, 'Vui lòng chọn năm học'),
+      term: z.enum(['1', '2', 'summer'], {
+        error: 'Vui lòng chọn học kỳ',
+      }),
       name: z
         .string({ error: 'Vui lòng nhập tên học kỳ' })
         .trim()
@@ -100,83 +95,37 @@ export const createSemesterFormSchema = (
         .max(100, 'Tên học kỳ tối đa 100 ký tự'),
       code: z
         .string({ error: 'Vui lòng nhập mã học kỳ' })
-        .trim()
-        .toUpperCase()
-        .min(1, 'Vui lòng nhập mã học kỳ')
-        .max(30, 'Mã học kỳ tối đa 30 ký tự')
-        .regex(
-          /^[A-Z0-9-]+$/,
-          'Mã chỉ cho phép chữ hoa, số và dấu gạch ngang (-)',
-        ),
-      startDate: z
-        .string({ error: 'Vui lòng chọn ngày bắt đầu' })
-        .min(1, 'Vui lòng chọn ngày bắt đầu'),
-      endDate: z
-        .string({ error: 'Vui lòng chọn ngày kết thúc' })
-        .min(1, 'Vui lòng chọn ngày kết thúc'),
+        .min(1, 'Vui lòng nhập mã học kỳ'),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
       gradeDeadline: z.string().optional().nullable(),
     })
     .superRefine((data, ctx) => {
-      // endDate must be AFTER startDate
-      if (data.startDate && data.endDate && data.endDate <= data.startDate) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Ngày kết thúc phải sau ngày bắt đầu',
-          path: ['endDate'],
-        });
-      }
-
-      // gradeDeadline: if present, must be >= startDate
-      if (
-        data.startDate &&
-        data.gradeDeadline &&
-        data.gradeDeadline.trim() !== '' &&
-        data.gradeDeadline < data.startDate
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Hạn nhập điểm phải sau hoặc bằng ngày bắt đầu',
-          path: ['gradeDeadline'],
-        });
-      }
-
-      // TODO: Academic policy check against endDate (non-blocking unless required)
-      if (
-        !GRADE_DEADLINE_ALLOW_BEFORE_END_DATE &&
-        data.endDate &&
-        data.gradeDeadline &&
-        data.gradeDeadline.trim() !== '' &&
-        data.gradeDeadline < data.endDate
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Hạn nhập điểm phải sau hoặc bằng ngày kết thúc',
-          path: ['gradeDeadline'],
-        });
-      }
-
-      // Client-side unique code check
-      if (data.code) {
-        const normalized = data.code.trim().toUpperCase();
+      // Client-side unique check for combination of (academicYear, term), mapped to term
+      if (data.academicYear && data.term) {
+        const { code } = buildSemester(data.academicYear, data.term);
         const isDuplicate = existingSemesters.some(
           (s) =>
-            s.code.toUpperCase() === normalized && s.id !== currentSemesterId,
+            s.code.toUpperCase() === code.toUpperCase() &&
+            s.id !== currentSemesterId,
         );
         if (isDuplicate) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: 'Mã này đã tồn tại',
-            path: ['code'],
+            message: 'Học kỳ này đã được tạo',
+            path: ['term'],
           });
         }
       }
     });
 
 export type SemesterFormValues = {
+  academicYear: string;
+  term: SemesterTerm;
   name: string;
   code: string;
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
   gradeDeadline?: string | null;
 };
 
@@ -198,9 +147,71 @@ export function SemesterDialog({
   onSubmit,
 }: SemesterDialogProps) {
   const isEditing = semester !== null;
-  const isCodeManuallyEditedRef = React.useRef(isEditing);
   const [showDiscardAlert, setShowDiscardAlert] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  // Calculate default academicYear, term, and standard background dates
+  const initialDefaults = React.useMemo(() => {
+    if (semester) {
+      const parsed = parseSemesterCode(semester.code);
+      const year =
+        parsed?.academicYear ??
+        (semester.startDate
+          ? `${new Date(semester.startDate).getFullYear()}-${new Date(semester.startDate).getFullYear() + 1}`
+          : '2026-2027');
+      const term = parsed?.term ?? '1';
+      const auto = buildSemester(year, term);
+      const isCustomName = semester.name !== auto.name;
+
+      const stdDates = getDefaultSemesterDates(year, term);
+      const semStart = toDateInput(semester.startDate) || stdDates.startDate;
+      const semEnd = toDateInput(semester.endDate) || stdDates.endDate;
+
+      return {
+        academicYear: year,
+        term,
+        name: semester.name,
+        code: semester.code,
+        startDate: semStart,
+        endDate: semEnd,
+        gradeDeadline: toDateInput(semester.gradeSubmissionDeadline),
+        isCustomName,
+      };
+    }
+
+    const suggested = suggestNextTerm(new Date(), existingSemesters);
+    const auto = buildSemester(suggested.academicYear, suggested.term);
+    const stdDates = getDefaultSemesterDates(
+      suggested.academicYear,
+      suggested.term,
+    );
+
+    return {
+      academicYear: suggested.academicYear,
+      term: suggested.term,
+      name: auto.name,
+      code: auto.code,
+      startDate: stdDates.startDate,
+      endDate: stdDates.endDate,
+      gradeDeadline: stdDates.gradeDeadline,
+      isCustomName: false,
+    };
+  }, [semester, existingSemesters]);
+
+  const [isCustomNameOpen, setIsCustomNameOpen] = React.useState(
+    initialDefaults.isCustomName,
+  );
+
+  const academicYearOptions = React.useMemo(() => {
+    const base = getAcademicYearOptions(new Date());
+    if (
+      initialDefaults.academicYear &&
+      !base.includes(initialDefaults.academicYear)
+    ) {
+      return [initialDefaults.academicYear, ...base].sort();
+    }
+    return base;
+  }, [initialDefaults.academicYear]);
 
   const schema = React.useMemo(
     () => createSemesterFormSchema(existingSemesters, semester?.id),
@@ -212,25 +223,36 @@ export function SemesterDialog({
     mode: 'onBlur',
     reValidateMode: 'onChange',
     defaultValues: {
-      name: semester?.name ?? '',
-      code: semester?.code ?? '',
-      startDate: toDateInput(semester?.startDate),
-      endDate: toDateInput(semester?.endDate),
-      gradeDeadline: toDateInput(semester?.gradeSubmissionDeadline),
+      academicYear: initialDefaults.academicYear,
+      term: initialDefaults.term,
+      name: initialDefaults.name,
+      code: initialDefaults.code,
+      startDate: initialDefaults.startDate,
+      endDate: initialDefaults.endDate,
+      gradeDeadline: initialDefaults.gradeDeadline,
     },
   });
 
-  const startDate = form.watch('startDate');
-  const endDate = form.watch('endDate');
+  const watchYear = form.watch('academicYear');
+  const watchTerm = form.watch('term');
+  const watchName = form.watch('name');
 
-  // Overlap warning check
-  const overlaps = React.useMemo(() => {
-    return findOverlaps({ startDate, endDate }, existingSemesters, semester?.id);
-  }, [startDate, endDate, existingSemesters, semester?.id]);
+  // Preview computation
+  const preview = React.useMemo(() => {
+    if (!watchYear || !watchTerm) return null;
+    const auto = buildSemester(watchYear, watchTerm);
+    return {
+      name:
+        isCustomNameOpen && watchName && watchName.trim() !== ''
+          ? watchName.trim()
+          : auto.name,
+      code: auto.code,
+    };
+  }, [watchYear, watchTerm, isCustomNameOpen, watchName]);
 
   const handleClose = React.useCallback(() => {
     form.reset();
-    isCodeManuallyEditedRef.current = false;
+    setIsCustomNameOpen(false);
     onClose();
   }, [form, onClose]);
 
@@ -242,44 +264,70 @@ export function SemesterDialog({
     }
   }, [form.formState.isDirty, handleClose]);
 
-  // Name change handler: auto-fill code if user hasn't edited code manually
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newName = e.target.value;
-    form.setValue('name', newName, {
-      shouldValidate: form.formState.submitCount > 0,
-      shouldDirty: true,
-    });
-
-    if (!isCodeManuallyEditedRef.current && !form.formState.dirtyFields.code) {
-      const generatedCode = generateSemesterCode(newName);
-      if (generatedCode) {
-        form.setValue('code', generatedCode, {
-          shouldValidate: true,
-          shouldDirty: false,
-        });
-      }
-    }
-  };
-
-  // Code change handler: mark manual editing flag and convert to uppercase
-  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    isCodeManuallyEditedRef.current = true;
-    const upperValue = e.target.value.toUpperCase();
-    form.setValue('code', upperValue, {
+  const handleAcademicYearChange = (newYear: string) => {
+    form.setValue('academicYear', newYear, {
       shouldValidate: true,
       shouldDirty: true,
     });
+    const currentTerm = form.getValues('term');
+    const auto = buildSemester(newYear, currentTerm);
+    form.setValue('code', auto.code, { shouldValidate: true, shouldDirty: true });
+    if (!isCustomNameOpen) {
+      form.setValue('name', auto.name, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+    const dates = getDefaultSemesterDates(newYear, currentTerm);
+    form.setValue('startDate', dates.startDate);
+    form.setValue('endDate', dates.endDate);
+    form.setValue('gradeDeadline', dates.gradeDeadline);
+  };
+
+  const handleTermChange = (newTerm: SemesterTerm) => {
+    form.setValue('term', newTerm, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+    const currentYear = form.getValues('academicYear');
+    const auto = buildSemester(currentYear, newTerm);
+    form.setValue('code', auto.code, { shouldValidate: true, shouldDirty: true });
+    if (!isCustomNameOpen) {
+      form.setValue('name', auto.name, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+    const dates = getDefaultSemesterDates(currentYear, newTerm);
+    form.setValue('startDate', dates.startDate);
+    form.setValue('endDate', dates.endDate);
+    form.setValue('gradeDeadline', dates.gradeDeadline);
   };
 
   const handleSubmit = async (values: SemesterFormValues) => {
     setIsSubmitting(true);
     try {
+      const { name: autoName, code: autoCode } = buildSemester(
+        values.academicYear,
+        values.term,
+      );
+      const dates = getDefaultSemesterDates(
+        values.academicYear,
+        values.term,
+      );
+
       const payload: SemesterInput = {
-        name: values.name.trim(),
-        code: values.code.trim().toUpperCase(),
-        startDate: values.startDate,
-        endDate: values.endDate,
-        gradeSubmissionDeadline: values.gradeDeadline?.trim() || null,
+        academicYear: values.academicYear,
+        term: values.term,
+        name:
+          isCustomNameOpen && values.name.trim() !== ''
+            ? values.name.trim()
+            : autoName,
+        code: autoCode,
+        startDate: values.startDate || dates.startDate,
+        endDate: values.endDate || dates.endDate,
+        gradeSubmissionDeadline:
+          values.gradeDeadline?.trim() || dates.gradeDeadline || null,
       };
 
       await onSubmit(payload);
@@ -289,14 +337,14 @@ export function SemesterDialog({
       let message = 'Không kết nối được máy chủ';
       if (err instanceof ApiError) {
         message = err.message;
-        // Map duplicate code conflict error from server onto the code field
+        // Map duplicate code conflict error from server onto the term field
         if (
           err.status === 409 ||
           err.message.toLowerCase().includes('already exists') ||
           err.message.toLowerCase().includes('tồn tại')
         ) {
-          form.setError('code', { message: 'Mã này đã tồn tại' });
-          form.setFocus('code');
+          form.setError('term', { message: 'Học kỳ này đã được tạo' });
+          form.setFocus('term');
         }
       } else if (err instanceof Error) {
         message = err.message;
@@ -308,13 +356,10 @@ export function SemesterDialog({
   };
 
   const handleInvalid = (errors: Record<string, unknown>) => {
-    // Focus the first invalid field
     const fieldOrder: (keyof SemesterFormValues)[] = [
+      'academicYear',
+      'term',
       'name',
-      'code',
-      'startDate',
-      'endDate',
-      'gradeDeadline',
     ];
     for (const field of fieldOrder) {
       if (errors[field]) {
@@ -347,159 +392,167 @@ export function SemesterDialog({
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(handleSubmit, handleInvalid)}
-              className="space-y-5"
+              className="space-y-4"
             >
-              {/* Overlap warning (non-blocking) */}
-              {overlaps.length > 0 && (
-                <Alert
-                  variant="warning"
-                  className="gap-2.5 py-2.5 text-xs border-amber-500/40 bg-amber-500/10"
-                >
-                  <AlertTriangle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                  <div className="space-y-0.5">
-                    <AlertTitle className="text-xs font-semibold text-amber-900 dark:text-amber-200">
-                      Cảnh báo trùng khoảng thời gian
-                    </AlertTitle>
-                    <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
-                      Khoảng thời gian này giao với học kỳ{' '}
-                      <span className="font-semibold">
-                        {overlaps.map((s) => s.name).join(', ')}
-                      </span>
-                      .
-                    </AlertDescription>
-                  </div>
-                </Alert>
-              )}
-
               {/* 2-column grid layout */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/* Hàng 1: Tên học kỳ */}
+                {/* Hàng 1: Năm học */}
                 <FormField
                   control={form.control}
-                  name="name"
+                  name="academicYear"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tên học kỳ</FormLabel>
-                      <FormControl>
-                        <Input
-                          id={field.name}
-                          name={field.name}
-                          value={field.value ?? ''}
-                          autoFocus
-                          maxLength={100}
-                          placeholder="Học kỳ 1 năm học 2026-2027"
-                          className="placeholder:text-muted-foreground/80 dark:placeholder:text-neutral-400"
-                          disabled={isSubmitting}
-                          onChange={handleNameChange}
-                          onBlur={field.onBlur}
-                        />
-                      </FormControl>
+                      <FormLabel>Năm học</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={handleAcademicYearChange}
+                        disabled={isSubmitting}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Chọn năm học..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {academicYearOptions.map((year) => (
+                            <SelectItem key={year} value={year}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {/* Hàng 1: Mã */}
+                {/* Hàng 1: Học kỳ */}
                 <FormField
                   control={form.control}
-                  name="code"
+                  name="term"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Mã</FormLabel>
-                      <FormControl>
-                        <Input
-                          id={field.name}
-                          name={field.name}
-                          value={field.value ?? ''}
-                          maxLength={30}
-                          placeholder="HK1-2026-2027"
-                          className="uppercase placeholder:text-muted-foreground/80 dark:placeholder:text-neutral-400"
-                          disabled={isSubmitting}
-                          onChange={handleCodeChange}
-                          onBlur={field.onBlur}
-                        />
-                      </FormControl>
+                      <FormLabel>Học kỳ</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={(val) =>
+                          handleTermChange(val as SemesterTerm)
+                        }
+                        disabled={isSubmitting}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Chọn học kỳ..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {TERM_OPTIONS.map((opt) => {
+                            const targetCode = buildSemester(
+                              watchYear,
+                              opt.value,
+                            ).code.toUpperCase();
+                            const isCreated = existingSemesters.some(
+                              (s) =>
+                                s.code.toUpperCase() === targetCode &&
+                                s.id !== semester?.id,
+                            );
+                            return (
+                              <SelectItem
+                                key={opt.value}
+                                value={opt.value}
+                                disabled={isCreated}
+                              >
+                                <span className="flex items-center gap-1.5">
+                                  <span>{opt.label}</span>
+                                  {isCreated && (
+                                    <span className="text-[11px] text-muted-foreground font-normal">
+                                      (Đã tạo)
+                                    </span>
+                                  )}
+                                </span>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {/* Hàng 2: Bắt đầu */}
-                <FormField
-                  control={form.control}
-                  name="startDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Bắt đầu</FormLabel>
-                      <FormControl>
-                        <Input
-                          id={field.name}
-                          name={field.name}
-                          type="date"
-                          value={field.value ?? ''}
-                          className="dark:[color-scheme:dark]"
-                          disabled={isSubmitting}
-                          onChange={(e) => {
-                            field.onChange(e);
-                            if (form.getValues('endDate')) {
-                              form.trigger('endDate');
-                            }
-                          }}
-                          onBlur={field.onBlur}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Hàng 2: Xem trước chỉ đọc + Tùy chỉnh tên */}
+                {preview && (
+                  <div className="sm:col-span-2 rounded-lg border border-slate-200 dark:border-neutral-800 bg-slate-50/80 dark:bg-white/4 px-3.5 py-2.5 flex items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-baseline gap-2">
+                      <span className="text-xs text-muted-foreground select-none">
+                        Xem trước:
+                      </span>
+                      <span className="font-semibold text-sm text-slate-900 dark:text-neutral-100">
+                        {preview.name}
+                      </span>
+                      <span className="text-xs font-mono font-medium text-slate-500 dark:text-neutral-400 bg-slate-200/60 dark:bg-neutral-800 px-1.5 py-0.5 rounded">
+                        {preview.code}
+                      </span>
+                    </div>
 
-                {/* Hàng 2: Kết thúc */}
-                <FormField
-                  control={form.control}
-                  name="endDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Kết thúc</FormLabel>
-                      <FormControl>
-                        <Input
-                          id={field.name}
-                          name={field.name}
-                          type="date"
-                          value={field.value ?? ''}
-                          className="dark:[color-scheme:dark]"
-                          disabled={isSubmitting}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    {!isCustomNameOpen && (
+                      <button
+                        type="button"
+                        onClick={() => setIsCustomNameOpen(true)}
+                        className="text-xs text-primary hover:underline font-medium cursor-pointer shrink-0 ml-auto"
+                      >
+                        Tùy chỉnh tên
+                      </button>
+                    )}
+                  </div>
+                )}
 
-                {/* Hàng 3: Hạn nhập điểm (không bắt buộc) (nằm 1 cột, độ rộng khớp lưới) */}
-                <FormField
-                  control={form.control}
-                  name="gradeDeadline"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col sm:col-span-1">
-                      <FormLabel>Hạn nhập điểm (không bắt buộc)</FormLabel>
-                      <FormControl>
-                        <Input
-                          id={field.name}
-                          name={field.name}
-                          type="date"
-                          value={field.value ?? ''}
-                          className="dark:[color-scheme:dark]"
-                          disabled={isSubmitting}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Hàng 2.5: Ô Input cho name khi bật Tùy chỉnh tên */}
+                {isCustomNameOpen && (
+                  <div className="sm:col-span-2">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem className="space-y-1.5 animate-in fade-in-50">
+                          <div className="flex items-center justify-between">
+                            <FormLabel>Tùy chỉnh tên học kỳ</FormLabel>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsCustomNameOpen(false);
+                                const auto = buildSemester(watchYear, watchTerm);
+                                form.setValue('name', auto.name, {
+                                  shouldValidate: true,
+                                  shouldDirty: true,
+                                });
+                              }}
+                              className="text-xs text-muted-foreground hover:text-foreground hover:underline cursor-pointer"
+                            >
+                              Đóng lại (dùng tên tự sinh)
+                            </button>
+                          </div>
+                          <FormControl>
+                            <Input
+                              id={field.name}
+                              name={field.name}
+                              value={field.value ?? ''}
+                              maxLength={100}
+                              placeholder={
+                                buildSemester(watchYear, watchTerm).name
+                              }
+                              className="h-9 text-sm placeholder:text-muted-foreground/80 dark:placeholder:text-neutral-400"
+                              disabled={isSubmitting}
+                              onChange={field.onChange}
+                              onBlur={field.onBlur}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
               </div>
 
               <DialogFooter>

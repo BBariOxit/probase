@@ -141,7 +141,7 @@ export default function StudentRosterPage() {
 
   return (
     <TooltipProvider delay={200}>
-      <div className="flex flex-col gap-3 md:h-[calc(100dvh-6.5rem)] md:max-h-[calc(100dvh-6.5rem)]">
+      <div className="flex flex-col gap-3 md:max-h-[calc(100dvh-6.5rem)]">
         {/* THANH CÔNG CỤ: TÌM KIẾM + BỘ LỌC GỘP (CÁCH A) + NÚT THAO TÁC */}
         <div className="shrink-0 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-1 items-center gap-2.5 min-w-[320px]">
@@ -531,8 +531,8 @@ export default function StudentRosterPage() {
         )}
 
         {/* BẢNG DỮ LIỆU: VÙNG BẢNG (flex-1 min-h-0 overflow-auto), STICKY HEADER z-10 */}
-        <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] shadow-2xs overflow-hidden">
-          <div className="flex-1 min-h-0 overflow-auto">
+        <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] shadow-2xs overflow-hidden">
+          <div className="flex-auto min-h-0 overflow-auto">
             <Table containerClassName="overflow-visible" className="relative w-full text-left text-sm">
               <TableHeader>
                 <TableRow>

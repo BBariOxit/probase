@@ -1,8 +1,7 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 
 const readable = new Intl.DateTimeFormat('vi-VN', {
   weekday: 'short',
@@ -43,18 +42,14 @@ export function DateField({
       )}
       {hint && <p className="-mt-1 text-xs text-slate-500 dark:text-neutral-400">{hint}</p>}
 
-      <Input
+      <DatePicker
         id={id}
-        type="date"
-        className={cn(
-          'text-sm h-9 rounded-lg border-[1.5px] border-[#c4c9d9] bg-white text-slate-900 transition focus:border-[#2563eb] focus:outline-none focus:ring-1 focus:ring-[#2563eb]',
-          'dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary disabled:opacity-50',
-          className,
-        )}
         value={value}
+        onChange={onChange}
         disabled={disabled}
-        aria-invalid={invalid}
-        onChange={(event) => onChange(event.target.value)}
+        invalid={invalid}
+        error={!!error}
+        className={className}
       />
 
       {showWeekday && value && (

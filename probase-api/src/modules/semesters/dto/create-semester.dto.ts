@@ -3,22 +3,35 @@ import { createZodDto } from 'nestjs-zod';
 
 export const CreateSemesterSchema = z
   .object({
-    name: z
-      .string()
-      .min(1, 'Vui lòng nhập tên học kỳ')
-      .max(100, 'Tên học kỳ tối đa 100 ký tự'),
-    code: z
-      .string()
-      .min(1, 'Vui lòng nhập mã học kỳ')
-      .max(20, 'Mã học kỳ tối đa 20 ký tự')
-      .transform((val) => val.toUpperCase()),
-    startDate: z.coerce.date(),
-    endDate: z.coerce.date(),
-    gradeSubmissionDeadline: z.coerce.date().optional(),
+    academicYear: z
+      .string({ error: 'Vui lòng chọn năm học' })
+      .min(1, 'Vui lòng chọn năm học'),
+    term: z
+      .string({ error: 'Vui lòng chọn học kỳ' })
+      .min(1, 'Vui lòng chọn học kỳ'),
+    name: z.string().max(100, 'Tên học kỳ tối đa 100 ký tự').optional(),
+    code: z.string().optional(),
+    startDate: z.coerce.date().optional(),
+    endDate: z.coerce.date().optional(),
+    gradeSubmissionDeadline: z.coerce.date().optional().nullable(),
   })
-  .refine((data) => data.endDate > data.startDate, {
-    message: 'Ngày kết thúc phải sau ngày bắt đầu',
-    path: ['endDate'],
-  });
+  .refine(
+    (data) =>
+      !data.startDate || !data.endDate || data.endDate > data.startDate,
+    {
+      message: 'Ngày kết thúc phải sau ngày bắt đầu',
+      path: ['endDate'],
+    },
+  )
+  .refine(
+    (data) =>
+      !data.startDate ||
+      !data.gradeSubmissionDeadline ||
+      data.gradeSubmissionDeadline >= data.startDate,
+    {
+      message: 'Hạn nhập điểm phải sau hoặc bằng ngày bắt đầu',
+      path: ['gradeSubmissionDeadline'],
+    },
+  );
 
 export class CreateSemesterDto extends createZodDto(CreateSemesterSchema) {}
