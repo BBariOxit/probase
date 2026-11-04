@@ -16,10 +16,7 @@ export default function NotificationDetailPage() {
     return (
       <div className="mx-auto max-w-4xl space-y-4">
         <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.push('/notifications')}
-          className="text-muted-foreground hover:text-foreground gap-2 -ml-2"
+          variant="default" size="sm" onClick={() => router.push('/notifications')} className="gap-2 cursor-pointer shadow-xs font-semibold"
         >
           <ArrowLeft className="size-4" /> Quay lại danh sách thông báo
         </Button>
@@ -37,10 +34,7 @@ export default function NotificationDetailPage() {
     return (
       <div className="mx-auto max-w-4xl space-y-4">
         <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.push('/notifications')}
-          className="text-muted-foreground hover:text-foreground gap-2 -ml-2"
+          variant="default" size="sm" onClick={() => router.push('/notifications')} className="gap-2 cursor-pointer shadow-xs font-semibold"
         >
           <ArrowLeft className="size-4" /> Quay lại danh sách thông báo
         </Button>
@@ -77,10 +71,7 @@ export default function NotificationDetailPage() {
       {/* Top Navigation */}
       <div className="flex items-center justify-between">
         <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.push('/notifications')}
-          className="text-muted-foreground hover:text-foreground gap-2 -ml-2"
+          variant="default" size="sm" onClick={() => router.push('/notifications')} className="gap-2 cursor-pointer shadow-xs font-semibold"
         >
           <ArrowLeft className="size-4" />
           <span>Quay lại danh sách thông báo</span>
