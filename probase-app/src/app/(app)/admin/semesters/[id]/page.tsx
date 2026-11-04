@@ -332,20 +332,15 @@ function PlanTabsForm({
                     <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-slate-100 dark:bg-[#262626] text-primary">
                       <Calendar className="size-6" />
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold text-slate-800 dark:text-neutral-200">
-                        {type.name} chưa được kích hoạt trong học kỳ này
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-sm mx-auto">
-                        Tích chọn để thiết lập lịch mở đăng ký và kế hoạch thực hiện.
-                      </p>
-                    </div>
+                    <p className="text-sm font-medium text-slate-700 dark:text-neutral-300">
+                      {type.name} chưa kích hoạt
+                    </p>
                     <button
                       type="button"
                       onClick={() => patch(type.id, { enabled: true })}
-                      className="mt-2 inline-flex items-center rounded-lg border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 px-4 py-2 text-xs font-semibold transition cursor-pointer"
+                      className="inline-flex items-center rounded-lg border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer"
                     >
-                      Kích hoạt {type.name}
+                      Kích hoạt đợt
                     </button>
                   </div>
                 ) : (
@@ -495,7 +490,7 @@ function PlanTabsForm({
                     ) : (
                       /* Khối nộp bài nét đứt (Empty State): #181818, viền border-dashed border-neutral-600 */
                       <div className="rounded-xl border-[1.5px] border-dashed border-[#b0b8cc] dark:border-neutral-600 p-5 text-center text-xs text-slate-500 dark:text-neutral-400 bg-slate-50/50 dark:bg-[#181818]">
-                        Đợt đồ án này chưa được lưu trong cơ sở dữ liệu. Nhấn <strong>Lưu cấu hình</strong> bên dưới để tạo đợt, sau đó danh mục bài nộp sẽ sẵn sàng để thiết lập.
+                        Lưu cấu hình đợt để thiết lập danh mục bài nộp.
                       </div>
                     )}
 
@@ -547,9 +542,9 @@ function describeProblems({
   const problems: string[] = [];
 
   if (row.start === '' || row.end === '') {
-    problems.push(`${type.name}: Chưa nhập đủ ngày mở và hạn đăng ký đề tài.`);
+    problems.push('Chưa nhập đủ ngày mở và hạn đăng ký.');
   } else if (row.end <= row.start) {
-    problems.push(`${type.name}: Hạn đăng ký đề tài phải sau ngày mở.`);
+    problems.push('Hạn đăng ký phải sau ngày mở.');
   }
 
   if (
@@ -558,7 +553,7 @@ function describeProblems({
     row.officialEnd <= row.officialStart
   ) {
     problems.push(
-      `${type.name}: Ngày kết thúc thực hiện đồ án phải sau ngày bắt đầu.`,
+      'Ngày kết thúc phải sau ngày bắt đầu.',
     );
   }
 

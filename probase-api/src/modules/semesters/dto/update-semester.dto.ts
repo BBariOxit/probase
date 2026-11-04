@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
 
 export const UpdateSemesterSchema = z.object({
+  academicYear: z.string().optional(),
+  term: z.string().optional(),
   name: z.string().min(1).max(255).optional(),
   code: z
     .string()

@@ -4,16 +4,17 @@ import { useState } from 'react';
 import Link from 'next/link';
 import {
   CalendarRange,
-  CircleCheck,
+  CircleOff,
   Loader2,
+  MoreHorizontal,
   Pencil,
   Plus,
   Settings2,
   Trash2,
 } from 'lucide-react';
 import {
-  useActivateSemester,
   useCreateSemester,
+  useDeactivateSemester,
   useDeleteSemester,
   useSemesters,
   useUpdateSemester,
@@ -22,8 +23,15 @@ import type { Semester } from '@/lib/api/types';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
-import { StatusPill } from '@/components/shared/status-pill';
+import { StatusPill, type StatusTone } from '@/components/shared/status-pill';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -32,6 +40,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 import { SemesterDialog } from './semester-dialog';
 
 const dateFormat = new Intl.DateTimeFormat('vi-VN', {
@@ -40,18 +54,88 @@ const dateFormat = new Intl.DateTimeFormat('vi-VN', {
   year: 'numeric',
 });
 
+function getSemesterStatus(semester: Semester): {
+  label: string;
+  tone: StatusTone;
+} {
+  if (semester.isActive) {
+    return { label: 'Đang mở', tone: 'success' };
+  }
+  const now = Date.now();
+  const start = new Date(semester.startDate).getTime();
+  const end = new Date(semester.endDate).getTime();
+
+  if (!isNaN(start) && start > now) {
+    return { label: 'Chưa mở', tone: 'active' };
+  }
+  if (!isNaN(end) && end < now) {
+    return { label: 'Đã kết thúc', tone: 'idle' };
+  }
+  return { label: 'Đã đóng', tone: 'idle' };
+}
+
+function ActionMenuItem({
+  icon: Icon,
+  label,
+  disabled,
+  tooltip,
+  variant,
+  onClick,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  disabled?: boolean;
+  tooltip?: string;
+  variant?: 'default' | 'destructive';
+  onClick?: () => void;
+}) {
+  const item = (
+    <DropdownMenuItem
+      variant={variant}
+      disabled={disabled}
+      onClick={disabled ? undefined : onClick}
+      className={cn(
+        disabled && 'cursor-not-allowed opacity-50',
+        variant === 'destructive' &&
+          'text-destructive focus:text-destructive data-[disabled]:text-destructive data-[variant=destructive]:text-destructive',
+      )}
+    >
+      <Icon className="size-4 shrink-0" />
+      <span>{label}</span>
+    </DropdownMenuItem>
+  );
+
+  if (disabled && tooltip) {
+    return (
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <span className="block w-full cursor-not-allowed">{item}</span>
+          }
+        />
+        <TooltipContent side="left">{tooltip}</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return item;
+}
+
 export default function SemestersPage() {
   const allowed = useRequireRole('ADMIN');
   const { data, isPending, error } = useSemesters();
   const create = useCreateSemester();
   const update = useUpdateSemester();
   const remove = useDeleteSemester();
-  const activate = useActivateSemester();
+  const deactivate = useDeactivateSemester();
 
   const [editing, setEditing] = useState<Semester | 'new' | null>(null);
   const [deleting, setDeleting] = useState<Semester | null>(null);
+  const [closing, setClosing] = useState<Semester | null>(null);
 
   if (!allowed) return null;
+
+  const now = Date.now();
 
   return (
     <div className="space-y-4">
@@ -75,86 +159,106 @@ export default function SemestersPage() {
                 <TableHead className="w-56">Thời gian</TableHead>
                 <TableHead className="w-40">Hạn nhập điểm</TableHead>
                 <TableHead className="w-32">Trạng thái</TableHead>
-                <TableHead className="w-44" />
+                <TableHead className="w-[180px] text-right" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data?.map((semester) => (
-                <TableRow key={semester.id}>
-                  <TableCell className="font-medium">{semester.name}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {dateFormat.format(new Date(semester.startDate))} –{' '}
-                    {dateFormat.format(new Date(semester.endDate))}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {semester.gradeSubmissionDeadline
-                      ? dateFormat.format(
-                          new Date(semester.gradeSubmissionDeadline),
-                        )
-                      : '—'}
-                  </TableCell>
-                  <TableCell>
-                    {semester.isActive ? (
-                      <StatusPill label="Đang mở" tone="success" />
-                    ) : (
-                      <StatusPill label="Đã đóng" tone="idle" />
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-end gap-1">
-                      {/*
-                        The round plan is a destination rather than a dialog:
-                        it is the longest form in the product, and it is what
-                        somebody comes to this screen to reach.
-                      */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        render={
-                          <Link href={`/admin/semesters/${semester.id}`} />
-                        }
-                      >
-                        <Settings2 />
-                        Đợt đăng ký
-                      </Button>
-                      {!semester.isActive && (
+              {data?.map((semester) => {
+                const start = new Date(semester.startDate).getTime();
+                const isUpcoming =
+                  !semester.isActive && !isNaN(start) && start > now;
+                const isActive = semester.isActive;
+
+                const canClose = isActive;
+                const closeTooltip = canClose
+                  ? undefined
+                  : isUpcoming
+                    ? 'Học kỳ chưa bắt đầu'
+                    : 'Học kỳ đã kết thúc';
+
+                const canDelete = isUpcoming;
+                const deleteTooltip = canDelete
+                  ? undefined
+                  : isActive
+                    ? 'Không thể xóa học kỳ đang diễn ra'
+                    : 'Không thể xóa học kỳ đã kết thúc';
+
+                return (
+                  <TableRow key={semester.id}>
+                    <TableCell className="font-medium">
+                      {semester.name}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {dateFormat.format(new Date(semester.startDate))} –{' '}
+                      {dateFormat.format(new Date(semester.endDate))}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {semester.gradeSubmissionDeadline
+                        ? dateFormat.format(
+                            new Date(semester.gradeSubmissionDeadline),
+                          )
+                        : '—'}
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const { label, tone } = getSemesterStatus(semester);
+                        return <StatusPill label={label} tone={tone} />;
+                      })()}
+                    </TableCell>
+                    <TableCell className="w-[180px] text-right">
+                      <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"
-                          size="icon-sm"
-                          aria-label={`Mở ${semester.name}`}
-                          disabled={activate.isPending}
-                          onClick={() => activate.mutate(semester.id)}
+                          size="sm"
+                          render={
+                            <Link href={`/admin/semesters/${semester.id}`} />
+                          }
                         >
-                          <CircleCheck />
+                          <Settings2 className="size-4" />
+                          Đợt đăng ký
                         </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label={`Sửa ${semester.name}`}
-                        onClick={() => setEditing(semester)}
-                      >
-                        <Pencil />
-                      </Button>
-                      {/*
-                        The open term is not offered for deletion. The API
-                        refuses a semester with anything in it anyway, but this
-                        one would take the whole product's default with it.
-                      */}
-                      {!semester.isActive && (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label={`Xoá ${semester.name}`}
-                          onClick={() => setDeleting(semester)}
-                        >
-                          <Trash2 />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            render={
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label={`Thao tác cho ${semester.name}`}
+                              >
+                                <MoreHorizontal className="size-4" />
+                              </Button>
+                            }
+                          />
+                          <DropdownMenuContent align="end" className="w-40">
+                            <ActionMenuItem
+                              icon={Pencil}
+                              label="Chỉnh sửa"
+                              onClick={() => setEditing(semester)}
+                            />
+                            <DropdownMenuSeparator />
+                            <ActionMenuItem
+                              icon={CircleOff}
+                              label="Đóng đợt"
+                              disabled={!canClose}
+                              tooltip={closeTooltip}
+                              variant="destructive"
+                              onClick={() => setClosing(semester)}
+                            />
+                            <ActionMenuItem
+                              icon={Trash2}
+                              label="Xóa"
+                              disabled={!canDelete}
+                              tooltip={deleteTooltip}
+                              variant="destructive"
+                              onClick={() => setDeleting(semester)}
+                            />
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
@@ -183,8 +287,11 @@ export default function SemestersPage() {
         )}
       </div>
 
-      {activate.error && (
-        <p className="text-sm text-destructive">{activate.error.message}</p>
+      {deactivate.error && (
+        <p className="text-sm text-destructive">{deactivate.error.message}</p>
+      )}
+      {remove.error && (
+        <p className="text-sm text-destructive">{remove.error.message}</p>
       )}
 
       {editing && (
@@ -199,6 +306,15 @@ export default function SemestersPage() {
           }
         />
       )}
+
+      <ConfirmDialog
+        open={closing !== null}
+        onOpenChange={(open) => !open && setClosing(null)}
+        title="Đóng đợt đăng ký?"
+        description={`Học kỳ "${closing?.name}" sẽ được đóng lại. Sinh viên và giảng viên sẽ không thể đăng ký mới.`}
+        confirmLabel="Đóng đợt"
+        onConfirm={() => deactivate.mutateAsync(closing!.id)}
+      />
 
       <ConfirmDialog
         open={deleting !== null}

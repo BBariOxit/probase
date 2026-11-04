@@ -69,6 +69,15 @@ export class SemestersController {
     return this.semestersService.activate(id, actorId);
   }
 
+  @Roles('ADMIN')
+  @Patch(':id/deactivate')
+  deactivate(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser('id') actorId: number,
+  ) {
+    return this.semestersService.deactivate(id, actorId);
+  }
+
   // ── Registration rounds ───────────────────────────────────
 
   @Get(':id/rounds')
