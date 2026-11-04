@@ -1,6 +1,11 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   topicService,
   type TopicInput,
@@ -34,6 +39,26 @@ export function useTopics(query: TopicQuery, options?: { enabled?: boolean }) {
     // the table empties and the page jumps every time someone types a letter
     // into the search box.
     placeholderData: (previous) => previous,
+  });
+}
+
+export function useInfiniteTopics(
+  query: Omit<TopicQuery, 'page'>,
+  options?: { enabled?: boolean },
+) {
+  return useInfiniteQuery({
+    queryKey: [...topicKeys.lists(), 'infinite', query],
+    queryFn: ({ pageParam = 1 }) =>
+      topicService.getAll({ ...query, page: pageParam as number }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      if (lastPage.page < lastPage.totalPages) {
+        return lastPage.page + 1;
+      }
+      return undefined;
+    },
+    enabled: options?.enabled ?? true,
+    staleTime: 60_000,
   });
 }
 

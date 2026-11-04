@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { BookOpen, Copy, Eye, MoreHorizontal, Search } from 'lucide-react';
 import { toast } from 'sonner';
@@ -11,13 +11,12 @@ import {
   useProjectTypes,
 } from '@/lib/api/master-data';
 import { useMyGroup } from '@/lib/api/registration';
-import { useTopicLecturers, useTopics } from '@/lib/api/topics';
+import { useInfiniteTopics, useTopicLecturers } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
-import { useDebounce, usePagination } from '@/hooks';
+import { useDebounce } from '@/hooks';
 import { cn, sanitizeLecturerName } from '@/lib/utils';
 import { EmptyState } from '@/components/shared/empty-state';
 import { MyGroupBanner } from '@/components/groups/my-group-banner';
-import { PaginationBar } from '@/components/shared/pagination-bar';
 import { RegistrationPhaseNotice } from '@/components/rounds/registration-phase-notice';
 import { SeatBadge } from '@/components/groups/seat-indicator';
 import { TopicRegisterButton } from '@/components/topics/topic-register-button';
@@ -60,16 +59,20 @@ export default function StudentTopicsPage() {
   const { data: lecturers } = useTopicLecturers(activeSemester?.id);
   const { data: myGroup } = useMyGroup();
 
-  const { page, setPage, pageSize, setPageSize, resetPage } = usePagination({
-    initialPageSize: PAGE_SIZE,
-  });
   const [search, setSearch] = useState('');
   const [projectTypeId, setProjectTypeId] = useState(MY_COHORT);
   const [lecturerId, setLecturerId] = useState(ANY);
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const debouncedSearch = useDebounce(search);
 
-  const { data, isPending, error } = useTopics(
+  const {
+    data,
+    isPending,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    error,
+  } = useInfiniteTopics(
     {
       status: 'OPEN',
       semesterId: activeSemester?.id,
@@ -80,15 +83,99 @@ export default function StudentTopicsPage() {
           : projectTypeId,
       lecturerId: lecturerId === ANY ? undefined : lecturerId,
       q: debouncedSearch || undefined,
-      page,
-      limit: pageSize,
+      limit: PAGE_SIZE,
     },
     { enabled: activeSemester !== undefined },
   );
 
+  const topics = data?.pages.flatMap((page) => page.items) ?? [];
+  const total = data?.pages[0]?.total ?? 0;
+
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const restoredRef = useRef(false);
+
+  // ── Infinite scroll observer: load more when near bottom ──
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      {
+        root: null,
+        rootMargin: '400px', // Fetch well before hitting the exact bottom
+      },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Extra scroll listener guarantee
+  useEffect(() => {
+    function handleScroll() {
+      if (!hasNextPage || isFetchingNextPage) return;
+      const scrollBottom =
+        document.documentElement.scrollHeight -
+        (window.scrollY + window.innerHeight);
+      if (scrollBottom < 600) {
+        fetchNextPage();
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // ── Preserve scroll position when navigating to detail and returning ──
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    const saveScroll = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        if (window.scrollY > 0) {
+          sessionStorage.setItem(
+            'student_topics_scroll_y',
+            String(window.scrollY),
+          );
+        }
+      }, 150);
+    };
+
+    window.addEventListener('scroll', saveScroll, { passive: true });
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('scroll', saveScroll);
+    };
+  }, []);
+
+  // Restore scroll position after topics load
+  useEffect(() => {
+    if (restoredRef.current) return;
+    const savedY = sessionStorage.getItem('student_topics_scroll_y');
+    if (savedY && topics.length > 0) {
+      const targetY = parseInt(savedY, 10);
+      if (!isNaN(targetY) && targetY > 0) {
+        restoredRef.current = true;
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: targetY, behavior: 'instant' });
+        });
+      }
+    }
+  }, [topics.length]);
+
+  // Reset scroll and saved position when user changes filter or search
+  useEffect(() => {
+    sessionStorage.removeItem('student_topics_scroll_y');
+    restoredRef.current = true;
+  }, [debouncedSearch, projectTypeId, lecturerId]);
+
   if (!allowed) return null;
 
-  const topics = data?.items ?? [];
   const filtering =
     debouncedSearch !== '' ||
     (projectTypeId !== ANY && projectTypeId !== MY_COHORT) ||
@@ -125,7 +212,6 @@ export default function StudentTopicsPage() {
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value);
-                resetPage();
               }}
               placeholder="Tìm tên đề tài, mô tả…"
               className="pl-9 h-9 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
@@ -137,7 +223,6 @@ export default function StudentTopicsPage() {
             value={projectTypeId}
             onValueChange={(value) => {
               setProjectTypeId(value as number);
-              resetPage();
             }}
           >
             <SelectTrigger
@@ -178,7 +263,6 @@ export default function StudentTopicsPage() {
             value={lecturerId}
             onValueChange={(value) => {
               setLecturerId(value as number);
-              resetPage();
             }}
           >
             <SelectTrigger
@@ -204,10 +288,11 @@ export default function StudentTopicsPage() {
           </Select>
         </div>
 
-        {data && (
+        {total > 0 && (
           <div className="flex items-center gap-2">
             <span className="text-xs sm:text-sm font-medium text-slate-600 dark:text-neutral-400 select-none">
-              Hiển thị <strong className="text-primary font-bold text-sm">{data.total}</strong> đề tài
+              Hiển thị <strong className="text-primary font-bold text-sm">{topics.length}</strong> trong số{' '}
+              <strong className="text-primary font-bold text-sm">{total}</strong> đề tài
             </span>
           </div>
         )}
@@ -252,8 +337,10 @@ export default function StudentTopicsPage() {
                       href={`/student/topics/${topic.id}`}
                       className="font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors line-clamp-2"
                       onClick={(e) => {
-                        e.preventDefault();
-                        setSelectedTopicId(topic.id);
+                        if (!e.metaKey && !e.ctrlKey) {
+                          e.preventDefault();
+                          setSelectedTopicId(topic.id);
+                        }
                       }}
                     >
                       {topic.title}
@@ -345,9 +432,39 @@ export default function StudentTopicsPage() {
               );
             })}
 
+            {/* Skeleton initial loading */}
             {isPending &&
               Array.from({ length: 6 }).map((_, i) => (
-                <TableRow key={i} className="hover:bg-transparent">
+                <TableRow key={`skeleton-init-${i}`} className="hover:bg-transparent">
+                  <TableCell className="px-5 py-3.5">
+                    <Skeleton className="h-4 w-3/4 mb-1.5" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </TableCell>
+                  <TableCell className="px-4 py-3.5">
+                    <Skeleton className="h-6 w-28 rounded-md" />
+                  </TableCell>
+                  <TableCell className="px-4 py-3.5">
+                    <Skeleton className="h-4 w-32 mb-1" />
+                    <Skeleton className="h-3 w-20" />
+                  </TableCell>
+                  <TableCell className="px-4 py-3.5 text-center">
+                    <div className="flex justify-center">
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-5 py-3.5 text-right">
+                    <div className="flex justify-end gap-1.5">
+                      <Skeleton className="h-8 w-20 rounded-md" />
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+
+            {/* Skeleton loading more (appended to existing rows) */}
+            {isFetchingNextPage &&
+              Array.from({ length: 3 }).map((_, i) => (
+                <TableRow key={`skeleton-more-${i}`} className="hover:bg-transparent">
                   <TableCell className="px-5 py-3.5">
                     <Skeleton className="h-4 w-3/4 mb-1.5" />
                     <Skeleton className="h-3 w-1/2" />
@@ -375,6 +492,9 @@ export default function StudentTopicsPage() {
           </TableBody>
         </Table>
 
+        {/* Sentinel element to trigger fetchNextPage when scrolled near */}
+        <div ref={sentinelRef} className="h-1 w-full" aria-hidden="true" />
+
         {!isPending && topics.length === 0 && (
           <div className="py-12">
             <EmptyState
@@ -389,20 +509,13 @@ export default function StudentTopicsPage() {
             />
           </div>
         )}
-      </div>
 
-      {/* ── Phân trang ── */}
-      {data && (
-        <PaginationBar
-          page={data.page}
-          totalPages={data.totalPages}
-          total={data.total}
-          pageSize={pageSize}
-          onPageChange={setPage}
-          onPageSizeChange={setPageSize}
-          itemName="đề tài"
-        />
-      )}
+        {!hasNextPage && topics.length > 0 && !isFetchingNextPage && (
+          <div className="py-4 text-center text-xs text-muted-foreground select-none border-t border-slate-200/80 dark:border-neutral-700/80">
+            Đã hiển thị tất cả {total} đề tài
+          </div>
+        )}
+      </div>
 
       {/* ── Sheet chi tiết đề tài ── */}
       <TopicDetailSheet
