@@ -95,8 +95,8 @@
   --accent: #eff6ff;
   --accent-foreground: #3b82f6;
   --destructive: #ef4444;
-  --border: #e2e8f0;
-  --input: #cbd5e1;
+  --border: #cbd5e1;
+  --input: #c4c9d9;
 
   --status-waiting: #d97706;
   --status-waiting-bg: #fef3c7;
@@ -156,7 +156,7 @@
   --accent: #262626;
   --accent-foreground: #3b82f6;
   --destructive: #f87171;
-  --border: #2e2e2e; /* neutral-800 */
+  --border: #383838; /* neutral-700 */
   --input: #404040; /* neutral-700 */
 
   --status-waiting: #fbbf24;

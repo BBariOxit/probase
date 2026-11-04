@@ -23,8 +23,7 @@ const daysFromNow = (n: number) => new Date(Date.now() + n * DAY_MS);
 // ─────────────────────────────────────────────────────────
 const MAJORS = [
   { code: 'CNPM', name: 'Kỹ thuật phần mềm' },
-  { code: 'MMT', name: 'Mạng máy tính và An toàn thông tin' },
-  { code: 'KHMT', name: 'Khoa học máy tính & Trí tuệ nhân tạo' },
+  { code: 'MMT', name: 'Mạng máy tính' },
 ];
 
 const PROJECT_TYPES = [
@@ -41,8 +40,8 @@ const DEMO_STAFF = [
     email: 'gvgvk@dlu.edu.vn',
     role: 'ADMIN' as const,
     lecturerCode: 'GVGVK',
-    fullName: 'ThS. Nguyễn Thị GVK',
-    academicTitle: 'ThS',
+    fullName: 'Nguyễn Thị GVK',
+    academicTitle: 'ThS.',
     majorCode: 'CNPM',
     researchInterests: 'Quản lý đào tạo, Cơ sở dữ liệu và Hệ thống thông tin',
     isAcademicAssistant: true, // Trợ lý Giáo vụ Khoa (TLGV)
@@ -53,8 +52,8 @@ const DEMO_STAFF = [
     email: 'gvcnk@dlu.edu.vn',
     role: 'LECTURER' as const,
     lecturerCode: 'GVCNK',
-    fullName: 'TS. Trần Văn CNK',
-    academicTitle: 'TS',
+    fullName: 'Trần Văn CNK',
+    academicTitle: 'TS.',
     majorCode: 'CNPM',
     researchInterests: 'Trí tuệ nhân tạo, Khai phá dữ liệu, Xử lý ngôn ngữ tự nhiên',
     isAcademicAssistant: false,
@@ -65,8 +64,8 @@ const DEMO_STAFF = [
     email: 'gvab@dlu.edu.vn',
     role: 'LECTURER' as const,
     lecturerCode: 'GVAB',
-    fullName: 'TS. An Bình',
-    academicTitle: 'TS',
+    fullName: 'An Bình',
+    academicTitle: 'TS.',
     majorCode: 'CNPM',
     researchInterests: 'Kỹ thuật phần mềm, Kiến trúc hệ thống phân tán, Microservices',
     isAcademicAssistant: false,
@@ -77,8 +76,8 @@ const DEMO_STAFF = [
     email: 'gvcd@dlu.edu.vn',
     role: 'LECTURER' as const,
     lecturerCode: 'GVCD',
-    fullName: 'ThS. Chu Đình',
-    academicTitle: 'ThS',
+    fullName: 'Chu Đình',
+    academicTitle: 'ThS.',
     majorCode: 'MMT',
     researchInterests: 'Mạng máy tính, An toàn và Bảo mật thông tin, Mạng cảm biến IoT',
     isAcademicAssistant: false,
@@ -89,8 +88,8 @@ const DEMO_STAFF = [
     email: 'gvpb@dlu.edu.vn',
     role: 'LECTURER' as const,
     lecturerCode: 'GVPB',
-    fullName: 'ThS. Phan Bửu',
-    academicTitle: 'ThS',
+    fullName: 'Phan Bửu',
+    academicTitle: 'ThS.',
     majorCode: 'CNPM',
     researchInterests: 'Kỹ thuật phần mềm, Phát triển ứng dụng Web & Mobile hiện đại',
     isAcademicAssistant: false,
@@ -101,9 +100,9 @@ const DEMO_STAFF = [
     email: 'gvln@dlu.edu.vn',
     role: 'LECTURER' as const,
     lecturerCode: 'GVLN',
-    fullName: 'TS. Lê Ngân',
-    academicTitle: 'TS',
-    majorCode: 'KHMT',
+    fullName: 'Lê Ngân',
+    academicTitle: 'TS.',
+    majorCode: 'CNPM',
     researchInterests: 'Thị giác máy tính, Học sâu, Trí tuệ nhân tạo biên (Edge AI)',
     isAcademicAssistant: false,
     isFacultyBoard: false,
@@ -186,7 +185,7 @@ async function main() {
     });
     majorIdByCode.set(saved.code, saved.id);
   }
-  console.log(`[✓] 1. Chuyên ngành: ${MAJORS.length} ngành (CNPM, MMT, KHMT)`);
+  console.log(`[✓] 1. Chuyên ngành: ${MAJORS.length} ngành (CNPM, MMT)`);
 
   // 2. Seed Loại đồ án (Project Types)
   const projectTypeIdByCode = new Map<string, number>();

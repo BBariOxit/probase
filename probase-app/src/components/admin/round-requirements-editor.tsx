@@ -158,7 +158,7 @@ export const RoundRequirementsEditor = forwardRef<
       )}
 
       {rows.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 dark:border-neutral-600 p-8 text-center space-y-1 bg-slate-50/50 dark:bg-[#181818]">
+        <div className="rounded-xl border-[1.5px] border-dashed border-[#b0b8cc] dark:border-neutral-600 p-8 text-center space-y-1 bg-slate-50/50 dark:bg-[#181818]">
           <p className="text-sm font-medium text-slate-700 dark:text-neutral-200">
             Chưa có mốc nộp bài nào
           </p>
@@ -179,7 +179,7 @@ export const RoundRequirementsEditor = forwardRef<
                 value={row.name}
                 onChange={(e) => patch(index, { name: e.target.value })}
                 placeholder="Tên tài liệu / bài nộp (ví dụ: Đề cương chi tiết)..."
-                className="h-9 flex-1 min-w-0 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary"
+                className="h-9 flex-1 min-w-0 rounded-lg border-[1.5px] border-[#c4c9d9] bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-[#2563eb] focus:outline-none focus:ring-1 focus:ring-[#2563eb] dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary"
               />
 
               {/* Ô chọn hạn nộp (w-40) - Khoét lõm #141414, viền border-neutral-700 */}
@@ -187,7 +187,7 @@ export const RoundRequirementsEditor = forwardRef<
                 type="date"
                 value={row.due}
                 onChange={(e) => patch(index, { due: e.target.value })}
-                className="h-9 w-40 shrink-0 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary"
+                className="h-9 w-40 shrink-0 rounded-lg border-[1.5px] border-[#c4c9d9] bg-white px-3 text-xs text-slate-900 transition focus:border-[#2563eb] focus:outline-none focus:ring-1 focus:ring-[#2563eb] dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary"
               />
 
               {/* Nút Bắt buộc (Pill Tag) */}
