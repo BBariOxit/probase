@@ -64,6 +64,27 @@ export class NotificationsService {
     };
   }
 
+  async findOne(id: number, userId: number) {
+    const notification = await this.prisma.notification.findFirst({
+      where: { id, userId },
+      select: LIST_SELECT,
+    });
+
+    if (!notification) {
+      throw new NotFoundException('Không tìm thấy thông báo');
+    }
+
+    if (!notification.isRead) {
+      await this.prisma.notification.update({
+        where: { id },
+        data: { isRead: true },
+      });
+      notification.isRead = true;
+    }
+
+    return notification;
+  }
+
   async markRead(id: number, userId: number) {
     const { count } = await this.prisma.notification.updateMany({
       where: { id, userId },

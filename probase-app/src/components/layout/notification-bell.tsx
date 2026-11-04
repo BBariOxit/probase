@@ -8,7 +8,7 @@ import {
   useNotifications,
 } from '@/lib/api/notifications';
 import type { AppNotification, Role } from '@/lib/api/types';
-import { notificationHref, timeAgo } from '@/lib/notifications';
+import { timeAgo } from '@/lib/notifications';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,9 +31,7 @@ export function NotificationBell({ role }: { role: Role }) {
 
   function open(notice: AppNotification) {
     if (!notice.isRead) markRead.mutate(notice.id);
-
-    const href = notificationHref(notice, role);
-    if (href) router.push(href);
+    router.push(`/notifications/${notice.id}`);
   }
 
   return (
@@ -60,7 +58,7 @@ export function NotificationBell({ role }: { role: Role }) {
 
       <DropdownMenuContent
         align="end"
-        className="w-96 sm:w-[410px] p-0 rounded-xl overflow-hidden shadow-xl border border-border bg-popover"
+        className="w-80 sm:w-96 p-0 rounded-xl overflow-hidden shadow-xl border border-border bg-popover"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50/80 dark:bg-neutral-900/60 border-b border-border">
@@ -106,36 +104,33 @@ export function NotificationBell({ role }: { role: Role }) {
               <DropdownMenuItem
                 key={notice.id}
                 className={cn(
-                  'flex-col items-start gap-1 rounded-none px-4 py-3 cursor-pointer transition-colors focus:bg-muted/60',
+                  'flex items-center justify-between gap-3 px-4 py-3 cursor-pointer transition-colors focus:bg-muted/60',
                   !notice.isRead
-                    ? 'bg-blue-50/60 dark:bg-blue-950/25 hover:bg-blue-100/60 dark:hover:bg-blue-900/40'
+                    ? 'bg-blue-50/70 dark:bg-blue-950/30 hover:bg-blue-100/60 dark:hover:bg-blue-900/40'
                     : 'bg-transparent hover:bg-muted/50',
                 )}
                 onClick={() => open(notice)}
               >
-                <div className="flex w-full items-start justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    {!notice.isRead && (
-                      <span className="size-2 shrink-0 rounded-full bg-primary shadow-xs" />
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  {!notice.isRead ? (
+                    <span className="size-2 shrink-0 rounded-full bg-primary shadow-xs" />
+                  ) : (
+                    <span className="size-2 shrink-0 rounded-full bg-muted-foreground/30" />
+                  )}
+                  <span
+                    className={cn(
+                      'text-xs sm:text-sm leading-snug truncate',
+                      !notice.isRead
+                        ? 'font-semibold text-slate-900 dark:text-neutral-100'
+                        : 'font-normal text-slate-700 dark:text-neutral-300',
                     )}
-                    <span
-                      className={cn(
-                        'text-sm leading-snug line-clamp-1',
-                        !notice.isRead
-                          ? 'font-semibold text-slate-900 dark:text-neutral-100'
-                          : 'font-medium text-slate-700 dark:text-neutral-300',
-                      )}
-                    >
-                      {notice.title}
-                    </span>
-                  </div>
-                  <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums whitespace-nowrap pt-0.5">
-                    {timeAgo(notice.createdAt)}
+                  >
+                    {notice.title}
                   </span>
                 </div>
-                <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground pl-0 text-wrap">
-                  {notice.content}
-                </p>
+                <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums whitespace-nowrap">
+                  {timeAgo(notice.createdAt)}
+                </span>
               </DropdownMenuItem>
             ))
           )}

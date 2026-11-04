@@ -23,6 +23,14 @@ export class NotificationsController {
     return this.notificationsService.findMine(query, userId);
   }
 
+  @Get(':id')
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser('id') userId: number,
+  ) {
+    return this.notificationsService.findOne(id, userId);
+  }
+
   @Patch(':id/read')
   markRead(
     @Param('id', ParseIntPipe) id: number,

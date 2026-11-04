@@ -150,3 +150,72 @@ export function timeAgo(iso: string): string {
     year: 'numeric',
   }).format(new Date(iso));
 }
+
+export function notificationCategory(type: string): {
+  label: string;
+  color: string;
+} {
+  switch (type) {
+    case 'PROPOSAL_SUBMITTED':
+    case 'PROPOSAL_REVISION_REQUESTED':
+    case 'PROPOSAL_RESUBMITTED':
+    case 'PROPOSAL_ACCEPTED':
+    case 'PROPOSAL_REJECTED':
+      return {
+        label: 'Đề xuất đề tài',
+        color:
+          'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/40',
+      };
+    case 'GROUP_MEMBER_JOINED':
+    case 'GROUP_MEMBER_REMOVED':
+    case 'GROUP_DISBANDED':
+    case 'GROUP_MEMBER_ASSIGNED':
+      return {
+        label: 'Nhóm sinh viên',
+        color:
+          'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/40',
+      };
+    case 'ROUND_EXTENDED':
+    case 'REGISTRATION_CLOSING_SOON':
+    case 'ROUND_FINALIZED':
+      return {
+        label: 'Đợt đăng ký',
+        color:
+          'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/40',
+      };
+    case 'SUBMISSION_FEEDBACK':
+    case 'SUBMISSION_DUE_SOON':
+    case 'DEADLINE_REMINDER':
+      return {
+        label: 'Báo cáo & Nhắc nhở',
+        color:
+          'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300 border-orange-200/60 dark:border-orange-800/40',
+      };
+    case 'OUTLINE_SUBMITTED':
+    case 'OUTLINE_REVISION_REQUESTED':
+    case 'OUTLINE_APPROVED':
+      return {
+        label: 'Đề cương M03',
+        color:
+          'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200/60 dark:border-blue-800/40',
+      };
+    case 'GRADE_PUBLISHED':
+      return {
+        label: 'Điểm số',
+        color:
+          'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200/60 dark:border-purple-800/40',
+      };
+    case 'TOPIC_STUDENT_ASSIGNED':
+      return {
+        label: 'Phân công đề tài',
+        color:
+          'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300 border-cyan-200/60 dark:border-cyan-800/40',
+      };
+    default:
+      return {
+        label: 'Thông báo chung',
+        color:
+          'bg-slate-100 text-slate-700 dark:bg-neutral-800 dark:text-neutral-300 border-slate-200 dark:border-neutral-700',
+      };
+  }
+}

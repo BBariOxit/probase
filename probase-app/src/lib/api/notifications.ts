@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
-import type { NotificationPage } from '@/lib/api/types';
+import type { AppNotification, NotificationPage } from '@/lib/api/types';
 
 export interface NotificationQuery {
   page?: number;
@@ -14,6 +14,7 @@ export const notificationKeys = {
   all: ['notifications'] as const,
   list: (query: NotificationQuery) =>
     [...notificationKeys.all, 'list', query] as const,
+  detail: (id: number) => [...notificationKeys.all, 'detail', id] as const,
 };
 
 function toSearch(query: NotificationQuery): string {
@@ -33,6 +34,14 @@ export function useNotifications(query: NotificationQuery = {}) {
     staleTime: 30_000,
     refetchInterval: 60_000,
     refetchOnWindowFocus: true,
+  });
+}
+
+export function useNotification(id?: number) {
+  return useQuery({
+    queryKey: notificationKeys.detail(id!),
+    queryFn: () => api<AppNotification>(`/notifications/${id}`),
+    enabled: Boolean(id && !isNaN(id)),
   });
 }
 
