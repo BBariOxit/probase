@@ -294,30 +294,32 @@ export default function StudentTopicsPage() {
             triggerClassName="h-9 min-w-44 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
           />
 
-          {/* 4. Còn trống 🔘 (Toggle switch) */}
+          {/* 4. Còn trống 🔘 (Toggle switch with solid primary background when ON) */}
           <button
             type="button"
             role="switch"
             aria-checked={onlyAvailable}
             onClick={() => setOnlyAvailable((prev) => !prev)}
             className={cn(
-              'inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs sm:text-sm font-medium transition-colors cursor-pointer select-none',
+              'inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs sm:text-sm font-medium transition-all cursor-pointer select-none shadow-2xs',
               onlyAvailable
-                ? 'border-primary/50 bg-primary/10 text-primary'
+                ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-xs'
                 : 'border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-600 dark:text-neutral-400 hover:border-slate-400 dark:hover:border-neutral-600',
             )}
-            title={onlyAvailable ? 'Đang chỉ hiện đề tài còn trống' : 'Nhấn để chỉ hiện đề tài còn trống'}
+            title={onlyAvailable ? 'Đang lọc đề tài còn trống (nhấn để tắt)' : 'Nhấn để chỉ hiện đề tài còn trống'}
           >
             <span>Còn trống</span>
             <span
               className={cn(
-                'relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
-                onlyAvailable ? 'bg-primary' : 'bg-slate-300 dark:bg-neutral-700',
+                'relative inline-flex h-4 w-7 shrink-0 items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out',
+                onlyAvailable
+                  ? 'bg-black/25 dark:bg-black/35 ring-1 ring-white/30'
+                  : 'bg-slate-300 dark:bg-neutral-700',
               )}
             >
               <span
                 className={cn(
-                  'pointer-events-none inline-block size-3 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out',
+                  'pointer-events-none block size-3 rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out',
                   onlyAvailable ? 'translate-x-3' : 'translate-x-0',
                 )}
               />
