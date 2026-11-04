@@ -14,7 +14,7 @@ import { useMyGroup } from '@/lib/api/registration';
 import { useInfiniteTopics, useTopicLecturers } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebounce } from '@/hooks';
-import { sanitizeLecturerName } from '@/lib/utils';
+import { cn, sanitizeLecturerName } from '@/lib/utils';
 import { EmptyState } from '@/components/shared/empty-state';
 import { RegistrationPhaseNotice } from '@/components/rounds/registration-phase-notice';
 import { SeatBadge } from '@/components/groups/seat-indicator';
@@ -47,7 +47,6 @@ import {
 
 const PAGE_SIZE = 12;
 const ANY = 0;
-const MY_COHORT = -1;
 
 function getProjectTypeAbbr(projectType: { name: string; code?: string }): {
   short: string;
@@ -82,10 +81,24 @@ export default function StudentTopicsPage() {
   const { data: myGroup } = useMyGroup();
 
   const [search, setSearch] = useState('');
-  const [projectTypeId, setProjectTypeId] = useState(MY_COHORT);
+  const [projectTypeId, setProjectTypeId] = useState<number | null>(null);
+  const userChangedTypeRef = useRef(false);
   const [lecturerId, setLecturerId] = useState(ANY);
+  const [onlyAvailable, setOnlyAvailable] = useState(true);
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const debouncedSearch = useDebounce(search);
+
+  // Set default project type to the student's eligible type as soon as myTypes loads
+  useEffect(() => {
+    if (userChangedTypeRef.current) return;
+    if (myTypes && myTypes.length > 0) {
+      setProjectTypeId(myTypes[0].id);
+    } else if (myTypes && myTypes.length === 0) {
+      setProjectTypeId(ANY);
+    }
+  }, [myTypes]);
+
+  const effectiveProjectTypeId = projectTypeId ?? myTypes?.[0]?.id ?? ANY;
 
   const {
     data,
@@ -98,11 +111,8 @@ export default function StudentTopicsPage() {
     {
       status: 'OPEN',
       semesterId: activeSemester?.id,
-      forMyCohort: projectTypeId === MY_COHORT,
       projectTypeId:
-        projectTypeId === ANY || projectTypeId === MY_COHORT
-          ? undefined
-          : projectTypeId,
+        effectiveProjectTypeId === ANY ? undefined : effectiveProjectTypeId,
       lecturerId: lecturerId === ANY ? undefined : lecturerId,
       q: debouncedSearch || undefined,
       limit: PAGE_SIZE,
@@ -110,8 +120,15 @@ export default function StudentTopicsPage() {
     { enabled: activeSemester !== undefined },
   );
 
-  const topics = data?.pages.flatMap((page) => page.items) ?? [];
-  const total = data?.pages[0]?.total ?? 0;
+  const rawTopics = data?.pages.flatMap((page) => page.items) ?? [];
+  const rawTotal = data?.pages[0]?.total ?? 0;
+
+  // Filter topics for "Còn trống" (topics that have no group or where join is still open)
+  const topics = onlyAvailable
+    ? rawTopics.filter(
+        (t) => !t.isFull && (t.activeGroup === null || t.canJoin),
+      )
+    : rawTopics;
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const restoredRef = useRef(false);
@@ -194,16 +211,15 @@ export default function StudentTopicsPage() {
   useEffect(() => {
     sessionStorage.removeItem('student_topics_scroll_y');
     restoredRef.current = true;
-  }, [debouncedSearch, projectTypeId, lecturerId]);
+  }, [debouncedSearch, effectiveProjectTypeId, lecturerId, onlyAvailable]);
 
   if (!allowed) return null;
 
   const filtering =
     debouncedSearch !== '' ||
-    (projectTypeId !== ANY && projectTypeId !== MY_COHORT) ||
-    lecturerId !== ANY;
-
-  const myCohortTypes = myTypes?.map((type) => type.name).join(', ');
+    effectiveProjectTypeId !== ANY ||
+    lecturerId !== ANY ||
+    !onlyAvailable;
 
   const sanitizedLecturers = (lecturers ?? []).map((l) => ({
     ...l,
@@ -222,76 +238,71 @@ export default function StudentTopicsPage() {
         />
       ))}
 
-      {/* ── Khung tìm kiếm & bộ lọc ── */}
+      {/* ── Khung tìm kiếm & bộ lọc: [Tìm tên đề tài...] [Loại đồ án ▾] [Giảng viên ▾] [Còn trống 🔘] ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-1 flex-wrap items-center gap-3">
+          {/* 1. Tìm tên đề tài */}
           <div className="relative min-w-56 flex-1 sm:max-w-xs">
             <Search className="pointer-events-none absolute left-3 top-2.5 size-4 text-slate-400 dark:text-neutral-500" />
             <Input
               value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-              }}
-              placeholder="Tìm tên đề tài, mô tả…"
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Tìm tên đề tài…"
               className="pl-9 h-9 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
-              aria-label="Tìm đề tài"
+              aria-label="Tìm tên đề tài"
             />
           </div>
 
+          {/* 2. Loại đồ án ▾ (KLTN / DACN / DACS) */}
           <Select
-            value={projectTypeId}
-            onValueChange={(value) => {
-              setProjectTypeId(value as number);
+            value={effectiveProjectTypeId}
+            onValueChange={(val) => {
+              userChangedTypeRef.current = true;
+              setProjectTypeId(val as number);
             }}
           >
             <SelectTrigger
-              className="h-9 min-w-44 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+              className="h-9 min-w-36 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
               aria-label="Lọc theo loại đồ án"
             >
               <SelectValue>
-                {(value) => {
-                  if (value === MY_COHORT) return 'Khóa của bạn';
-                  return (
-                    projectTypes?.find((type) => type.id === value)?.name ??
-                    'Mọi loại đồ án'
-                  );
+                {(val) => {
+                  if (!val || val === ANY) return 'Tất cả loại đồ án';
+                  const type = projectTypes?.find((t) => t.id === val);
+                  if (!type) return 'Loại đồ án';
+                  return getProjectTypeAbbr(type).short;
                 }}
               </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-white dark:bg-[#1e1e1e] border-slate-200 dark:border-neutral-700">
-              <SelectItem value={MY_COHORT}>
-                <span className="flex flex-col items-start">
-                  <span>Khóa của bạn</span>
-                  {myCohortTypes && (
-                    <span className="text-[11px] text-muted-foreground">
-                      {myCohortTypes}
+              <SelectItem value={ANY}>Tất cả loại đồ án</SelectItem>
+              {projectTypes?.map((type) => {
+                const abbr = getProjectTypeAbbr(type);
+                return (
+                  <SelectItem key={type.id} value={type.id}>
+                    <span className="font-medium">{abbr.short}</span>
+                    <span className="text-xs text-muted-foreground ml-2">
+                      ({abbr.full})
                     </span>
-                  )}
-                </span>
-              </SelectItem>
-              <SelectItem value={ANY}>Mọi loại đồ án</SelectItem>
-              {projectTypes?.map((type) => (
-                <SelectItem key={type.id} value={type.id}>
-                  {type.name}
-                </SelectItem>
-              ))}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
 
+          {/* 3. Giảng viên ▾ */}
           <Select
             value={lecturerId}
-            onValueChange={(value) => {
-              setLecturerId(value as number);
-            }}
+            onValueChange={(val) => setLecturerId(val as number)}
           >
             <SelectTrigger
-              className="h-9 min-w-48 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+              className="h-9 min-w-44 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
               aria-label="Lọc theo giảng viên"
             >
               <SelectValue>
-                {(value) => {
-                  const lecturer = sanitizedLecturers.find((one) => one.id === value);
-                  if (!lecturer) return 'Mọi giảng viên';
+                {(val) => {
+                  const lecturer = sanitizedLecturers.find((one) => one.id === val);
+                  if (!lecturer || val === ANY) return 'Mọi giảng viên';
                   return lecturer.displayName;
                 }}
               </SelectValue>
@@ -305,13 +316,43 @@ export default function StudentTopicsPage() {
               ))}
             </SelectContent>
           </Select>
+
+          {/* 4. Còn trống 🔘 (Toggle switch) */}
+          <button
+            type="button"
+            role="switch"
+            aria-checked={onlyAvailable}
+            onClick={() => setOnlyAvailable((prev) => !prev)}
+            className={cn(
+              'inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs sm:text-sm font-medium transition-colors cursor-pointer select-none',
+              onlyAvailable
+                ? 'border-primary/50 bg-primary/10 text-primary'
+                : 'border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-600 dark:text-neutral-400 hover:border-slate-400 dark:hover:border-neutral-600',
+            )}
+            title={onlyAvailable ? 'Đang chỉ hiện đề tài còn trống' : 'Nhấn để chỉ hiện đề tài còn trống'}
+          >
+            <span>Còn trống</span>
+            <span
+              className={cn(
+                'relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
+                onlyAvailable ? 'bg-primary' : 'bg-slate-300 dark:bg-neutral-700',
+              )}
+            >
+              <span
+                className={cn(
+                  'pointer-events-none inline-block size-3 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out',
+                  onlyAvailable ? 'translate-x-3' : 'translate-x-0',
+                )}
+              />
+            </span>
+          </button>
         </div>
 
-        {total > 0 && (
+        {rawTotal > 0 && (
           <div className="flex items-center gap-2">
             <span className="text-xs sm:text-sm font-medium text-slate-600 dark:text-neutral-400 select-none">
               Hiển thị <strong className="text-primary font-bold text-sm">{topics.length}</strong> trong số{' '}
-              <strong className="text-primary font-bold text-sm">{total}</strong> đề tài
+              <strong className="text-primary font-bold text-sm">{rawTotal}</strong> đề tài
             </span>
           </div>
         )}
@@ -513,10 +554,10 @@ export default function StudentTopicsPage() {
             <EmptyState
               icon={BookOpen}
               title={
-                filtering
-                  ? 'Không có đề tài nào khớp bộ lọc.'
-                  : projectTypeId === MY_COHORT
-                    ? 'Chưa có đề tài nào mở cho khóa của bạn. Chọn "Mọi loại đồ án" để xem toàn bộ.'
+                onlyAvailable && rawTopics.length > 0
+                  ? 'Tất cả đề tài hiện tại đã có nhóm nhận. Tắt nút "Còn trống" để xem toàn bộ danh sách.'
+                  : filtering
+                    ? 'Không có đề tài nào khớp bộ lọc.'
                     : 'Chưa có đề tài nào được mở đăng ký.'
               }
             />
@@ -525,7 +566,7 @@ export default function StudentTopicsPage() {
 
         {!hasNextPage && topics.length > 0 && !isFetchingNextPage && (
           <div className="py-4 text-center text-xs text-muted-foreground select-none border-t border-slate-200/80 dark:border-neutral-700/80">
-            Đã hiển thị tất cả {total} đề tài
+            Đã hiển thị tất cả {rawTotal} đề tài
           </div>
         )}
       </div>
