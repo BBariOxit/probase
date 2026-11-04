@@ -72,12 +72,12 @@
   /* ==========================================================================
      LIGHT MODE CONFIGURATION
      ========================================================================== */
-  --background: #f8fafc; /* Canvas ngoài */
+  --background: oklch(0.94 0 0); /* Canvas ngoài */
   --foreground: #0f172a;
 
-  --card: #ffffff;
+  --card: oklch(1 0 0);
   --card-foreground: #0f172a;
-  --popover: #ffffff;
+  --popover: oklch(1 0 0);
   --popover-foreground: #0f172a;
 
   /* --------------------------------------------------------------------------
@@ -90,13 +90,13 @@
 
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #475569;
+  --muted: oklch(0.92 0 0);
+  --muted-foreground: oklch(0.40 0 0);
   --accent: #eff6ff;
   --accent-foreground: #2563eb;
   --destructive: #ef4444;
-  --border: #cbd5e1;
-  --input: #cbd5e1;
+  --border: oklch(0.78 0 0);
+  --input: oklch(0.78 0 0);
 
   --status-waiting: #d97706;
   --status-waiting-bg: #fef3c7;

@@ -25,12 +25,13 @@ function useInvalidateRegistration() {
   };
 }
 
-export function useMyGroup() {
+export function useMyGroup(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: groupKeys.mine(),
     queryFn: () => api<RegistrationGroup | null>('/registration-groups/me'),
     staleTime: 2 * 60_000,
     refetchOnWindowFocus: false,
+    ...options,
   });
 }
 

@@ -441,8 +441,7 @@ export function DatePicker({
         onPaste={handlePaste}
         onBlur={handleBlur}
         className={cn(
-          'h-9 w-full rounded-lg border-[1.5px] border-[#c4c9d9] bg-white pr-9 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-[#2563eb] focus:outline-none focus:ring-1 focus:ring-[#2563eb]',
-          'dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary disabled:opacity-50',
+          'h-9 w-full rounded-lg border-[1.5px] border-slate-400 dark:border-neutral-700 hover:border-slate-500 dark:hover:border-neutral-500 bg-slate-100 hover:bg-slate-200/50 focus:bg-white dark:bg-[#141414] dark:hover:bg-[#171717] pr-9 text-sm text-slate-900 dark:text-neutral-100 transition placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:border-primary dark:focus:ring-2 dark:focus:ring-primary/20 disabled:opacity-50 shadow-xs',
           (hasError || invalid || error) &&
             'border-destructive ring-1 ring-destructive dark:border-destructive dark:ring-destructive',
         )}
