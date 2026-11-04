@@ -110,7 +110,7 @@ export default function StudentTopicsPage() {
     error,
   } = useInfiniteTopics(
     {
-      status: 'OPEN',
+      status: onlyAvailable ? 'OPEN' : undefined,
       semesterId: activeSemester?.id,
       projectTypeId:
         effectiveProjectTypeId === ANY ? undefined : effectiveProjectTypeId,
@@ -126,10 +126,13 @@ export default function StudentTopicsPage() {
 
   // Filter topics for "Còn trống" & lecturerId guarantee
   const topics = rawTopics.filter((t) => {
-    if (
-      onlyAvailable &&
-      (t.activeGroup || t.isFull || (t.occupiedSeats ?? 0) >= t.maxStudents)
-    ) {
+    const isTaken =
+      Boolean(t.activeGroup) ||
+      t.isFull ||
+      (t.occupiedSeats ?? 0) >= t.maxStudents ||
+      t.status !== 'OPEN';
+
+    if (onlyAvailable && isTaken) {
       return false;
     }
     if (lecturerId !== ANY && t.lecturer?.id !== lecturerId) {
@@ -291,15 +294,17 @@ export default function StudentTopicsPage() {
               }}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className="bg-white dark:bg-[#1e1e1e] border-slate-200 dark:border-neutral-700">
+          <SelectContent className="w-auto min-w-[270px] whitespace-nowrap bg-white dark:bg-[#1e1e1e] border-slate-200 dark:border-neutral-700 shadow-xl">
             <SelectItem value={ANY}>Tất cả loại đồ án</SelectItem>
             {projectTypes?.map((type) => {
               const abbr = getProjectTypeAbbr(type);
               return (
                 <SelectItem key={type.id} value={type.id}>
-                  <span className="font-medium">{abbr.short}</span>
-                  <span className="text-xs text-muted-foreground ml-2">
-                    ({abbr.full})
+                  <span className="font-medium text-slate-900 dark:text-neutral-100">
+                    {abbr.full}
+                  </span>
+                  <span className="text-xs text-muted-foreground ml-1.5 font-normal">
+                    ({abbr.short})
                   </span>
                 </SelectItem>
               );
@@ -378,7 +383,8 @@ export default function StudentTopicsPage() {
               const isTaken =
                 Boolean(topic.activeGroup) ||
                 topic.isFull ||
-                (topic.occupiedSeats ?? 0) >= topic.maxStudents;
+                (topic.occupiedSeats ?? 0) >= topic.maxStudents ||
+                topic.status !== 'OPEN';
 
               return (
                 <TableRow
