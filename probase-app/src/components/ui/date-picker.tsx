@@ -193,6 +193,94 @@ function MiniCalendar({
   );
 }
 
+function computeNextInputState(
+  text: string,
+  selStart: number,
+  selEnd: number,
+  key: string,
+): { text: string; cursor: number } | null {
+  let raw = text;
+  let newCursor = selStart;
+
+  if (key === 'Backspace') {
+    if (selStart !== selEnd) {
+      raw = text.slice(0, selStart) + text.slice(selEnd);
+      newCursor = selStart;
+    } else {
+      if (selStart === 0) return { text, cursor: 0 };
+      if (text[selStart - 1] === '/') {
+        // Skip over slash and remove the digit before it
+        raw = text.slice(0, selStart - 2) + text.slice(selStart);
+        newCursor = selStart - 2;
+      } else {
+        raw = text.slice(0, selStart - 1) + text.slice(selStart);
+        newCursor = selStart - 1;
+      }
+    }
+  } else if (key === 'Delete') {
+    if (selStart !== selEnd) {
+      raw = text.slice(0, selStart) + text.slice(selEnd);
+      newCursor = selStart;
+    } else {
+      if (selStart >= text.length) return { text, cursor: selStart };
+      if (text[selStart] === '/') {
+        raw = text.slice(0, selStart + 1) + text.slice(selStart + 2);
+      } else {
+        raw = text.slice(0, selStart) + text.slice(selStart + 1);
+      }
+    }
+  } else if (/^\d$/.test(key)) {
+    const beforeCursor = text.slice(0, selStart);
+    const partsBefore = beforeCursor.split('/');
+    const currentPartIndex = partsBefore.length - 1;
+    const currentPart = partsBefore[currentPartIndex];
+    const maxLen = currentPartIndex === 2 ? 4 : 2;
+
+    if (selStart === selEnd && text[selStart] === '/' && currentPart.length >= maxLen) {
+      selStart++;
+      selEnd++;
+    }
+
+    raw = text.slice(0, selStart) + key + text.slice(selEnd);
+    newCursor = selStart + 1;
+  } else {
+    return null;
+  }
+
+  // Preserve segment boundaries
+  const parts = raw.split('/');
+  let d = parts[0] ? parts[0].replace(/\D/g, '') : '';
+  let m = parts[1] ? parts[1].replace(/\D/g, '') : '';
+  let y = parts[2] ? parts[2].replace(/\D/g, '') : '';
+
+  if (d.length > 2) {
+    m = d.slice(2) + m;
+    d = d.slice(0, 2);
+  }
+  if (m.length > 2) {
+    y = m.slice(2) + y;
+    m = m.slice(0, 2);
+  }
+  y = y.slice(0, 4);
+
+  let formatted = d;
+  if (parts.length > 1 || d.length === 2) {
+    formatted += '/' + m;
+  }
+  if (parts.length > 2 || (parts.length === 2 && m.length === 2 && raw.includes('/'))) {
+    formatted += '/' + y;
+  }
+
+  // Auto-advance cursor over slashes
+  if (newCursor === 2 && formatted[2] === '/' && text[2] !== '/') {
+    newCursor = 3;
+  } else if (newCursor === 5 && formatted[5] === '/' && text[5] !== '/') {
+    newCursor = 6;
+  }
+
+  return { text: formatted, cursor: Math.min(newCursor, formatted.length) };
+}
+
 export function DatePicker({
   id,
   value,
@@ -206,7 +294,7 @@ export function DatePicker({
   const [open, setOpen] = React.useState(false);
   const [text, setText] = React.useState(() => toDisplayDate(value));
   const [hasError, setHasError] = React.useState(false);
-  const isDeletingRef = React.useRef(false);
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     setText(toDisplayDate(value));
@@ -225,49 +313,19 @@ export function DatePicker({
     return undefined;
   }, [text, value]);
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Backspace' || e.key === 'Delete') {
-      isDeletingRef.current = true;
-    } else {
-      isDeletingRef.current = false;
-    }
-  }
+  function updateInput(newText: string, newCursor?: number) {
+    setText(newText);
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const isDeleting = isDeletingRef.current;
-    const raw = e.target.value;
-
-    const digits = raw.replace(/\D/g, '').slice(0, 8);
-
-    let formatted = '';
-    if (isDeleting) {
-      if (digits.length <= 2) {
-        formatted = digits;
-      } else if (digits.length <= 4) {
-        formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
-      } else {
-        formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-      }
-    } else {
-      if (digits.length === 0) {
-        formatted = '';
-      } else if (digits.length === 1) {
-        formatted = digits;
-      } else if (digits.length === 2) {
-        formatted = `${digits}/`;
-      } else if (digits.length === 3) {
-        formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
-      } else if (digits.length === 4) {
-        formatted = `${digits.slice(0, 2)}/${digits.slice(2)}/`;
-      } else {
-        formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-      }
+    if (newCursor !== undefined) {
+      requestAnimationFrame(() => {
+        if (inputRef.current) {
+          inputRef.current.setSelectionRange(newCursor, newCursor);
+        }
+      });
     }
 
-    setText(formatted);
-
-    if (formatted.length === 10) {
-      const res = parseDisplayDate(formatted);
+    if (newText.length === 10) {
+      const res = parseDisplayDate(newText);
       if (res) {
         setHasError(false);
         onChange(res.iso);
@@ -277,6 +335,63 @@ export function DatePicker({
     } else {
       setHasError(false);
     }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    // Let browser handle navigation and shortcut combinations
+    if (
+      e.ctrlKey ||
+      e.metaKey ||
+      e.altKey ||
+      e.key.startsWith('Arrow') ||
+      e.key === 'Tab' ||
+      e.key === 'Home' ||
+      e.key === 'End' ||
+      e.key === 'Enter' ||
+      e.key === 'Escape'
+    ) {
+      return;
+    }
+
+    const input = e.currentTarget;
+    const selStart = input.selectionStart ?? 0;
+    const selEnd = input.selectionEnd ?? 0;
+
+    const result = computeNextInputState(text, selStart, selEnd, e.key);
+    if (result) {
+      e.preventDefault();
+      updateInput(result.text, result.cursor);
+    } else if (e.key.length === 1) {
+      // Disallow non-digit characters
+      e.preventDefault();
+    }
+  }
+
+  function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text');
+    if (/^\d{4}-\d{2}-\d{2}/.test(pasted)) {
+      const display = toDisplayDate(pasted.slice(0, 10));
+      updateInput(display, display.length);
+      return;
+    }
+    const digits = pasted.replace(/\D/g, '').slice(0, 8);
+    if (!digits) return;
+    let formatted = digits.slice(0, 2);
+    if (digits.length > 2) formatted += '/' + digits.slice(2, 4);
+    if (digits.length > 4) formatted += '/' + digits.slice(4, 8);
+    updateInput(formatted, formatted.length);
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    // Fallback for autofill or IME
+    const val = e.target.value;
+    if (val === text) return;
+    const digits = val.replace(/\D/g, '').slice(0, 8);
+    let formatted = digits.slice(0, 2);
+    if (digits.length > 2) formatted += '/' + digits.slice(2, 4);
+    if (digits.length > 4) formatted += '/' + digits.slice(4, 8);
+    updateInput(formatted, formatted.length);
   }
 
   function handleBlur() {
@@ -314,14 +429,16 @@ export function DatePicker({
   return (
     <div className={cn('relative flex items-center w-full', className)}>
       <Input
+        ref={inputRef}
         id={id}
         type="text"
         inputMode="numeric"
         placeholder={placeholder}
         value={text}
         disabled={disabled}
-        onChange={handleInputChange}
+        onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
         onBlur={handleBlur}
         className={cn(
           'h-9 w-full rounded-lg border-[1.5px] border-[#c4c9d9] bg-white pr-9 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-[#2563eb] focus:outline-none focus:ring-1 focus:ring-[#2563eb]',
