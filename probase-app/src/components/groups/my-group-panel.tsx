@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { GroupSeatList } from '@/components/groups/group-seat-list';
+import { cn } from '@/lib/utils';
 
 export function MyGroupPanel({
   group,
@@ -34,6 +35,7 @@ export function MyGroupPanel({
     null,
   );
   const [studentCode, setStudentCode] = useState('');
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const update = useUpdateGroup(group.id);
   const disband = useDisbandGroup(group.id);
   const leave = useLeaveGroup(group.id);
@@ -42,13 +44,19 @@ export function MyGroupPanel({
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
     const code = studentCode.trim();
-    if (!code) return;
+    if (!code) {
+      setInviteError('Vui lòng nhập mã số sinh viên');
+      return;
+    }
+    setInviteError(null);
     try {
       await invite.mutateAsync(code);
       toast.success(`Đã thêm sinh viên ${code} vào nhóm thành công!`);
       setStudentCode('');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Không thể mời sinh viên');
+      const msg = err instanceof Error ? err.message : 'Không thể mời sinh viên';
+      setInviteError(msg);
+      toast.error(msg);
     }
   }
 
@@ -146,26 +154,41 @@ export function MyGroupPanel({
               Còn <strong className="text-primary font-bold text-xs">{group.topic.maxStudents - group.occupiedSeats}</strong> chỗ trống
             </span>
           </div>
-          <form onSubmit={handleInvite} className="flex gap-2">
-            <Input
-              value={studentCode}
-              onChange={(e) => setStudentCode(e.target.value)}
-              placeholder="Nhập MSSV…"
-              className="h-10 text-xs sm:text-sm bg-white dark:bg-[#141414] border-[1.5px] border-slate-300 dark:border-neutral-700 text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 shadow-2xs"
-              disabled={invite.isPending}
-            />
-            <Button
-              type="submit"
-              disabled={!studentCode.trim() || invite.isPending}
-              className="shrink-0 h-10 px-5 font-bold bg-primary hover:bg-primary/90 text-white shadow-xs cursor-pointer disabled:opacity-50"
-            >
-              {invite.isPending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <UserPlus className="size-4 mr-1.5" />
-              )}
-              Mời
-            </Button>
+          <form onSubmit={handleInvite} className="space-y-1.5">
+            <div className="flex gap-2">
+              <Input
+                value={studentCode}
+                onChange={(e) => {
+                  setStudentCode(e.target.value);
+                  if (inviteError) setInviteError(null);
+                }}
+                placeholder="Nhập MSSV…"
+                className={cn(
+                  'h-10 text-xs sm:text-sm bg-white dark:bg-[#141414] border-[1.5px] text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 shadow-2xs',
+                  inviteError
+                    ? 'border-rose-500 focus-visible:border-rose-500 focus-visible:ring-rose-500/20'
+                    : 'border-slate-300 dark:border-neutral-700 focus-visible:border-primary',
+                )}
+                disabled={invite.isPending}
+              />
+              <Button
+                type="submit"
+                disabled={invite.isPending}
+                className="shrink-0 h-10 px-5 font-bold bg-primary hover:bg-primary/90 text-white shadow-xs cursor-pointer"
+              >
+                {invite.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <UserPlus className="size-4 mr-1.5" />
+                )}
+                Mời
+              </Button>
+            </div>
+            {inviteError && (
+              <p className="text-xs font-medium text-rose-600 dark:text-rose-400 animate-in fade-in-50 pl-0.5">
+                {inviteError}
+              </p>
+            )}
           </form>
         </div>
       )}
