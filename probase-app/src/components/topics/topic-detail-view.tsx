@@ -36,6 +36,12 @@ export function TopicDetailView({
           <TopicStatusBadge status={topic.status} className="mt-1.5" />
         </div>
 
+        {topic.titleEn && (
+          <p className="-mt-1 text-sm italic text-muted-foreground">
+            {topic.titleEn}
+          </p>
+        )}
+
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
           <Meta icon={GraduationCap}>
             <Link
@@ -54,11 +60,33 @@ export function TopicDetailView({
 
       <div className="space-y-6 pt-2">
         <TextSection title="Mô tả" body={topic.description} titleAs="h2" />
+        {topic.objectives && (
+          <TextSection
+            title="Mục tiêu đề tài"
+            body={topic.objectives}
+            titleAs="h2"
+          />
+        )}
         <TextSection
           title="Yêu cầu đầu ra"
           body={topic.expectedOutcomes}
           titleAs="h2"
         />
+        {topic.techStack && (
+          <section className="space-y-2">
+            <h2 className="text-sm font-medium">Công nghệ & Công cụ đề xuất</h2>
+            <div className="flex flex-wrap gap-2">
+              {topic.techStack.split(',').map((tech, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-800 dark:bg-neutral-800 dark:text-neutral-200"
+                >
+                  {tech.trim()}
+                </span>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {actions && <div className="flex items-center gap-2 pt-1">{actions}</div>}

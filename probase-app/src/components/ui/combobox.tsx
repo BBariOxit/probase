@@ -168,7 +168,7 @@ export function Combobox({
           aria-expanded={open}
           role="combobox"
           className={cn(
-            'flex w-full items-center justify-between gap-1.5 rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] py-1.5 pr-2 pl-2.5 text-left transition-colors outline-none select-none hover:bg-slate-50 dark:hover:bg-neutral-800/80 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-2xs',
+            'flex w-full items-center justify-between gap-1.5 rounded-lg border-[1.5px] border-slate-400 dark:border-neutral-700 hover:border-slate-500 dark:hover:border-neutral-500 bg-slate-100 hover:bg-slate-200/50 focus:bg-white dark:bg-[#141414] dark:hover:bg-[#171717] dark:focus:bg-[#141414] py-1.5 pr-2 pl-2.5 text-left text-slate-900 dark:text-neutral-100 transition-colors outline-none select-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-xs',
             size === 'sm' ? 'h-8.5 text-xs' : 'h-10 text-sm',
             triggerClassName,
           )}

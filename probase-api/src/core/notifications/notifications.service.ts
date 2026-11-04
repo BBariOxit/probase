@@ -1,3 +1,4 @@
+import { NotificationTemplates } from './notification-templates';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
   GroupMemberStatus,
@@ -62,6 +63,27 @@ export class NotificationsService {
       limit: query.limit,
       totalPages: Math.ceil(total / query.limit),
     };
+  }
+
+  async findOne(id: number, userId: number) {
+    const notification = await this.prisma.notification.findFirst({
+      where: { id, userId },
+      select: LIST_SELECT,
+    });
+
+    if (!notification) {
+      throw new NotFoundException('Không tìm thấy thông báo');
+    }
+
+    if (!notification.isRead) {
+      await this.prisma.notification.update({
+        where: { id },
+        data: { isRead: true },
+      });
+      notification.isRead = true;
+    }
+
+    return notification;
   }
 
   async markRead(id: number, userId: number) {
@@ -138,4 +160,19 @@ export class NotificationsService {
 
     return students.map((student) => student.userId);
   }
+  async studentsInCohorts(cohorts: string[]): Promise<number[]> {
+    if (cohorts.length === 0) return [];
+
+    const students = await this.prisma.studentProfile.findMany({
+      where: {
+        cohort: { in: cohorts },
+        user: { isActive: true },
+      },
+      select: { userId: true },
+    });
+
+    return students.map((s) => s.userId);
+  }
 }
+
+export { NotificationTemplates };

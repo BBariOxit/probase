@@ -150,3 +150,43 @@ export function timeAgo(iso: string): string {
     year: 'numeric',
   }).format(new Date(iso));
 }
+
+export function notificationCategory(type: string): {
+  label: string;
+  color: string;
+} {
+  const neutral =
+    'bg-slate-100 text-slate-600 dark:bg-neutral-800 dark:text-neutral-400 border-slate-200/80 dark:border-neutral-700/80';
+
+  switch (type) {
+    case 'PROPOSAL_SUBMITTED':
+    case 'PROPOSAL_REVISION_REQUESTED':
+    case 'PROPOSAL_RESUBMITTED':
+    case 'PROPOSAL_ACCEPTED':
+    case 'PROPOSAL_REJECTED':
+      return { label: 'Đề xuất đề tài', color: neutral };
+    case 'GROUP_MEMBER_JOINED':
+    case 'GROUP_MEMBER_REMOVED':
+    case 'GROUP_DISBANDED':
+    case 'GROUP_MEMBER_ASSIGNED':
+      return { label: 'Nhóm sinh viên', color: neutral };
+    case 'ROUND_EXTENDED':
+    case 'REGISTRATION_CLOSING_SOON':
+    case 'ROUND_FINALIZED':
+      return { label: 'Đợt đăng ký', color: neutral };
+    case 'SUBMISSION_FEEDBACK':
+    case 'SUBMISSION_DUE_SOON':
+    case 'DEADLINE_REMINDER':
+      return { label: 'Báo cáo & Nhắc nhở', color: neutral };
+    case 'OUTLINE_SUBMITTED':
+    case 'OUTLINE_REVISION_REQUESTED':
+    case 'OUTLINE_APPROVED':
+      return { label: 'Đề cương M03', color: neutral };
+    case 'GRADE_PUBLISHED':
+      return { label: 'Điểm số', color: neutral };
+    case 'TOPIC_STUDENT_ASSIGNED':
+      return { label: 'Phân công đề tài', color: neutral };
+    default:
+      return { label: 'Thông báo', color: neutral };
+  }
+}

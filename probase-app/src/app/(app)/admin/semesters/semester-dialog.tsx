@@ -264,7 +264,8 @@ export function SemesterDialog({
     }
   }, [form.formState.isDirty, handleClose]);
 
-  const handleAcademicYearChange = (newYear: string) => {
+  const handleAcademicYearChange = (newYear: string | null) => {
+    if (!newYear) return;
     form.setValue('academicYear', newYear, {
       shouldValidate: true,
       shouldDirty: true,

@@ -632,9 +632,7 @@ export class RegistrationGroupsService {
     requireProposerOrFree(newTopic, student.id);
 
     // 3. Kiểm tra số lượng thành viên nhóm hiện tại so với sức chứa tối đa của đề tài mới
-    const activeMembers = group.members.filter(
-      (m) => m.status === GroupMemberStatus.ACCEPTED,
-    );
+    const activeMembers = group.members;
     if (activeMembers.length > newTopic.maxStudents) {
       throw new BadRequestException(
         `Đề tài mới chỉ cho phép tối đa ${newTopic.maxStudents} sinh viên, nhưng nhóm hiện có ${activeMembers.length} thành viên.`,

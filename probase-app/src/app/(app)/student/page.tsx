@@ -355,7 +355,7 @@ function StudentTopicsContent() {
                     <span className="font-semibold text-slate-900 dark:text-neutral-100">
                       {abbr.full}
                     </span>
-                    <span className="text-xs text-muted-foreground ml-1.5 font-normal">
+                    <span className="text-muted-foreground font-normal">
                       ({abbr.short})
                     </span>
                   </SelectItem>
@@ -424,7 +424,7 @@ function StudentTopicsContent() {
         <Table className="relative w-full min-w-[850px] table-fixed text-left text-sm">
           <TableHeader>
             <TableRow>
-              <TableHead className="px-5">Tên đề tài</TableHead>
+              <TableHead className="w-[340px] max-w-[340px] px-5">Tên đề tài</TableHead>
               <TableHead className="w-24 px-3 whitespace-nowrap">Loại đồ án</TableHead>
               <TableHead className="w-24 px-3 text-center whitespace-nowrap">Số lượng</TableHead>
               <TableHead className="w-44 px-3 whitespace-nowrap">Cán bộ hướng dẫn</TableHead>
@@ -451,17 +451,12 @@ function StudentTopicsContent() {
                   className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                   onClick={() => setSelectedTopicId(topic.id)}
                 >
-                  <TableCell className="px-5 py-3.5 align-middle">
-                    <div className="max-w-[400px]">
+                  <TableCell className="w-[340px] max-w-[340px] px-5 py-3.5 align-middle whitespace-normal">
+                    <div className="w-full max-w-[340px] whitespace-normal">
                       <Link
                         href={`/student/topics/${topic.id}`}
-                        className="font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words"
-                        onClick={(e) => {
-                          if (!e.metaKey && !e.ctrlKey) {
-                            e.preventDefault();
-                            setSelectedTopicId(topic.id);
-                          }
-                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words whitespace-normal line-clamp-2"
                       >
                         {topic.title}
                       </Link>

@@ -34,7 +34,7 @@ export default function StudentGroupPage() {
   if (!group) {
     return (
       <div className="max-w-4xl">
-        <div className="rounded-xl border border-slate-200 dark:border-neutral-700/80 bg-white dark:bg-[#141414]">
+        <div className="rounded-2xl border border-[#b8c0d0] dark:border-[#333338] bg-white dark:bg-[#1e1e1e]">
           <EmptyState
             icon={Users}
             title="Bạn chưa đăng ký đề tài nào."

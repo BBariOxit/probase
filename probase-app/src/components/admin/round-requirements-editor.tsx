@@ -1,6 +1,6 @@
 'use client';
 
-import { GripVertical, Plus, Trash2 } from 'lucide-react';
+import { GripVertical, Plus, Trash2, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DatePicker } from '@/components/ui/date-picker';
 
@@ -78,13 +78,18 @@ export function RoundRequirementsEditor({
       )}
 
       {requirements.length === 0 ? (
-        <div className="rounded-xl border-[1.5px] border-dashed border-[#b0b8cc] dark:border-neutral-600 p-8 text-center space-y-1 bg-slate-50/50 dark:bg-[#181818]">
-          <p className="text-sm font-medium text-slate-700 dark:text-neutral-200">
-            Chưa có mốc nộp bài nào
-          </p>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-sm mx-auto">
-            Nhấn &ldquo;Thêm mốc nộp bài&rdquo; để thiết lập các hạn nộp tài liệu cho đợt này.
-          </p>
+        <div className="rounded-xl border-[1.5px] border-dashed border-slate-300 dark:border-neutral-700 p-8 text-center space-y-2.5 bg-slate-100 dark:bg-[#181818]">
+          <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-slate-200/80 dark:bg-neutral-800 text-slate-500 dark:text-neutral-400">
+            <FileText className="size-5" />
+          </div>
+          <div className="space-y-0.5">
+            <p className="text-sm font-semibold text-slate-800 dark:text-neutral-200">
+              Chưa có mốc nộp bài nào
+            </p>
+            <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-sm mx-auto">
+              Nhấn &ldquo;Thêm mốc nộp bài&rdquo; để thiết lập các hạn nộp tài liệu cho đợt này.
+            </p>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">
@@ -101,7 +106,7 @@ export function RoundRequirementsEditor({
                 disabled={disabled}
                 onChange={(e) => patch(index, { name: e.target.value })}
                 placeholder="Tên tài liệu / bài nộp (ví dụ: Đề cương chi tiết)..."
-                className="h-9 flex-1 min-w-0 rounded-lg border-[1.5px] border-[#c4c9d9] bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-[#2563eb] focus:outline-none focus:ring-1 focus:ring-[#2563eb] dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary disabled:opacity-50"
+                className="h-9 flex-1 min-w-0 rounded-lg border-[1.5px] border-slate-400 dark:border-neutral-700 hover:border-slate-500 dark:hover:border-neutral-500 bg-slate-100 hover:bg-slate-200/50 focus:bg-white dark:bg-[#141414] dark:hover:bg-[#171717] px-3 text-sm text-slate-900 dark:text-neutral-100 transition placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:border-primary dark:focus:ring-2 dark:focus:ring-primary/20 disabled:opacity-50 shadow-xs"
               />
 
               {/* Ô chọn hạn nộp (w-44) - DatePicker dd/MM/yyyy */}
@@ -120,14 +125,20 @@ export function RoundRequirementsEditor({
                 disabled={disabled}
                 onClick={() => patch(index, { isRequired: !row.isRequired })}
                 className={cn(
-                  'h-8 shrink-0 text-xs font-medium px-2.5 py-1 transition cursor-pointer select-none rounded-md disabled:opacity-50 disabled:cursor-not-allowed',
+                  'h-8 shrink-0 text-xs font-medium px-2.5 py-1 transition cursor-pointer select-none rounded-md inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed',
                   row.isRequired
-                    ? 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-[#262626] dark:text-neutral-200 dark:border-neutral-700 hover:bg-slate-200 dark:hover:bg-[#333333]'
-                    : 'border border-transparent bg-transparent text-slate-500 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-[#262626]/40',
+                    ? 'bg-white dark:bg-neutral-900 text-slate-800 dark:text-neutral-200 border border-slate-300 dark:border-neutral-700 shadow-2xs hover:bg-slate-50 dark:hover:bg-neutral-800'
+                    : 'bg-transparent text-slate-400 dark:text-neutral-500 border border-dashed border-slate-300 dark:border-neutral-700 hover:border-slate-400 hover:text-slate-600 dark:hover:text-neutral-300',
                 )}
                 title="Nhấn để chuyển đổi giữa Bắt buộc và Tùy chọn"
               >
-                {row.isRequired ? 'Bắt buộc' : 'Tùy chọn'}
+                <span
+                  className={cn(
+                    'size-1.5 rounded-full shrink-0',
+                    row.isRequired ? 'bg-primary' : 'bg-slate-300 dark:bg-neutral-600',
+                  )}
+                />
+                <span>{row.isRequired ? 'Bắt buộc' : 'Tùy chọn'}</span>
               </button>
 
               {/* Nút xóa */}

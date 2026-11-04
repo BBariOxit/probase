@@ -62,7 +62,16 @@ export function TopicDetailSheet({
       open={!!topicId}
       onOpenChange={(open) => !open && onClose()}
       loading={isPending}
-      title={topic?.title}
+      title={
+        <div className="space-y-1">
+          <div>{topic?.title}</div>
+          {topic?.titleEn && (
+            <div className="text-xs font-normal italic text-muted-foreground">
+              {topic.titleEn}
+            </div>
+          )}
+        </div>
+      }
       badge={topic ? <TopicStatusBadge status={topic.status} /> : null}
       meta={meta}
       footer={footerActions}
@@ -71,7 +80,25 @@ export function TopicDetailSheet({
       {topic && (
         <>
           <TextSection title="Mô tả" body={topic.description} />
+          {topic.objectives && (
+            <TextSection title="Mục tiêu đề tài" body={topic.objectives} />
+          )}
           <TextSection title="Yêu cầu đầu ra" body={topic.expectedOutcomes} />
+          {topic.techStack && (
+            <div className="space-y-1.5">
+              <h4 className="text-sm font-medium">Công nghệ & Công cụ đề xuất</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {topic.techStack.split(',').map((tech, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-neutral-800 dark:text-neutral-300"
+                  >
+                    {tech.trim()}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
     </DetailSheet>

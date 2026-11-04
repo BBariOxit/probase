@@ -6,6 +6,10 @@
 
 @theme inline {
   --color-background: var(--background);
+  --color-page: var(--color-page);
+  --color-card: var(--color-card);
+  --color-row: var(--color-row);
+  --color-section: var(--color-section);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans), 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-mono), monospace;
@@ -72,12 +76,16 @@
   /* ==========================================================================
      LIGHT MODE CONFIGURATION
      ========================================================================== */
-  --background: #f8fafc; /* Canvas ngoài */
+  --background: #f1f3f8; /* Canvas ngoài: #f1f3f8 */
+  --color-page: #f1f3f8;
+  --color-card: #ffffff;
+  --color-row: #f7f8fc;
+  --color-section: #eef1f8;
   --foreground: #0f172a;
 
-  --card: #ffffff;
+  --card: oklch(1 0 0);
   --card-foreground: #0f172a;
-  --popover: #ffffff;
+  --popover: oklch(1 0 0);
   --popover-foreground: #0f172a;
 
   /* --------------------------------------------------------------------------
@@ -90,13 +98,13 @@
 
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #475569;
+  --muted: oklch(0.92 0 0);
+  --muted-foreground: oklch(0.40 0 0);
   --accent: #eff6ff;
   --accent-foreground: #2563eb;
   --destructive: #ef4444;
-  --border: #cbd5e1;
-  --input: #cbd5e1;
+  --border: oklch(0.78 0 0);
+  --input: oklch(0.78 0 0);
 
   --status-waiting: #d97706;
   --status-waiting-bg: #fef3c7;
@@ -132,7 +140,11 @@
   /* ==========================================================================
      DARK MODE CONFIGURATION (Matte Obsidian & Neutral Stone — Chuẩn Raycast)
      ========================================================================== */
-  --background: #121212; /* Canvas ngoài: Đen nhám lì */
+    --background: #121212; /* Canvas ngoài: Đen nhám lì */
+  --color-page: #121212;
+  --color-card: #1e1e1e;
+  --color-row: #28282c;
+  --color-section: #161618;
   --foreground: #f5f5f5; /* Chữ chính: neutral-100 */
 
   /* Khối Card nội dung chính: Xám đen phẳng #1e1e1e */
