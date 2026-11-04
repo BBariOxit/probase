@@ -16,6 +16,7 @@ import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebounce } from '@/hooks';
 import { cn, sanitizeLecturerName } from '@/lib/utils';
 import { EmptyState } from '@/components/shared/empty-state';
+import { LecturerCombobox } from '@/components/shared/lecturer-combobox';
 import { RegistrationPhaseNotice } from '@/components/rounds/registration-phase-notice';
 import { SeatBadge } from '@/components/groups/seat-indicator';
 import { TopicRegisterButton } from '@/components/topics/topic-register-button';
@@ -221,11 +222,6 @@ export default function StudentTopicsPage() {
     lecturerId !== ANY ||
     !onlyAvailable;
 
-  const sanitizedLecturers = (lecturers ?? []).map((l) => ({
-    ...l,
-    ...sanitizeLecturerName(l.fullName, l.academicTitle),
-  }));
-
   return (
     <div className="space-y-4">
       {/* ── Thông báo tiến trình đợt ── */}
@@ -290,32 +286,13 @@ export default function StudentTopicsPage() {
             </SelectContent>
           </Select>
 
-          {/* 3. Giảng viên ▾ */}
-          <Select
+          {/* 3. Giảng viên ▾ (Combobox tìm kiếm) */}
+          <LecturerCombobox
+            lecturers={lecturers ?? []}
             value={lecturerId}
-            onValueChange={(val) => setLecturerId(val as number)}
-          >
-            <SelectTrigger
-              className="h-9 min-w-44 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
-              aria-label="Lọc theo giảng viên"
-            >
-              <SelectValue>
-                {(val) => {
-                  const lecturer = sanitizedLecturers.find((one) => one.id === val);
-                  if (!lecturer || val === ANY) return 'Mọi giảng viên';
-                  return lecturer.displayName;
-                }}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="min-w-[220px] w-max bg-white dark:bg-[#1e1e1e] border-slate-200 dark:border-neutral-700">
-              <SelectItem value={ANY}>Mọi giảng viên</SelectItem>
-              {sanitizedLecturers.map((lecturer) => (
-                <SelectItem key={lecturer.id} value={lecturer.id}>
-                  {lecturer.displayName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onChange={setLecturerId}
+            triggerClassName="h-9 min-w-44 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+          />
 
           {/* 4. Còn trống 🔘 (Toggle switch) */}
           <button
@@ -347,15 +324,6 @@ export default function StudentTopicsPage() {
             </span>
           </button>
         </div>
-
-        {rawTotal > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs sm:text-sm font-medium text-slate-600 dark:text-neutral-400 select-none">
-              Hiển thị <strong className="text-primary font-bold text-sm">{topics.length}</strong> trong số{' '}
-              <strong className="text-primary font-bold text-sm">{rawTotal}</strong> đề tài
-            </span>
-          </div>
-        )}
       </div>
 
       {error && (
@@ -566,7 +534,7 @@ export default function StudentTopicsPage() {
 
         {!hasNextPage && topics.length > 0 && !isFetchingNextPage && (
           <div className="py-4 text-center text-xs text-muted-foreground select-none border-t border-slate-200/80 dark:border-neutral-700/80">
-            Đã hiển thị tất cả {rawTotal} đề tài
+            Đã hiển thị tất cả <strong className="text-primary font-bold">{rawTotal}</strong> đề tài
           </div>
         )}
       </div>
