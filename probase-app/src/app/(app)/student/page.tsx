@@ -451,12 +451,11 @@ function StudentTopicsContent() {
                   className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                   onClick={() => setSelectedTopicId(topic.id)}
                 >
-                  <TableCell className="w-[340px] max-w-[340px] px-5 py-3.5 align-middle">
-                    <div className="w-full max-w-[340px]">
+                  <TableCell className="w-[340px] max-w-[340px] px-5 py-3.5 align-middle whitespace-normal">
+                    <div className="w-full max-w-[340px] whitespace-normal">
                       <Link
                         href={`/student/topics/${topic.id}`}
-                        className="font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words line-clamp-2"
-
+                        className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words whitespace-normal line-clamp-2"
                       >
                         {topic.title}
                       </Link>
