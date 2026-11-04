@@ -176,12 +176,10 @@ export default function SemestersPage() {
                     ? 'Học kỳ chưa bắt đầu'
                     : 'Học kỳ đã kết thúc';
 
-                const canDelete = isUpcoming;
+                const canDelete = !isActive;
                 const deleteTooltip = canDelete
                   ? undefined
-                  : isActive
-                    ? 'Không thể xóa học kỳ đang diễn ra'
-                    : 'Không thể xóa học kỳ đã kết thúc';
+                  : 'Không thể xóa học kỳ đang diễn ra';
 
                 return (
                   <TableRow key={semester.id}>
