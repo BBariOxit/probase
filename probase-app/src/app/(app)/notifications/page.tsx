@@ -58,11 +58,6 @@ export default function NotificationsPage() {
           <h1 className="text-2xl font-bold font-heading text-slate-900 dark:text-neutral-100 flex items-center gap-2.5">
             <Bell className="size-6 text-primary" />
             <span>Thông báo</span>
-            {unread > 0 && (
-              <span className="rounded-full bg-primary/10 text-primary dark:bg-primary/20 px-2.5 py-0.5 text-xs font-bold">
-                {unread} chưa đọc
-              </span>
-            )}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Cập nhật về tiến độ đồ án, hạn nộp báo cáo và kết quả từ Giảng viên, Khoa
