@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, Copy, Eye, MoreHorizontal, Search } from 'lucide-react';
+import { BookOpen, CalendarClock, Copy, Eye, MoreHorizontal, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useActiveSemester,
@@ -18,7 +18,7 @@ import { cn, sanitizeLecturerName } from '@/lib/utils';
 import { EmptyState } from '@/components/shared/empty-state';
 import { LecturerCombobox } from '@/components/shared/lecturer-combobox';
 import { RegistrationPhaseNotice } from '@/components/rounds/registration-phase-notice';
-import { SeatBadge } from '@/components/groups/seat-indicator';
+import { StatusPill } from '@/components/shared/status-pill';
 import { TopicRegisterButton } from '@/components/topics/topic-register-button';
 import { TopicDetailSheet } from '@/components/topics/topic-detail-sheet';
 import { Button } from '@/components/ui/button';
@@ -124,10 +124,13 @@ export default function StudentTopicsPage() {
   const rawTopics = data?.pages.flatMap((page) => page.items) ?? [];
   const rawTotal = data?.pages[0]?.total ?? 0;
 
-  // Filter topics for "Còn trống" (topics that have no group or where join is still open)
+  // Filter topics for "Còn trống" (topics that have no group)
   const topics = onlyAvailable
     ? rawTopics.filter(
-        (t) => !t.isFull && (t.activeGroup === null || t.canJoin),
+        (t) =>
+          !t.activeGroup &&
+          !t.isFull &&
+          (t.occupiedSeats ?? 0) < t.maxStudents,
       )
     : rawTopics;
 
@@ -233,6 +236,21 @@ export default function StudentTopicsPage() {
           hasGroup={myGroup != null}
         />
       ))}
+      {activeSemester && rounds && rounds.length === 0 && (
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white px-4 py-3 shadow-2xs dark:bg-[#1e1e1e]">
+          <div className="flex items-start gap-3">
+            <CalendarClock className="mt-0.5 size-4.5 shrink-0 text-primary" />
+            <div className="space-y-0.5 text-sm">
+              <p className="font-semibold text-slate-900 dark:text-neutral-100">
+                Chưa mở đợt đăng ký đề tài
+              </p>
+              <p className="text-xs text-slate-500 dark:text-neutral-400">
+                Hiện tại chưa có đợt đăng ký nào được mở cho học kỳ này. Bạn có thể xem trước danh sách đề tài.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Khung tìm kiếm & bộ lọc: [Tìm tên đề tài...] [Loại đồ án ▾] [Giảng viên ▾] [Còn trống 🔘] ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -336,14 +354,15 @@ export default function StudentTopicsPage() {
 
       {/* ── Bảng dữ liệu dùng chung (Shared Table Component) ── */}
       <div className="flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-card shadow-2xs overflow-hidden">
-        <Table className="relative w-full text-left text-sm">
+        <Table className="relative w-full min-w-[900px] text-left text-sm">
           <TableHeader>
             <TableRow>
-              <TableHead className="min-w-[280px] max-w-[380px] w-[380px] px-5">Tên đề tài</TableHead>
-              <TableHead className="w-28 px-4">Loại đồ án</TableHead>
-              <TableHead className="w-56 px-4">Cán bộ hướng dẫn</TableHead>
-              <TableHead className="w-40 px-4 text-center">Tình trạng</TableHead>
-              <TableHead className="w-44 px-5 text-right">Thao tác</TableHead>
+              <TableHead className="w-full px-5">Tên đề tài</TableHead>
+              <TableHead className="w-24 px-3 whitespace-nowrap">Loại đồ án</TableHead>
+              <TableHead className="w-24 px-3 text-center whitespace-nowrap">Số lượng</TableHead>
+              <TableHead className="w-48 px-3 whitespace-nowrap">Cán bộ hướng dẫn</TableHead>
+              <TableHead className="w-32 px-3 text-center whitespace-nowrap">Tình trạng</TableHead>
+              <TableHead className="w-36 px-5 text-right whitespace-nowrap">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -353,6 +372,10 @@ export default function StudentTopicsPage() {
                 topic.lecturer.academicTitle,
               );
               const typeInfo = getProjectTypeAbbr(topic.projectType);
+              const isTaken =
+                Boolean(topic.activeGroup) ||
+                topic.isFull ||
+                (topic.occupiedSeats ?? 0) >= topic.maxStudents;
 
               return (
                 <TableRow
@@ -360,22 +383,24 @@ export default function StudentTopicsPage() {
                   className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                   onClick={() => setSelectedTopicId(topic.id)}
                 >
-                  <TableCell className="min-w-[280px] max-w-[380px] w-[380px] px-5 py-3.5 align-middle">
-                    <Link
-                      href={`/student/topics/${topic.id}`}
-                      className="font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words"
-                      onClick={(e) => {
-                        if (!e.metaKey && !e.ctrlKey) {
-                          e.preventDefault();
-                          setSelectedTopicId(topic.id);
-                        }
-                      }}
-                    >
-                      {topic.title}
-                    </Link>
+                  <TableCell className="px-5 py-3.5 align-middle">
+                    <div className="max-w-[380px] min-w-[280px]">
+                      <Link
+                        href={`/student/topics/${topic.id}`}
+                        className="font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words"
+                        onClick={(e) => {
+                          if (!e.metaKey && !e.ctrlKey) {
+                            e.preventDefault();
+                            setSelectedTopicId(topic.id);
+                          }
+                        }}
+                      >
+                        {topic.title}
+                      </Link>
+                    </div>
                   </TableCell>
 
-                  <TableCell className="w-28 px-4 py-3.5 align-middle">
+                  <TableCell className="w-24 px-3 py-3.5 align-middle whitespace-nowrap">
                     <span
                       className="font-medium text-slate-700 dark:text-neutral-300"
                       title={typeInfo.full}
@@ -384,7 +409,13 @@ export default function StudentTopicsPage() {
                     </span>
                   </TableCell>
 
-                  <TableCell className="px-4 py-3.5 align-middle">
+                  <TableCell className="w-24 px-3 py-3.5 text-center align-middle whitespace-nowrap">
+                    <span className="font-medium text-slate-700 dark:text-neutral-300">
+                      {topic.maxStudents} SV
+                    </span>
+                  </TableCell>
+
+                  <TableCell className="w-48 px-3 py-3.5 align-middle whitespace-nowrap">
                     <span className="font-medium text-slate-800 dark:text-neutral-200">
                       {lecturerInfo.displayName}
                     </span>
@@ -395,11 +426,15 @@ export default function StudentTopicsPage() {
                     )}
                   </TableCell>
 
-                  <TableCell className="px-4 py-3.5 text-center align-middle">
-                    <SeatBadge topic={topic} />
+                  <TableCell className="w-32 px-3 py-3.5 text-center align-middle whitespace-nowrap">
+                    {isTaken ? (
+                      <StatusPill label="Đã có nhóm" tone="idle" />
+                    ) : (
+                      <StatusPill label="Còn trống" tone="success" />
+                    )}
                   </TableCell>
 
-                  <TableCell className="px-5 py-3.5 text-right whitespace-nowrap align-middle">
+                  <TableCell className="w-36 px-5 py-3.5 text-right whitespace-nowrap align-middle">
                     <div
                       className="flex items-center justify-end gap-1.5"
                       onClick={(e) => e.stopPropagation()}
@@ -460,25 +495,30 @@ export default function StudentTopicsPage() {
             {isPending &&
               Array.from({ length: 6 }).map((_, i) => (
                 <TableRow key={`skeleton-init-${i}`} className="hover:bg-transparent">
-                  <TableCell className="min-w-[280px] max-w-[380px] w-[380px] px-5 py-3.5">
-                    <Skeleton className="h-4 w-3/4 mb-1.5" />
-                    <Skeleton className="h-3 w-1/2" />
+                  <TableCell className="px-5 py-3.5">
+                    <div className="max-w-[380px]">
+                      <Skeleton className="h-4 w-3/4 mb-1.5" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
                   </TableCell>
-                  <TableCell className="w-28 px-4 py-3.5">
+                  <TableCell className="w-24 px-3 py-3.5">
                     <Skeleton className="h-4 w-12" />
                   </TableCell>
-                  <TableCell className="px-4 py-3.5">
+                  <TableCell className="w-24 px-3 py-3.5 text-center">
+                    <Skeleton className="h-4 w-10 mx-auto" />
+                  </TableCell>
+                  <TableCell className="w-48 px-3 py-3.5">
                     <Skeleton className="h-4 w-32 mb-1" />
                     <Skeleton className="h-3 w-20" />
                   </TableCell>
-                  <TableCell className="px-4 py-3.5 text-center">
+                  <TableCell className="w-32 px-3 py-3.5 text-center">
                     <div className="flex justify-center">
-                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-6 w-20 rounded-md" />
                     </div>
                   </TableCell>
-                  <TableCell className="px-5 py-3.5 text-right">
+                  <TableCell className="w-36 px-5 py-3.5 text-right">
                     <div className="flex justify-end gap-1.5">
-                      <Skeleton className="h-8 w-20 rounded-md" />
+                      <Skeleton className="h-8 w-18 rounded-md" />
                       <Skeleton className="h-8 w-8 rounded-md" />
                     </div>
                   </TableCell>
@@ -489,25 +529,30 @@ export default function StudentTopicsPage() {
             {isFetchingNextPage &&
               Array.from({ length: 3 }).map((_, i) => (
                 <TableRow key={`skeleton-more-${i}`} className="hover:bg-transparent">
-                  <TableCell className="min-w-[280px] max-w-[380px] w-[380px] px-5 py-3.5">
-                    <Skeleton className="h-4 w-3/4 mb-1.5" />
-                    <Skeleton className="h-3 w-1/2" />
+                  <TableCell className="px-5 py-3.5">
+                    <div className="max-w-[380px]">
+                      <Skeleton className="h-4 w-3/4 mb-1.5" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
                   </TableCell>
-                  <TableCell className="w-28 px-4 py-3.5">
+                  <TableCell className="w-24 px-3 py-3.5">
                     <Skeleton className="h-4 w-12" />
                   </TableCell>
-                  <TableCell className="px-4 py-3.5">
+                  <TableCell className="w-24 px-3 py-3.5 text-center">
+                    <Skeleton className="h-4 w-10 mx-auto" />
+                  </TableCell>
+                  <TableCell className="w-48 px-3 py-3.5">
                     <Skeleton className="h-4 w-32 mb-1" />
                     <Skeleton className="h-3 w-20" />
                   </TableCell>
-                  <TableCell className="px-4 py-3.5 text-center">
+                  <TableCell className="w-32 px-3 py-3.5 text-center">
                     <div className="flex justify-center">
-                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-6 w-20 rounded-md" />
                     </div>
                   </TableCell>
-                  <TableCell className="px-5 py-3.5 text-right">
+                  <TableCell className="w-36 px-5 py-3.5 text-right">
                     <div className="flex justify-end gap-1.5">
-                      <Skeleton className="h-8 w-20 rounded-md" />
+                      <Skeleton className="h-8 w-18 rounded-md" />
                       <Skeleton className="h-8 w-8 rounded-md" />
                     </div>
                   </TableCell>
