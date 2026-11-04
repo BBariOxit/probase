@@ -1,7 +1,10 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useActiveSemester, useMyEligibleProjectTypes } from '@/lib/api/master-data';
+import { useMyGroup } from '@/lib/api/registration';
 import type { SessionUser } from '@/lib/api/types';
 import { NAV_BY_ROLE, type NavItem } from '@/lib/nav';
 import { cn } from '@/lib/utils';
@@ -60,6 +63,54 @@ function NavEntry({ item }: { item: NavItem }) {
 }
 
 export function AppSidebar({ user }: { user: SessionUser }) {
+  const isStudent = user.role === 'STUDENT';
+  const { data: myGroup } = useMyGroup({ enabled: isStudent });
+  const activeSemester = useActiveSemester();
+  const { data: eligibleTypes } = useMyEligibleProjectTypes(
+    isStudent ? activeSemester?.id : undefined,
+  );
+
+  const isKLTN = useMemo(() => {
+    if (!isStudent) return false;
+    if (myGroup?.topic?.projectType) {
+      const pt = myGroup.topic.projectType;
+      const code = pt.code?.toUpperCase() ?? '';
+      const name = pt.name?.toLowerCase() ?? '';
+      return (
+        code === 'DATN' ||
+        name.includes('khóa luận') ||
+        name.includes('tốt nghiệp')
+      );
+    }
+    if (eligibleTypes && eligibleTypes.length > 0) {
+      return eligibleTypes.some((pt) => {
+        const code = pt.code?.toUpperCase() ?? '';
+        const name = pt.name?.toLowerCase() ?? '';
+        return (
+          code === 'DATN' ||
+          name.includes('khóa luận') ||
+          name.includes('tốt nghiệp')
+        );
+      });
+    }
+    return false;
+  }, [isStudent, myGroup, eligibleTypes]);
+
+  const navGroups = useMemo(() => {
+    const rawGroups = NAV_BY_ROLE[user.role];
+    if (!isStudent) return rawGroups;
+
+    return rawGroups.map((group) => ({
+      ...group,
+      items: group.items.filter((item) => {
+        if (item.href === '/student/defense') {
+          return isKLTN;
+        }
+        return true;
+      }),
+    }));
+  }, [user.role, isStudent, isKLTN]);
+
   return (
     <Sidebar variant="sidebar" collapsible="icon">
       <SidebarHeader className="h-14 flex flex-row items-center justify-start px-4 border-b border-white/8 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
@@ -77,7 +128,7 @@ export function AppSidebar({ user }: { user: SessionUser }) {
       </SidebarHeader>
 
       <SidebarContent className="gap-4 px-1 py-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-2 group-data-[collapsible=icon]:gap-1">
-        {NAV_BY_ROLE[user.role].map((group, index) => (
+        {navGroups.map((group, index) => (
           <SidebarGroup
             key={group.label ?? index}
             className="px-3 py-0 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-0"

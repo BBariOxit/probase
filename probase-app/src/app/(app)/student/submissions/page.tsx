@@ -11,6 +11,7 @@ import { useRequireRole } from '@/lib/auth/use-require-role';
 import { EmptyState } from '@/components/shared/empty-state';
 import { FormError } from '@/components/shared/form-error';
 import { PageWithRail } from '@/components/layout/page-with-rail';
+import { StudentOutlineCard } from '@/components/outlines/student-outline-card';
 import { SubmissionCard } from '@/components/submissions/submission-card';
 import { SubmissionDeadlines } from '@/components/submissions/submission-deadlines';
 import { Button } from '@/components/ui/button';
@@ -95,60 +96,66 @@ export default function StudentSubmissionsPage() {
         </>
       }
     >
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="font-heading text-sm font-semibold tracking-tight">
-          Đã nộp
-        </h2>
-        {/*
-          Nothing to hand in until the faculty has said what. The button is
-          hidden rather than disabled: a greyed control invites hunting for the
-          trick that enables it, and the empty deadline list beside it has
-          already given the reason.
-        */}
-        {group.requirements.length > 0 && (
-          <Button onClick={() => setSubmitting(true)}>
-            <Upload />
-            Nộp bài
-          </Button>
-        )}
-      </div>
+      <div className="space-y-6">
+        <StudentOutlineCard />
 
-      {error && (
-        <p className="text-sm text-destructive">Không tải được bài nộp.</p>
-      )}
-
-      {isPending && (
-        <div className="flex justify-center py-16">
-          <Loader2 className="size-5 animate-spin text-muted-foreground" />
-        </div>
-      )}
-
-      {!isPending && submissions.length === 0 && (
-        <div className="rounded-xl border">
-          <EmptyState
-            icon={FileUp}
-            title="Nhóm bạn chưa nộp gì cả."
-            action={
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSubmitting(true)}
-              >
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-heading text-sm font-semibold tracking-tight">
+              Bài nộp báo cáo
+            </h2>
+            {/*
+              Nothing to hand in until the faculty has said what. The button is
+              hidden rather than disabled: a greyed control invites hunting for the
+              trick that enables it, and the empty deadline list beside it has
+              already given the reason.
+            */}
+            {group.requirements.length > 0 && (
+              <Button onClick={() => setSubmitting(true)}>
                 <Upload />
-                Nộp bài đầu tiên
+                Nộp bài
               </Button>
-            }
-          />
-        </div>
-      )}
+            )}
+          </div>
 
-      <ul className="space-y-3">
-        {submissions.map((submission) => (
-          <li key={submission.id}>
-            <SubmissionCard submission={submission} />
-          </li>
-        ))}
-      </ul>
+          {error && (
+            <p className="text-sm text-destructive">Không tải được bài nộp.</p>
+          )}
+
+          {isPending && (
+            <div className="flex justify-center py-16">
+              <Loader2 className="size-5 animate-spin text-muted-foreground" />
+            </div>
+          )}
+
+          {!isPending && submissions.length === 0 && (
+            <div className="rounded-xl border">
+              <EmptyState
+                icon={FileUp}
+                title="Nhóm bạn chưa nộp bài báo cáo nào."
+                action={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSubmitting(true)}
+                  >
+                    <Upload />
+                    Nộp bài đầu tiên
+                  </Button>
+                }
+              />
+            </div>
+          )}
+
+          <ul className="space-y-3">
+            {submissions.map((submission) => (
+              <li key={submission.id}>
+                <SubmissionCard submission={submission} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
 
       {submitting && (
         <SubmitDialog

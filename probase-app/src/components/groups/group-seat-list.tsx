@@ -181,10 +181,7 @@ function EmptySeat() {
       </span>
 
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-slate-600 dark:text-neutral-400">Chỗ còn trống</p>
-        <p className="mt-0.5 truncate text-xs text-muted-foreground">
-          Trưởng nhóm có thể mời thêm bạn bằng MSSV
-        </p>
+        <p className="text-sm font-medium text-slate-500 dark:text-neutral-400">Chỗ còn trống</p>
       </div>
     </li>
   );

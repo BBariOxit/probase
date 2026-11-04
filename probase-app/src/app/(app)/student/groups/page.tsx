@@ -6,13 +6,7 @@ import { useActiveSemester, useMyRound } from '@/lib/api/master-data';
 import { useMyGroup } from '@/lib/api/registration';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { EmptyState } from '@/components/shared/empty-state';
-import { GroupTopicBrief } from '@/components/groups/group-topic-brief';
 import { MyGroupPanel } from '@/components/groups/my-group-panel';
-import { StudentOutlineCard } from '@/components/outlines/student-outline-card';
-import { StudentProgressSection } from '@/components/progress/student-progress-section';
-import { StudentDefenseSection } from '@/components/reviews/student-defense-section';
-import { PageWithRail } from '@/components/layout/page-with-rail';
-import { RoundTimeline } from '@/components/rounds/round-timeline';
 import { Button } from '@/components/ui/button';
 
 export default function StudentGroupPage() {
@@ -39,10 +33,8 @@ export default function StudentGroupPage() {
 
   if (!group) {
     return (
-      <PageWithRail
-        rail={round && <RoundTimeline round={round} hasGroup={false} />}
-      >
-        <div className="rounded-xl border">
+      <div className="max-w-4xl">
+        <div className="rounded-xl border border-slate-200 dark:border-neutral-700/80 bg-white dark:bg-[#141414]">
           <EmptyState
             icon={Users}
             title="Bạn chưa đăng ký đề tài nào."
@@ -53,23 +45,14 @@ export default function StudentGroupPage() {
             }
           />
         </div>
-      </PageWithRail>
+      </div>
     );
   }
 
   return (
-    <PageWithRail rail={round && <RoundTimeline round={round} hasGroup />}>
-      {/*
-        Editable only while the gate is genuinely open. An extension does not
-        count: it reopens registration for students who ended up without a group,
-        and leaves every group already formed exactly as it is.
-      */}
+    <div className="max-w-4xl space-y-6">
       <MyGroupPanel group={group} canEdit={round?.phase === 'OPEN'} />
-      <StudentOutlineCard />
-      <StudentProgressSection />
-      <StudentDefenseSection groupId={group.id} />
-      <GroupTopicBrief topicId={group.topicId} />
-    </PageWithRail>
+    </div>
   );
 }
 

@@ -148,7 +148,7 @@ export function MyGroupPanel({
             <Input
               value={studentCode}
               onChange={(e) => setStudentCode(e.target.value)}
-              placeholder="Nhập MSSV (ví dụ: 2212345)…"
+              placeholder="Nhập MSSV…"
               className="h-9 text-xs sm:text-sm bg-white dark:bg-[#141414] border-slate-300 dark:border-neutral-700"
               disabled={invite.isPending}
             />
@@ -166,9 +166,6 @@ export function MyGroupPanel({
               Mời
             </Button>
           </form>
-          <p className="text-2xs text-muted-foreground">
-            Hệ thống sẽ gửi thông báo và email đến sinh viên được mời.
-          </p>
         </div>
       )}
 
