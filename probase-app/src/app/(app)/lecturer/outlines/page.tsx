@@ -69,31 +69,31 @@ function OutlineStatusBadge({ status }: { status?: OutlineStatus | null }) {
   switch (status) {
     case 'APPROVED_BY_LECTURER':
       return (
-        <Badge className="bg-emerald-600/15 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/30 gap-1 px-2.5 py-0.5 text-xs font-medium">
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
           <CheckCircle2 className="size-3.5" />
           Đã duyệt
-        </Badge>
+        </span>
       );
     case 'SUBMITTED':
       return (
-        <Badge className="bg-amber-500/15 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-500/30 gap-1 px-2.5 py-0.5 text-xs font-medium">
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">
           <Clock className="size-3.5" />
           Chờ duyệt
-        </Badge>
+        </span>
       );
     case 'NEEDS_REVISION':
       return (
-        <Badge className="bg-rose-500/15 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300 border border-rose-500/30 gap-1 px-2.5 py-0.5 text-xs font-medium">
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 dark:text-rose-400 whitespace-nowrap">
           <AlertCircle className="size-3.5" />
           Cần chỉnh sửa
-        </Badge>
+        </span>
       );
     default:
       return (
-        <Badge variant="outline" className="text-muted-foreground gap-1 px-2.5 py-0.5 text-xs">
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-neutral-400 whitespace-nowrap">
           <FileText className="size-3.5" />
           Chưa nộp
-        </Badge>
+        </span>
       );
   }
 }

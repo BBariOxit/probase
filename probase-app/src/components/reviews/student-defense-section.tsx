@@ -17,7 +17,6 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useGroupReviews } from '@/lib/api/reviews';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 interface StudentDefenseSectionProps {
@@ -117,19 +116,19 @@ export function StudentDefenseSection({ groupId }: StudentDefenseSectionProps) {
                 Tiến độ đợt 2 (≥ 50%)
               </span>
               {stage2 ? (
-                <Badge
+                <span
                   className={
                     stage2Passed
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] h-4.5 px-1.5'
-                      : 'bg-rose-500/10 text-rose-400 border-rose-500/20 text-[10px] h-4.5 px-1.5'
+                      ? 'text-emerald-600 dark:text-emerald-400 text-xs font-medium'
+                      : 'text-rose-600 dark:text-rose-400 text-xs font-medium'
                   }
                 >
                   {stage2Passed ? 'Đạt' : 'Chưa đạt'}
-                </Badge>
+                </span>
               ) : (
-                <Badge variant="outline" className="text-zinc-500 border-zinc-700/40 text-[10px] h-4.5 px-1.5">
+                <span className="text-slate-500 dark:text-neutral-400 text-xs font-medium">
                   Chưa nộp
-                </Badge>
+                </span>
               )}
             </div>
             <p className="text-xs font-medium text-foreground">
@@ -144,19 +143,19 @@ export function StudentDefenseSection({ groupId }: StudentDefenseSectionProps) {
                 Ý kiến GVHD
               </span>
               {supervisorReview ? (
-                <Badge
+                <span
                   className={
                     supervisorReview.isDefenseAllowed
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] h-4.5 px-1.5'
-                      : 'bg-rose-500/10 text-rose-400 border-rose-500/20 text-[10px] h-4.5 px-1.5'
+                      ? 'text-emerald-600 dark:text-emerald-400 text-xs font-medium'
+                      : 'text-rose-600 dark:text-rose-400 text-xs font-medium'
                   }
                 >
                   {supervisorReview.isDefenseAllowed ? 'Đồng ý' : 'Không cho'}
-                </Badge>
+                </span>
               ) : (
-                <Badge variant="outline" className="text-amber-400 border-amber-500/30 text-[10px] h-4.5 px-1.5">
+                <span className="text-amber-600 dark:text-amber-400 text-xs font-medium">
                   Chờ duyệt
-                </Badge>
+                </span>
               )}
             </div>
             <p className="text-xs text-foreground truncate">
@@ -171,19 +170,19 @@ export function StudentDefenseSection({ groupId }: StudentDefenseSectionProps) {
                 Ý kiến GVPB
               </span>
               {reviewerReview ? (
-                <Badge
+                <span
                   className={
                     reviewerReview.isDefenseAllowed
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] h-4.5 px-1.5'
-                      : 'bg-rose-500/10 text-rose-400 border-rose-500/20 text-[10px] h-4.5 px-1.5'
+                      ? 'text-emerald-600 dark:text-emerald-400 text-xs font-medium'
+                      : 'text-rose-600 dark:text-rose-400 text-xs font-medium'
                   }
                 >
                   {reviewerReview.isDefenseAllowed ? 'Đồng ý' : 'Không cho'}
-                </Badge>
+                </span>
               ) : (
-                <Badge variant="outline" className="text-amber-400 border-amber-500/30 text-[10px] h-4.5 px-1.5">
+                <span className="text-amber-600 dark:text-amber-400 text-xs font-medium">
                   Chờ duyệt
-                </Badge>
+                </span>
               )}
             </div>
             <p className="text-xs text-foreground truncate">

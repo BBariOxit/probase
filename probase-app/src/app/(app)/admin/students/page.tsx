@@ -675,8 +675,7 @@ function StudentRow({ student }: { student: StudentRosterRow }) {
             {student.group.topic.title}
           </p>
         ) : (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-neutral-400 bg-slate-100/80 dark:bg-neutral-800/60 border border-slate-200/80 dark:border-neutral-700/60">
-            <span className="size-1.5 rounded-full bg-slate-400 dark:bg-neutral-500" />
+          <span className="text-xs font-medium text-primary">
             Chưa có đề tài
           </span>
         )}
