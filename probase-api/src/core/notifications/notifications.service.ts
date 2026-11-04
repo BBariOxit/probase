@@ -1,3 +1,4 @@
+import { NotificationTemplates } from './notification-templates';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
   GroupMemberStatus,
@@ -160,3 +161,19 @@ export class NotificationsService {
     return students.map((student) => student.userId);
   }
 }
+
+export { NotificationTemplates   async studentsInCohorts(cohorts: string[]): Promise<number[]> {
+    if (cohorts.length === 0) return [];
+
+    const students = await this.prisma.studentProfile.findMany({
+      where: {
+        cohort: { in: cohorts },
+        user: { isActive: true },
+      },
+      select: { userId: true },
+    });
+
+    return students.map((s) => s.userId);
+  }
+
+};

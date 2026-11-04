@@ -825,8 +825,8 @@ async function main() {
       data: {
         userId,
         type: 'REGISTRATION_CLOSING_SOON',
-        title: 'Kế hoạch Đồ án & Khóa luận tốt nghiệp HK1',
-        content: `Học kỳ 1 năm học ${currentYear}–${currentYear + 1} đã chính thức mở đợt đăng ký đề tài và nộp đề cương M03 theo đúng quy định của Khoa CNTT.`,
+        title: 'Thông báo về việc mở đợt đăng ký đồ án',
+        content: `Học kỳ 1 năm học ${currentYear}–${currentYear + 1} đã chính thức mở đợt đăng ký đề tài.\n\nSinh viên đủ điều kiện vui lòng nhanh tay theo dõi danh sách đề tài và đăng ký trước thời hạn quy định của Khoa.`,
       },
     });
   }
