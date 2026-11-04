@@ -2,6 +2,7 @@
 
 import { GripVertical, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { DatePicker } from '@/components/ui/date-picker';
 
 export interface RequirementRow {
   id?: number;
@@ -93,7 +94,7 @@ export function RoundRequirementsEditor({
                 <GripVertical className="h-4 w-4" />
               </span>
 
-              {/* Ô nhập tên bài (flex-1) - Khoét lõm #141414, viền border-neutral-700 */}
+              {/* Ô nhập tên bài (flex-1) */}
               <input
                 id={`req-name-${typeId}-${index}`}
                 value={row.name}
@@ -103,14 +104,14 @@ export function RoundRequirementsEditor({
                 className="h-9 flex-1 min-w-0 rounded-lg border-[1.5px] border-[#c4c9d9] bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-[#2563eb] focus:outline-none focus:ring-1 focus:ring-[#2563eb] dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary disabled:opacity-50"
               />
 
-              {/* Ô chọn hạn nộp (w-40) - Khoét lõm #141414, viền border-neutral-700 */}
-              <input
+              {/* Ô chọn hạn nộp (w-44) - DatePicker dd/MM/yyyy */}
+              <DatePicker
                 id={`req-due-${typeId}-${index}`}
-                type="date"
                 value={row.due}
                 disabled={disabled}
-                onChange={(e) => patch(index, { due: e.target.value })}
-                className="h-9 w-40 shrink-0 rounded-lg border-[1.5px] border-[#c4c9d9] bg-white px-3 text-xs text-slate-900 transition focus:border-[#2563eb] focus:outline-none focus:ring-1 focus:ring-[#2563eb] dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100 dark:focus:border-primary dark:focus:ring-1 dark:focus:ring-primary disabled:opacity-50"
+                onChange={(due) => patch(index, { due })}
+                className="w-44 shrink-0"
+                placeholder="dd/mm/yyyy"
               />
 
               {/* Nút Bắt buộc (Pill Tag) */}
@@ -129,7 +130,7 @@ export function RoundRequirementsEditor({
                 {row.isRequired ? 'Bắt buộc' : 'Tùy chọn'}
               </button>
 
-              {/* Nút xóa (Icon dạng trần, không viền) */}
+              {/* Nút xóa */}
               <button
                 type="button"
                 disabled={disabled}
