@@ -5,6 +5,7 @@ import { useQueries, useQueryClient } from '@tanstack/react-query';
 import {
   Calendar,
   Clock,
+  Copy,
   GraduationCap,
   Info,
   Loader2,
@@ -34,7 +35,23 @@ import {
   type RequirementRow,
 } from '@/components/admin/round-requirements-editor';
 import { StatusPill, type StatusTone } from '@/components/shared/status-pill';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -198,6 +215,17 @@ function checkTabDirty(
   return false;
 }
 
+function hasTabConfigData(tab: TabFormState | undefined): boolean {
+  if (!tab) return false;
+  return Boolean(
+    tab.start ||
+      tab.end ||
+      tab.officialStart ||
+      tab.officialEnd ||
+      (tab.requirements && tab.requirements.length > 0),
+  );
+}
+
 export default function SemesterRoundsPage({
   params,
 }: {
@@ -259,12 +287,12 @@ export default function SemesterRoundsPage({
   if (!allowed) return null;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div className="flex items-center gap-2">
-        <h1 className="font-heading text-xl font-bold tracking-tight text-slate-900 dark:text-neutral-100">
-          Đợt đăng ký · {semester?.name ?? `Học kỳ #${semesterId}`}
-        </h1>
-        <TooltipProvider delay={200}>
+    <TooltipProvider delay={200}>
+      <div className="mx-auto max-w-4xl space-y-6">
+        <div className="flex items-center gap-2">
+          <h1 className="font-heading text-xl font-bold tracking-tight text-slate-900 dark:text-neutral-100">
+            Đợt đăng ký · {semester?.name ?? `Học kỳ #${semesterId}`}
+          </h1>
           <Tooltip>
             <TooltipTrigger
               render={
@@ -282,42 +310,42 @@ export default function SemesterRoundsPage({
               Chỉ loại nào được kích hoạt mới mở đợt trong học kỳ này.
             </TooltipContent>
           </Tooltip>
-        </TooltipProvider>
-      </div>
+        </div>
 
-      {roundsError ? (
-        <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-6 text-center space-y-2">
-          <p className="text-sm font-medium text-destructive">
-            Không thể tải dữ liệu đợt đăng ký ({roundsError.message}).
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetchRounds()}
-            className="cursor-pointer"
-          >
-            Thử lại
-          </Button>
-        </div>
-      ) : isPending ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="size-5 animate-spin text-primary" />
-        </div>
-      ) : (
-        <PlanTabsForm
-          key={`${semesterId}-${version}`}
-          semesterId={semesterId}
-          projectTypes={projectTypes}
-          rounds={rounds}
-          initialRequirements={initialRequirements}
-          onSaved={async () => {
-            await refetchRounds();
-            requirementsQueries.forEach((q) => q.refetch());
-            setVersion((v) => v + 1);
-          }}
-        />
-      )}
-    </div>
+        {roundsError ? (
+          <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-6 text-center space-y-2">
+            <p className="text-sm font-medium text-destructive">
+              Không thể tải dữ liệu đợt đăng ký ({roundsError.message}).
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetchRounds()}
+              className="cursor-pointer"
+            >
+              Thử lại
+            </Button>
+          </div>
+        ) : isPending ? (
+          <div className="flex justify-center py-16">
+            <Loader2 className="size-5 animate-spin text-primary" />
+          </div>
+        ) : (
+          <PlanTabsForm
+            key={`${semesterId}-${version}`}
+            semesterId={semesterId}
+            projectTypes={projectTypes}
+            rounds={rounds}
+            initialRequirements={initialRequirements}
+            onSaved={async () => {
+              await refetchRounds();
+              requirementsQueries.forEach((q) => q.refetch());
+              setVersion((v) => v + 1);
+            }}
+          />
+        )}
+      </div>
+    </TooltipProvider>
   );
 }
 
@@ -347,6 +375,43 @@ function PlanTabsForm({
     () => new Map(rounds.map((round) => [round.projectTypeId, round])),
     [rounds],
   );
+
+  const [copyConfirm, setCopyConfirm] = useState<{
+    sourceTypeId: number;
+    targetTypeId: number;
+  } | null>(null);
+  const [manuallyDirtiedTabs, setManuallyDirtiedTabs] = useState<Set<number>>(
+    () => new Set(),
+  );
+
+  function handleExecuteCopy() {
+    if (!copyConfirm) return;
+    const { sourceTypeId, targetTypeId } = copyConfirm;
+    const src = formState[sourceTypeId];
+    if (!src) return;
+
+    patch(targetTypeId, {
+      enabled: true,
+      start: src.start,
+      end: src.end,
+      cohorts: src.cohorts,
+      targetCohort: src.targetCohort,
+      officialStart: src.officialStart,
+      officialEnd: src.officialEnd,
+      requirements: src.requirements.map((r) => ({
+        name: r.name,
+        due: r.due,
+        isRequired: r.isRequired,
+      })),
+    });
+
+    setManuallyDirtiedTabs((prev) => new Set(prev).add(targetTypeId));
+    setCopyConfirm(null);
+
+    const srcName =
+      projectTypes.find((t) => t.id === sourceTypeId)?.name ?? 'tab đã chọn';
+    toast.success(`Đã sao chép cấu hình từ ${srcName}`);
+  }
 
   const initialFormState: Record<number, TabFormState> = useMemo(() => {
     return Object.fromEntries(
@@ -388,6 +453,7 @@ function PlanTabsForm({
   }
 
   function isTabDirty(typeId: number): boolean {
+    if (manuallyDirtiedTabs.has(typeId)) return true;
     return checkTabDirty(formState[typeId], initialFormState[typeId]);
   }
 
@@ -477,6 +543,7 @@ function PlanTabsForm({
       await queryClient.invalidateQueries({ queryKey: ['rounds'] });
 
       toast.success('Đã lưu cấu hình đợt đăng ký thành công');
+      setManuallyDirtiedTabs(new Set());
       onSaved();
     } catch (err) {
       const msg =
@@ -564,12 +631,80 @@ function PlanTabsForm({
                     {round && <StatusPill {...PHASE[round.phase]} />}
                   </div>
 
-                  {locked && (
-                    <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-500/10 border border-amber-500/20 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-400">
-                      <Lock className="size-3.5" />
-                      Đợt đã đóng cổng — đổi hạn phải dùng Gia hạn
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {locked && (
+                      <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-500/10 border border-amber-500/20 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+                        <Lock className="size-3.5" />
+                        Đợt đã đóng cổng — đổi hạn phải dùng Gia hạn
+                      </span>
+                    )}
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={locked}
+                            className="h-8 gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-neutral-100 cursor-pointer"
+                          >
+                            <Copy className="size-3.5" />
+                            <span>Sao chép từ...</span>
+                          </Button>
+                        }
+                      />
+                      <DropdownMenuContent align="end" className="w-56">
+                        {projectTypes
+                          .filter((t) => t.id !== type.id)
+                          .map((other) => {
+                            const otherTab = formState[other.id];
+                            const hasData = hasTabConfigData(otherTab);
+
+                            const menuItem = (
+                              <DropdownMenuItem
+                                key={other.id}
+                                disabled={!hasData}
+                                onClick={() => {
+                                  if (hasData) {
+                                    setCopyConfirm({
+                                      sourceTypeId: other.id,
+                                      targetTypeId: type.id,
+                                    });
+                                  }
+                                }}
+                                className={cn(
+                                  'cursor-pointer flex items-center gap-2',
+                                  !hasData && 'cursor-not-allowed opacity-50',
+                                )}
+                              >
+                                <Copy className="size-3.5 shrink-0 text-muted-foreground" />
+                                <span className="truncate">{other.name}</span>
+                              </DropdownMenuItem>
+                            );
+
+                            if (!hasData) {
+                              return (
+                                <Tooltip key={other.id}>
+                                  <TooltipTrigger
+                                    render={
+                                      <span className="block w-full cursor-not-allowed">
+                                        {menuItem}
+                                      </span>
+                                    }
+                                  />
+                                  <TooltipContent side="left">
+                                    Tab này chưa có dữ liệu
+                                  </TooltipContent>
+                                </Tooltip>
+                              );
+                            }
+
+                            return menuItem;
+                          })}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
 
                 {!row.enabled ? (
@@ -769,6 +904,43 @@ function PlanTabsForm({
           Lưu cấu hình
         </button>
       </div>
+
+      <AlertDialog
+        open={copyConfirm !== null}
+        onOpenChange={(open) => {
+          if (!open) setCopyConfirm(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Sao chép cấu hình từ{' '}
+              {
+                projectTypes.find((t) => t.id === copyConfirm?.sourceTypeId)
+                  ?.name
+              }
+              ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Dữ liệu hiện tại của tab này sẽ bị ghi đè.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => setCopyConfirm(null)}
+              className="cursor-pointer"
+            >
+              Huỷ
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleExecuteCopy}
+              className="cursor-pointer"
+            >
+              Sao chép
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
