@@ -124,15 +124,19 @@ export default function StudentTopicsPage() {
   const rawTopics = data?.pages.flatMap((page) => page.items) ?? [];
   const rawTotal = data?.pages[0]?.total ?? 0;
 
-  // Filter topics for "Còn trống" (topics that have no group)
-  const topics = onlyAvailable
-    ? rawTopics.filter(
-        (t) =>
-          !t.activeGroup &&
-          !t.isFull &&
-          (t.occupiedSeats ?? 0) < t.maxStudents,
-      )
-    : rawTopics;
+  // Filter topics for "Còn trống" & lecturerId guarantee
+  const topics = rawTopics.filter((t) => {
+    if (
+      onlyAvailable &&
+      (t.activeGroup || t.isFull || (t.occupiedSeats ?? 0) >= t.maxStudents)
+    ) {
+      return false;
+    }
+    if (lecturerId !== ANY && t.lecturer?.id !== lecturerId) {
+      return false;
+    }
+    return true;
+  });
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const restoredRef = useRef(false);
@@ -253,97 +257,96 @@ export default function StudentTopicsPage() {
       )}
 
       {/* ── Khung tìm kiếm & bộ lọc: [Tìm tên đề tài...] [Loại đồ án ▾] [Giảng viên ▾] [Còn trống 🔘] ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-1 flex-wrap items-center gap-3">
-          {/* 1. Tìm tên đề tài */}
-          <div className="relative min-w-56 flex-1 sm:max-w-xs">
-            <Search className="pointer-events-none absolute left-3 top-2.5 size-4 text-slate-400 dark:text-neutral-500" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Tìm tên đề tài…"
-              className="pl-9 h-9 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
-              aria-label="Tìm tên đề tài"
-            />
-          </div>
-
-          {/* 2. Loại đồ án ▾ (KLTN / DACN / DACS) */}
-          <Select
-            value={effectiveProjectTypeId}
-            onValueChange={(val) => {
-              userChangedTypeRef.current = true;
-              setProjectTypeId(val as number);
-            }}
-          >
-            <SelectTrigger
-              className="h-9 min-w-36 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
-              aria-label="Lọc theo loại đồ án"
-            >
-              <SelectValue>
-                {(val) => {
-                  if (!val || val === ANY) return 'Tất cả loại đồ án';
-                  const type = projectTypes?.find((t) => t.id === val);
-                  if (!type) return 'Loại đồ án';
-                  return getProjectTypeAbbr(type).short;
-                }}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-[#1e1e1e] border-slate-200 dark:border-neutral-700">
-              <SelectItem value={ANY}>Tất cả loại đồ án</SelectItem>
-              {projectTypes?.map((type) => {
-                const abbr = getProjectTypeAbbr(type);
-                return (
-                  <SelectItem key={type.id} value={type.id}>
-                    <span className="font-medium">{abbr.short}</span>
-                    <span className="text-xs text-muted-foreground ml-2">
-                      ({abbr.full})
-                    </span>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-
-          {/* 3. Giảng viên ▾ (Combobox tìm kiếm) */}
-          <LecturerCombobox
-            lecturers={lecturers ?? []}
-            value={lecturerId}
-            onChange={setLecturerId}
-            triggerClassName="h-9 min-w-44 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+      <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+        {/* 1. Tìm tên đề tài */}
+        <div className="relative w-56 sm:w-64 max-w-xs shrink-0">
+          <Search className="pointer-events-none absolute left-3 top-2.5 size-4 text-slate-400 dark:text-neutral-500" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Tìm tên đề tài…"
+            className="pl-9 h-9 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+            aria-label="Tìm tên đề tài"
           />
+        </div>
 
-          {/* 4. Còn trống 🔘 (Toggle switch with solid primary background when ON) */}
-          <button
-            type="button"
-            role="switch"
-            aria-checked={onlyAvailable}
-            onClick={() => setOnlyAvailable((prev) => !prev)}
-            className={cn(
-              'inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs sm:text-sm font-medium transition-all cursor-pointer select-none shadow-2xs',
-              onlyAvailable
-                ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-xs'
-                : 'border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-600 dark:text-neutral-400 hover:border-slate-400 dark:hover:border-neutral-600',
-            )}
-            title={onlyAvailable ? 'Đang lọc đề tài còn trống (nhấn để tắt)' : 'Nhấn để chỉ hiện đề tài còn trống'}
+        {/* 2. Loại đồ án ▾ (KLTN / DACN / DACS) */}
+        <Select
+          value={effectiveProjectTypeId}
+          onValueChange={(val) => {
+            userChangedTypeRef.current = true;
+            setProjectTypeId(val as number);
+          }}
+        >
+          <SelectTrigger
+            className="h-9 w-32 sm:w-36 shrink-0 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+            aria-label="Lọc theo loại đồ án"
           >
-            <span>Còn trống</span>
+            <SelectValue>
+              {(val) => {
+                if (!val || val === ANY) return 'Tất cả loại đồ án';
+                const type = projectTypes?.find((t) => t.id === val);
+                if (!type) return 'Loại đồ án';
+                return getProjectTypeAbbr(type).short;
+              }}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent className="bg-white dark:bg-[#1e1e1e] border-slate-200 dark:border-neutral-700">
+            <SelectItem value={ANY}>Tất cả loại đồ án</SelectItem>
+            {projectTypes?.map((type) => {
+              const abbr = getProjectTypeAbbr(type);
+              return (
+                <SelectItem key={type.id} value={type.id}>
+                  <span className="font-medium">{abbr.short}</span>
+                  <span className="text-xs text-muted-foreground ml-2">
+                    ({abbr.full})
+                  </span>
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+
+        {/* 3. Giảng viên ▾ (Combobox tìm kiếm) */}
+        <LecturerCombobox
+          lecturers={lecturers ?? []}
+          value={lecturerId}
+          onChange={setLecturerId}
+          className="w-48 sm:w-52 shrink-0"
+          triggerClassName="h-9 w-full text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+        />
+
+        {/* 4. Còn trống 🔘 (Toggle switch with solid primary background when ON) */}
+        <button
+          type="button"
+          role="switch"
+          aria-checked={onlyAvailable}
+          onClick={() => setOnlyAvailable((prev) => !prev)}
+          className={cn(
+            'inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border px-3 text-xs sm:text-sm font-medium transition-all cursor-pointer select-none shadow-2xs',
+            onlyAvailable
+              ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-xs'
+              : 'border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-600 dark:text-neutral-400 hover:border-slate-400 dark:hover:border-neutral-600',
+          )}
+          title={onlyAvailable ? 'Đang lọc đề tài còn trống (nhấn để tắt)' : 'Nhấn để chỉ hiện đề tài còn trống'}
+        >
+          <span>Còn trống</span>
+          <span
+            className={cn(
+              'relative inline-flex h-4 w-7 shrink-0 items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out',
+              onlyAvailable
+                ? 'bg-black/25 dark:bg-black/35 ring-1 ring-white/30'
+                : 'bg-slate-300 dark:bg-neutral-700',
+            )}
+          >
             <span
               className={cn(
-                'relative inline-flex h-4 w-7 shrink-0 items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out',
-                onlyAvailable
-                  ? 'bg-black/25 dark:bg-black/35 ring-1 ring-white/30'
-                  : 'bg-slate-300 dark:bg-neutral-700',
+                'pointer-events-none block size-3 rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out',
+                onlyAvailable ? 'translate-x-3' : 'translate-x-0',
               )}
-            >
-              <span
-                className={cn(
-                  'pointer-events-none block size-3 rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out',
-                  onlyAvailable ? 'translate-x-3' : 'translate-x-0',
-                )}
-              />
-            </span>
-          </button>
-        </div>
+            />
+          </span>
+        </button>
       </div>
 
       {error && (
@@ -354,15 +357,15 @@ export default function StudentTopicsPage() {
 
       {/* ── Bảng dữ liệu dùng chung (Shared Table Component) ── */}
       <div className="flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-card shadow-2xs overflow-hidden">
-        <Table className="relative w-full min-w-[900px] text-left text-sm">
+        <Table className="relative w-full min-w-[850px] table-fixed text-left text-sm">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-full px-5">Tên đề tài</TableHead>
+              <TableHead className="px-5">Tên đề tài</TableHead>
               <TableHead className="w-24 px-3 whitespace-nowrap">Loại đồ án</TableHead>
               <TableHead className="w-24 px-3 text-center whitespace-nowrap">Số lượng</TableHead>
-              <TableHead className="w-48 px-3 whitespace-nowrap">Cán bộ hướng dẫn</TableHead>
+              <TableHead className="w-44 px-3 whitespace-nowrap">Cán bộ hướng dẫn</TableHead>
               <TableHead className="w-32 px-3 text-center whitespace-nowrap">Tình trạng</TableHead>
-              <TableHead className="w-36 px-5 text-right whitespace-nowrap">Thao tác</TableHead>
+              <TableHead className="w-32 px-5 text-right whitespace-nowrap">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -384,7 +387,7 @@ export default function StudentTopicsPage() {
                   onClick={() => setSelectedTopicId(topic.id)}
                 >
                   <TableCell className="px-5 py-3.5 align-middle">
-                    <div className="max-w-[380px] min-w-[280px]">
+                    <div className="max-w-[400px]">
                       <Link
                         href={`/student/topics/${topic.id}`}
                         className="font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words"
@@ -415,7 +418,7 @@ export default function StudentTopicsPage() {
                     </span>
                   </TableCell>
 
-                  <TableCell className="w-48 px-3 py-3.5 align-middle whitespace-nowrap">
+                  <TableCell className="w-44 px-3 py-3.5 align-middle whitespace-nowrap">
                     <span className="font-medium text-slate-800 dark:text-neutral-200">
                       {lecturerInfo.displayName}
                     </span>
@@ -434,7 +437,7 @@ export default function StudentTopicsPage() {
                     )}
                   </TableCell>
 
-                  <TableCell className="w-36 px-5 py-3.5 text-right whitespace-nowrap align-middle">
+                  <TableCell className="w-32 px-5 py-3.5 text-right whitespace-nowrap align-middle">
                     <div
                       className="flex items-center justify-end gap-1.5"
                       onClick={(e) => e.stopPropagation()}
@@ -496,7 +499,7 @@ export default function StudentTopicsPage() {
               Array.from({ length: 6 }).map((_, i) => (
                 <TableRow key={`skeleton-init-${i}`} className="hover:bg-transparent">
                   <TableCell className="px-5 py-3.5">
-                    <div className="max-w-[380px]">
+                    <div className="max-w-[400px]">
                       <Skeleton className="h-4 w-3/4 mb-1.5" />
                       <Skeleton className="h-3 w-1/2" />
                     </div>
@@ -507,7 +510,7 @@ export default function StudentTopicsPage() {
                   <TableCell className="w-24 px-3 py-3.5 text-center">
                     <Skeleton className="h-4 w-10 mx-auto" />
                   </TableCell>
-                  <TableCell className="w-48 px-3 py-3.5">
+                  <TableCell className="w-44 px-3 py-3.5">
                     <Skeleton className="h-4 w-32 mb-1" />
                     <Skeleton className="h-3 w-20" />
                   </TableCell>
@@ -516,7 +519,7 @@ export default function StudentTopicsPage() {
                       <Skeleton className="h-6 w-20 rounded-md" />
                     </div>
                   </TableCell>
-                  <TableCell className="w-36 px-5 py-3.5 text-right">
+                  <TableCell className="w-32 px-5 py-3.5 text-right">
                     <div className="flex justify-end gap-1.5">
                       <Skeleton className="h-8 w-18 rounded-md" />
                       <Skeleton className="h-8 w-8 rounded-md" />
@@ -530,7 +533,7 @@ export default function StudentTopicsPage() {
               Array.from({ length: 3 }).map((_, i) => (
                 <TableRow key={`skeleton-more-${i}`} className="hover:bg-transparent">
                   <TableCell className="px-5 py-3.5">
-                    <div className="max-w-[380px]">
+                    <div className="max-w-[400px]">
                       <Skeleton className="h-4 w-3/4 mb-1.5" />
                       <Skeleton className="h-3 w-1/2" />
                     </div>
@@ -541,7 +544,7 @@ export default function StudentTopicsPage() {
                   <TableCell className="w-24 px-3 py-3.5 text-center">
                     <Skeleton className="h-4 w-10 mx-auto" />
                   </TableCell>
-                  <TableCell className="w-48 px-3 py-3.5">
+                  <TableCell className="w-44 px-3 py-3.5">
                     <Skeleton className="h-4 w-32 mb-1" />
                     <Skeleton className="h-3 w-20" />
                   </TableCell>
@@ -550,7 +553,7 @@ export default function StudentTopicsPage() {
                       <Skeleton className="h-6 w-20 rounded-md" />
                     </div>
                   </TableCell>
-                  <TableCell className="w-36 px-5 py-3.5 text-right">
+                  <TableCell className="w-32 px-5 py-3.5 text-right">
                     <div className="flex justify-end gap-1.5">
                       <Skeleton className="h-8 w-18 rounded-md" />
                       <Skeleton className="h-8 w-8 rounded-md" />
@@ -581,7 +584,7 @@ export default function StudentTopicsPage() {
 
         {!hasNextPage && topics.length > 0 && !isFetchingNextPage && (
           <div className="py-4 text-center text-xs text-muted-foreground select-none border-t border-slate-200/80 dark:border-neutral-700/80">
-            Đã hiển thị tất cả <strong className="text-primary font-bold">{rawTotal}</strong> đề tài
+            Đã hiển thị tất cả <strong className="text-primary font-bold">{topics.length}</strong> đề tài
           </div>
         )}
       </div>

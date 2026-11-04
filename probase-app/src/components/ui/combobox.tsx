@@ -202,7 +202,7 @@ export function Combobox({
               data-slot="combobox-content"
               data-combobox-content="true"
               className={cn(
-                'z-[70] w-(--anchor-width) min-w-[260px] max-w-sm rounded-lg border border-slate-200 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] p-0 text-popover-foreground shadow-xl duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 overflow-hidden',
+                'z-[70] w-(--anchor-width) min-w-[200px] max-w-sm rounded-lg border border-slate-200 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] p-0 text-popover-foreground shadow-xl duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 overflow-hidden',
                 popupClassName,
               )}
             >
@@ -256,6 +256,11 @@ export function Combobox({
                         data-combobox-item="true"
                         role="option"
                         aria-selected={isSelected}
+                        onPointerDown={(e) => {
+                          // Prevent input blur before selection is processed
+                          e.preventDefault();
+                          handleSelect(option.value);
+                        }}
                         onClick={() => handleSelect(option.value)}
                         onMouseEnter={() => setHighlightedIndex(index)}
                         className={cn(
