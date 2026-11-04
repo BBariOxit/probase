@@ -8,7 +8,6 @@ import {
   FileSpreadsheet,
   FileUp,
   Loader2,
-  Sparkles,
   Upload,
 } from 'lucide-react';
 import {
@@ -120,10 +119,8 @@ export function EligibleStudentsImportDialog({
             <FileSpreadsheet className="size-5 text-primary" />
             Import danh sách SV đủ điều kiện làm đồ án
           </DialogTitle>
-          <DialogDescription>
-            Nhập danh sách sinh viên từ file Excel của Phòng Đào tạo thẩm định.
-            Hệ thống sẽ tự động kích hoạt trạng thái đủ điều kiện và tự động khởi tạo
-            tài khoản sinh viên nếu chưa có trong hệ thống.
+          <DialogDescription className="sr-only">
+            Import danh sách sinh viên đủ điều kiện làm đồ án
           </DialogDescription>
         </DialogHeader>
 
@@ -206,7 +203,14 @@ export function EligibleStudentsImportDialog({
                 onValueChange={(val) => setSelectedRoundId(val ? Number(val) : null)}
               >
                 <SelectTrigger id="round-select">
-                  <SelectValue placeholder="Chọn đợt đồ án…" />
+                  <SelectValue placeholder="Chọn đợt đồ án…">
+                    {(val) => {
+                      if (!val) return 'Chọn đợt đồ án…';
+                      const round = rounds?.find((r) => String(r.id) === String(val));
+                      if (!round) return 'Chọn đợt đồ án…';
+                      return `${round.projectType.name} (Học kỳ: ${semester?.name ?? ''})`;
+                    }}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {rounds?.map((round) => (
@@ -218,40 +222,30 @@ export function EligibleStudentsImportDialog({
               </Select>
             </div>
 
-            {/* Template action */}
-            <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 p-3">
-              <div className="space-y-0.5">
-                <p className="text-sm font-medium">Chưa có file chuẩn format DLU?</p>
-                <p className="text-xs text-muted-foreground">
-                  File mẫu gồm các cột MSSV, Họ tên, Lớp, Email, Ghi chú.
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadTemplate}
-                disabled={isDownloadingTemplate}
-                className="gap-1.5 shrink-0"
-              >
-                {isDownloadingTemplate ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <Download className="size-3.5 text-primary" />
-                )}
-                Tải file mẫu Excel
-              </Button>
-            </div>
-
-            {/* File dropzone */}
+            {/* File dropzone + Link "Tải file mẫu" nhỏ cạnh nhãn */}
             <div className="space-y-1.5">
-              <Label>
-                File danh sách sinh viên (.xlsx hoặc .csv){' '}
-                <span className="text-destructive">*</span>
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="eligible-file-input">
+                  File danh sách sinh viên (.xlsx hoặc .csv){' '}
+                  <span className="text-destructive">*</span>
+                </Label>
+                <button
+                  type="button"
+                  onClick={handleDownloadTemplate}
+                  disabled={isDownloadingTemplate}
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium cursor-pointer"
+                >
+                  {isDownloadingTemplate ? (
+                    <Loader2 className="size-3 animate-spin" />
+                  ) : (
+                    <Download className="size-3" />
+                  )}
+                  Tải file mẫu
+                </button>
+              </div>
               <label
                 htmlFor="eligible-file-input"
-                className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border/80 bg-background/50 p-6 text-center transition-all hover:border-primary/60 hover:bg-muted/40"
+                className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border/80 bg-background/50 p-6 text-center transition-all hover:border-primary/60 hover:bg-muted/40"
               >
                 {file ? (
                   <div className="space-y-1 text-center">
@@ -263,11 +257,11 @@ export function EligibleStudentsImportDialog({
                   </div>
                 ) : (
                   <div className="space-y-1.5">
-                    <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <Upload className="size-5" />
+                    <div className="mx-auto flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <Upload className="size-4.5" />
                     </div>
                     <p className="text-sm font-medium">
-                      Kéo thả file vào đây hoặc <span className="text-primary underline">chọn từ máy tính</span>
+                      Kéo thả file hoặc <span className="text-primary underline">chọn từ máy tính</span>
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Chấp nhận file Excel (.xlsx) hoặc file CSV (.csv) dung lượng tối đa 10MB
@@ -288,18 +282,6 @@ export function EligibleStudentsImportDialog({
                   }}
                 />
               </label>
-            </div>
-
-            <div className="rounded-lg bg-blue-500/10 p-3 text-xs text-blue-900 dark:text-blue-200">
-              <div className="flex items-center gap-1.5 font-semibold">
-                <Sparkles className="size-3.5 text-blue-600 dark:text-blue-400" />
-                <span>Tiện ích tự động hóa 2-trong-1</span>
-              </div>
-              <p className="mt-1 text-muted-foreground leading-relaxed">
-                Sinh viên chưa có tài khoản trong hệ thống sẽ được tự động kích hoạt tài khoản
-                mới với mật khẩu tạm thời. Sinh viên đã có tài khoản sẽ được gắn trạng thái đủ
-                điều kiện và nhận thông báo tức thời.
-              </p>
             </div>
 
             <DialogFooter className="pt-2">
