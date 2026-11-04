@@ -160,9 +160,7 @@ export class NotificationsService {
 
     return students.map((student) => student.userId);
   }
-}
-
-export { NotificationTemplates   async studentsInCohorts(cohorts: string[]): Promise<number[]> {
+  async studentsInCohorts(cohorts: string[]): Promise<number[]> {
     if (cohorts.length === 0) return [];
 
     const students = await this.prisma.studentProfile.findMany({
@@ -175,5 +173,6 @@ export { NotificationTemplates   async studentsInCohorts(cohorts: string[]): Pro
 
     return students.map((s) => s.userId);
   }
+}
 
-};
+export { NotificationTemplates };

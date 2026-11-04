@@ -163,7 +163,7 @@ export default function NotificationsPage() {
                 className={cn(
                   'group flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5 transition-colors cursor-pointer text-left',
                   !notice.isRead
-                    ? 'bg-blue-50/50 hover:bg-blue-100/60 dark:bg-blue-950/25 dark:hover:bg-blue-900/40'
+                    ? 'bg-slate-50/80 hover:bg-slate-100/80 dark:bg-neutral-800/40 dark:hover:bg-neutral-800/70'
                     : 'bg-card hover:bg-muted/40',
                 )}
               >

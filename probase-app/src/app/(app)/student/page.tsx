@@ -455,6 +455,7 @@ function StudentTopicsContent() {
                     <div className="w-full max-w-[340px] whitespace-normal">
                       <Link
                         href={`/student/topics/${topic.id}`}
+                        onClick={(e) => e.stopPropagation()}
                         className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words whitespace-normal line-clamp-2"
                       >
                         {topic.title}

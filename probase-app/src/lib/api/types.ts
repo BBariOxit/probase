@@ -201,6 +201,8 @@ export interface NotificationPage {
 export interface TopicListItem extends TopicAvailability {
   id: number;
   title: string;
+  titleVi?: string | null;
+  titleEn?: string | null;
   maxStudents: number;
   status: TopicStatus;
   majorId?: number | null;
@@ -228,6 +230,8 @@ export interface TopicListItem extends TopicAvailability {
 export interface TopicDetail extends TopicAvailability {
   id: number;
   title: string;
+  titleVi?: string | null;
+  titleEn?: string | null;
   description: string;
   expectedOutcomes: string;
   objectives?: string | null;

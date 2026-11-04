@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { EllipsisVertical, GraduationCap, Layers, Loader2, RotateCcw, UserPlus } from 'lucide-react';
+import { EllipsisVertical, GraduationCap, Layers, Loader2, LogOut, RotateCcw, Trash2, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useDisbandGroup,
@@ -65,10 +65,10 @@ export function MyGroupPanel({
   const { topic } = group;
 
   return (
-    <section className="space-y-5 rounded-xl border border-slate-300 dark:border-neutral-800 bg-white dark:bg-[#141414] p-5 shadow-xs">
-      <header className="space-y-2">
+    <section className="space-y-6 rounded-2xl border border-[#b8c0d0] dark:border-[#333338] bg-white dark:bg-[#1e1e1e] p-5 sm:p-6 shadow-sm">
+      <header className="space-y-3">
         <div className="flex items-start justify-between gap-3">
-          <h2 className="font-heading min-w-0 text-base sm:text-lg leading-snug font-bold tracking-tight text-slate-900 dark:text-neutral-100">
+          <h2 className="font-heading min-w-0 text-lg sm:text-xl leading-snug font-bold tracking-tight text-slate-900 dark:text-neutral-100">
             <Link
               href={`/student/topics/${topic.id}`}
               className="rounded-sm hover:text-primary hover:underline transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
@@ -85,7 +85,7 @@ export function MyGroupPanel({
                     variant="ghost"
                     size="icon-sm"
                     aria-label="Thao tác với nhóm"
-                    className="shrink-0 text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-100"
+                    className="shrink-0 text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-100 cursor-pointer"
                   />
                 }
               >
@@ -98,24 +98,29 @@ export function MyGroupPanel({
                       onClick={() =>
                         router.push(`/student?switchTopicForGroup=${group.id}`)
                       }
+                      className="cursor-pointer"
                     >
-                      <RotateCcw className="size-4 mr-1 text-slate-500" />
-                      Đổi đề tài
+                      <RotateCcw className="size-4 mr-1.5 text-slate-500" />
+                      <span>Đổi đề tài</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       variant="destructive"
                       onClick={() => setConfirming('disband')}
+                      className="cursor-pointer"
                     >
-                      Hủy đăng ký
+                      <Trash2 className="size-4 mr-1.5" />
+                      <span>Hủy đăng ký</span>
                     </DropdownMenuItem>
                   </>
                 ) : (
                   <DropdownMenuItem
                     variant="destructive"
                     onClick={() => setConfirming('leave')}
+                    className="cursor-pointer"
                   >
-                    Rời nhóm
+                    <LogOut className="size-4 mr-1.5" />
+                    <span>Rời nhóm</span>
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
@@ -123,10 +128,10 @@ export function MyGroupPanel({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-slate-700 dark:text-neutral-300 font-medium">
+        <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
           <Link
             href={`/lecturers/${topic.lecturer.id}`}
-            className="inline-flex items-center gap-1.5 rounded-sm hover:text-primary hover:underline transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#f7f8fc] hover:bg-[#eef1f8] dark:bg-[#26262a] dark:hover:bg-[#2e2e34] text-slate-700 dark:text-neutral-300 border border-[#b8c0d0] dark:border-[#383840] transition-colors font-medium"
           >
             <GraduationCap className="size-4 text-primary shrink-0" />
             <span>
@@ -135,7 +140,7 @@ export function MyGroupPanel({
                 : topic.lecturer.fullName}
             </span>
           </Link>
-          <span className="inline-flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#f7f8fc] dark:bg-[#26262a] text-slate-700 dark:text-neutral-300 border border-[#b8c0d0] dark:border-[#383840] font-medium">
             <Layers className="size-4 text-primary shrink-0" />
             <span>{topic.projectType.name}</span>
           </span>
@@ -145,17 +150,15 @@ export function MyGroupPanel({
       <GroupSeatList group={group} canEdit={canEdit} />
 
       {canEdit && group.isLeader && !group.isFull && (
-        <div className="space-y-2.5 pt-4 border-t border-slate-200 dark:border-neutral-800">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-slate-900 dark:text-neutral-100 flex items-center gap-1.5">
-              <UserPlus className="size-4 text-primary" />
+        <div className="rounded-xl border border-[#b8c0d0] dark:border-[#2e2e32] bg-[#eef1f8] dark:bg-[#161618] p-4 sm:p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <UserPlus className="size-4 text-primary" />
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-300">
               Mời thành viên bằng MSSV
-            </p>
-            <span className="text-xs text-slate-600 dark:text-neutral-400">
-              Còn <strong className="text-primary font-bold text-xs">{group.topic.maxStudents - group.occupiedSeats}</strong> chỗ trống
-            </span>
+            </h3>
           </div>
-          <form onSubmit={handleInvite} className="space-y-1.5">
+
+          <form onSubmit={handleInvite} className="space-y-2">
             <div className="flex gap-2">
               <Input
                 value={studentCode}
@@ -163,19 +166,19 @@ export function MyGroupPanel({
                   setStudentCode(e.target.value);
                   if (inviteError) setInviteError(null);
                 }}
-                placeholder="Nhập MSSV…"
+                placeholder="Nhập mã số sinh viên (ví dụ: 2266666)…"
                 className={cn(
-                  'h-10 text-xs sm:text-sm bg-white dark:bg-[#141414] border-[1.5px] text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 shadow-2xs',
+                  'h-10 text-sm bg-white dark:bg-[#202024] border border-[#a6b0c2] dark:border-[#383840] text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 shadow-2xs transition-colors',
                   inviteError
                     ? 'border-rose-500 focus-visible:border-rose-500 focus-visible:ring-rose-500/20'
-                    : 'border-slate-300 dark:border-neutral-700 focus-visible:border-primary',
+                    : 'border-slate-300 dark:border-neutral-700 hover:border-slate-400 dark:hover:border-neutral-600 focus-visible:border-primary',
                 )}
                 disabled={invite.isPending}
               />
               <Button
                 type="submit"
                 disabled={invite.isPending}
-                className="shrink-0 h-10 px-5 font-bold bg-primary hover:bg-primary/90 text-white shadow-xs cursor-pointer"
+                className="shrink-0 h-10 px-5 font-semibold bg-primary hover:bg-primary/90 text-white shadow-xs cursor-pointer"
               >
                 {invite.isPending ? (
                   <Loader2 className="size-4 animate-spin" />
@@ -191,6 +194,15 @@ export function MyGroupPanel({
               </p>
             )}
           </form>
+        </div>
+      )}
+
+      {group.isFull && (
+        <div className="flex items-center gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 px-4 py-3 text-xs font-medium text-emerald-800 dark:text-emerald-300">
+          <span className="flex size-5 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold">
+            ✓
+          </span>
+          <span>Nhóm đã đủ {group.occupiedSeats}/{group.topic.maxStudents} thành viên tối đa.</span>
         </div>
       )}
 
