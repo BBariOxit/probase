@@ -84,23 +84,23 @@
      MÀU CHỦ ĐẠO TOÀN DỰ ÁN (LIGHT MODE)
      -> Chỉnh sửa mã màu này để thay đổi toàn bộ nút, tab, icon, viền focus
      -------------------------------------------------------------------------- */
-  --primary: #3b82f6;
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
-  --ring: #3b82f6;
+  --ring: #2563eb;
 
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
-  --muted-foreground: #64748b;
+  --muted-foreground: #475569;
   --accent: #eff6ff;
-  --accent-foreground: #3b82f6;
+  --accent-foreground: #2563eb;
   --destructive: #ef4444;
   --border: #cbd5e1;
-  --input: #c4c9d9;
+  --input: #cbd5e1;
 
   --status-waiting: #d97706;
   --status-waiting-bg: #fef3c7;
-  --status-active: #3b82f6;
+  --status-active: #2563eb;
   --status-active-bg: #eff6ff;
   --status-success: #059669;
   --status-success-bg: #ecfdf5;

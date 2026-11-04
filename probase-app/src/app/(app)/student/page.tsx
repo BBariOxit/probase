@@ -260,98 +260,106 @@ export default function StudentTopicsPage() {
       )}
 
       {/* ── Khung tìm kiếm & bộ lọc: [Tìm tên đề tài...] [Loại đồ án ▾] [Giảng viên ▾] [Còn trống 🔘] ── */}
-      <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-        {/* 1. Tìm tên đề tài */}
-        <div className="relative w-56 sm:w-64 max-w-xs shrink-0">
-          <Search className="pointer-events-none absolute left-3 top-2.5 size-4 text-slate-400 dark:text-neutral-500" />
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Tìm tên đề tài…"
-            className="pl-9 h-9 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
-            aria-label="Tìm tên đề tài"
+      <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+          {/* 1. Tìm tên đề tài */}
+          <div className="relative w-56 sm:w-64 max-w-xs shrink-0">
+            <Search className="pointer-events-none absolute left-3 top-2.5 size-4 text-slate-400 dark:text-neutral-500" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Tìm tên đề tài…"
+              className="pl-9 h-9 text-xs sm:text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
+              aria-label="Tìm tên đề tài"
+            />
+          </div>
+
+          {/* 2. Loại đồ án ▾ (KLTN / DACN / DACS) */}
+          <Select
+            value={effectiveProjectTypeId}
+            onValueChange={(val) => {
+              userChangedTypeRef.current = true;
+              setProjectTypeId(val as number);
+            }}
+          >
+            <SelectTrigger
+              className="h-9 w-32 sm:w-36 shrink-0 text-xs sm:text-sm font-medium rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-800 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
+              aria-label="Lọc theo loại đồ án"
+            >
+              <SelectValue>
+                {(val) => {
+                  if (!val || val === ANY) return 'Tất cả loại đồ án';
+                  const type = projectTypes?.find((t) => t.id === val);
+                  if (!type) return 'Loại đồ án';
+                  return getProjectTypeAbbr(type).short;
+                }}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="w-auto min-w-[270px] whitespace-nowrap bg-white dark:bg-[#1e1e1e] border-slate-300 dark:border-neutral-700 shadow-xl">
+              <SelectItem value={ANY}>Tất cả loại đồ án</SelectItem>
+              {projectTypes?.map((type) => {
+                const abbr = getProjectTypeAbbr(type);
+                return (
+                  <SelectItem key={type.id} value={type.id}>
+                    <span className="font-semibold text-slate-900 dark:text-neutral-100">
+                      {abbr.full}
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-1.5 font-normal">
+                      ({abbr.short})
+                    </span>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+
+          {/* 3. Giảng viên ▾ (Combobox tìm kiếm) */}
+          <LecturerCombobox
+            lecturers={lecturers ?? []}
+            value={lecturerId}
+            onChange={setLecturerId}
+            className="w-48 sm:w-52 shrink-0"
+            triggerClassName="h-9 w-full text-xs sm:text-sm font-medium rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-800 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
           />
-        </div>
 
-        {/* 2. Loại đồ án ▾ (KLTN / DACN / DACS) */}
-        <Select
-          value={effectiveProjectTypeId}
-          onValueChange={(val) => {
-            userChangedTypeRef.current = true;
-            setProjectTypeId(val as number);
-          }}
-        >
-          <SelectTrigger
-            className="h-9 w-32 sm:w-36 shrink-0 text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
-            aria-label="Lọc theo loại đồ án"
-          >
-            <SelectValue>
-              {(val) => {
-                if (!val || val === ANY) return 'Tất cả loại đồ án';
-                const type = projectTypes?.find((t) => t.id === val);
-                if (!type) return 'Loại đồ án';
-                return getProjectTypeAbbr(type).short;
-              }}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent className="w-auto min-w-[270px] whitespace-nowrap bg-white dark:bg-[#1e1e1e] border-slate-200 dark:border-neutral-700 shadow-xl">
-            <SelectItem value={ANY}>Tất cả loại đồ án</SelectItem>
-            {projectTypes?.map((type) => {
-              const abbr = getProjectTypeAbbr(type);
-              return (
-                <SelectItem key={type.id} value={type.id}>
-                  <span className="font-medium text-slate-900 dark:text-neutral-100">
-                    {abbr.full}
-                  </span>
-                  <span className="text-xs text-muted-foreground ml-1.5 font-normal">
-                    ({abbr.short})
-                  </span>
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
-
-        {/* 3. Giảng viên ▾ (Combobox tìm kiếm) */}
-        <LecturerCombobox
-          lecturers={lecturers ?? []}
-          value={lecturerId}
-          onChange={setLecturerId}
-          className="w-48 sm:w-52 shrink-0"
-          triggerClassName="h-9 w-full text-xs sm:text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
-        />
-
-        {/* 4. Còn trống 🔘 (Toggle switch with solid primary background when ON) */}
-        <button
-          type="button"
-          role="switch"
-          aria-checked={onlyAvailable}
-          onClick={() => setOnlyAvailable((prev) => !prev)}
-          className={cn(
-            'inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border px-3 text-xs sm:text-sm font-medium transition-all cursor-pointer select-none shadow-2xs',
-            onlyAvailable
-              ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-xs'
-              : 'border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-600 dark:text-neutral-400 hover:border-slate-400 dark:hover:border-neutral-600',
-          )}
-          title={onlyAvailable ? 'Đang lọc đề tài còn trống (nhấn để tắt)' : 'Nhấn để chỉ hiện đề tài còn trống'}
-        >
-          <span>Còn trống</span>
-          <span
+          {/* 4. Còn trống 🔘 (Toggle switch with solid primary background when ON) */}
+          <button
+            type="button"
+            role="switch"
+            aria-checked={onlyAvailable}
+            onClick={() => setOnlyAvailable((prev) => !prev)}
             className={cn(
-              'relative inline-flex h-4 w-7 shrink-0 items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out',
+              'inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border px-3 text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none shadow-2xs',
               onlyAvailable
-                ? 'bg-black/25 dark:bg-black/35 ring-1 ring-white/30'
-                : 'bg-slate-300 dark:bg-neutral-700',
+                ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs'
+                : 'border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-300 hover:border-slate-400 dark:hover:border-neutral-600',
             )}
+            title={onlyAvailable ? 'Đang lọc đề tài còn trống (nhấn để tắt)' : 'Nhấn để chỉ hiện đề tài còn trống'}
           >
+            <span>Còn trống</span>
             <span
               className={cn(
-                'pointer-events-none block size-3 rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out',
-                onlyAvailable ? 'translate-x-3' : 'translate-x-0',
+                'relative inline-flex h-4 w-7 shrink-0 items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out',
+                onlyAvailable
+                  ? 'bg-black/25 dark:bg-black/35 ring-1 ring-white/30'
+                  : 'bg-slate-300 dark:bg-neutral-700',
               )}
-            />
+            >
+              <span
+                className={cn(
+                  'pointer-events-none block size-3 rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out',
+                  onlyAvailable ? 'translate-x-3' : 'translate-x-0',
+                )}
+              />
+            </span>
+          </button>
+        </div>
+
+        {topics.length > 0 && (
+          <span className="text-xs sm:text-sm font-medium text-slate-600 dark:text-neutral-400 select-none ml-auto">
+            <strong className="text-primary font-bold text-sm">{topics.length}</strong> đề tài
           </span>
-        </button>
+        )}
       </div>
 
       {error && (
@@ -396,7 +404,7 @@ export default function StudentTopicsPage() {
                     <div className="max-w-[400px]">
                       <Link
                         href={`/student/topics/${topic.id}`}
-                        className="font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words"
+                        className="font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words"
                         onClick={(e) => {
                           if (!e.metaKey && !e.ctrlKey) {
                             e.preventDefault();
@@ -411,7 +419,7 @@ export default function StudentTopicsPage() {
 
                   <TableCell className="w-24 px-3 py-3.5 align-middle whitespace-nowrap">
                     <span
-                      className="font-medium text-slate-700 dark:text-neutral-300"
+                      className="font-semibold text-slate-800 dark:text-neutral-200"
                       title={typeInfo.full}
                     >
                       {typeInfo.short}
@@ -419,13 +427,16 @@ export default function StudentTopicsPage() {
                   </TableCell>
 
                   <TableCell className="w-24 px-3 py-3.5 text-center align-middle whitespace-nowrap">
-                    <span className="font-medium text-slate-700 dark:text-neutral-300">
-                      {topic.maxStudents} SV
+                    <span className="font-semibold text-primary">
+                      {topic.maxStudents}
+                    </span>{' '}
+                    <span className="font-medium text-slate-600 dark:text-neutral-400">
+                      SV
                     </span>
                   </TableCell>
 
                   <TableCell className="w-44 px-3 py-3.5 align-middle whitespace-nowrap">
-                    <span className="font-medium text-slate-800 dark:text-neutral-200">
+                    <span className="font-medium text-slate-900 dark:text-neutral-100">
                       {lecturerInfo.displayName}
                     </span>
                     {lecturerInfo.departmentRole && (

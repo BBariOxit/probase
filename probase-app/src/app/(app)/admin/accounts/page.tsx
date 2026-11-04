@@ -156,7 +156,7 @@ export default function AccountsPage() {
             value={search}
             onChange={(event) => refilter(() => setSearch(event.target.value))}
             placeholder="Tìm theo tên hoặc email…"
-            className="pl-8 h-9 text-xs rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] focus-visible:border-primary"
+            className="pl-8 h-9 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#141414] focus-visible:border-primary shadow-2xs"
             aria-label="Tìm tài khoản"
           />
         </div>
@@ -165,7 +165,7 @@ export default function AccountsPage() {
           value={role}
           onValueChange={(value) => refilter(() => setRole(value as string))}
         >
-          <SelectTrigger className="w-40 h-9 text-xs rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700" aria-label="Lọc theo vai trò">
+          <SelectTrigger className="w-40 h-9 text-xs font-medium rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 shadow-2xs" aria-label="Lọc theo vai trò">
             <SelectValue>
               {(value) =>
                 ROLE_FILTERS.find((option) => option.value === value)?.label
@@ -185,7 +185,7 @@ export default function AccountsPage() {
           value={status}
           onValueChange={(value) => refilter(() => setStatus(value as string))}
         >
-          <SelectTrigger className="w-44 h-9 text-xs rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700" aria-label="Lọc theo trạng thái">
+          <SelectTrigger className="w-44 h-9 text-xs font-medium rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 shadow-2xs" aria-label="Lọc theo trạng thái">
             <SelectValue>
               {(value) =>
                 STATUS_FILTERS.find((option) => option.value === value)?.label
@@ -254,11 +254,11 @@ export default function AccountsPage() {
                     </a>
                   </TableCell>
                   <TableCell className="tabular-nums">
-                    <span className="font-mono text-xs font-medium text-slate-800 dark:text-neutral-200">
+                    <span className="font-mono text-xs font-semibold text-primary">
                       {codeOf(user) ?? '—'}
                     </span>
                     {user.studentProfile?.class && (
-                      <span className="mt-0.5 block text-xs font-medium text-muted-foreground">
+                      <span className="mt-0.5 block text-xs font-medium text-slate-700 dark:text-neutral-300">
                         {user.studentProfile.class}
                       </span>
                     )}

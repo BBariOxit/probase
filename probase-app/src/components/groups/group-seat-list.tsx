@@ -41,13 +41,15 @@ export function GroupSeatList({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium">Thành viên ({occupied}/{capacity})</h3>
+        <h3 className="text-sm font-bold text-slate-900 dark:text-neutral-100">
+          Thành viên <span className="text-primary font-bold">({occupied}/{capacity})</span>
+        </h3>
         {busy && (
           <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
         )}
       </div>
 
-      <ul className="divide-y divide-slate-200 dark:divide-neutral-700/80 rounded-lg border border-slate-200 dark:border-neutral-700 bg-white dark:bg-[#141414]">
+      <ul className="divide-y divide-slate-200 dark:divide-neutral-800 rounded-lg border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#141414] overflow-hidden shadow-2xs">
         {group.members.map((member) => (
           <MemberSeat
             key={member.id}
@@ -99,23 +101,33 @@ function MemberSeat({
       />
 
       <div className="min-w-0 flex-1">
-        <p className="flex flex-wrap items-center gap-x-2 text-sm font-medium">
-          <span className="truncate">{student.fullName}</span>
+        <p className="flex flex-wrap items-center gap-x-2 text-sm">
+          <span className="truncate font-bold text-slate-900 dark:text-neutral-100">{student.fullName}</span>
           {member.isLeader && (
-            <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-normal text-muted-foreground">
+            <span className="rounded-md bg-primary/10 text-primary border border-primary/25 px-2 py-0.5 text-xs font-semibold">
               Trưởng nhóm
             </span>
           )}
           {member.joinSource === 'ASSIGNED' && (
-            <span className="rounded-md bg-status-waiting-bg px-1.5 py-0.5 text-xs font-normal text-status-waiting">
+            <span className="rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 px-2 py-0.5 text-xs font-semibold">
               Khoa xếp vào
             </span>
           )}
         </p>
-        <p className="mt-1 truncate text-xs text-muted-foreground">
-          {[student.studentCode, student.class, student.major?.name]
-            .filter(Boolean)
-            .join(' · ')}
+        <p className="mt-1 truncate text-xs text-slate-600 dark:text-neutral-400">
+          <span className="font-semibold text-primary font-mono">{student.studentCode}</span>
+          {student.class && (
+            <>
+              <span className="text-slate-400 dark:text-neutral-600"> · </span>
+              <span className="font-medium text-slate-800 dark:text-neutral-200">{student.class}</span>
+            </>
+          )}
+          {student.major?.name && (
+            <>
+              <span className="text-slate-400 dark:text-neutral-600"> · </span>
+              <span>{student.major.name}</span>
+            </>
+          )}
         </p>
       </div>
 
@@ -175,13 +187,13 @@ function EmptySeat() {
     <li className="flex items-center gap-3 px-3.5 py-3">
       <span
         aria-hidden
-        className="flex size-8 shrink-0 items-center justify-center rounded-full border border-dashed border-slate-300 dark:border-neutral-700 text-slate-400 dark:text-neutral-500"
+        className="flex size-8 shrink-0 items-center justify-center rounded-full border border-dashed border-slate-300 dark:border-neutral-600 text-slate-400 dark:text-neutral-500 bg-slate-50 dark:bg-neutral-900"
       >
         <UserRoundPlus className="size-4" />
       </span>
 
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-slate-500 dark:text-neutral-400">Chỗ còn trống</p>
+        <p className="text-sm font-medium text-slate-600 dark:text-neutral-400">Chỗ còn trống</p>
       </div>
     </li>
   );

@@ -67,7 +67,7 @@ export function StudentDefenseSection({ groupId }: StudentDefenseSectionProps) {
         </Button>
       </div>
 
-      <div className="rounded-xl border border-border/60 bg-card/60 p-4 space-y-3">
+      <div className="rounded-xl border border-slate-300 dark:border-neutral-800 bg-white dark:bg-[#141414] p-4 space-y-3 shadow-xs">
         {/* Banner trạng thái điều kiện */}
         {eligibilityStatus === 'ELIGIBLE' ? (
           <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 space-y-0.5">
@@ -110,7 +110,7 @@ export function StudentDefenseSection({ groupId }: StudentDefenseSectionProps) {
         {/* 3 tiêu chí cốt lõi */}
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 pt-1">
           {/* Tiêu chí 1: Tiến độ 2 */}
-          <div className="rounded-lg border border-border/40 bg-muted/15 p-3 space-y-1">
+          <div className="rounded-lg border border-slate-200 dark:border-neutral-800 bg-slate-50/60 dark:bg-neutral-900/40 p-3 space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-muted-foreground">
                 Tiến độ đợt 2 (≥ 50%)
@@ -137,7 +137,7 @@ export function StudentDefenseSection({ groupId }: StudentDefenseSectionProps) {
           </div>
 
           {/* Tiêu chí 2: GVHD */}
-          <div className="rounded-lg border border-border/40 bg-muted/15 p-3 space-y-1">
+          <div className="rounded-lg border border-slate-200 dark:border-neutral-800 bg-slate-50/60 dark:bg-neutral-900/40 p-3 space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-muted-foreground">
                 Ý kiến GVHD
@@ -164,7 +164,7 @@ export function StudentDefenseSection({ groupId }: StudentDefenseSectionProps) {
           </div>
 
           {/* Tiêu chí 3: GVPB */}
-          <div className="rounded-lg border border-border/40 bg-muted/15 p-3 space-y-1">
+          <div className="rounded-lg border border-slate-200 dark:border-neutral-800 bg-slate-50/60 dark:bg-neutral-900/40 p-3 space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-muted-foreground">
                 Ý kiến GVPB

@@ -302,13 +302,13 @@ export default function AdminOutlinesPage() {
                   <TableRow key={group.id} className="hover:bg-muted/20">
                     <TableCell className="align-top py-3">
                       <div className="space-y-1">
-                        <p className="font-semibold text-foreground text-sm hover:text-primary transition-colors cursor-pointer">
+                        <p className="font-bold text-slate-900 dark:text-neutral-100 text-sm hover:text-primary transition-colors cursor-pointer">
                           {group.name ?? `Nhóm ${group.id}`}
                         </p>
-                        <div className="space-y-0.5 text-xs text-muted-foreground">
+                        <div className="space-y-0.5 text-xs text-slate-600 dark:text-neutral-400">
                           {group.members.map((m) => (
                             <div key={m.id}>
-                              {m.student.fullName} (<span className="font-mono text-muted-foreground">{m.student.studentCode}</span>)
+                              {m.student.fullName} (<span className="font-mono text-primary font-semibold">{m.student.studentCode}</span>)
                             </div>
                           ))}
                         </div>
@@ -317,11 +317,11 @@ export default function AdminOutlinesPage() {
 
                     <TableCell className="align-top py-3">
                       <div className="space-y-1">
-                        <p className="font-medium text-foreground text-sm leading-snug">
+                        <p className="font-semibold text-slate-900 dark:text-neutral-100 text-sm leading-snug">
                           {group.topic?.title}
                         </p>
                         {group.topic?.projectType && (
-                          <p className="text-xs text-muted-foreground pt-0.5">
+                          <p className="text-xs font-medium text-slate-700 dark:text-neutral-300 pt-0.5">
                             {group.topic.projectType.name}
                           </p>
                         )}
@@ -329,7 +329,7 @@ export default function AdminOutlinesPage() {
                     </TableCell>
 
                     <TableCell className="align-top py-3 text-sm">
-                      <p className="font-medium text-foreground">
+                      <p className="font-medium text-slate-800 dark:text-neutral-200">
                         {group.topic?.lecturer?.academicTitle ? `${group.topic.lecturer.academicTitle} ` : ''}
                         {group.topic?.lecturer?.fullName}
                       </p>

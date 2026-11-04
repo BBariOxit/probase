@@ -179,7 +179,7 @@ export default function StudentRosterPage() {
                   refilter(() => setSearch(event.target.value))
                 }
                 placeholder="Tìm theo tên hoặc mã sinh viên…"
-                className="pl-9 h-9.5 text-sm rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 bg-white dark:bg-[#141414] focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
+                className="pl-9 h-9.5 text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#141414] focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
                 aria-label="Tìm sinh viên"
               />
               {search && (
@@ -217,7 +217,7 @@ export default function StudentRosterPage() {
                     className={`h-9.5 px-3.5 rounded-lg border-[1.5px] transition-all cursor-pointer shadow-2xs ${
                       activeSecondaryCount > 0
                         ? 'border-primary/50 bg-primary/8 text-primary font-semibold hover:bg-primary/12'
-                        : 'border-[#c4c9d9] dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200'
+                        : 'border-slate-300 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200'
                     }`}
                   />
                 }
@@ -271,7 +271,7 @@ export default function StudentRosterPage() {
                         refilter(() => setClassCode(e.target.value))
                       }
                       placeholder="Nhập mã lớp..."
-                      className="h-8.5 text-xs rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700"
+                      className="h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700"
                     />
                   </div>
 
@@ -286,7 +286,7 @@ export default function StudentRosterPage() {
                         refilter(() => setGroupState(val as string))
                       }
                     >
-                      <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700">
+                      <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
                         <SelectValue>
                           {(v) =>
                             GROUP_FILTERS.find((opt) => opt.value === v)?.label
@@ -314,7 +314,7 @@ export default function StudentRosterPage() {
                         refilter(() => setRoundId(val as number))
                       }
                     >
-                      <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-[#c4c9d9] dark:border-neutral-700">
+                      <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
                         <SelectValue>
                           {(v) =>
                             v === ANY
@@ -412,7 +412,7 @@ export default function StudentRosterPage() {
             </Button>
             <Button
               variant="outline"
-              className="gap-1.5 h-9.5 px-3.5 border-[1.5px] border-[#c4c9d9] dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200 cursor-pointer shadow-2xs"
+              className="gap-1.5 h-9.5 px-3.5 border-[1.5px] border-slate-300 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200 cursor-pointer shadow-2xs"
               disabled={exportRoster.isPending}
               onClick={() => exportRoster.mutate(query)}
             >

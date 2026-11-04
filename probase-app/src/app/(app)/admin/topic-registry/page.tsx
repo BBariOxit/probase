@@ -93,7 +93,13 @@ function OccupancyBadge({ topic }: { topic: TopicListItem }) {
   const full = topic.isFull;
   return (
     <span
-      className={`font-mono tabular-nums ${full ? 'font-semibold text-destructive' : 'text-muted-foreground'}`}
+      className={`font-mono tabular-nums font-semibold ${
+        full
+          ? 'text-slate-500 dark:text-neutral-400'
+          : topic.occupiedSeats > 0
+            ? 'text-primary'
+            : 'text-emerald-600 dark:text-emerald-400'
+      }`}
     >
       {topic.occupiedSeats}/{topic.maxStudents}
     </span>
@@ -328,17 +334,17 @@ export default function AdminTopicRegistryPage() {
                   onClick={() => setSelectedTopicId(topic.id)}
                 >
                   <TableCell className="font-medium">
-                    <span className="font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary transition-colors">{topic.title}</span>
+                    <span className="font-bold text-slate-900 dark:text-neutral-100 hover:text-primary transition-colors">{topic.title}</span>
                     <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
                       {topic.semester.name}
                     </span>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="text-slate-800 dark:text-neutral-200 font-medium">
                     {topic.lecturer.academicTitle
                       ? `${topic.lecturer.academicTitle} ${topic.lecturer.fullName}`
                       : topic.lecturer.fullName}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="text-slate-700 dark:text-neutral-300 font-medium">
                     {topic.projectType.name}
                   </TableCell>
                   <TableCell className="text-center">

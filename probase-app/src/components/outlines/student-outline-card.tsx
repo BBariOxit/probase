@@ -121,12 +121,12 @@ export function StudentOutlineCard() {
   };
 
   return (
-    <Card className="border-border/60 bg-card/60">
-      <CardHeader className="pb-3 border-b border-border/40">
+    <Card className="border-slate-300 dark:border-neutral-800 bg-white dark:bg-[#141414] shadow-xs">
+      <CardHeader className="pb-3 border-b border-slate-200 dark:border-neutral-800">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <FileCheck2 className="size-4.5 text-emerald-500" />
-            <CardTitle className="text-sm font-semibold tracking-tight text-foreground">
+            <CardTitle className="text-sm font-bold tracking-tight text-slate-900 dark:text-neutral-100">
               Đề cương đồ án (M03)
             </CardTitle>
           </div>
