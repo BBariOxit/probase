@@ -122,12 +122,6 @@ function MemberSeat({
               <span className="font-medium text-slate-800 dark:text-neutral-200">{student.class}</span>
             </>
           )}
-          {student.major?.name && (
-            <>
-              <span className="text-slate-400 dark:text-neutral-600"> · </span>
-              <span>{student.major.name}</span>
-            </>
-          )}
         </p>
       </div>
 
