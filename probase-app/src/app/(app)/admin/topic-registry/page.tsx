@@ -374,9 +374,6 @@ export default function AdminTopicRegistryPage() {
                     >
                       {topic.title}
                     </Link>
-                    <span className="mt-1 block text-xs font-normal text-muted-foreground">
-                      {topic.semester.name}
-                    </span>
                   </div>
                 </TableCell>
                 <TableCell className="w-44 whitespace-nowrap text-slate-800 dark:text-neutral-200 font-medium">

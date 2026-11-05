@@ -105,9 +105,6 @@ export default function AdminTopicQueuePage() {
                     >
                       {topic.title}
                     </Link>
-                    <span className="mt-1 block text-xs font-normal text-muted-foreground">
-                      {topic.semester.name}
-                    </span>
                   </div>
                 </TableCell>
                 <TableCell className="w-48 whitespace-nowrap text-slate-800 dark:text-neutral-200 font-medium">
