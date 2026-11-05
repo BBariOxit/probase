@@ -9,6 +9,7 @@ import {
   useRegisterTopic,
 } from '@/lib/api/registration';
 import type { TopicAvailability } from '@/lib/api/types';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -31,10 +32,16 @@ export function TopicRegisterButton({
   topic,
   idle,
   className,
+  size = 'sm',
+  buttonClassName,
+  label,
 }: {
   topic: TopicLike;
   idle?: React.ReactNode;
   className?: string;
+  size?: 'default' | 'sm' | 'lg' | 'icon';
+  buttonClassName?: string;
+  label?: string;
 }) {
   const register = useRegisterTopic();
   const join = useJoinTopic();
@@ -68,13 +75,13 @@ export function TopicRegisterButton({
           {showButton && (
             <Button
               type="button"
-              size="sm"
+              size={size}
               onClick={act}
               disabled={pending}
-              className="relative z-10 font-semibold shadow-xs"
+              className={cn('relative z-10 font-semibold shadow-xs cursor-pointer', buttonClassName)}
             >
               {pending && <Loader2 className="size-4 animate-spin" />}
-              {registering ? 'Đăng ký' : 'Tham gia'}
+              {label ?? (registering ? 'Đăng ký' : 'Tham gia')}
             </Button>
           )}
 

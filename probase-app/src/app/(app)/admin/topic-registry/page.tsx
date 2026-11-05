@@ -1,15 +1,25 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import {
   BookMarked,
   Check,
   ChevronDown,
+  Eye,
   Loader2,
+  Lock,
   LockOpen,
+  MoreHorizontal,
   Search,
   X,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import {
   useBulkOpenTopics,
@@ -21,7 +31,7 @@ import { useDebouncedValue } from '@/lib/use-debounced-value';
 import type { Semester, TopicListItem, TopicStatus } from '@/lib/api/types';
 import { useSemesters } from '@/lib/api/master-data';
 import { BulkOpenDialog } from '@/components/admin/bulk-open-dialog';
-import { TopicReviewModal } from '@/components/topics/topic-review-modal';
+import { TopicDetailSheet } from '@/components/topics/topic-detail-sheet';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { Button } from '@/components/ui/button';
@@ -117,62 +127,84 @@ function OriginBadge({ fromProposal }: { fromProposal: boolean }) {
   );
 }
 
-/** Quick open/close toggle button for a single topic row. */
-function TopicActionButton({ topic }: { topic: TopicListItem }) {
+/** Quick actions dropdown for a single topic row. */
+function TopicActionsDropdown({
+  topic,
+  onViewDetail,
+}: {
+  topic: TopicListItem;
+  onViewDetail: () => void;
+}) {
   const transition = useTopicTransition();
   const mine = transition.variables?.id === topic.id && transition.isPending;
 
-  if (topic.status === 'APPROVED') {
-    return (
-      <Button
-        size="sm"
-        variant="outline"
-        className="gap-1.5"
-        disabled={transition.isPending}
-        onClick={(e) => {
-          e.stopPropagation();
-          transition
-            .mutateAsync({ id: topic.id, to: 'open' })
-            .then(() => toast.success('Đã mở đăng ký đề tài.'))
-            .catch(() => toast.error('Không thực hiện được.'));
-        }}
-      >
-        {mine ? (
-          <Loader2 className="size-3.5 animate-spin" />
-        ) : (
-          <LockOpen className="size-3.5" />
-        )}
-        Mở
-      </Button>
-    );
-  }
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            disabled={mine}
+            className="size-8 text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-neutral-800 cursor-pointer"
+            aria-label="Thao tác với đề tài"
+          >
+            {mine ? (
+              <Loader2 className="size-4 animate-spin text-muted-foreground" />
+            ) : (
+              <MoreHorizontal className="size-4" />
+            )}
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem
+          className="cursor-pointer gap-2"
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewDetail();
+          }}
+        >
+          <Eye className="size-4 text-slate-500 dark:text-neutral-400" />
+          <span>Xem chi tiết</span>
+        </DropdownMenuItem>
 
-  if (topic.status === 'OPEN') {
-    return (
-      <Button
-        size="sm"
-        variant="ghost"
-        className="gap-1.5 text-muted-foreground"
-        disabled={transition.isPending}
-        onClick={(e) => {
-          e.stopPropagation();
-          transition
-            .mutateAsync({ id: topic.id, to: 'close' })
-            .then(() => toast.success('Đã đóng đăng ký đề tài.'))
-            .catch(() => toast.error('Không thực hiện được.'));
-        }}
-      >
-        {mine ? (
-          <Loader2 className="size-3.5 animate-spin" />
-        ) : (
-          <X className="size-3.5" />
+        {topic.status === 'APPROVED' && (
+          <DropdownMenuItem
+            className="cursor-pointer gap-2 text-emerald-600 dark:text-emerald-400 focus:text-emerald-700 dark:focus:text-emerald-300"
+            disabled={transition.isPending}
+            onClick={(e) => {
+              e.stopPropagation();
+              transition
+                .mutateAsync({ id: topic.id, to: 'open' })
+                .then(() => toast.success('Đã mở đăng ký đề tài.'))
+                .catch(() => toast.error('Không thực hiện được.'));
+            }}
+          >
+            <LockOpen className="size-4" />
+            <span>Mở đăng ký</span>
+          </DropdownMenuItem>
         )}
-        Đóng
-      </Button>
-    );
-  }
 
-  return null;
+        {topic.status === 'OPEN' && (
+          <DropdownMenuItem
+            className="cursor-pointer gap-2 text-rose-600 dark:text-rose-400 focus:text-rose-700 dark:focus:text-rose-300"
+            disabled={transition.isPending}
+            onClick={(e) => {
+              e.stopPropagation();
+              transition
+                .mutateAsync({ id: topic.id, to: 'close' })
+                .then(() => toast.success('Đã đóng đăng ký đề tài.'))
+                .catch(() => toast.error('Không thực hiện được.'));
+            }}
+          >
+            <Lock className="size-4" />
+            <span>Đóng đăng ký</span>
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 export default function AdminTopicRegistryPage() {
@@ -311,69 +343,76 @@ export default function AdminTopicRegistryPage() {
       )}
 
       {/* ── Table ── */}
-      <div className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-64">Tiêu đề</TableHead>
-                <TableHead className="w-44">Giảng viên</TableHead>
-                <TableHead className="w-32">Loại đồ án</TableHead>
-                <TableHead className="w-20 text-center">Chỗ</TableHead>
-                <TableHead className="w-36">Nguồn gốc</TableHead>
-                <TableHead className="w-32">Trạng thái</TableHead>
-                <TableHead className="w-28 text-right">Tạo lúc</TableHead>
-                <TableHead className="w-24 text-right">Thao tác</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {topics.map((topic) => (
-                <TableRow
-                  key={topic.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => setSelectedTopicId(topic.id)}
-                >
-                  <TableCell className="font-medium">
-                    <span className="font-bold text-slate-900 dark:text-neutral-100 hover:text-primary transition-colors">{topic.title}</span>
-                    <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-                      {topic.semester.name}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-slate-800 dark:text-neutral-200 font-medium">
-                    {topic.lecturer.academicTitle
-                      ? `${topic.lecturer.academicTitle} ${topic.lecturer.fullName}`
-                      : topic.lecturer.fullName}
-                  </TableCell>
-                  <TableCell className="text-slate-700 dark:text-neutral-300 font-medium">
-                    {topic.projectType.name}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <OccupancyBadge topic={topic} />
-                  </TableCell>
-                  <TableCell>
-                    <OriginBadge fromProposal={topic.fromProposal} />
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`text-sm font-medium ${STATUS_LABELS[topic.status]?.className ?? ''}`}
+      <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
+        <Table className="w-full min-w-[1020px] table-fixed text-left text-sm">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[340px] max-w-[380px] min-w-[280px]">Tiêu đề</TableHead>
+              <TableHead className="w-44 whitespace-nowrap">Giảng viên</TableHead>
+              <TableHead className="w-36 whitespace-nowrap">Loại đồ án</TableHead>
+              <TableHead className="w-20 text-center whitespace-nowrap">Chỗ</TableHead>
+              <TableHead className="w-32 whitespace-nowrap">Nguồn gốc</TableHead>
+              <TableHead className="w-32 whitespace-nowrap">Trạng thái</TableHead>
+              <TableHead className="w-28 text-right whitespace-nowrap">Tạo lúc</TableHead>
+              <TableHead className="w-16 text-center whitespace-nowrap">Thao tác</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {topics.map((topic) => (
+              <TableRow
+                key={topic.id}
+                className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
+                onClick={() => setSelectedTopicId(topic.id)}
+              >
+                <TableCell className="w-[340px] max-w-[380px] min-w-[280px] font-medium whitespace-normal">
+                  <div className="w-full max-w-[380px] whitespace-normal">
+                    <Link
+                      href={`/admin/topics/${topic.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words whitespace-normal line-clamp-2 cursor-pointer"
+                      title={topic.title}
                     >
-                      {STATUS_LABELS[topic.status]?.label ?? topic.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="tabular-nums text-right text-muted-foreground">
-                    {dateFormat.format(new Date(topic.createdAt))}
-                  </TableCell>
-                  <TableCell
-                    className="text-right"
-                    onClick={(e) => e.stopPropagation()}
+                      {topic.title}
+                    </Link>
+                  </div>
+                </TableCell>
+                <TableCell className="w-44 whitespace-nowrap text-slate-800 dark:text-neutral-200 font-medium">
+                  {topic.lecturer.academicTitle
+                    ? `${topic.lecturer.academicTitle} ${topic.lecturer.fullName}`
+                    : topic.lecturer.fullName}
+                </TableCell>
+                <TableCell className="w-36 whitespace-nowrap text-slate-700 dark:text-neutral-300 font-medium">
+                  {topic.projectType.name}
+                </TableCell>
+                <TableCell className="w-20 text-center whitespace-nowrap">
+                  <OccupancyBadge topic={topic} />
+                </TableCell>
+                <TableCell className="w-32 whitespace-nowrap">
+                  <OriginBadge fromProposal={topic.fromProposal} />
+                </TableCell>
+                <TableCell className="w-32 whitespace-nowrap">
+                  <span
+                    className={`text-sm font-medium ${STATUS_LABELS[topic.status]?.className ?? ''}`}
                   >
-                    <TopicActionButton topic={topic} />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                    {STATUS_LABELS[topic.status]?.label ?? topic.status}
+                  </span>
+                </TableCell>
+                <TableCell className="w-28 whitespace-nowrap tabular-nums text-right text-muted-foreground">
+                  {dateFormat.format(new Date(topic.createdAt))}
+                </TableCell>
+                <TableCell
+                  className="w-16 text-center whitespace-nowrap"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <TopicActionsDropdown
+                    topic={topic}
+                    onViewDetail={() => setSelectedTopicId(topic.id)}
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
         {isPending && (
           <div className="flex justify-center py-14">
@@ -401,12 +440,11 @@ export default function AdminTopicRegistryPage() {
         />
       )}
 
-      {/* ── Detail review modal ── */}
-      <TopicReviewModal
+      {/* ── Topic detail sheet (mở bên phải) ── */}
+      <TopicDetailSheet
         topicId={selectedTopicId}
         onClose={() => setSelectedTopicId(null)}
-        isAdmin={true}
-        stage="AUTO"
+        hideRegisterButton={true}
       />
 
       {/* ── Bulk open dialog ── */}

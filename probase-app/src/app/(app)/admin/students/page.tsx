@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import {
   Download,
   FileUp,
@@ -558,7 +559,7 @@ export default function StudentRosterPage() {
         {/* BẢNG DỮ LIỆU: VÙNG BẢNG (flex-1 min-h-0 overflow-auto), STICKY HEADER z-10 */}
         <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs overflow-hidden">
           <div className="flex-auto min-h-0 overflow-auto">
-            <Table containerClassName="overflow-visible" className="relative w-full text-left text-sm">
+            <Table containerClassName="overflow-visible" className="relative w-full min-w-[960px] text-left text-sm">
               <TableHeader>
                 <TableRow>
                   <TableHead className="min-w-44 px-5">
@@ -570,7 +571,7 @@ export default function StudentRosterPage() {
                   <TableHead className="w-40 px-4">
                     Chuyên ngành
                   </TableHead>
-                  <TableHead className="min-w-[280px] px-5">
+                  <TableHead className="w-[300px] max-w-[320px] px-5">
                     Đề tài
                   </TableHead>
                   <TableHead className="w-28 px-4 whitespace-nowrap">
@@ -598,7 +599,7 @@ export default function StudentRosterPage() {
                   <Skeleton className="h-4 w-44" />
                   <Skeleton className="h-4 w-20" />
                   <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-4 flex-1" />
+                  <Skeleton className="h-4 w-64" />
                   <Skeleton className="h-4 w-16" />
                   <Skeleton className="h-4 w-32" />
                   <Skeleton className="h-4 w-20" />
@@ -668,12 +669,33 @@ function StudentRow({ student }: { student: StudentRosterRow }) {
         {student.major?.name ?? '—'}
       </TableCell>
 
-      {/* 4. Đề tài: Xuống dòng tự nhiên, không line-clamp, không whitespace-nowrap, bỏ badge */}
-      <TableCell className="px-5 py-3.5 align-middle">
+      {/* 4. Đề tài: Fix cứng chiều dài, truncate 3 chấm + tooltip popup tên đầy đủ khi hover */}
+      <TableCell className="w-[300px] max-w-[320px] px-5 py-3.5 align-middle">
         {student.group ? (
-          <p className="text-sm font-semibold text-slate-900 dark:text-neutral-100 leading-snug break-words">
-            {student.group.topic.title}
-          </p>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Link
+                  href={`/admin/topics/${student.group.topic.id}`}
+                  className="block cursor-pointer text-left w-full max-w-[280px] truncate"
+                />
+              }
+            >
+              <span className="truncate text-sm font-semibold text-slate-900 dark:text-neutral-100 leading-snug hover:text-primary transition-colors">
+                {student.group.topic.title}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              align="start"
+              className="max-w-md p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-neutral-800 dark:text-neutral-100 rounded-lg shadow-xl border border-slate-700 dark:border-neutral-700 z-50"
+            >
+              <p className="font-semibold text-primary mb-1">Tên đề tài đầy đủ:</p>
+              <p className="text-slate-200 dark:text-neutral-200">
+                {student.group.topic.title}
+              </p>
+            </TooltipContent>
+          </Tooltip>
         ) : (
           <span className="text-xs font-medium text-primary">
             Chưa có đề tài

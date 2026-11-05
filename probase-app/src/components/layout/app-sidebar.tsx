@@ -9,11 +9,9 @@ import type { SessionUser } from '@/lib/api/types';
 import { NAV_BY_ROLE, type NavItem } from '@/lib/nav';
 import { cn } from '@/lib/utils';
 import { Brand, Logo } from '@/components/layout/brand';
-import { SemesterContext } from '@/components/rounds/semester-context';
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -148,10 +146,6 @@ export function AppSidebar({ user }: { user: SessionUser }) {
           </SidebarGroup>
         ))}
       </SidebarContent>
-
-      <SidebarFooter className="px-3 py-3 border-t border-white/8 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-2 flex items-center justify-center">
-        <SemesterContext />
-      </SidebarFooter>
 
       <SidebarRail />
     </Sidebar>

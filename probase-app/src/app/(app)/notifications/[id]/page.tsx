@@ -102,15 +102,8 @@ export default function NotificationDetailPage() {
         </div>
 
         {/* Footer gọn gàng */}
-        <div className="bg-slate-50/70 dark:bg-neutral-900/50 px-6 py-3.5 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+        <div className="bg-slate-50/70 dark:bg-neutral-900/50 px-6 py-3.5 border-t border-border text-xs text-muted-foreground">
           <span>Đây là thông báo tự động.</span>
-          <button
-            type="button"
-            onClick={() => router.push('/notifications')}
-            className="text-primary hover:underline font-medium cursor-pointer"
-          >
-            Về danh sách thông báo
-          </button>
         </div>
       </article>
     </div>

@@ -292,10 +292,9 @@ export default function LecturerTopicsPage() {
                       {topic.title}
                     </Link>
                     <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-                      {topic.semester.name} ·{' '}
                       {topic.activeGroup
-                        ? `nhóm ${topic.activeGroup.occupiedSeats}/${topic.maxStudents}`
-                        : 'chưa có nhóm'}
+                        ? `Nhóm ${topic.activeGroup.occupiedSeats}/${topic.maxStudents}`
+                        : 'Chưa có nhóm'}
                     </span>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
