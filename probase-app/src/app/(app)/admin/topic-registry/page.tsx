@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import {
   BookMarked,
@@ -30,7 +31,7 @@ import { useDebouncedValue } from '@/lib/use-debounced-value';
 import type { Semester, TopicListItem, TopicStatus } from '@/lib/api/types';
 import { useSemesters } from '@/lib/api/master-data';
 import { BulkOpenDialog } from '@/components/admin/bulk-open-dialog';
-import { TopicReviewModal } from '@/components/topics/topic-review-modal';
+import { TopicDetailSheet } from '@/components/topics/topic-detail-sheet';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { Button } from '@/components/ui/button';
@@ -365,12 +366,14 @@ export default function AdminTopicRegistryPage() {
               >
                 <TableCell className="w-[340px] max-w-[380px] min-w-[280px] font-medium whitespace-normal">
                   <div className="w-full max-w-[380px] whitespace-normal">
-                    <span
-                      className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words whitespace-normal line-clamp-2"
+                    <Link
+                      href={`/admin/topics/${topic.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words whitespace-normal line-clamp-2 cursor-pointer"
                       title={topic.title}
                     >
                       {topic.title}
-                    </span>
+                    </Link>
                     <span className="mt-1 block text-xs font-normal text-muted-foreground">
                       {topic.semester.name}
                     </span>
@@ -440,12 +443,11 @@ export default function AdminTopicRegistryPage() {
         />
       )}
 
-      {/* ── Detail review modal ── */}
-      <TopicReviewModal
+      {/* ── Topic detail sheet (mở bên phải) ── */}
+      <TopicDetailSheet
         topicId={selectedTopicId}
         onClose={() => setSelectedTopicId(null)}
-        isAdmin={true}
-        stage="AUTO"
+        hideRegisterButton={true}
       />
 
       {/* ── Bulk open dialog ── */}

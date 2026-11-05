@@ -100,8 +100,7 @@ export default function AdminTopicQueuePage() {
                       className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words whitespace-normal line-clamp-2"
                       title={topic.title}
                       onClick={(e) => {
-                        e.preventDefault();
-                        setSelectedTopicId(topic.id);
+                        e.stopPropagation();
                       }}
                     >
                       {topic.title}
