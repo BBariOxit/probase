@@ -1,7 +1,10 @@
 'use client';
 
-import { GraduationCap, Layers, Users } from 'lucide-react';
+import Link from 'next/link';
+import { GraduationCap, Layers, Pencil, Users } from 'lucide-react';
 import { useTopic } from '@/lib/api/topics';
+import { useSession } from '@/lib/auth/session';
+import { useMyProfile } from '@/lib/api/me';
 import { TopicStatusBadge } from '@/components/topics/topic-status-badge';
 import { TextSection } from '@/components/shared/text-section';
 import { TopicRegisterButton } from '@/components/topics/topic-register-button';
@@ -48,11 +51,34 @@ export function TopicDetailSheet({
     </>
   ) : null;
 
+  const user = useSession((s) => s.user);
+  const { data: profile } = useMyProfile();
+  const isLecturer = user?.role === 'LECTURER';
+  const isAdmin = user?.role === 'ADMIN';
+  const isOwner =
+    isLecturer &&
+    (profile?.lecturer?.id === topic?.lecturer.id ||
+      user?.fullName === topic?.lecturer.fullName);
+  const canEdit =
+    (isOwner || isAdmin) &&
+    topic?.status !== 'IN_PROGRESS' &&
+    topic?.status !== 'COMPLETED';
+
   const footerActions = topic ? (
     <>
       <Button variant="ghost" onClick={onClose}>
         Đóng
       </Button>
+      {canEdit && (
+        <Button
+          variant="outline"
+          render={<Link href={`/lecturer/topics/${topic.id}`} />}
+          className="gap-1.5 font-semibold"
+        >
+          <Pencil className="size-3.5" />
+          <span>Sửa</span>
+        </Button>
+      )}
       {!hideRegisterButton && <TopicRegisterButton topic={topic} idle={null} />}
     </>
   ) : null;
@@ -79,11 +105,23 @@ export function TopicDetailSheet({
     >
       {topic && (
         <>
-          <TextSection title="Mô tả" body={topic.description} />
+          <TextSection
+            title="Mô tả"
+            body={topic.description}
+            bodyClassName="text-justify"
+          />
           {topic.objectives && (
-            <TextSection title="Mục tiêu đề tài" body={topic.objectives} />
+            <TextSection
+              title="Mục tiêu đề tài"
+              body={topic.objectives}
+              bodyClassName="text-justify"
+            />
           )}
-          <TextSection title="Yêu cầu đầu ra" body={topic.expectedOutcomes} />
+          <TextSection
+            title="Yêu cầu đầu ra"
+            body={topic.expectedOutcomes}
+            bodyClassName="text-justify"
+          />
           {topic.techStack && (
             <div className="space-y-1.5">
               <h4 className="text-sm font-medium">Công nghệ & Công cụ đề xuất</h4>
