@@ -75,29 +75,30 @@ export default function AdminTopicQueuePage() {
         <p className="text-sm text-destructive">Không tải được hàng chờ.</p>
       )}
 
-      <div className="overflow-hidden rounded-xl border">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-64">Tiêu đề</TableHead>
-                <TableHead className="w-48">Giảng viên</TableHead>
-                <TableHead className="w-36">Loại đồ án</TableHead>
-                <TableHead className="w-28">Ngày gửi</TableHead>
-                <TableHead className="w-28" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {topics.map((topic) => (
-                <TableRow
-                  key={topic.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => setSelectedTopicId(topic.id)}
-                >
-                  <TableCell className="font-medium">
+      <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
+        <Table className="w-full min-w-[850px] table-fixed text-left text-sm">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[340px] max-w-[380px] min-w-[280px]">Tiêu đề</TableHead>
+              <TableHead className="w-48 whitespace-nowrap">Giảng viên</TableHead>
+              <TableHead className="w-36 whitespace-nowrap">Loại đồ án</TableHead>
+              <TableHead className="w-28 whitespace-nowrap">Ngày gửi</TableHead>
+              <TableHead className="w-28 text-right whitespace-nowrap" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {topics.map((topic) => (
+              <TableRow
+                key={topic.id}
+                className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
+                onClick={() => setSelectedTopicId(topic.id)}
+              >
+                <TableCell className="w-[340px] max-w-[380px] min-w-[280px] font-medium whitespace-normal">
+                  <div className="w-full max-w-[380px] whitespace-normal">
                     <Link
                       href={`/admin/topics/${topic.id}`}
-                      className="rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                      className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words whitespace-normal line-clamp-2"
+                      title={topic.title}
                       onClick={(e) => {
                         e.preventDefault();
                         setSelectedTopicId(topic.id);
@@ -105,20 +106,21 @@ export default function AdminTopicQueuePage() {
                     >
                       {topic.title}
                     </Link>
-                    <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+                    <span className="mt-1 block text-xs font-normal text-muted-foreground">
                       {topic.semester.name}
                     </span>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {topic.lecturer.fullName}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {topic.projectType.name}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground tabular-nums">
-                    {dateFormat.format(new Date(topic.createdAt))}
-                  </TableCell>
-                  <TableCell className="text-right">
+                  </div>
+                </TableCell>
+                <TableCell className="w-48 whitespace-nowrap text-slate-800 dark:text-neutral-200 font-medium">
+                  {topic.lecturer.fullName}
+                </TableCell>
+                <TableCell className="w-36 whitespace-nowrap text-slate-700 dark:text-neutral-300 font-medium">
+                  {topic.projectType.name}
+                </TableCell>
+                <TableCell className="w-28 whitespace-nowrap text-muted-foreground tabular-nums">
+                  {dateFormat.format(new Date(topic.createdAt))}
+                </TableCell>
+                <TableCell className="w-28 text-right whitespace-nowrap">
                     <Button
                       size="sm"
                       disabled={transition.isPending}
@@ -140,7 +142,6 @@ export default function AdminTopicQueuePage() {
               ))}
             </TableBody>
           </Table>
-        </div>
 
         {isPending && (
           <div className="flex justify-center py-14">
