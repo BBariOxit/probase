@@ -212,11 +212,11 @@ export class RegistrationGroupsService {
     // 3. Check joinable conditions (eligibility, round phases, no existing group)
     await this.assertJoinable(group, targetStudent, { allowHeldSeats: true });
 
-    // 4. Add member directly
+    // 4. Add member directly (Mời qua MSSV)
     const result = await this.addMember(
       group.id,
       targetStudent,
-      GroupJoinSource.SELF,
+      GroupJoinSource.LINK,
       { allowHeldSeats: true },
     );
 
