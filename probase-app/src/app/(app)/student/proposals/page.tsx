@@ -20,9 +20,7 @@ import { useRequireRole } from '@/lib/auth/use-require-role';
 import { proposalWindow } from '@/lib/proposal-window';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
-import { PageWithRail } from '@/components/layout/page-with-rail';
 import { PaginationBar } from '@/components/shared/pagination-bar';
-import { RoundTimeline } from '@/components/rounds/round-timeline';
 import { ProposalCard } from '@/components/proposals/proposal-card';
 import { ProposalDetailSheet } from '@/components/proposals/proposal-detail-sheet';
 import { Button } from '@/components/ui/button';
@@ -76,13 +74,7 @@ export default function StudentProposalsPage() {
 
   return (
     <>
-      <PageWithRail
-        rail={
-          rounds?.[0] && (
-            <RoundTimeline round={rounds[0]} hasGroup={group != null} />
-          )
-        }
-      >
+      <div className="mx-auto max-w-4xl space-y-4">
         {/*
           The reason comes before the button, not instead of it: a student who
           cannot send one right now still needs to know why, and the sentence is
@@ -155,7 +147,7 @@ export default function StudentProposalsPage() {
             onPageChange={setPage}
           />
         )}
-      </PageWithRail>
+      </div>
 
       <ProposalDetailSheet
         proposal={viewingProposal}
