@@ -12,7 +12,6 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useGroupReviews } from '@/lib/api/reviews';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TopicReviewDialog } from './topic-review-dialog';
 
@@ -39,15 +38,10 @@ export function SupervisorReviewSection({
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="space-y-0.5">
-          <h2 className="text-sm font-semibold tracking-tight text-foreground flex items-center gap-2">
-            <Award className="size-4 text-primary" />
-            <span>Phiếu nhận xét GVHD & Thẩm định bảo vệ</span>
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Đánh giá chất lượng toàn văn cuối kỳ và xác nhận điều kiện ra bảo vệ.
-          </p>
-        </div>
+        <h2 className="text-sm font-semibold tracking-tight text-foreground flex items-center gap-2">
+          <Award className="size-4 text-primary" />
+          <span>Phiếu nhận xét GVHD & Thẩm định bảo vệ</span>
+        </h2>
 
         <Button
           size="sm"
@@ -57,7 +51,7 @@ export function SupervisorReviewSection({
           <FileText className="size-3.5" />
           {supervisorReview
             ? `Cập nhật nhận xét (${expectedTemplate})`
-            : `Lập phiếu nhận xét (${expectedTemplate})`}
+            : `Lập nhận xét (${expectedTemplate})`}
         </Button>
       </div>
 
@@ -68,57 +62,55 @@ export function SupervisorReviewSection({
           <div className="rounded-lg border border-border/40 bg-muted/15 p-3 space-y-1">
             <span className="text-[11px] text-muted-foreground flex items-center gap-1">
               <UserCheck className="size-3.5 text-primary" />
-              Ý kiến GVHD ({expectedTemplate}):
+              Ý kiến GVHD:
             </span>
             {supervisorReview ? (
               <div className="space-y-0.5">
-                <Badge
+                <p
                   className={
                     supervisorReview.isDefenseAllowed
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs'
-                      : 'bg-rose-500/10 text-rose-400 border-rose-500/20 text-xs'
+                      ? 'text-xs font-semibold text-emerald-600 dark:text-emerald-400'
+                      : 'text-xs font-semibold text-rose-500'
                   }
                 >
                   {supervisorReview.isDefenseAllowed ? 'Đồng ý cho bảo vệ' : 'Không đồng ý'}
-                </Badge>
+                </p>
                 <p className="text-[10px] text-muted-foreground">
                   Ký ngày {new Date(supervisorReview.signedAt).toLocaleDateString('vi-VN')}
                 </p>
               </div>
             ) : (
-              <Badge variant="outline" className="text-amber-400 border-amber-500/30 text-xs">
-                Chờ lập nhận xét
-              </Badge>
+              <p className="text-xs text-muted-foreground">Chưa lập nhận xét</p>
             )}
           </div>
 
           {/* CB Phản biện */}
           <div className="rounded-lg border border-border/40 bg-muted/15 p-3 space-y-1">
             <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <UserCheck className="size-3.5 text-blue-400" />
-              Ý kiến GVPB (M05):
+              <UserCheck className="size-3.5 text-blue-500" />
+              Ý kiến GVPB:
             </span>
             {reviewerReview ? (
               <div className="space-y-0.5">
-                <Badge
+                <p
                   className={
                     reviewerReview.isDefenseAllowed
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs'
-                      : 'bg-rose-500/10 text-rose-400 border-rose-500/20 text-xs'
+                      ? 'text-xs font-semibold text-emerald-600 dark:text-emerald-400'
+                      : 'text-xs font-semibold text-rose-500'
                   }
                 >
                   {reviewerReview.isDefenseAllowed ? 'Đồng ý cho bảo vệ' : 'Không đồng ý'}
-                </Badge>
+                </p>
                 <p className="text-[10px] text-muted-foreground">
                   {reviewerReview.lecturer?.fullName} ({new Date(reviewerReview.signedAt).toLocaleDateString('vi-VN')})
                 </p>
               </div>
             ) : (
-              <Badge variant="outline" className="text-zinc-500 border-zinc-700/40 text-xs">
+              <p className="text-xs text-muted-foreground">
                 {group?.assignment?.reviewer
                   ? `Chờ ${group.assignment.reviewer.fullName}`
-                  : 'Chưa phân công GVPB'}
-              </Badge>
+                  : 'Chưa phân công'}
+              </p>
             )}
           </div>
 
@@ -126,25 +118,23 @@ export function SupervisorReviewSection({
           <div className="rounded-lg border border-border/40 bg-muted/15 p-3 space-y-1">
             <span className="text-[11px] text-muted-foreground flex items-center gap-1">
               {isDefenseEligible ? (
-                <ShieldCheck className="size-3.5 text-emerald-400" />
+                <ShieldCheck className="size-3.5 text-emerald-500" />
               ) : (
-                <Clock className="size-3.5 text-amber-400" />
+                <Clock className="size-3.5 text-amber-500" />
               )}
               Kết quả thẩm định:
             </span>
             <div>
               {eligibilityStatus === 'ELIGIBLE' ? (
-                <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs">
+                <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                   Đủ điều kiện bảo vệ
-                </Badge>
+                </p>
               ) : eligibilityStatus === 'NOT_ELIGIBLE' ? (
-                <Badge className="bg-rose-500/10 text-rose-400 border-rose-500/20 text-xs">
+                <p className="text-xs font-semibold text-rose-500">
                   Chưa đủ điều kiện
-                </Badge>
+                </p>
               ) : (
-                <Badge variant="outline" className="text-amber-400 border-amber-500/30 text-xs">
-                  Đang thẩm định
-                </Badge>
+                <p className="text-xs text-muted-foreground">Đang thẩm định</p>
               )}
             </div>
           </div>
@@ -154,7 +144,7 @@ export function SupervisorReviewSection({
         {supervisorReview && (
           <div className="rounded-lg border border-border/40 bg-muted/10 p-3 space-y-1">
             <p className="text-[11px] font-medium text-muted-foreground">
-              Nhận xét đã lưu của bạn:
+              Nhận xét GVHD:
             </p>
             <p className="text-xs text-foreground italic leading-relaxed">
               "{supervisorReview.generalComment}"

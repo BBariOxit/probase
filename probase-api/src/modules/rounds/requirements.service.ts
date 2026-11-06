@@ -150,6 +150,6 @@ export class RequirementsService {
       select: { id: true },
     });
 
-    if (!round) throw new NotFoundException(`Round ${roundId} not found`);
+    if (!round) throw new NotFoundException(`Không tìm thấy đợt đăng ký mã #${roundId}`);
   }
 }

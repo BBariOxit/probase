@@ -79,7 +79,12 @@ const LIST_SELECT = {
   // Only the id of whoever proposed it. A topic born from a proposal is
   // reserved for that student while the gate is open, and a screen that does
   // not know it would draw a register button the API refuses.
-  sourceProposal: { select: { studentId: true } },
+  sourceProposal: {
+    select: {
+      studentId: true,
+      attachments: true,
+    },
+  },
 } satisfies Prisma.TopicSelect;
 
 type TopicRound = {
@@ -227,7 +232,12 @@ const DETAIL_INCLUDE = {
     },
   },
   registrationGroups: ACTIVE_GROUP_SELECT,
-  sourceProposal: { select: { studentId: true } },
+  sourceProposal: {
+    select: {
+      studentId: true,
+      attachments: true,
+    },
+  },
 } satisfies Prisma.TopicInclude;
 
 @Injectable()
@@ -265,7 +275,7 @@ export class TopicsService {
 
     if (query.mine) {
       if (role !== Role.LECTURER) {
-        throw new ForbiddenException('Only lecturers own topics');
+        throw new ForbiddenException('Chỉ giảng viên mới có quyền sở hữu đề tài.');
       }
       where.lecturerId = await this.requireLecturerProfileId(userId);
       if (query.status) {
@@ -447,19 +457,19 @@ export class TopicsService {
     });
 
     if (!topic) {
-      throw new NotFoundException('Topic not found');
+      throw new NotFoundException('Không tìm thấy đề tài.');
     }
 
     if (topic.status === TopicStatus.DRAFT) {
       if (role !== Role.LECTURER) {
-        throw new NotFoundException('Topic not found');
+        throw new NotFoundException('Không tìm thấy đề tài.');
       }
       const lecturerId = await this.requireLecturerProfileId(userId);
       if (topic.lecturerId !== lecturerId) {
-        throw new NotFoundException('Topic not found');
+        throw new NotFoundException('Không tìm thấy đề tài.');
       }
     } else if (!canSee(topic.status, role)) {
-      throw new NotFoundException('Topic not found');
+      throw new NotFoundException('Không tìm thấy đề tài.');
     }
 
     // The gate is the round's phase, and only the phase. Comparing the dates
@@ -521,7 +531,7 @@ export class TopicsService {
       topic.status === TopicStatus.COMPLETED
     ) {
       throw new ConflictException(
-        'A topic already under way can no longer be edited',
+        'Đề tài đang thực hiện, không thể chỉnh sửa.',
       );
     }
 
@@ -552,20 +562,20 @@ export class TopicsService {
     // it is free for the next student to take.
     if (topic.activeGroupCount > 0) {
       throw new ConflictException(
-        'Cannot delete a topic that students have already registered for',
+        'Không thể xóa đề tài đã có sinh viên đăng ký.',
       );
     }
 
     await this.prisma.topic.delete({ where: { id } });
 
-    return { message: 'Topic deleted' };
+    return { message: 'Đã xóa đề tài thành công.' };
   }
 
   async approve(id: number) {
     const topic = await this.requireTopic(id);
 
     if (topic.status !== TopicStatus.PENDING) {
-      throw new ConflictException('Only a pending topic can be approved');
+      throw new ConflictException('Chỉ đề tài đang chờ duyệt mới có thể phê duyệt.');
     }
 
     return this.setStatus(id, TopicStatus.APPROVED);
@@ -589,7 +599,7 @@ export class TopicsService {
 
     if (topic.status !== TopicStatus.APPROVED) {
       throw new ConflictException(
-        'A topic must be approved before it can accept registrations',
+        'Đề tài phải được phê duyệt trước khi mở đăng ký.',
       );
     }
 
@@ -600,7 +610,7 @@ export class TopicsService {
     const topic = await this.requireOwnTopic(id, userId, role);
 
     if (topic.status !== TopicStatus.OPEN) {
-      throw new ConflictException('Only an open topic can be closed');
+      throw new ConflictException('Chỉ có thể đóng đề tài đang ở trạng thái mở đăng ký.');
     }
 
     return this.setStatus(id, TopicStatus.APPROVED);
@@ -893,10 +903,15 @@ export class TopicsService {
   private async presentDetail<T extends TopicWithGroups>(topic: T) {
     const phases = await this.phases.resolveMany([topic.round]);
 
-    return withActiveGroup(
+    const presented = withActiveGroup(
       topic,
       phases.get(topic.round.id) ?? topic.round.phase,
     );
+
+    return {
+      ...presented,
+      attachments: (topic as any).sourceProposal?.attachments ?? [],
+    };
   }
 
   private async requireTopic(id: number) {
@@ -917,7 +932,7 @@ export class TopicsService {
       },
     });
 
-    if (!topic) throw new NotFoundException('Topic not found');
+    if (!topic) throw new NotFoundException('Không tìm thấy đề tài.');
 
     return { ...topic, activeGroupCount: topic._count.registrationGroups };
   }
@@ -930,7 +945,7 @@ export class TopicsService {
     const lecturerId = await this.requireLecturerProfileId(userId);
 
     if (topic.lecturerId !== lecturerId) {
-      throw new ForbiddenException('This topic belongs to another lecturer');
+      throw new ForbiddenException('Đề tài này thuộc quyền quản lý của giảng viên khác.');
     }
 
     return topic;
@@ -944,7 +959,7 @@ export class TopicsService {
 
     if (!profile) {
       throw new ForbiddenException(
-        'No lecturer profile is attached to this account',
+        'Tài khoản chưa được liên kết với hồ sơ giảng viên.',
       );
     }
 
@@ -957,7 +972,7 @@ export class TopicsService {
       select: { id: true },
     });
 
-    if (!semester) throw new NotFoundException(`Semester ${id} not found`);
+    if (!semester) throw new NotFoundException(`Không tìm thấy học kỳ mã #${id}`);
   }
 }
 

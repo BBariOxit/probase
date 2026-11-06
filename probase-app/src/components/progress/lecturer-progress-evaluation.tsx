@@ -11,7 +11,6 @@ import {
   Loader2,
   MessageSquare,
   Scale,
-  Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -20,7 +19,6 @@ import {
   useLecturerGroupProgressDetail,
 } from '@/lib/api/progress';
 import { formatDate } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -157,20 +155,11 @@ export function LecturerProgressEvaluation({
     <div className="space-y-6">
       {/* ── HAI ĐỢT KIỂM TRA TẬP TRUNG (CHẤM ĐIỂM) ── */}
       <div className="rounded-xl border bg-card p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+        <div className="flex items-center justify-between mb-3">
           <h4 className="font-semibold text-sm text-foreground flex items-center gap-2">
             <Award className="size-4 text-primary" />
-            <span>
-              {isSubCouncilCourse
-                ? 'Đánh giá học phần Tiểu ban 2 Giảng viên (ĐACS / ĐACN)'
-                : 'Đánh giá 2 đợt tiến độ tập trung của Khoa'}
-            </span>
+            <span>Đánh giá tiến độ</span>
           </h4>
-          {projectTypeCode && (
-            <Badge variant="outline" className="text-xs">
-              Loại: {projectTypeCode}
-            </Badge>
-          )}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -180,18 +169,16 @@ export function LecturerProgressEvaluation({
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-xs">
                   {isSubCouncilCourse
-                    ? 'Tiến độ 1 (Quá trình GVHD: 50%)'
-                    : 'Tiến độ 1 (Trọng số 20%)'}
+                    ? 'Tiến độ 1 (GVHD - 50%)'
+                    : 'Tiến độ 1 (20%)'}
                 </span>
                 {stage1?.finalStageGrade !== null && stage1?.finalStageGrade !== undefined ? (
-                  <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
+                  <span className="text-xs font-semibold text-primary">
                     {stage1.supervisorGrade}/10
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-muted-foreground text-[11px]">
-                    {stage1 ? 'Đã nộp bài' : 'Chưa nộp'}
-                  </Badge>
-                )}
+                  </span>
+                ) : stage1 ? (
+                  <span className="text-xs text-muted-foreground">Đã nộp</span>
+                ) : null}
               </div>
 
               {stage1 ? (
@@ -225,7 +212,7 @@ export function LecturerProgressEvaluation({
                   )}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">Nhóm chưa nộp báo cáo đợt 1.</p>
+                <p className="text-xs text-muted-foreground">Chưa có báo cáo.</p>
               )}
             </div>
 
@@ -233,7 +220,7 @@ export function LecturerProgressEvaluation({
               <div className="mt-3 pt-2 border-t">
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="default"
                   className="w-full text-xs h-8"
                   onClick={() => handleOpenGrade('STAGE_1')}
                 >
@@ -249,24 +236,22 @@ export function LecturerProgressEvaluation({
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-xs">
                   {isSubCouncilCourse
-                    ? 'Tiến độ 2 (Tiểu ban 2 GV: 50%)'
-                    : 'Tiến độ 2 (Hội đồng 30%)'}
+                    ? 'Tiến độ 2 (Tiểu ban - 50%)'
+                    : 'Tiến độ 2 (Hội đồng - 30%)'}
                 </span>
                 {stage2?.finalStageGrade !== null && stage2?.finalStageGrade !== undefined ? (
-                  <Badge
+                  <span
                     className={
                       stage2.isPassed === false
-                        ? 'bg-destructive/10 text-destructive font-bold'
-                        : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold'
+                        ? 'text-xs font-semibold text-destructive'
+                        : 'text-xs font-semibold text-primary'
                     }
                   >
                     {stage2.finalStageGrade}/10
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-muted-foreground text-[11px]">
-                    {stage2 ? 'Đã nộp bài' : 'Chưa nộp'}
-                  </Badge>
-                )}
+                  </span>
+                ) : stage2 ? (
+                  <span className="text-xs text-muted-foreground">Đã nộp</span>
+                ) : null}
               </div>
 
               {stage2 ? (
@@ -294,12 +279,12 @@ export function LecturerProgressEvaluation({
                     </a>
                   )}
                   {stage2.workloadPercentage !== null && (
-                    <div className="flex items-center justify-between font-medium pt-1">
-                      <span>Đánh giá khối lượng:</span>
+                    <div className="flex items-center justify-between text-xs font-medium pt-1">
+                      <span>Khối lượng:</span>
                       <span
                         className={
                           stage2.workloadPercentage >= 50
-                            ? 'text-emerald-600 font-semibold'
+                            ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
                             : 'text-destructive font-semibold'
                         }
                       >
@@ -329,14 +314,14 @@ export function LecturerProgressEvaluation({
                   </div>
 
                   {stage2.isPassed === false && (
-                    <div className="flex items-center gap-1 text-destructive font-medium">
+                    <div className="flex items-center gap-1 text-destructive font-medium text-xs">
                       <AlertTriangle className="size-3.5 shrink-0" />
-                      <span>Cảnh báo: Dưới 50% khối lượng!</span>
+                      <span>Khối lượng chưa đạt (&lt; 50%)</span>
                     </div>
                   )}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">Nhóm chưa nộp bài đợt 2.</p>
+                <p className="text-xs text-muted-foreground">Chưa có báo cáo.</p>
               )}
             </div>
 
@@ -344,11 +329,15 @@ export function LecturerProgressEvaluation({
               <div className="mt-3 pt-2 border-t">
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="default"
                   className="w-full text-xs h-8"
                   onClick={() => handleOpenGrade('STAGE_2')}
                 >
-                  {isSupervisor ? 'GVHD Chấm điểm TĐ2' : 'GVPB Chấm điểm TĐ2'}
+                  {stage2?.finalStageGrade !== null
+                    ? 'Chỉnh sửa điểm TĐ2'
+                    : isSupervisor
+                      ? 'GVHD Chấm điểm TĐ2'
+                      : 'GVPB Chấm điểm TĐ2'}
                 </Button>
               </div>
             )}
@@ -364,18 +353,18 @@ export function LecturerProgressEvaluation({
           stage2?.finalStageGrade !== undefined && (
             <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
               <div className="flex items-center gap-2">
-                <Sparkles className="size-4 text-primary shrink-0" />
+                <CheckCircle2 className="size-4 text-primary shrink-0" />
                 <span>
-                  <strong>Tổng kết học phần ({projectTypeCode}):</strong> 50% TĐ1 ({stage1.finalStageGrade}đ) + 50% Tiểu ban ({stage2.finalStageGrade}đ)
+                  <strong>Tổng kết học phần:</strong> 50% TĐ1 ({stage1.finalStageGrade}đ) + 50% Tiểu ban ({stage2.finalStageGrade}đ)
                 </span>
               </div>
               <div className="flex items-center gap-1.5 font-bold">
                 <span className="text-primary text-sm">
                   {(0.5 * stage1.finalStageGrade + 0.5 * stage2.finalStageGrade).toFixed(2)}/10
                 </span>
-                <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border-emerald-500/20">
-                  Điểm chữ: {getLetterGrade(0.5 * stage1.finalStageGrade + 0.5 * stage2.finalStageGrade)}
-                </Badge>
+                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                  (Điểm chữ: {getLetterGrade(0.5 * stage1.finalStageGrade + 0.5 * stage2.finalStageGrade)})
+                </span>
               </div>
             </div>
           )}
@@ -385,13 +374,13 @@ export function LecturerProgressEvaluation({
       <div className="rounded-xl border bg-card p-4">
         <div className="flex items-center justify-between mb-3">
           <h4 className="font-semibold text-sm text-foreground">
-            Nhật ký tiến độ sinh viên ({weeklyLogs.length} mốc)
+            Nhật ký tiến độ ({weeklyLogs.length})
           </h4>
         </div>
 
         {weeklyLogs.length === 0 ? (
           <p className="text-xs text-muted-foreground py-4 text-center border border-dashed rounded-lg">
-            Nhóm chưa cập nhật mốc tiến độ nào.
+            Chưa có nhật ký tiến độ.
           </p>
         ) : (
           <div className="space-y-3">
@@ -402,17 +391,17 @@ export function LecturerProgressEvaluation({
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="font-mono text-xs">
+                    <span className="font-mono text-xs font-semibold text-primary">
                       Tuần {log.weekNumber}
-                    </Badge>
+                    </span>
                     <span className="font-medium text-foreground">
                       {log.title || `Báo cáo Tuần ${log.weekNumber}`}
                     </span>
-                    <Badge variant="secondary" className="text-[10px]">
-                      {log.completionPercentage}%
-                    </Badge>
+                    <span className="text-muted-foreground text-[11px]">
+                      ({log.completionPercentage}%)
+                    </span>
                     {log.isAcknowledged && (
-                      <span className="flex items-center gap-1 text-[11px] font-medium text-emerald-600">
+                      <span className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
                         <CheckCircle2 className="size-3" />
                         Đã xem
                       </span>
@@ -442,14 +431,14 @@ export function LecturerProgressEvaluation({
 
                 {log.blockers && (
                   <div className="rounded bg-amber-500/10 p-2 text-amber-800 dark:text-amber-400">
-                    <span className="font-semibold">Vướng mắc SV báo cáo: </span>
+                    <span className="font-semibold">Vướng mắc: </span>
                     <span>{log.blockers}</span>
                   </div>
                 )}
 
                 {log.lecturerComment && (
                   <div className="rounded bg-muted/40 p-2 text-foreground/80">
-                    <span className="font-semibold text-primary">Nhận xét của bạn: </span>
+                    <span className="font-semibold text-primary">Nhận xét: </span>
                     <span>{log.lecturerComment}</span>
                   </div>
                 )}
@@ -463,7 +452,7 @@ export function LecturerProgressEvaluation({
                       onClick={() => handleOpenFeedback(log)}
                     >
                       <MessageSquare className="size-3" />
-                      {log.lecturerComment ? 'Sửa nhận xét' : 'Xác nhận & Góp ý'}
+                      {log.lecturerComment ? 'Sửa nhận xét' : 'Nhận xét'}
                     </Button>
                   </div>
                 )}
@@ -478,9 +467,6 @@ export function LecturerProgressEvaluation({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Góp ý tiến độ Tuần {selectedLog?.weekNumber}</DialogTitle>
-            <DialogDescription>
-              Gửi phản hồi nhận xét và xác nhận khối lượng công việc cho nhóm sinh viên.
-            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 pt-2">
@@ -499,12 +485,12 @@ export function LecturerProgressEvaluation({
 
             <div className="space-y-1.5">
               <Label htmlFor="commentText" className="text-xs">
-                Lời dặn / Góp ý chuyên môn
+                Góp ý chuyên môn
               </Label>
               <Textarea
                 id="commentText"
                 rows={4}
-                placeholder="Nhập nhận xét, hướng dẫn tuần tiếp theo cho sinh viên..."
+                placeholder="Nhập nhận xét cho sinh viên..."
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
               />
@@ -517,7 +503,7 @@ export function LecturerProgressEvaluation({
             </Button>
             <Button onClick={handleSubmitFeedback} disabled={feedbackMutation.isPending}>
               {feedbackMutation.isPending && <Loader2 className="mr-1.5 size-4 animate-spin" />}
-              Lưu phản hồi
+              Lưu nhận xét
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -528,19 +514,8 @@ export function LecturerProgressEvaluation({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {gradingStage === 'STAGE_1'
-                ? isSubCouncilCourse
-                  ? 'Chấm điểm Quá trình Lần 1 (50%)'
-                  : 'Chấm điểm Tiến độ lần 1 (20%)'
-                : isSubCouncilCourse
-                  ? 'Đánh giá Tiểu ban Lần 2 (50%)'
-                  : 'Đánh giá Tiến độ lần 2 (30% - Hội đồng)'}
+              {gradingStage === 'STAGE_1' ? 'Chấm điểm Tiến độ 1' : 'Chấm điểm Tiến độ 2'}
             </DialogTitle>
-            <DialogDescription>
-              {gradingStage === 'STAGE_1'
-                ? 'Nhập điểm và nhận xét về báo cáo phân tích thiết kế, CSDL và prototype.'
-                : 'Thẩm định demo source code và dự thảo báo cáo. Sản phẩm phải đạt tối thiểu 50% khối lượng để được bảo vệ/công nhận.'}
-            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 pt-2">
@@ -564,7 +539,7 @@ export function LecturerProgressEvaluation({
               <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="workloadVal" className="text-xs">
-                    % Khối lượng hoàn thành thực tế:
+                    % Khối lượng hoàn thành:
                   </Label>
                   <span className="text-xs font-bold">{workload}%</span>
                 </div>
@@ -578,9 +553,9 @@ export function LecturerProgressEvaluation({
                 />
                 <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
                   {workload >= 50 ? (
-                    <span className="text-emerald-600 font-medium">✓ Đạt yêu cầu (≥ 50%), đủ điều kiện</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">Đạt yêu cầu (≥ 50%)</span>
                   ) : (
-                    <span className="text-destructive font-medium">⚠ Cảnh báo: Dưới 50%, có nguy cơ không đạt</span>
+                    <span className="text-destructive font-medium">Chưa đạt yêu cầu (&lt; 50%)</span>
                   )}
                 </div>
               </div>
@@ -591,7 +566,7 @@ export function LecturerProgressEvaluation({
               <Textarea
                 id="gradeFeedbackText"
                 rows={3}
-                placeholder="Góp ý những điểm cần hoàn thiện..."
+                placeholder="Nhập nhận xét đánh giá..."
                 value={gradeFeedback}
                 onChange={(e) => setGradeFeedback(e.target.value)}
               />

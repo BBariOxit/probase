@@ -24,7 +24,7 @@ export class MajorsService {
       include: { _count: { select: { students: true } } },
     });
 
-    if (!major) throw new NotFoundException('Major not found');
+    if (!major) throw new NotFoundException('Không tìm thấy chuyên ngành.');
 
     return major;
   }
@@ -53,10 +53,10 @@ export class MajorsService {
       include: { _count: { select: { students: true } } },
     });
 
-    if (!major) throw new NotFoundException('Major not found');
+    if (!major) throw new NotFoundException('Không tìm thấy chuyên ngành.');
 
     if (major._count.students > 0) {
-      throw new ConflictException('Cannot delete major with existing students');
+      throw new ConflictException('Không thể xóa chuyên ngành đã có sinh viên theo học.');
     }
 
     return this.prisma.major.delete({ where: { id } });
@@ -65,7 +65,7 @@ export class MajorsService {
   private async checkDuplicateCode(code: string, excludeId?: number) {
     const existing = await this.prisma.major.findUnique({ where: { code } });
     if (existing && existing.id !== excludeId) {
-      throw new ConflictException(`Major code "${code}" already exists`);
+      throw new ConflictException(`Mã chuyên ngành "${code}" đã tồn tại.`);
     }
   }
 }

@@ -325,7 +325,7 @@ function StudentTopicsContent() {
             />
           </div>
 
-          {/* 2. Loại đồ án ▾ (KLTN / DACN / DACS) */}
+          {/* 2. Loại đồ án ▾ */}
           <Select
             value={effectiveProjectTypeId}
             onValueChange={(val) => {
@@ -334,33 +334,30 @@ function StudentTopicsContent() {
             }}
           >
             <SelectTrigger
-              className="h-9 w-32 sm:w-36 shrink-0 text-xs sm:text-sm font-medium rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-800 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
+              className="h-9 w-auto min-w-[140px] sm:min-w-[170px] shrink-0 text-xs sm:text-sm font-normal rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white hover:bg-slate-50 dark:bg-[#1e1e1e] dark:hover:bg-[#252525] text-slate-800 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
               aria-label="Lọc theo loại đồ án"
             >
               <SelectValue>
                 {(val) => {
                   if (!val || val === ANY) return 'Tất cả loại đồ án';
                   const type = projectTypes?.find((t) => t.id === val);
-                  if (!type) return 'Loại đồ án';
-                  return getProjectTypeAbbr(type).short;
+                  return type?.name ?? 'Loại đồ án';
                 }}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="w-auto min-w-[270px] whitespace-nowrap bg-white dark:bg-[#1e1e1e] border-slate-300 dark:border-neutral-700 shadow-xl">
-              <SelectItem value={ANY}>Tất cả loại đồ án</SelectItem>
-              {projectTypes?.map((type) => {
-                const abbr = getProjectTypeAbbr(type);
-                return (
-                  <SelectItem key={type.id} value={type.id}>
-                    <span className="font-semibold text-slate-900 dark:text-neutral-100">
-                      {abbr.full}
-                    </span>
-                    <span className="text-muted-foreground font-normal">
-                      ({abbr.short})
-                    </span>
-                  </SelectItem>
-                );
-              })}
+            <SelectContent className="w-auto min-w-[200px] whitespace-nowrap bg-white dark:bg-[#1e1e1e] border-slate-300 dark:border-neutral-700 shadow-xl">
+              <SelectItem value={ANY}>
+                <span className="font-normal text-slate-800 dark:text-neutral-200">
+                  Tất cả loại đồ án
+                </span>
+              </SelectItem>
+              {projectTypes?.map((type) => (
+                <SelectItem key={type.id} value={type.id}>
+                  <span className="font-normal text-slate-800 dark:text-neutral-200">
+                    {type.name}
+                  </span>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -370,7 +367,7 @@ function StudentTopicsContent() {
             value={lecturerId}
             onChange={setLecturerId}
             className="w-48 sm:w-52 shrink-0"
-            triggerClassName="h-9 w-full text-xs sm:text-sm font-medium rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-800 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
+            triggerClassName="h-9 w-full text-xs sm:text-sm font-medium rounded-lg border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] text-slate-800 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
           />
 
           {/* 4. Còn trống 🔘 (Toggle switch with solid primary background when ON) */}
@@ -383,7 +380,7 @@ function StudentTopicsContent() {
               'inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border px-3 text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none shadow-2xs',
               onlyAvailable
                 ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs'
-                : 'border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-300 hover:border-slate-400 dark:hover:border-neutral-600',
+                : 'border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] text-slate-700 dark:text-neutral-300 hover:border-slate-400 dark:hover:border-neutral-600',
             )}
             title={onlyAvailable ? 'Đang lọc đề tài còn trống (nhấn để tắt)' : 'Nhấn để chỉ hiện đề tài còn trống'}
           >

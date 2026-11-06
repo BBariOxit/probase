@@ -203,9 +203,11 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
               className="size-5 text-[10px]"
             />
             <span className="text-foreground">{student.fullName}</span>
-            <span>
-              {student.studentCode}
-              {student.class && ` · ${student.class}`}
+            <span className="inline-flex items-center gap-1.5">
+              <span className="inline-flex items-center rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-primary">
+                {student.studentCode}
+              </span>
+              {student.class && <span>· {student.class}</span>}
             </span>
           </span>
         }
@@ -257,9 +259,12 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
         proposal={viewing ? proposal : null}
         onClose={() => setViewing(false)}
         counterparty={
-          <span>
-            Sinh viên: {student.fullName} ({student.studentCode}
-            {student.class && ` - ${student.class}`})
+          <span className="inline-flex items-center gap-1.5">
+            Sinh viên: {student.fullName} (
+            <span className="inline-flex items-center rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-primary">
+              {student.studentCode}
+            </span>
+            {student.class && <span>- {student.class}</span>})
           </span>
         }
         footer={<Outcome proposal={proposal} />}

@@ -155,7 +155,10 @@ export default function LecturerReviewsPage() {
                               {m.student.fullName}
                             </span>{' '}
                             <span className="text-muted-foreground font-mono">
-                              ({m.student.studentCode}
+                              (
+                              <span className="text-primary font-semibold">
+                                {m.student.studentCode}
+                              </span>
                               {m.student.class ? ` · ${m.student.class}` : ''})
                             </span>
                           </p>

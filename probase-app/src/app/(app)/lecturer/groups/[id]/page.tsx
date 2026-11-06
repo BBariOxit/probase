@@ -34,7 +34,7 @@ import { useState } from 'react';
 
 const JOIN_SOURCE_LABEL: Record<string, string> = {
   SELF: 'Tự đăng ký',
-  LINK: 'Qua link nhóm',
+  LINK: 'Mời qua MSSV',
   ASSIGNED: 'Khoa phân công',
 };
 
@@ -159,13 +159,17 @@ export default function LecturerGroupDetailPage({
                           )}
                         </p>
                         <p className="truncate text-xs text-muted-foreground sm:hidden">
-                          {member.student.studentCode}
+                          <span className="font-mono text-xs font-semibold text-primary">
+                            {member.student.studentCode}
+                          </span>
                         </p>
                       </div>
                     </div>
                   </td>
-                  <td className="hidden px-4 py-3 font-mono text-xs text-muted-foreground sm:table-cell">
-                    {member.student.studentCode}
+                  <td className="hidden px-4 py-3 sm:table-cell">
+                    <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 font-mono text-xs font-semibold text-primary">
+                      {member.student.studentCode}
+                    </span>
                   </td>
                   <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
                     {member.student.class ?? '—'}
@@ -175,8 +179,20 @@ export default function LecturerGroupDetailPage({
                       ? dateFormat.format(new Date(member.joinedAt))
                       : '—'}
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {JOIN_SOURCE_LABEL[member.joinSource] ?? member.joinSource}
+                  <td className="px-4 py-3 text-xs">
+                    {member.joinSource === 'ASSIGNED' ? (
+                      <span className="inline-flex items-center rounded-md border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                        Khoa phân công
+                      </span>
+                    ) : member.joinSource === 'LINK' ? (
+                      <span className="inline-flex items-center rounded-md border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-neutral-300">
+                        Mời qua MSSV
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                        Tự đăng ký
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -212,7 +228,7 @@ export default function LecturerGroupDetailPage({
 
         {!subPending && submissions.length === 0 && (
           <div className="rounded-xl border">
-            <EmptyState icon={FileText} title="Nhóm này chưa nộp bài nào." />
+            <EmptyState icon={FileText} title="Chưa có bài nộp nào." />
           </div>
         )}
 
@@ -293,9 +309,6 @@ function FeedbackDialog({
 
           <div className="space-y-2">
             <Label htmlFor="feedback">Nhận xét cho nhóm</Label>
-            <p className="text-xs text-muted-foreground">
-              Cả nhóm sẽ nhận thông báo và đọc được nguyên văn.
-            </p>
             <Textarea
               id="feedback"
               rows={5}

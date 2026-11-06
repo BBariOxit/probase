@@ -119,7 +119,7 @@ function RowActions({ topic }: { topic: TopicListItem }) {
 
             {canEdit && (
               <DropdownMenuItem
-                render={<Link href={`/lecturer/topics/${topic.id}`} />}
+                render={<Link href={`/lecturer/topics/${topic.id}?edit=true`} />}
               >
                 <Pencil />
                 Sửa
@@ -262,51 +262,54 @@ export default function LecturerTopicsPage() {
         </p>
       )}
 
-      <div className="overflow-hidden rounded-xl border">
+      <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="w-full table-fixed text-left text-sm">
             <TableHeader>
               <TableRow>
-                <TableHead className="min-w-64">Tiêu đề</TableHead>
-                <TableHead className="w-40">Loại đồ án</TableHead>
-                <TableHead className="w-36">Trạng thái</TableHead>
-                <TableHead className="w-12" />
+                <TableHead className="w-[380px] max-w-[440px] min-w-[280px] px-5 py-3.5 whitespace-nowrap">Tiêu đề</TableHead>
+                <TableHead className="w-40 px-3 py-3.5 whitespace-nowrap">Loại đồ án</TableHead>
+                <TableHead className="w-36 px-3 py-3.5 whitespace-nowrap">Trạng thái</TableHead>
+                <TableHead className="w-24 px-4 py-3.5 text-right whitespace-nowrap" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {topics.map((topic) => (
                 <TableRow
                   key={topic.id}
-                  className="cursor-pointer hover:bg-muted/50"
+                  className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                   onClick={() => setSelectedTopicId(topic.id)}
                 >
-                  <TableCell className="font-medium">
-                    <Link
-                      href={`/lecturer/topics/${topic.id}`}
-                      className="rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setSelectedTopicId(topic.id);
-                      }}
-                    >
-                      {topic.title}
-                    </Link>
-                    <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-                      {topic.activeGroup
-                        ? `Nhóm ${topic.activeGroup.occupiedSeats}/${topic.maxStudents}`
-                        : 'Chưa có nhóm'}
-                    </span>
+                  <TableCell className="w-[380px] max-w-[440px] min-w-[280px] px-5 py-3.5 align-middle whitespace-normal">
+                    <div className="w-full max-w-[440px] whitespace-normal">
+                      <Link
+                        href={`/lecturer/topics/${topic.id}`}
+                        className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words whitespace-normal line-clamp-2 cursor-pointer"
+                        title={topic.title}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                      >
+                        {topic.title}
+                      </Link>
+                      <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                        {topic.activeGroup
+                          ? `Nhóm ${topic.activeGroup.occupiedSeats}/${topic.maxStudents} sinh viên`
+                          : 'Chưa có nhóm sinh viên'}
+                      </span>
+                    </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="w-40 px-3 py-3.5 align-middle whitespace-nowrap font-medium text-slate-700 dark:text-neutral-300">
                     {topic.projectType.name}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="w-36 px-3 py-3.5 align-middle whitespace-nowrap">
                     <TopicOwnerBadge
                       status={topic.status}
                       activeGroup={topic.activeGroup}
+                      variant="text"
                     />
                   </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
+                  <TableCell className="w-24 px-4 py-3.5 align-middle text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <RowActions topic={topic} />
                   </TableCell>
                 </TableRow>

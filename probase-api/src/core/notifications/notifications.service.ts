@@ -92,9 +92,9 @@ export class NotificationsService {
       data: { isRead: true },
     });
 
-    if (count === 0) throw new NotFoundException('Notification not found');
+    if (count === 0) throw new NotFoundException('Không tìm thấy thông báo.');
 
-    return { message: 'Notification marked as read' };
+    return { message: 'Đã đánh dấu thông báo là đã đọc.' };
   }
 
   async markAllRead(userId: number) {

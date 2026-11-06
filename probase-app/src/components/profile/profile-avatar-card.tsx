@@ -55,9 +55,21 @@ export function ProfileAvatarCard({ profile }: { profile: MyProfile }) {
         </div>
 
         <div className="min-w-0">
-          <h2 className="font-heading truncate text-lg leading-tight font-semibold tracking-tight">
-            {profile.fullName ?? ROLE_LABELS[profile.role]}
-          </h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="font-heading truncate text-lg leading-tight font-semibold tracking-tight">
+              {profile.fullName ?? ROLE_LABELS[profile.role]}
+            </h2>
+            {profile.student?.studentCode && (
+              <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 font-mono text-xs font-semibold text-primary">
+                {profile.student.studentCode}
+              </span>
+            )}
+            {profile.lecturer?.lecturerCode && (
+              <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 font-mono text-xs font-semibold text-primary">
+                {profile.lecturer.lecturerCode}
+              </span>
+            )}
+          </div>
           <p className="truncate text-sm text-muted-foreground">
             {profile.email}
           </p>

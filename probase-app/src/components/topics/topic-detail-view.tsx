@@ -6,8 +6,10 @@ import {
   CheckCircle,
   CheckCircle2,
   Cpu,
+  ExternalLink,
   FileText,
   GraduationCap,
+  ImageIcon,
   Layers,
   Pencil,
   Target,
@@ -21,6 +23,13 @@ import { TopicStatusBadge } from '@/components/topics/topic-status-badge';
 import { TopicRegisterButton } from '@/components/topics/topic-register-button';
 import { Button } from '@/components/ui/button';
 
+function formatBytes(bytes?: number): string {
+  if (!bytes || bytes <= 0) return '0 B';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 const dateFormat = new Intl.DateTimeFormat('vi-VN', {
   day: '2-digit',
   month: '2-digit',
@@ -30,9 +39,11 @@ const dateFormat = new Intl.DateTimeFormat('vi-VN', {
 export function TopicDetailView({
   topic,
   actions,
+  onEdit,
 }: {
   topic: TopicDetail;
   actions?: React.ReactNode;
+  onEdit?: () => void;
 }) {
   const user = useSession((s) => s.user);
   const { data: profile } = useMyProfile();
@@ -57,48 +68,35 @@ export function TopicDetailView({
     !topic.alreadyInAGroup &&
     (topic.canRegister || topic.canJoin);
 
+  const attachments: any[] =
+    (topic as any).attachments ||
+    (topic as any).sourceProposal?.attachments ||
+    [];
+
   return (
-    <article className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#1a1d26] shadow-xs overflow-hidden">
+    <article className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] shadow-xs overflow-hidden">
       {/* Header đề tài */}
       <div className="p-6 sm:p-8 space-y-4">
         {/* Hàng trạng thái & nút thao tác nhanh ở trên */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <TopicStatusBadge status={topic.status} />
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30">
+            <span className="text-xs font-medium text-muted-foreground">
               {topic.projectType.name}
+              {topic.major ? ` • ${topic.major.name}` : ''}
             </span>
-            {topic.major && (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-neutral-800 dark:text-neutral-300 border border-slate-200 dark:border-neutral-700">
-                {topic.major.name}
-              </span>
-            )}
           </div>
 
-          <div className="flex items-center gap-2.5">
-            {/* Nút sửa đề tài đối với người tạo đề tài (GV / Admin) */}
-            {canEdit && (
-              <Button
-                variant="outline"
-                size="sm"
-                render={<Link href={`/lecturer/topics/${topic.id}`} />}
-                className="gap-1.5 h-9 font-semibold border-slate-300 dark:border-neutral-700 hover:bg-slate-100 dark:hover:bg-neutral-800 cursor-pointer shadow-2xs"
-              >
-                <Pencil className="size-3.5 text-primary" />
-                <span>Sửa đề tài</span>
-              </Button>
-            )}
-
-            {/* Nút đăng ký (primary) đối với sinh viên chưa có nhóm */}
-            {canStudentRegister && (
+          {canStudentRegister && (
+            <div className="flex items-center gap-2.5">
               <TopicRegisterButton
                 topic={topic}
                 size="default"
                 buttonClassName="h-9 px-4 text-xs sm:text-sm bg-primary text-white hover:bg-primary/90 font-semibold rounded-lg shadow-xs cursor-pointer gap-1.5"
                 label={topic.canRegister ? 'Đăng ký đề tài' : 'Tham gia nhóm'}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Tiêu đề đề tài */}
@@ -113,12 +111,10 @@ export function TopicDetailView({
           )}
         </div>
 
-        {/* Thông tin metadata (GVHD, Học kỳ, Số lượng SV) */}
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-sm text-slate-600 dark:text-neutral-400">
-          <div className="inline-flex items-center gap-2">
-            <div className="size-7 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-              <GraduationCap className="size-4" />
-            </div>
+        {/* Thông tin metadata (GVHD, Loại đồ án, Số lượng SV) */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1 text-sm text-slate-600 dark:text-neutral-400">
+          <div className="inline-flex items-center gap-1.5">
+            <GraduationCap className="size-4 text-muted-foreground/80 shrink-0" />
             <Link
               href={`/lecturers/${topic.lecturer.id}`}
               className="font-medium text-slate-900 dark:text-neutral-200 hover:text-primary transition-colors hover:underline"
@@ -132,17 +128,17 @@ export function TopicDetailView({
             </Link>
           </div>
 
-          <div className="inline-flex items-center gap-2">
-            <div className="size-7 rounded-full bg-slate-100 dark:bg-white/8 flex items-center justify-center text-slate-600 dark:text-neutral-400">
-              <Layers className="size-4" />
-            </div>
+          <span className="text-muted-foreground/30">•</span>
+
+          <div className="inline-flex items-center gap-1.5">
+            <Layers className="size-4 text-muted-foreground/80 shrink-0" />
             <span>{topic.projectType.name}</span>
           </div>
 
-          <div className="inline-flex items-center gap-2">
-            <div className="size-7 rounded-full bg-slate-100 dark:bg-white/8 flex items-center justify-center text-slate-600 dark:text-neutral-400">
-              <Users className="size-4" />
-            </div>
+          <span className="text-muted-foreground/30">•</span>
+
+          <div className="inline-flex items-center gap-1.5">
+            <Users className="size-4 text-muted-foreground/80 shrink-0" />
             <span>
               Tối đa {topic.maxStudents} sinh viên
               {topic.occupiedSeats !== undefined && (
@@ -154,14 +150,14 @@ export function TopicDetailView({
           </div>
         </div>
 
-        <hr className="border-border my-6" />
+        <hr className="border-slate-200 dark:border-neutral-800 my-6" />
 
-        {/* NỘI DUNG THEO TỪNG PHẦN, TÁCH BẠCH MÀU, CĂN ĐỀU 2 BÊN CHỮ */}
-        <div className="space-y-5">
+        {/* NỘI DUNG THEO TỪNG PHẦN */}
+        <div className="space-y-6">
           {/* 1. Mô tả nội dung yêu cầu */}
-          <div className="rounded-xl border border-slate-200/90 dark:border-neutral-800/90 bg-[#f7f8fc] dark:bg-[#1f2330] p-5 sm:p-6 space-y-3">
-            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-neutral-100 flex items-center gap-2.5">
-              <FileText className="size-5 text-primary shrink-0" />
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <FileText className="size-4 text-primary shrink-0" />
               <span>Mô tả nội dung yêu cầu</span>
             </h2>
             <div className="text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify selection:bg-primary/20">
@@ -171,9 +167,9 @@ export function TopicDetailView({
 
           {/* 2. Mục tiêu đề tài */}
           {topic.objectives && (
-            <div className="rounded-xl border border-slate-200/90 dark:border-neutral-800/90 bg-[#f7f8fc] dark:bg-[#1f2330] p-5 sm:p-6 space-y-3">
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-neutral-100 flex items-center gap-2.5">
-                <Target className="size-5 text-primary shrink-0" />
+            <div className="space-y-2 pt-4 border-t border-slate-200/80 dark:border-neutral-800/80">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <Target className="size-4 text-primary shrink-0" />
                 <span>Mục tiêu đề tài</span>
               </h2>
               <div className="text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify selection:bg-primary/20">
@@ -183,9 +179,9 @@ export function TopicDetailView({
           )}
 
           {/* 3. Yêu cầu đầu ra */}
-          <div className="rounded-xl border border-slate-200/90 dark:border-neutral-800/90 bg-[#f7f8fc] dark:bg-[#1f2330] p-5 sm:p-6 space-y-3">
-            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-neutral-100 flex items-center gap-2.5">
-              <CheckCircle2 className="size-5 text-primary shrink-0" />
+          <div className="space-y-2 pt-4 border-t border-slate-200/80 dark:border-neutral-800/80">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <CheckCircle2 className="size-4 text-primary shrink-0" />
               <span>Yêu cầu đầu ra</span>
             </h2>
             <div className="text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify selection:bg-primary/20">
@@ -195,16 +191,16 @@ export function TopicDetailView({
 
           {/* 4. Công nghệ & Công cụ đề xuất */}
           {topic.techStack && (
-            <div className="rounded-xl border border-slate-200/90 dark:border-neutral-800/90 bg-[#f7f8fc] dark:bg-[#1f2330] p-5 sm:p-6 space-y-3">
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-neutral-100 flex items-center gap-2.5">
-                <Cpu className="size-5 text-primary shrink-0" />
+            <div className="space-y-2.5 pt-4 border-t border-slate-200/80 dark:border-neutral-800/80">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <Cpu className="size-4 text-primary shrink-0" />
                 <span>Công nghệ & Công cụ đề xuất</span>
               </h2>
               <div className="flex flex-wrap gap-2 pt-1">
                 {topic.techStack.split(',').map((tech, i) => (
                   <span
                     key={i}
-                    className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold bg-white dark:bg-neutral-800 text-slate-800 dark:text-neutral-200 border border-slate-200 dark:border-neutral-700 shadow-2xs"
+                    className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-neutral-300 border border-slate-200/80 dark:border-neutral-700/80"
                   >
                     {tech.trim()}
                   </span>
@@ -212,11 +208,75 @@ export function TopicDetailView({
               </div>
             </div>
           )}
+          {/* 5. Tài liệu & Hình ảnh đính kèm */}
+          {attachments.length > 0 && (
+            <div className="space-y-3 pt-4 border-t border-slate-200/80 dark:border-neutral-800/80">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <FileText className="size-4 text-primary shrink-0" />
+                <span>Tài liệu & Hình ảnh đính kèm ({attachments.length})</span>
+              </h2>
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                {attachments.map((file: any, idx: number) => {
+                  const isImg =
+                    file.fileType?.toLowerCase().includes('image') ||
+                    /\.(jpg|jpeg|png|webp|gif)$/i.test(
+                      file.fileName || file.name || '',
+                    );
+
+                  return (
+                    <div
+                      key={file.id || idx}
+                      className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-neutral-800 bg-slate-50/60 dark:bg-neutral-900/40 p-3 text-xs"
+                    >
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-primary overflow-hidden">
+                        {isImg && file.fileUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={file.fileUrl}
+                            alt={file.fileName || 'Ảnh đính kèm'}
+                            className="size-full object-cover"
+                          />
+                        ) : isImg ? (
+                          <ImageIcon className="size-5" />
+                        ) : (
+                          <FileText className="size-5" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className="truncate font-medium text-slate-900 dark:text-neutral-100"
+                          title={file.fileName || file.name}
+                        >
+                          {file.fileName || file.name}
+                        </p>
+                        {file.fileSize && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {formatBytes(file.fileSize)}
+                          </p>
+                        )}
+                      </div>
+                      {file.fileUrl && (
+                        <a
+                          href={file.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 px-2.5 py-1 font-medium text-slate-700 dark:text-neutral-300 hover:text-primary transition-colors shrink-0"
+                        >
+                          <span>Xem</span>
+                          <ExternalLink className="size-3" />
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Footer Card */}
-      <div className="bg-slate-50/70 dark:bg-neutral-900/50 px-6 sm:px-8 py-4 border-t border-border flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-slate-50/70 dark:bg-neutral-900/40 px-6 sm:px-8 py-4 border-t border-slate-200 dark:border-neutral-800 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {topic.round && (
             <span className="inline-flex items-center gap-1.5">
@@ -276,7 +336,8 @@ export function TopicDetailView({
           {canEdit && (
             <Button
               variant="default"
-              render={<Link href={`/lecturer/topics/${topic.id}`} />}
+              onClick={onEdit}
+              render={!onEdit ? <Link href={`/lecturer/topics/${topic.id}?edit=true`} /> : undefined}
               className="gap-2 font-semibold bg-primary text-white hover:bg-primary/90 cursor-pointer shadow-xs"
             >
               <Pencil className="size-4" />

@@ -265,9 +265,10 @@ export function ProposalForm({
         )}
         <Button
           type="button"
-          variant="ghost"
+          variant="destructive"
           disabled={isSubmitting}
           onClick={onCancel}
+          className="cursor-pointer font-medium"
         >
           Huỷ
         </Button>

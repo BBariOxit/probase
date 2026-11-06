@@ -55,7 +55,7 @@ export class RoundPhaseService {
       if (!(await this.hasGroup(studentId, round.semesterId))) return;
 
       throw new ConflictException(
-        'Registration reopened only for students who ended up without a group — you already have a topic',
+        'Đợt gia hạn chỉ dành cho sinh viên chưa có nhóm — bạn đã có đề tài trong học kỳ này.',
       );
     }
 
@@ -103,7 +103,7 @@ export class RoundPhaseService {
     });
 
     if (!round) {
-      throw new NotFoundException(`Registration round ${roundId} not found`);
+      throw new NotFoundException(`Không tìm thấy đợt đăng ký #${roundId}`);
     }
 
     return round;
@@ -194,9 +194,9 @@ const REFUSAL_BY_PHASE: Record<
   string
 > = {
   [RoundPhase.PREP]:
-    'Registration for this round has not opened yet — no topic can be taken while the faculty office is still preparing',
+    'Đợt đăng ký chưa mở — sinh viên chưa thể chọn đề tài trong thời gian chuẩn bị.',
   [RoundPhase.RECONCILING]:
-    'Registration has closed. The faculty office is placing the students who ended up without a group, so groups can no longer be changed',
+    'Cổng đăng ký đã đóng. Giáo vụ đang xử lý phân bổ cho sinh viên chưa có nhóm, không thể thay đổi nhóm.',
   [RoundPhase.FINALIZED]:
-    'Allocation for this round is final and can no longer be changed',
+    'Danh sách phân bổ đợt này đã chốt chính thức, không thể thay đổi.',
 };
