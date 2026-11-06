@@ -325,7 +325,7 @@ function StudentTopicsContent() {
             />
           </div>
 
-          {/* 2. Loại đồ án ▾ (KLTN / DACN / DACS) */}
+          {/* 2. Loại đồ án ▾ */}
           <Select
             value={effectiveProjectTypeId}
             onValueChange={(val) => {
@@ -334,33 +334,30 @@ function StudentTopicsContent() {
             }}
           >
             <SelectTrigger
-              className="h-9 w-32 sm:w-36 shrink-0 text-xs sm:text-sm font-medium rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-800 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
+              className="h-9 w-auto min-w-[140px] sm:min-w-[170px] shrink-0 text-xs sm:text-sm font-normal rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white hover:bg-slate-50 dark:bg-[#1e1e1e] dark:hover:bg-[#252525] text-slate-800 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
               aria-label="Lọc theo loại đồ án"
             >
               <SelectValue>
                 {(val) => {
                   if (!val || val === ANY) return 'Tất cả loại đồ án';
                   const type = projectTypes?.find((t) => t.id === val);
-                  if (!type) return 'Loại đồ án';
-                  return getProjectTypeAbbr(type).short;
+                  return type?.name ?? 'Loại đồ án';
                 }}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="w-auto min-w-[270px] whitespace-nowrap bg-white dark:bg-[#1e1e1e] border-slate-300 dark:border-neutral-700 shadow-xl">
-              <SelectItem value={ANY}>Tất cả loại đồ án</SelectItem>
-              {projectTypes?.map((type) => {
-                const abbr = getProjectTypeAbbr(type);
-                return (
-                  <SelectItem key={type.id} value={type.id}>
-                    <span className="font-semibold text-slate-900 dark:text-neutral-100">
-                      {abbr.full}
-                    </span>
-                    <span className="text-muted-foreground font-normal">
-                      ({abbr.short})
-                    </span>
-                  </SelectItem>
-                );
-              })}
+            <SelectContent className="w-auto min-w-[200px] whitespace-nowrap bg-white dark:bg-[#1e1e1e] border-slate-300 dark:border-neutral-700 shadow-xl">
+              <SelectItem value={ANY}>
+                <span className="font-normal text-slate-800 dark:text-neutral-200">
+                  Tất cả loại đồ án
+                </span>
+              </SelectItem>
+              {projectTypes?.map((type) => (
+                <SelectItem key={type.id} value={type.id}>
+                  <span className="font-normal text-slate-800 dark:text-neutral-200">
+                    {type.name}
+                  </span>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
