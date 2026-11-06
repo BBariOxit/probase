@@ -25,7 +25,7 @@ export const SetRequirementsSchema = z
       new Set(body.requirements.map((one) => one.name.trim().toLowerCase()))
         .size === body.requirements.length,
     {
-      message: 'Hai tài liệu trùng tên — sinh viên sẽ không biết chọn cái nào',
+      message: 'Tên các tài liệu yêu cầu nộp không được trùng lặp',
       path: ['requirements'],
     },
   );

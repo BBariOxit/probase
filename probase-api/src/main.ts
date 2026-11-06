@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters';
 import { ZodValidationPipe } from './common/pipes/zod-validation.pipe';
 
 function trustedProxyHops(): number {
@@ -40,6 +41,7 @@ async function bootstrap() {
   });
 
   app.useGlobalPipes(new ZodValidationPipe());
+  app.useGlobalFilters(new AllExceptionsFilter());
   await app.listen(process.env.PORT ?? 3001);
 }
 void bootstrap();

@@ -139,7 +139,7 @@ function requireProposerOrFree(
   if (topic.sourceProposal.studentId === studentId) return;
 
   throw new ConflictException(
-    'Đề tài này do một sinh viên khác đề xuất, nên chỉ bạn ấy đăng ký được.',
+    'Đề tài này do sinh viên khác đề xuất, chỉ người đề xuất mới có quyền đăng ký.',
   );
 }
 

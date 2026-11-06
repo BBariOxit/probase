@@ -72,16 +72,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-
-const SCHEDULE_EDITABLE = ['PREP', 'OPEN'];
-
-const PHASE: Record<string, { label: string; tone: StatusTone }> = {
-  PREP: { label: 'Chưa mở', tone: 'waiting' },
-  OPEN: { label: 'Đang mở', tone: 'success' },
-  EXTENDED: { label: 'Đang gia hạn', tone: 'active' },
-  RECONCILING: { label: 'Đang phân bổ', tone: 'active' },
-  FINALIZED: { label: 'Đã chốt', tone: 'idle' },
-};
+import {
+  ROUND_PHASE_CONFIG as PHASE,
+  ROUND_SCHEDULE_EDITABLE_PHASES as SCHEDULE_EDITABLE,
+} from '@/constants';
 
 interface TabFormState {
   enabled: boolean;
@@ -116,7 +110,7 @@ function validateAllTabs(
       return {
         typeId: type.id,
         elementId: `start-${type.id}`,
-        message: `${type.name}: Chưa nhập ngày bắt đầu đăng ký.`,
+        message: `${type.name}: Chưa chọn ngày bắt đầu đăng ký.`,
       };
     }
 
@@ -124,7 +118,7 @@ function validateAllTabs(
       return {
         typeId: type.id,
         elementId: `end-${type.id}`,
-        message: `${type.name}: Chưa nhập hạn chốt đăng ký.`,
+        message: `${type.name}: Chưa chọn hạn chốt đăng ký.`,
       };
     }
 
@@ -132,7 +126,7 @@ function validateAllTabs(
       return {
         typeId: type.id,
         elementId: `end-${type.id}`,
-        message: `${type.name}: Hạn đăng ký phải sau ngày mở.`,
+        message: `${type.name}: Hạn đăng ký phải sau ngày mở đăng ký.`,
       };
     }
 
@@ -144,7 +138,7 @@ function validateAllTabs(
       return {
         typeId: type.id,
         elementId: `officialEnd-${type.id}`,
-        message: `${type.name}: Ngày kết thúc phải sau ngày bắt đầu.`,
+        message: `${type.name}: Ngày kết thúc đồ án phải sau ngày bắt đầu.`,
       };
     }
 
@@ -157,7 +151,7 @@ function validateAllTabs(
         return {
           typeId: type.id,
           elementId: `req-name-${type.id}-${i}`,
-          message: `${type.name}: Mục bài nộp #${i + 1} chưa có tên.`,
+          message: `${type.name}: Mục bài nộp #${i + 1} chưa nhập tên.`,
         };
       }
 
@@ -165,7 +159,7 @@ function validateAllTabs(
         return {
           typeId: type.id,
           elementId: `req-due-${type.id}-${i}`,
-          message: `${type.name}: "${trimmedName}" chưa có hạn nộp.`,
+          message: `${type.name}: Bài nộp "${trimmedName}" chưa có hạn nộp.`,
         };
       }
 
