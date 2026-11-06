@@ -159,13 +159,17 @@ export default function LecturerGroupDetailPage({
                           )}
                         </p>
                         <p className="truncate text-xs text-muted-foreground sm:hidden">
-                          {member.student.studentCode}
+                          <span className="font-mono text-xs font-semibold text-primary">
+                            {member.student.studentCode}
+                          </span>
                         </p>
                       </div>
                     </div>
                   </td>
-                  <td className="hidden px-4 py-3 font-mono text-xs text-muted-foreground sm:table-cell">
-                    {member.student.studentCode}
+                  <td className="hidden px-4 py-3 sm:table-cell">
+                    <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 font-mono text-xs font-semibold text-primary">
+                      {member.student.studentCode}
+                    </span>
                   </td>
                   <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
                     {member.student.class ?? '—'}

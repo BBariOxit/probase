@@ -12,7 +12,16 @@ export function ProfileFacts({ profile }: { profile: MyProfile }) {
       {student && (
         <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
           <Fact label="Họ và tên" value={student.fullName} />
-          <Fact label="Mã sinh viên" value={student.studentCode} />
+          <Fact
+            label="Mã sinh viên"
+            value={
+              student.studentCode ? (
+                <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 font-mono text-xs font-semibold text-primary">
+                  {student.studentCode}
+                </span>
+              ) : null
+            }
+          />
           <Fact label="Lớp" value={student.class} />
           <Fact label="Khoá" value={student.cohort} />
           <Fact label="Chuyên ngành" value={student.major?.name ?? null} />
@@ -23,7 +32,16 @@ export function ProfileFacts({ profile }: { profile: MyProfile }) {
         <>
           <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
             <Fact label="Họ và tên" value={lecturer.fullName} />
-            <Fact label="Mã giảng viên" value={lecturer.lecturerCode} />
+            <Fact
+              label="Mã giảng viên"
+              value={
+                lecturer.lecturerCode ? (
+                  <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 font-mono text-xs font-semibold text-primary">
+                    {lecturer.lecturerCode}
+                  </span>
+                ) : null
+              }
+            />
             <Fact
               label="Hướng dẫn học kỳ này"
               value={
@@ -65,7 +83,7 @@ function Fact({
   hint,
 }: {
   label: string;
-  value: string | null;
+  value: React.ReactNode;
   hint?: string;
 }) {
   return (

@@ -280,7 +280,10 @@ export default function ReviewersAdminPage() {
                                 >
                                   {m.student.fullName}{' '}
                                   <span className="text-[11px] font-normal text-muted-foreground">
-                                    ({m.student.studentCode}
+                                    (
+                                    <span className="font-mono font-semibold text-primary">
+                                      {m.student.studentCode}
+                                    </span>
                                     {m.student.class ? ` - ${m.student.class}` : ''}
                                     )
                                   </span>

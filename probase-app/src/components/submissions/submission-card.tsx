@@ -48,8 +48,15 @@ export function SubmissionCard({
           </h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {dateTimeFormat.format(new Date(submission.submittedAt))}
-            {submission.submittedBy &&
-              ` · ${submission.submittedBy.fullName} (${submission.submittedBy.studentCode})`}
+            {submission.submittedBy && (
+              <>
+                {' · '}{submission.submittedBy.fullName} (
+                <span className="font-mono font-semibold text-primary">
+                  {submission.submittedBy.studentCode}
+                </span>
+                )
+              </>
+            )}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
