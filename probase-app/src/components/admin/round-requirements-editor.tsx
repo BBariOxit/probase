@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DatePicker } from '@/components/ui/date-picker';
+import { DEFAULT_STANDARD_MILESTONES } from '@/constants';
 
 export interface RequirementRow {
   id?: number;
@@ -17,13 +18,6 @@ export interface RequirementRow {
   due: string;
   isRequired: boolean;
 }
-
-const DEFAULT_STANDARD_MILESTONES = [
-  'Đề cương chi tiết',
-  'Báo cáo tiến độ đợt 1',
-  'Báo cáo tiến độ đợt 2',
-  'Quyển báo cáo toàn văn & Sản phẩm',
-];
 
 export function RoundRequirementsEditor({
   typeId,

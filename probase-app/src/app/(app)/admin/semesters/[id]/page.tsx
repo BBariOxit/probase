@@ -72,16 +72,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-
-const SCHEDULE_EDITABLE = ['PREP', 'OPEN'];
-
-const PHASE: Record<string, { label: string; tone: StatusTone }> = {
-  PREP: { label: 'Chưa mở', tone: 'waiting' },
-  OPEN: { label: 'Đang mở', tone: 'success' },
-  EXTENDED: { label: 'Đang gia hạn', tone: 'active' },
-  RECONCILING: { label: 'Đang phân bổ', tone: 'active' },
-  FINALIZED: { label: 'Đã chốt', tone: 'idle' },
-};
+import {
+  ROUND_PHASE_CONFIG as PHASE,
+  ROUND_SCHEDULE_EDITABLE_PHASES as SCHEDULE_EDITABLE,
+} from '@/constants';
 
 interface TabFormState {
   enabled: boolean;
