@@ -6,8 +6,10 @@ import {
   CheckCircle,
   CheckCircle2,
   Cpu,
+  ExternalLink,
   FileText,
   GraduationCap,
+  ImageIcon,
   Layers,
   Pencil,
   Target,
@@ -20,6 +22,13 @@ import { sanitizeLecturerName } from '@/lib/utils';
 import { TopicStatusBadge } from '@/components/topics/topic-status-badge';
 import { TopicRegisterButton } from '@/components/topics/topic-register-button';
 import { Button } from '@/components/ui/button';
+
+function formatBytes(bytes?: number): string {
+  if (!bytes || bytes <= 0) return '0 B';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 const dateFormat = new Intl.DateTimeFormat('vi-VN', {
   day: '2-digit',
@@ -58,6 +67,11 @@ export function TopicDetailView({
     isStudent &&
     !topic.alreadyInAGroup &&
     (topic.canRegister || topic.canJoin);
+
+  const attachments: any[] =
+    (topic as any).attachments ||
+    (topic as any).sourceProposal?.attachments ||
+    [];
 
   return (
     <article className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] shadow-xs overflow-hidden">
@@ -191,6 +205,70 @@ export function TopicDetailView({
                     {tech.trim()}
                   </span>
                 ))}
+              </div>
+            </div>
+          )}
+          {/* 5. Tài liệu & Hình ảnh đính kèm */}
+          {attachments.length > 0 && (
+            <div className="space-y-3 pt-4 border-t border-slate-200/80 dark:border-neutral-800/80">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <FileText className="size-4 text-primary shrink-0" />
+                <span>Tài liệu & Hình ảnh đính kèm ({attachments.length})</span>
+              </h2>
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                {attachments.map((file: any, idx: number) => {
+                  const isImg =
+                    file.fileType?.toLowerCase().includes('image') ||
+                    /\.(jpg|jpeg|png|webp|gif)$/i.test(
+                      file.fileName || file.name || '',
+                    );
+
+                  return (
+                    <div
+                      key={file.id || idx}
+                      className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-neutral-800 bg-slate-50/60 dark:bg-neutral-900/40 p-3 text-xs"
+                    >
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-primary overflow-hidden">
+                        {isImg && file.fileUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={file.fileUrl}
+                            alt={file.fileName || 'Ảnh đính kèm'}
+                            className="size-full object-cover"
+                          />
+                        ) : isImg ? (
+                          <ImageIcon className="size-5" />
+                        ) : (
+                          <FileText className="size-5" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className="truncate font-medium text-slate-900 dark:text-neutral-100"
+                          title={file.fileName || file.name}
+                        >
+                          {file.fileName || file.name}
+                        </p>
+                        {file.fileSize && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {formatBytes(file.fileSize)}
+                          </p>
+                        )}
+                      </div>
+                      {file.fileUrl && (
+                        <a
+                          href={file.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 px-2.5 py-1 font-medium text-slate-700 dark:text-neutral-300 hover:text-primary transition-colors shrink-0"
+                        >
+                          <span>Xem</span>
+                          <ExternalLink className="size-3" />
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

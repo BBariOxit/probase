@@ -79,7 +79,12 @@ const LIST_SELECT = {
   // Only the id of whoever proposed it. A topic born from a proposal is
   // reserved for that student while the gate is open, and a screen that does
   // not know it would draw a register button the API refuses.
-  sourceProposal: { select: { studentId: true } },
+  sourceProposal: {
+    select: {
+      studentId: true,
+      attachments: true,
+    },
+  },
 } satisfies Prisma.TopicSelect;
 
 type TopicRound = {
@@ -227,7 +232,12 @@ const DETAIL_INCLUDE = {
     },
   },
   registrationGroups: ACTIVE_GROUP_SELECT,
-  sourceProposal: { select: { studentId: true } },
+  sourceProposal: {
+    select: {
+      studentId: true,
+      attachments: true,
+    },
+  },
 } satisfies Prisma.TopicInclude;
 
 @Injectable()
@@ -893,10 +903,15 @@ export class TopicsService {
   private async presentDetail<T extends TopicWithGroups>(topic: T) {
     const phases = await this.phases.resolveMany([topic.round]);
 
-    return withActiveGroup(
+    const presented = withActiveGroup(
       topic,
       phases.get(topic.round.id) ?? topic.round.phase,
     );
+
+    return {
+      ...presented,
+      attachments: (topic as any).sourceProposal?.attachments ?? [],
+    };
   }
 
   private async requireTopic(id: number) {

@@ -9,6 +9,10 @@ import { useTopic, useUpdateTopic } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useBreadcrumbLabel } from '@/lib/breadcrumb-context';
 import { PageHeading } from '@/components/layout/page-heading';
+import {
+  AttachmentUploader,
+  type ExistingAttachment,
+} from '@/components/shared/attachment-uploader';
 import { TopicDetailView } from '@/components/topics/topic-detail-view';
 import { TopicForm } from '@/components/topics/topic-form';
 import { TopicStatusBadge } from '@/components/topics/topic-status-badge';
@@ -22,6 +26,26 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
   const router = useRouter();
   const { data: topic, isPending, error } = useTopic(topicId);
   const update = useUpdateTopic(topicId);
+  const [files, setFiles] = useState<File[]>([]);
+  const [existingFiles, setExistingFiles] = useState<ExistingAttachment[]>([]);
+
+  // Sync existing files when topic loads
+  useEffect(() => {
+    if (topic) {
+      const topicAttachments: ExistingAttachment[] = (
+        (topic as any).attachments ||
+        (topic as any).sourceProposal?.attachments ||
+        []
+      ).map((att: any) => ({
+        id: att.id,
+        name: att.fileName || att.name,
+        url: att.fileUrl || att.url,
+        size: att.fileSize || att.size,
+        type: att.fileType || att.type,
+      }));
+      setExistingFiles(topicAttachments);
+    }
+  }, [topic]);
 
   // Sync edit mode if query param changes
   useEffect(() => {
@@ -108,7 +132,13 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
               expectedOutcomes: values.expectedOutcomes,
               maxStudents: values.maxStudents,
             });
-            toast.success('Đã cập nhật đề tài thành công!');
+            if (files.length > 0) {
+              toast.success(
+                `Đã cập nhật đề tài và lưu ${files.length} tệp đính kèm mới!`,
+              );
+            } else {
+              toast.success('Đã cập nhật đề tài thành công!');
+            }
             setIsEditing(false);
             router.replace(`/lecturer/topics/${topicId}`);
           }}
@@ -116,7 +146,17 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
             setIsEditing(false);
             router.replace(`/lecturer/topics/${topicId}`);
           }}
-        />
+        >
+          <AttachmentUploader
+            files={files}
+            onChange={setFiles}
+            existingFiles={existingFiles}
+            onDeleteExisting={(fileId) => {
+              setExistingFiles((prev) => prev.filter((f) => f.id !== fileId));
+              toast.success('Đã xoá tệp đính kèm.');
+            }}
+          />
+        </TopicForm>
       </div>
     );
   }
@@ -137,10 +177,7 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
       </div>
 
       {/* Chi tiết nội dung đề tài */}
-      <TopicDetailView
-        topic={topic}
-        onEdit={() => setIsEditing(true)}
-      />
+      <TopicDetailView topic={topic} onEdit={() => setIsEditing(true)} />
     </div>
   );
 }
