@@ -214,7 +214,7 @@ function SentProposal({
           editable && (
             <>
               <Button
-                variant={isDraft ? 'default' : 'outline'}
+                variant="default"
                 size="sm"
                 render={<Link href={`/student/proposals/${proposal.id}`} />}
               >
