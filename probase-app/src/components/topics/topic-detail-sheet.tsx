@@ -72,7 +72,7 @@ export function TopicDetailSheet({
       {canEdit && (
         <Button
           variant="outline"
-          render={<Link href={`/lecturer/topics/${topic.id}`} />}
+          render={<Link href={`/lecturer/topics/${topic.id}?edit=true`} />}
           className="gap-1.5 font-semibold"
         >
           <Pencil className="size-3.5" />

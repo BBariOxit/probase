@@ -30,9 +30,11 @@ const dateFormat = new Intl.DateTimeFormat('vi-VN', {
 export function TopicDetailView({
   topic,
   actions,
+  onEdit,
 }: {
   topic: TopicDetail;
   actions?: React.ReactNode;
+  onEdit?: () => void;
 }) {
   const user = useSession((s) => s.user);
   const { data: profile } = useMyProfile();
@@ -256,7 +258,8 @@ export function TopicDetailView({
           {canEdit && (
             <Button
               variant="default"
-              render={<Link href={`/lecturer/topics/${topic.id}`} />}
+              onClick={onEdit}
+              render={!onEdit ? <Link href={`/lecturer/topics/${topic.id}?edit=true`} /> : undefined}
               className="gap-2 font-semibold bg-primary text-white hover:bg-primary/90 cursor-pointer shadow-xs"
             >
               <Pencil className="size-4" />
