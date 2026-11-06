@@ -47,6 +47,12 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
       items: [
         { href: '/student', label: 'Đề tài', icon: BookOpen, ready: true },
         {
+          href: '/student/proposals',
+          label: 'Đề xuất đề tài',
+          icon: Lightbulb,
+          ready: true,
+        },
+        {
           href: '/student/groups',
           label: 'Nhóm của tôi',
           icon: Users,
