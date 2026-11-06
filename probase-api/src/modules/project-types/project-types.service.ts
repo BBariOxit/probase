@@ -28,7 +28,7 @@ export class ProjectTypesService {
       },
     });
 
-    if (!projectType) throw new NotFoundException('Project type not found');
+    if (!projectType) throw new NotFoundException('Không tìm thấy loại đồ án.');
 
     return projectType;
   }
@@ -60,7 +60,7 @@ export class ProjectTypesService {
       include: { _count: { select: { rounds: true, topicProposals: true } } },
     });
 
-    if (!projectType) throw new NotFoundException('Project type not found');
+    if (!projectType) throw new NotFoundException('Không tìm thấy loại đồ án.');
 
     // Counted through rounds rather than topics: a topic reaches its kind of
     // project through the round it sits in, so a round is what stands between
@@ -71,7 +71,7 @@ export class ProjectTypesService {
       projectType._count.topicProposals > 0
     ) {
       throw new ConflictException(
-        'Cannot delete project type with existing registration rounds or proposals',
+        'Không thể xóa loại đồ án đã có đợt đăng ký hoặc đề xuất.',
       );
     }
 
@@ -83,7 +83,7 @@ export class ProjectTypesService {
       where: { code },
     });
     if (existing && existing.id !== excludeId) {
-      throw new ConflictException(`Project type code "${code}" already exists`);
+      throw new ConflictException(`Mã loại đồ án "${code}" đã tồn tại.`);
     }
   }
 }

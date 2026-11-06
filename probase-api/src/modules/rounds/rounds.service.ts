@@ -95,7 +95,7 @@ export class RoundsService {
       select: ROUND_SELECT,
     });
 
-    if (!round) throw new NotFoundException(`Round ${id} not found`);
+    if (!round) throw new NotFoundException(`Không tìm thấy đợt đăng ký mã #${id}`);
 
     return (await this.renderMany([round]))[0];
   }
@@ -215,7 +215,7 @@ export class RoundsService {
 
     if (!round) {
       throw new ConflictException(
-        'The faculty office has not opened a round for this kind of project this semester, so no topic can be written for it',
+        'Khoa chưa mở đợt đăng ký cho loại đồ án này trong học kỳ, không thể tạo đề tài.',
       );
     }
 
@@ -263,7 +263,7 @@ export class RoundsService {
       });
 
       throw new ConflictException(
-        `Cannot remove rounds that already carry topics: ${types
+        `Không thể xóa đợt đăng ký đã có đề tài: ${types
           .map((type) => type.name)
           .join(', ')}`,
       );
@@ -416,8 +416,8 @@ export class RoundsService {
     if (phase !== RoundPhase.RECONCILING) {
       throw new ConflictException(
         phase === RoundPhase.EXTENDED
-          ? 'This round is already running an extension'
-          : 'Only a round whose gate has closed can be extended',
+          ? 'Đợt đăng ký này đang trong thời gian gia hạn.'
+          : 'Chỉ có thể gia hạn đợt đăng ký sau khi cổng đăng ký đã đóng.',
       );
     }
 
@@ -441,7 +441,7 @@ export class RoundsService {
 
       if (count === 0) {
         throw new ConflictException(
-          'This round has just changed state — reload and try again',
+          'Đợt đăng ký vừa thay đổi trạng thái — vui lòng tải lại trang và thử lại.',
         );
       }
 
@@ -558,7 +558,7 @@ export class RoundsService {
     if (SCHEDULE_EDITABLE_PHASES.includes(phase)) return;
 
     throw new ConflictException(
-      'Registration has already closed for this round, so its dates can no longer be edited — extend it instead, which records who reopened it and why',
+      'Đợt đăng ký đã đóng, không thể sửa mốc thời gian — vui lòng sử dụng chức năng gia hạn.',
     );
   }
 
@@ -621,7 +621,7 @@ export class RoundsService {
       },
     });
 
-    if (!round) throw new NotFoundException(`Round ${id} not found`);
+    if (!round) throw new NotFoundException(`Không tìm thấy đợt đăng ký mã #${id}`);
 
     return round;
   }
@@ -641,7 +641,7 @@ export class RoundsService {
       select: { id: true },
     });
 
-    if (!semester) throw new NotFoundException(`Semester ${id} not found`);
+    if (!semester) throw new NotFoundException(`Không tìm thấy học kỳ mã #${id}`);
   }
 
   private async requireProjectTypes(ids: number[]) {
@@ -656,7 +656,7 @@ export class RoundsService {
     const found = new Set(known.map((type) => type.id));
     const missing = wanted.filter((id) => !found.has(id));
 
-    throw new NotFoundException(`Project type ${missing.join(', ')} not found`);
+    throw new NotFoundException(`Không tìm thấy loại đồ án mã: ${missing.join(', ')}`);
   }
 }
 

@@ -249,7 +249,7 @@ export class UsersService {
       },
     });
 
-    if (!user) throw new NotFoundException(`User #${id} not found`);
+    if (!user) throw new NotFoundException(`Không tìm thấy người dùng mã #${id}`);
 
     return user;
   }
@@ -260,7 +260,7 @@ export class UsersService {
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
-    if (existing) throw new ConflictException('Email already in use');
+    if (existing) throw new ConflictException('Email này đã được sử dụng.');
 
     // Admin never sets the password directly — a temp password is generated
     // and delivered by email; the user must change it on first login.
@@ -273,10 +273,10 @@ export class UsersService {
         if (!conflict) throw err;
 
         if (conflict.some((field) => field.includes('email'))) {
-          throw new ConflictException('Email already in use');
+          throw new ConflictException('Email này đã được sử dụng.');
         }
-        const codeLabel = dto.role === 'STUDENT' ? 'Student' : 'Lecturer';
-        throw new ConflictException(`${codeLabel} code is already in use`);
+        const codeLabel = dto.role === 'STUDENT' ? 'sinh viên' : 'giảng viên';
+        throw new ConflictException(`Mã ${codeLabel} đã được sử dụng.`);
       },
     );
 
@@ -318,8 +318,8 @@ export class UsersService {
     const headers = await extractHeaders(file.buffer, file.originalname).catch(
       (err: unknown) => {
         throw new BadRequestException(
-          `Could not read import file: ${
-            err instanceof Error ? err.message : 'unknown error'
+          `Không thể đọc file dữ liệu: ${
+            err instanceof Error ? err.message : 'lỗi không xác định'
           }`,
         );
       },
@@ -330,14 +330,14 @@ export class UsersService {
       rows = await parseImportFile(file.buffer, file.originalname);
     } catch (err) {
       throw new BadRequestException(
-        `Could not read import file: ${
-          err instanceof Error ? err.message : 'unknown error'
+        `Không thể đọc file dữ liệu: ${
+          err instanceof Error ? err.message : 'lỗi không xác định'
         }`,
       );
     }
 
     if (rows.length === 0) {
-      throw new BadRequestException('Import file has no data rows');
+      throw new BadRequestException('File import không có hàng dữ liệu nào.');
     }
 
     const suggestions = suggestMapping(headers);
@@ -609,19 +609,19 @@ export class UsersService {
   // ── bulkImport (legacy single-step) ──────────────────────
 
   async bulkImport(file?: Express.Multer.File): Promise<BulkImportResult> {
-    if (!file) throw new BadRequestException('No file uploaded');
+    if (!file) throw new BadRequestException('Chưa có file nào được tải lên.');
 
     let rows: Awaited<ReturnType<typeof parseImportFile>>;
     try {
       rows = await parseImportFile(file.buffer, file.originalname);
     } catch (err) {
       throw new BadRequestException(
-        `Could not read import file: ${err instanceof Error ? err.message : 'unknown error'}`,
+        `Không thể đọc file dữ liệu: ${err instanceof Error ? err.message : 'lỗi không xác định'}`,
       );
     }
 
     if (rows.length === 0) {
-      throw new BadRequestException('Import file has no data rows');
+      throw new BadRequestException('File import không có hàng dữ liệu nào.');
     }
 
     const failed: BulkImportRowResult[] = [];
@@ -737,7 +737,7 @@ export class UsersService {
         where: { email: dto.email },
       });
       if (conflict && conflict.id !== id) {
-        throw new ConflictException('Email already in use');
+        throw new ConflictException('Email này đã được sử dụng.');
       }
     }
 
@@ -796,7 +796,7 @@ export class UsersService {
     const user = await this.findOne(id);
 
     if (!user.isActive) {
-      throw new ConflictException(`User #${id} is already deactivated`);
+      throw new ConflictException(`Tài khoản #${id} đã bị vô hiệu hóa trước đó.`);
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -898,7 +898,7 @@ export class UsersService {
     // Prevent assigning a student profile to a non-student account
     if (user.role !== 'STUDENT') {
       throw new ConflictException(
-        'Student profile can only be assigned to a STUDENT account',
+        'Hồ sơ sinh viên chỉ có thể gán cho tài khoản có vai trò Sinh viên.',
       );
     }
 
@@ -908,7 +908,7 @@ export class UsersService {
     });
     if (codeConflict && codeConflict.userId !== id) {
       throw new ConflictException(
-        `Student code "${dto.studentCode}" is already in use`,
+        `Mã số sinh viên "${dto.studentCode}" đã được sử dụng.`,
       );
     }
 
@@ -961,7 +961,7 @@ export class UsersService {
 
     if (user.role !== 'LECTURER') {
       throw new ConflictException(
-        'Lecturer profile can only be assigned to a LECTURER account',
+        'Hồ sơ giảng viên chỉ có thể gán cho tài khoản có vai trò Giảng viên.',
       );
     }
 
@@ -971,7 +971,7 @@ export class UsersService {
     });
     if (codeConflict && codeConflict.userId !== id) {
       throw new ConflictException(
-        `Lecturer code "${dto.lecturerCode}" is already in use`,
+        `Mã số giảng viên "${dto.lecturerCode}" đã được sử dụng.`,
       );
     }
 

@@ -257,7 +257,7 @@ export class RegistrationGroupsService {
 
     if (dto.declaredSize && dto.declaredSize > topic.maxStudents) {
       throw new BadRequestException(
-        `This topic holds ${topic.maxStudents} student(s), so ${dto.declaredSize} cannot be declared`,
+        `Đề tài quy định tối đa ${topic.maxStudents} sinh viên, không thể đăng ký quy mô ${dto.declaredSize} sinh viên.`,
       );
     }
 
@@ -322,7 +322,7 @@ export class RegistrationGroupsService {
     // asked for one should not silently get the other.
     if (!group) {
       throw new ConflictException(
-        'Nobody has registered this topic yet — register it instead of joining',
+        'Đề tài này chưa có nhóm đăng ký — vui lòng đăng ký đề tài thay vì tham gia.',
       );
     }
 
@@ -418,7 +418,7 @@ export class RegistrationGroupsService {
     });
 
     if (!lecturer) {
-      throw new NotFoundException('Lecturer profile not found');
+      throw new NotFoundException('Không tìm thấy thông tin giảng viên.');
     }
 
     const semesterId =
@@ -448,7 +448,7 @@ export class RegistrationGroupsService {
     const group = await this.loadGroup(id);
 
     if (!this.canView(group, viewer)) {
-      throw new NotFoundException('Registration group not found');
+      throw new NotFoundException('Không tìm thấy nhóm đăng ký.');
     }
 
     return this.render(group, viewer);
@@ -469,7 +469,7 @@ export class RegistrationGroupsService {
 
       if (!successor) {
         throw new BadRequestException(
-          'A group can only be handed to one of its own members',
+          'Chỉ có thể chuyển quyền nhóm trưởng cho thành viên trong nhóm.',
         );
       }
     }
@@ -480,13 +480,13 @@ export class RegistrationGroupsService {
     if (dto.declaredSize != null) {
       if (dto.declaredSize < group.members.length) {
         throw new BadRequestException(
-          `The group already has ${group.members.length} member(s), so it cannot declare ${dto.declaredSize}`,
+          `Nhóm hiện có ${group.members.length} thành viên, không thể thiết lập quy mô ${dto.declaredSize} sinh viên.`,
         );
       }
 
       if (dto.declaredSize > group.topic.maxStudents) {
         throw new BadRequestException(
-          `This topic holds ${group.topic.maxStudents} student(s), so ${dto.declaredSize} cannot be declared`,
+          `Đề tài quy định tối đa ${group.topic.maxStudents} sinh viên, không thể thiết lập quy mô ${dto.declaredSize} sinh viên.`,
         );
       }
     }
@@ -515,7 +515,7 @@ export class RegistrationGroupsService {
 
     if (studentId === group.leaderId) {
       throw new BadRequestException(
-        'A leader cannot remove themselves — hand the group over or disband it',
+        'Nhóm trưởng không thể tự rời nhóm — vui lòng chuyển quyền nhóm trưởng hoặc giải tán nhóm.',
       );
     }
 
@@ -524,7 +524,7 @@ export class RegistrationGroupsService {
     );
 
     if (!member) {
-      throw new NotFoundException('That student is not in this group');
+      throw new NotFoundException('Sinh viên không thuộc nhóm này.');
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -571,7 +571,7 @@ export class RegistrationGroupsService {
       group = await this.loadGroup(id);
 
       if (group.status === RegistrationGroupStatus.REJECTED) {
-        throw new ConflictException('This group has already been disbanded');
+        throw new ConflictException('Nhóm này đã giải tán.');
       }
     } else {
       const student = await this.requireStudent(userId);
@@ -695,13 +695,13 @@ export class RegistrationGroupsService {
       (candidate) => candidate.studentId === student.id,
     );
 
-    if (!member) throw new NotFoundException('You are not in this group');
+    if (!member) throw new NotFoundException('Bạn không phải là thành viên của nhóm này.');
 
     // Somebody has to answer for the group, and a group whose leader walked out
     // has nobody to hand it to, close it, or be asked about it.
     if (group.leaderId === student.id) {
       throw new ConflictException(
-        'Hand the group to another member first, or disband it',
+        'Vui lòng chuyển quyền nhóm trưởng cho thành viên khác hoặc giải tán nhóm.',
       );
     }
 
@@ -710,7 +710,7 @@ export class RegistrationGroupsService {
       await this.syncStatus(tx, id, group.topic.maxStudents);
     });
 
-    return { message: 'You have left the group' };
+    return { message: 'Bạn đã rời nhóm thành công.' };
   }
 
   // ── internals ─────────────────────────────────────────────
@@ -750,28 +750,28 @@ export class RegistrationGroupsService {
         });
 
         if (!group || group.status === RegistrationGroupStatus.REJECTED) {
-          throw new NotFoundException('Registration group not found');
+          throw new NotFoundException('Không tìm thấy nhóm đăng ký.');
         }
 
         if (group.members.some((member) => member.studentId === studentId)) {
-          throw new ConflictException('You are already in this group');
+          throw new ConflictException('Bạn đã là thành viên của nhóm này.');
         }
 
         if (!group.openForJoin) {
           throw new ConflictException(
-            'This group has closed itself to new members',
+            'Nhóm đã khóa nhận thành viên mới.',
           );
         }
 
         const seats = seatBreakdown(group);
 
         if (seats.occupied >= seats.capacity) {
-          throw new ConflictException('This group is already full');
+          throw new ConflictException('Nhóm đã đủ số lượng thành viên.');
         }
 
         if (!options.allowHeldSeats && seats.freeToAnyone === 0) {
           throw new ConflictException(
-            'The remaining seats are being held for members the leader has invited — ask them for the join link',
+            'Các vị trí còn lại đang dành cho thành viên được nhóm trưởng mời.',
           );
         }
 
@@ -828,7 +828,7 @@ export class RegistrationGroupsService {
       select: GROUP_SELECT,
     });
 
-    if (!group) throw new NotFoundException('Registration group not found');
+    if (!group) throw new NotFoundException('Không tìm thấy nhóm đăng ký.');
 
     return group;
   }
@@ -914,11 +914,11 @@ export class RegistrationGroupsService {
     const group = await this.loadGroup(id);
 
     if (group.status === RegistrationGroupStatus.REJECTED) {
-      throw new ConflictException('This group has already been disbanded');
+      throw new ConflictException('Nhóm này đã giải tán.');
     }
 
     if (group.leaderId !== studentId) {
-      throw new ForbiddenException('Only the group leader can do that');
+      throw new ForbiddenException('Chỉ nhóm trưởng mới có quyền thực hiện thao tác này.');
     }
 
     return group;
@@ -939,7 +939,7 @@ export class RegistrationGroupsService {
 
     if (existing) {
       throw new ConflictException(
-        `You are already in a group this semester, on "${existing.group.topic.title}" — leave it before taking another topic`,
+        `Sinh viên hiện đã tham gia nhóm đề tài "${existing.group.topic.title}" trong học kỳ này.`,
       );
     }
   }
@@ -954,7 +954,7 @@ export class RegistrationGroupsService {
     // either way, and distinguishing them would tell a stranger holding a stale
     // link that it was once real.
     if (!group || group.status === RegistrationGroupStatus.REJECTED) {
-      throw new NotFoundException('This invite link is no longer valid');
+      throw new NotFoundException('Liên kết mời tham gia nhóm không còn hiệu lực.');
     }
 
     return group;
@@ -973,19 +973,19 @@ export class RegistrationGroupsService {
 
     if (!group.openForJoin) {
       throw new ConflictException(
-        'This group has closed itself to new members',
+        'Nhóm đã khóa nhận thành viên mới.',
       );
     }
 
     const seats = seatBreakdown(group);
 
     if (seats.occupied >= seats.capacity) {
-      throw new ConflictException('This group is already full');
+      throw new ConflictException('Nhóm đã đủ số lượng thành viên.');
     }
 
     if (!options.allowHeldSeats && seats.freeToAnyone === 0) {
       throw new ConflictException(
-        'The remaining seats are being held for members the leader has invited — ask them for the join link',
+        'Các vị trí còn lại đang dành cho thành viên được nhóm trưởng mời.',
       );
     }
   }
@@ -998,7 +998,7 @@ export class RegistrationGroupsService {
 
     if (!profile) {
       throw new ForbiddenException(
-        'No student profile is attached to this account',
+        'Tài khoản chưa được liên kết với hồ sơ sinh viên.',
       );
     }
 
@@ -1021,11 +1021,11 @@ export class RegistrationGroupsService {
       },
     });
 
-    if (!topic) throw new NotFoundException('Topic not found');
+    if (!topic) throw new NotFoundException('Không tìm thấy đề tài.');
 
     if (topic.status !== TopicStatus.OPEN) {
       throw new ConflictException(
-        'This topic is not open for registration at the moment',
+        'Đề tài hiện chưa mở đăng ký.',
       );
     }
 
@@ -1060,7 +1060,7 @@ export class RegistrationGroupsService {
     // 2. Fallback to cohort-based rule if no specific student roster was imported
     if (!student.cohort) {
       throw new ForbiddenException(
-        'This account has no intake year on file, so eligibility cannot be established',
+        'Hồ sơ sinh viên thiếu thông tin khóa học để xét điều kiện tham gia.',
       );
     }
 
@@ -1082,12 +1082,12 @@ export class RegistrationGroupsService {
 
     if (!anyRule) {
       throw new ConflictException(
-        'The faculty office has not yet declared which intakes may take part in this round',
+        'Khoa chưa cấu hình điều kiện khóa sinh viên cho đợt đăng ký này.',
       );
     }
 
     throw new ForbiddenException(
-      `${topic.round.projectType.name} is not open to intake ${student.cohort} this semester`,
+      `${topic.round.projectType.name} học kỳ này không áp dụng cho sinh viên khóa ${student.cohort}.`,
     );
   }
 
@@ -1098,7 +1098,7 @@ export class RegistrationGroupsService {
     });
 
     if (!semester) {
-      throw new NotFoundException('No semester is currently active');
+      throw new NotFoundException('Không có học kỳ nào đang kích hoạt.');
     }
 
     return semester.id;
@@ -1111,18 +1111,18 @@ export class RegistrationGroupsService {
 
     if (target.includes('one_live_per_topic')) {
       return new ConflictException(
-        'Another group has just taken this topic — pick another one',
+        'Đề tài này vừa được nhóm khác đăng ký — vui lòng chọn đề tài khác.',
       );
     }
 
     if (target.includes('one_accepted_per_semester')) {
       return new ConflictException(
-        'You are already in a group this semester — leave it before taking another topic',
+        'Sinh viên đã tham gia nhóm trong học kỳ này — vui lòng rời nhóm cũ trước khi đăng ký.',
       );
     }
 
     return new ConflictException(
-      'That registration collided with another one — reload and try again',
+      'Thao tác đăng ký bị trùng lặp — vui lòng tải lại trang và thử lại.',
     );
   }
 }

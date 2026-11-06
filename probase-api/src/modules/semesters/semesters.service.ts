@@ -45,7 +45,7 @@ export class SemestersService {
       },
     });
 
-    if (!semester) throw new NotFoundException('Semester not found');
+    if (!semester) throw new NotFoundException('Không tìm thấy học kỳ.');
 
     // The plan comes along with the term, because "what is open this semester"
     // is the first thing anyone opening it wants to know, and the phases are
@@ -181,11 +181,11 @@ export class SemestersService {
       },
     });
 
-    if (!semester) throw new NotFoundException('Semester not found');
+    if (!semester) throw new NotFoundException('Không tìm thấy học kỳ.');
 
     if (semester._count.topics > 0 || semester._count.registrationGroups > 0) {
       throw new ConflictException(
-        'Cannot delete semester with existing topics or registration groups',
+        'Không thể xóa học kỳ đã có đề tài hoặc nhóm đăng ký.',
       );
     }
 
@@ -265,7 +265,7 @@ export class SemestersService {
       select: { id: true, startDate: true, endDate: true },
     });
 
-    if (!semester) throw new NotFoundException('Semester not found');
+    if (!semester) throw new NotFoundException('Không tìm thấy học kỳ.');
 
     return semester;
   }
@@ -275,7 +275,7 @@ export class SemestersService {
       where: { code },
     });
     if (existing && existing.id !== excludeId) {
-      throw new ConflictException(`Semester code "${code}" already exists`);
+      throw new ConflictException(`Mã học kỳ "${code}" đã tồn tại.`);
     }
   }
 }
