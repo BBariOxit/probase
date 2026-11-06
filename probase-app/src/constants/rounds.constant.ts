@@ -19,3 +19,4 @@ export const DEFAULT_STANDARD_MILESTONES = [
   'Báo cáo tiến độ đợt 2',
   'Quyển báo cáo toàn văn & Sản phẩm',
 ] as const;
+
