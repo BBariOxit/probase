@@ -225,6 +225,7 @@ function SentProposal({
                 variant="ghost"
                 size="sm"
                 onClick={() => setConfirming(true)}
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
               >
                 <Undo2 />
                 {isDraft ? 'Xoá nháp' : 'Rút lại'}
