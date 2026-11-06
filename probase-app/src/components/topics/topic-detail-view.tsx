@@ -71,30 +71,16 @@ export function TopicDetailView({
             </span>
           </div>
 
-          <div className="flex items-center gap-2.5">
-            {/* Nút sửa đề tài đối với người tạo đề tài (GV / Admin) */}
-            {canEdit && (
-              <Button
-                variant="outline"
-                size="sm"
-                render={<Link href={`/lecturer/topics/${topic.id}`} />}
-                className="gap-1.5 h-9 font-semibold border-slate-300 dark:border-neutral-700 hover:bg-slate-100 dark:hover:bg-neutral-800 cursor-pointer shadow-2xs"
-              >
-                <Pencil className="size-3.5 text-primary" />
-                <span>Sửa đề tài</span>
-              </Button>
-            )}
-
-            {/* Nút đăng ký (primary) đối với sinh viên chưa có nhóm */}
-            {canStudentRegister && (
+          {canStudentRegister && (
+            <div className="flex items-center gap-2.5">
               <TopicRegisterButton
                 topic={topic}
                 size="default"
                 buttonClassName="h-9 px-4 text-xs sm:text-sm bg-primary text-white hover:bg-primary/90 font-semibold rounded-lg shadow-xs cursor-pointer gap-1.5"
                 label={topic.canRegister ? 'Đăng ký đề tài' : 'Tham gia nhóm'}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Tiêu đề đề tài */}
