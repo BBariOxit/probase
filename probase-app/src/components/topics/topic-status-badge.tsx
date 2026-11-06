@@ -17,21 +17,31 @@ const TOPIC_STATUS: Record<TopicStatus, StatusLabel> = {
 
 export function TopicStatusBadge({
   status,
+  variant = 'tag',
   className,
 }: {
   status: TopicStatus;
+  variant?: 'text' | 'tag';
   className?: string;
 }) {
-  return <StatusPill {...TOPIC_STATUS[status]} className={className} />;
+  return (
+    <StatusPill
+      {...TOPIC_STATUS[status]}
+      variant={variant}
+      className={className}
+    />
+  );
 }
 
 export function TopicOwnerBadge({
   status,
   activeGroup,
+  variant = 'tag',
   className,
 }: {
   status: TopicStatus;
   activeGroup: ActiveGroup | null;
+  variant?: 'text' | 'tag';
   className?: string;
 }) {
   if (status === 'OPEN' && activeGroup) {
@@ -40,8 +50,14 @@ export function TopicOwnerBadge({
         ? ({ label: 'Đã đủ người', tone: 'success' } as const)
         : ({ label: 'Đang lập nhóm', tone: 'active' } as const);
 
-    return <StatusPill {...owned} className={className} />;
+    return <StatusPill {...owned} variant={variant} className={className} />;
   }
 
-  return <StatusPill {...TOPIC_STATUS[status]} className={className} />;
+  return (
+    <StatusPill
+      {...TOPIC_STATUS[status]}
+      variant={variant}
+      className={className}
+    />
+  );
 }
