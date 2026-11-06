@@ -423,7 +423,7 @@ export class RoundsService {
 
     if (dto.registrationEnd.getTime() <= Date.now()) {
       throw new BadRequestException(
-        'Hạn gia hạn phải nằm ở tương lai, nếu không cổng đóng lại ngay khi vừa mở',
+        'Thời hạn gia hạn phải sau thời điểm hiện tại.',
       );
     }
 
@@ -481,7 +481,7 @@ export class RoundsService {
 
     if (phase !== RoundPhase.FINALIZED) {
       throw new ConflictException(
-        'Chỉ mở khoá được đợt đã chốt phân bổ. Đợt này chưa chốt nên vẫn đang sửa được bình thường.',
+        'Chỉ có thể mở khóa đợt đăng ký đã chốt phân bổ.',
       );
     }
 
@@ -503,7 +503,7 @@ export class RoundsService {
 
       if (count === 0) {
         throw new ConflictException(
-          'Đợt này vừa thay đổi trạng thái — tải lại trang rồi thử lại.',
+          'Đợt đăng ký đã thay đổi trạng thái, vui lòng tải lại trang.',
         );
       }
 
@@ -547,7 +547,7 @@ export class RoundsService {
         userId,
         type: NotificationType.ROUND_EXTENDED,
         title: 'Khoa đã gia hạn đăng ký đề tài',
-        content: `Bạn chưa có nhóm. ${round.projectType.name} được mở lại tới hết ngày ${formatDate(round.registrationEnd)} — chọn đề tài trước hạn đó, nếu không khoa sẽ xếp bạn vào một đề tài còn chỗ.`,
+        content: `Khoa gia hạn đăng ký ${round.projectType.name} đến hết ngày ${formatDate(round.registrationEnd)}. Vui lòng hoàn tất đăng ký trước thời hạn.`,
         targetId: round.id,
       })),
     );

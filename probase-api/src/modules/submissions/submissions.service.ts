@@ -98,7 +98,7 @@ export class SubmissionsService {
 
     if (!file && !dto.submissionUrl) {
       throw new BadRequestException(
-        'Cần tải lên một file hoặc dán một link — nộp trống thì không có gì để chấm.',
+        'Vui lòng tải lên tệp đính kèm hoặc nhập liên kết nộp bài.',
       );
     }
 
@@ -300,7 +300,7 @@ export class SubmissionsService {
 
     if (!group) {
       throw new ForbiddenException(
-        'Bạn chưa có nhóm đề tài nào, nên chưa nộp bài được.',
+        'Bạn chưa thuộc nhóm đề tài nào để thực hiện nộp bài.',
       );
     }
 

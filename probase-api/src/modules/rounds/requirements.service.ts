@@ -52,11 +52,9 @@ export class RequirementsService {
 
     if (blocked.length > 0) {
       throw new ConflictException(
-        `Không bỏ được ${blocked
+        `Không thể xóa các mục đã có nhóm nộp bài: ${blocked
           .map((row) => `"${row.name}"`)
-          .join(
-            ', ',
-          )} khỏi danh sách vì đã có nhóm nộp bài. Đổi tên hoặc dời hạn thì được.`,
+          .join(', ')}.`,
       );
     }
 
@@ -69,7 +67,7 @@ export class RequirementsService {
 
     if (stranger) {
       throw new NotFoundException(
-        `Không tìm thấy mục "${stranger.name}" trong đợt này — tải lại trang rồi thử lại.`,
+        `Không tìm thấy mục bài nộp "${stranger.name}" thuộc đợt này.`,
       );
     }
 
@@ -137,7 +135,7 @@ export class RequirementsService {
 
     if (!requirement) {
       throw new NotFoundException(
-        'Mục này không nằm trong danh sách bài nộp của đợt bạn đang làm.',
+        'Yêu cầu nộp bài không thuộc đợt đăng ký này.',
       );
     }
 

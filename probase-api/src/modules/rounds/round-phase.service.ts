@@ -38,7 +38,7 @@ export class RoundPhaseService {
       if (!(await this.hasGroup(studentId, round.semesterId))) return;
 
       throw new ConflictException(
-        'Registration reopened only for students who ended up without a group — yours is unaffected and cannot be changed',
+        'Đợt gia hạn chỉ dành cho sinh viên chưa có nhóm, nhóm hiện tại không thể thay đổi.',
       );
     }
 
@@ -74,7 +74,7 @@ export class RoundPhaseService {
     }
 
     throw new ConflictException(
-      'Đợt đăng ký đã đóng, nên đề tài duyệt bây giờ sẽ không ai đăng ký được nữa. Bạn vẫn có thể từ chối kèm nhận xét.',
+      'Đợt đăng ký đã đóng, không thể phê duyệt thêm đề tài mới.',
     );
   }
 
@@ -85,7 +85,7 @@ export class RoundPhaseService {
 
     throw new ConflictException(
       phase === RoundPhase.EXTENDED
-        ? 'Registration has closed. The extension only lets students without a group register — a group that exists can no longer be changed'
+        ? 'Cổng đăng ký đã đóng. Đợt gia hạn chỉ dành cho sinh viên chưa có nhóm, nhóm hiện tại không thể thay đổi.'
         : REFUSAL_BY_PHASE[phase],
     );
   }

@@ -56,7 +56,7 @@ export default function StudentSubmissionsPage() {
       <div className="mx-auto max-w-2xl rounded-xl border">
         <EmptyState
           icon={Users}
-          title="Bạn chưa có đề tài nào, nên chưa nộp bài được."
+          title="Bạn chưa thuộc nhóm đề tài nào."
           action={
             <Button render={<Link href="/student" />}>
               Xem danh sách đề tài
@@ -207,10 +207,9 @@ function SubmitDialog({
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Nộp bài</DialogTitle>
+          <DialogTitle>Nộp bài báo cáo</DialogTitle>
           <DialogDescription>
-            Mỗi lần nộp là một phiên bản mới — bài cũ và nhận xét trên nó vẫn
-            giữ nguyên.
+            Tải lên tệp tài liệu hoặc liên kết nộp bài cho mốc tiến độ đã chọn.
           </DialogDescription>
         </DialogHeader>
 
@@ -218,7 +217,7 @@ function SubmitDialog({
           <FormError message={error} />
 
           <div className="space-y-2">
-            <Label htmlFor="sub-type">Nộp cho mục nào</Label>
+            <Label htmlFor="sub-type">Hạng mục bài nộp</Label>
             <Select
               value={requirementId}
               onValueChange={(value) => setRequirementId(value as number)}
@@ -242,7 +241,7 @@ function SubmitDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="sub-file">Tệp</Label>
+            <Label htmlFor="sub-file">Tệp đính kèm</Label>
             <p className="-mt-1 text-xs text-muted-foreground">
               PDF, Word hoặc ZIP, tối đa 25MB.
             </p>
@@ -255,15 +254,9 @@ function SubmitDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="sub-url">Hoặc link</Label>
-            {/*
-              One sentence covering both, now that the wording cannot key off a
-              fixed kind: what the office called this document is their text, and
-              guessing "this one is source code" from its name would be wrong the
-              first time a faculty writes it differently.
-            */}
+            <Label htmlFor="sub-url">Liên kết nộp bài (URL)</Label>
             <p className="-mt-1 text-xs text-muted-foreground">
-              Link GitHub, Google Drive… nếu bạn không tải file lên.
+              Link GitHub, Google Drive... nếu không tải tệp lên.
             </p>
             <Input
               id="sub-url"
