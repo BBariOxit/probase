@@ -228,7 +228,7 @@ export default function LecturerGroupDetailPage({
 
         {!subPending && submissions.length === 0 && (
           <div className="rounded-xl border">
-            <EmptyState icon={FileText} title="Nhóm này chưa nộp bài nào." />
+            <EmptyState icon={FileText} title="Chưa có bài nộp nào." />
           </div>
         )}
 
@@ -309,9 +309,6 @@ function FeedbackDialog({
 
           <div className="space-y-2">
             <Label htmlFor="feedback">Nhận xét cho nhóm</Label>
-            <p className="text-xs text-muted-foreground">
-              Cả nhóm sẽ nhận thông báo và đọc được nguyên văn.
-            </p>
             <Textarea
               id="feedback"
               rows={5}

@@ -26,10 +26,7 @@ export default function NewTopicPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
-      <PageHeading
-        title="Tạo đề tài"
-        description="Bạn có thể lưu dưới dạng Bản nháp hoặc bấm Gửi duyệt cho Tổ trưởng Bộ môn khi sẵn sàng."
-      />
+      <PageHeading title="Tạo đề tài" />
       <TopicForm
         defaultValues={{ semesterId: activeSemester.id }}
         submitLabel="Gửi duyệt Bộ môn"
