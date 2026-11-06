@@ -156,7 +156,7 @@ export default function AccountsPage() {
             value={search}
             onChange={(event) => refilter(() => setSearch(event.target.value))}
             placeholder="Tìm theo tên hoặc email…"
-            className="pl-8 h-9 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#141414] focus-visible:border-primary shadow-2xs"
+            className="pl-8 h-9 text-xs"
             aria-label="Tìm tài khoản"
           />
         </div>
@@ -165,7 +165,7 @@ export default function AccountsPage() {
           value={role}
           onValueChange={(value) => refilter(() => setRole(value as string))}
         >
-          <SelectTrigger className="w-40 h-9 text-xs font-medium rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 shadow-2xs" aria-label="Lọc theo vai trò">
+          <SelectTrigger className="w-40 h-9 text-xs font-medium" aria-label="Lọc theo vai trò">
             <SelectValue>
               {(value) =>
                 ROLE_FILTERS.find((option) => option.value === value)?.label
@@ -185,7 +185,7 @@ export default function AccountsPage() {
           value={status}
           onValueChange={(value) => refilter(() => setStatus(value as string))}
         >
-          <SelectTrigger className="w-44 h-9 text-xs font-medium rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 shadow-2xs" aria-label="Lọc theo trạng thái">
+          <SelectTrigger className="w-44 h-9 text-xs font-medium" aria-label="Lọc theo trạng thái">
             <SelectValue>
               {(value) =>
                 STATUS_FILTERS.find((option) => option.value === value)?.label

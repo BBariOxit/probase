@@ -370,7 +370,7 @@ function StudentTopicsContent() {
             value={lecturerId}
             onChange={setLecturerId}
             className="w-48 sm:w-52 shrink-0"
-            triggerClassName="h-9 w-full text-xs sm:text-sm font-medium rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-800 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
+            triggerClassName="h-9 w-full text-xs sm:text-sm font-medium rounded-lg border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] text-slate-800 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
           />
 
           {/* 4. Còn trống 🔘 (Toggle switch with solid primary background when ON) */}
@@ -383,7 +383,7 @@ function StudentTopicsContent() {
               'inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border px-3 text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none shadow-2xs',
               onlyAvailable
                 ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs'
-                : 'border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-700 dark:text-neutral-300 hover:border-slate-400 dark:hover:border-neutral-600',
+                : 'border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] text-slate-700 dark:text-neutral-300 hover:border-slate-400 dark:hover:border-neutral-600',
             )}
             title={onlyAvailable ? 'Đang lọc đề tài còn trống (nhấn để tắt)' : 'Nhấn để chỉ hiện đề tài còn trống'}
           >
