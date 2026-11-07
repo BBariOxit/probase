@@ -255,10 +255,9 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
                 Xem & Nhận xét
               </Button>
               <Button
-                variant="ghost"
                 size="sm"
                 onClick={() => setAnswering('reject')}
-                className="text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+                className="gap-1.5 cursor-pointer font-semibold shadow-xs bg-rose-600 text-white hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-700 dark:text-white"
               >
                 <X className="size-4" />
                 Từ chối

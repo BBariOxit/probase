@@ -187,6 +187,7 @@ export function RejectProposalDialog({
             variant="destructive"
             disabled={trimmed === '' || reject.isPending}
             onClick={submit}
+            className="bg-rose-600 hover:bg-rose-700 text-white dark:bg-rose-600 dark:hover:bg-rose-700 dark:text-white font-semibold shadow-xs"
           >
             {reject.isPending && <Loader2 className="animate-spin" />}
             Xác nhận từ chối

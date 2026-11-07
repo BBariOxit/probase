@@ -113,10 +113,9 @@ export default function LecturerProposalDetailPage({
               <span>Nhận hướng dẫn</span>
             </Button>
             <Button
-              variant="outline"
               size="sm"
               onClick={() => setAnswering('reject')}
-              className="gap-1.5 cursor-pointer font-semibold shadow-xs text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+              className="gap-1.5 cursor-pointer font-semibold shadow-xs bg-rose-600 text-white hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-700 dark:text-white"
             >
               <X className="size-4" />
               <span>Từ chối</span>
