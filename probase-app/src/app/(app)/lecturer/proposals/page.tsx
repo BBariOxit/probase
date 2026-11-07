@@ -294,6 +294,7 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
     <>
       <ProposalCard
         proposal={proposal}
+        titleHref={`/lecturer/proposals?id=${proposal.id}`}
         onClick={() => setViewing(true)}
         counterparty={
           <span className="inline-flex items-center gap-1.5">

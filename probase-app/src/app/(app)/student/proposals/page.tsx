@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRight,
+  FileText,
   GraduationCap,
   Info,
   Lightbulb,
@@ -220,6 +221,7 @@ function SentProposal({
     <>
       <ProposalCard
         proposal={proposal}
+        titleHref={`/student/proposals/${proposal.id}`}
         onClick={onClick}
         counterparty={
           <span className="inline-flex items-center gap-1.5">
@@ -244,9 +246,10 @@ function SentProposal({
                 variant="default"
                 size="sm"
                 render={<Link href={`/student/proposals/${proposal.id}`} />}
+                className="gap-1.5 font-semibold shadow-xs"
               >
-                <Pencil />
-                {isDraft ? 'Chỉnh sửa & Gửi' : 'Xem chi tiết & Sửa'}
+                <FileText className="size-4" />
+                {isDraft ? 'Hoàn thiện & Gửi' : 'Xem chi tiết'}
               </Button>
               <Button
                 variant="ghost"
@@ -254,7 +257,7 @@ function SentProposal({
                 onClick={() => setConfirming(true)}
                 className="text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
               >
-                <Undo2 />
+                <Undo2 className="size-4" />
                 {isDraft ? 'Xoá nháp' : 'Rút lại'}
               </Button>
             </>

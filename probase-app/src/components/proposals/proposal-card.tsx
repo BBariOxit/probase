@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { CalendarDays, Layers, MessageSquare } from 'lucide-react';
 import type { ProposalStatus, TopicProposal } from '@/lib/api/types';
 import { StatusPill, type StatusLabel } from '@/components/shared/status-pill';
@@ -35,12 +36,14 @@ export function ProposalCard({
   actions,
   footer,
   onClick,
+  titleHref,
 }: {
   proposal: TopicProposal;
   counterparty?: React.ReactNode;
   actions?: React.ReactNode;
   footer?: React.ReactNode;
   onClick?: () => void;
+  titleHref?: string;
 }) {
   return (
     <article
@@ -60,9 +63,19 @@ export function ProposalCard({
       }}
     >
       <div className="flex items-start justify-between gap-3">
-        <h2 className="text-sm font-medium group-hover:underline">
-          {proposal.title}
-        </h2>
+        {titleHref ? (
+          <Link
+            href={titleHref}
+            onClick={(e) => e.stopPropagation()}
+            className="text-base font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors cursor-pointer leading-snug"
+          >
+            {proposal.title}
+          </Link>
+        ) : (
+          <h2 className="text-base font-bold text-slate-900 dark:text-neutral-100 group-hover:underline cursor-pointer leading-snug">
+            {proposal.title}
+          </h2>
+        )}
         <ProposalStatusBadge status={proposal.status} />
       </div>
 
