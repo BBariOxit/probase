@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 const TEXT_TONE_CLASS = {
   waiting: 'text-amber-600 dark:text-amber-400 font-medium',
   active: 'text-primary font-medium',
-  success: 'text-emerald-600 dark:text-emerald-400 font-medium',
+  success: 'text-green-600 dark:text-green-400 font-medium',
   danger: 'text-rose-600 dark:text-rose-400 font-medium',
   idle: 'text-slate-500 dark:text-neutral-400 font-medium',
 } as const;

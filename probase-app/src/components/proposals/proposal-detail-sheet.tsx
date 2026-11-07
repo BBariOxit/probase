@@ -73,7 +73,7 @@ export function ProposalDetailSheet({
     <DetailSheet
       open={!!proposal}
       onOpenChange={(open) => !open && onClose()}
-      title={proposal?.title}
+      title={<span className="break-words [overflow-wrap:anywhere]">{proposal?.title}</span>}
       badge={proposal ? <ProposalStatusBadge status={proposal.status} /> : null}
       meta={meta}
       footer={footerActions}

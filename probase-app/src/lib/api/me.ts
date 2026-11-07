@@ -7,24 +7,32 @@ import { useSession } from '@/lib/auth/session';
 import { profileService } from '@/services/profile.service';
 
 export const meKeys = {
-  profile: ['me', 'profile'] as const,
+  all: ['me'] as const,
+  profile: (userId?: number | null) => ['me', 'profile', userId ?? 'anonymous'] as const,
 };
 
 export function useMyProfile() {
+  const user = useSession((state) => state.user);
+
   return useQuery({
-    queryKey: meKeys.profile,
+    queryKey: meKeys.profile(user?.id),
     queryFn: () => profileService.getProfile(),
-    staleTime: 5 * 60_000,
+    enabled: !!user?.id,
+    staleTime: 30_000,
   });
 }
 
 export function useUpdateMyProfile() {
   const queryClient = useQueryClient();
+  const user = useSession((state) => state.user);
 
   return useMutation({
     mutationFn: (input: UpdateMyProfileInput) =>
       profileService.updateProfile(input),
-    onSuccess: (profile) => queryClient.setQueryData(meKeys.profile, profile),
+    onSuccess: (profile) => {
+      queryClient.setQueryData(meKeys.profile(user?.id), profile);
+      queryClient.invalidateQueries({ queryKey: meKeys.all });
+    },
   });
 }
 
@@ -39,7 +47,7 @@ function useAvatarMutation<TVariables>(
     onSuccess: async ({ avatarUrl }) => {
       patchUser({ avatarUrl });
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: meKeys.profile }),
+        queryClient.invalidateQueries({ queryKey: meKeys.all }),
         queryClient.invalidateQueries({ queryKey: groupKeys.all }),
       ]);
     },

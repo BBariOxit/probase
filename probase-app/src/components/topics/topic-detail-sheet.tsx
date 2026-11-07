@@ -47,7 +47,7 @@ export function TopicDetailSheet({
           : topic.lecturer.fullName}
       </Meta>
       <Meta icon={Layers}>{topic.projectType.name}</Meta>
-      <Meta icon={Users}>{topic.maxStudents} sinh viên</Meta>
+      <Meta icon={Users}>Sinh viên {topic.occupiedSeats ?? 0}/{topic.maxStudents}</Meta>
     </>
   ) : null;
 
@@ -89,13 +89,8 @@ export function TopicDetailSheet({
       onOpenChange={(open) => !open && onClose()}
       loading={isPending}
       title={
-        <div className="space-y-1">
-          <div>{topic?.title}</div>
-          {topic?.titleEn && (
-            <div className="text-xs font-normal italic text-muted-foreground">
-              {topic.titleEn}
-            </div>
-          )}
+        <div className="min-w-0 break-words [overflow-wrap:anywhere]">
+          {topic?.title}
         </div>
       }
       badge={topic ? <TopicStatusBadge status={topic.status} /> : null}

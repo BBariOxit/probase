@@ -779,18 +779,31 @@ export type ProposalStatus =
   | 'REJECTED'
   | 'NEEDS_REVISION';
 
+export interface ProposalCommentReaction {
+  id: number;
+  userId: number;
+  createdAt: string;
+  user: {
+    id: number;
+    fullName: string;
+    role: string;
+  };
+}
+
 export interface ProposalComment {
   id: number;
   proposalId: number;
   authorId: number;
   content: string;
   createdAt: string;
+  updatedAt?: string;
   author: {
     id: number;
     fullName: string;
     avatarUrl?: string | null;
     role: string;
   };
+  reactions?: ProposalCommentReaction[];
 }
 
 export interface ProposalAttachment {
@@ -809,6 +822,7 @@ export interface TopicProposal {
   title: string;
   description: string;
   expectedOutcomes: string;
+  maxStudents?: number;
 
   lecturerFeedback: string | null;
   createdAt: string;

@@ -87,8 +87,15 @@ export function useAcceptProposal() {
   const invalidate = useInvalidateProposals();
 
   return useMutation({
-    mutationFn: ({ id, maxStudents }: { id: number; maxStudents: number }) =>
-      proposalService.accept(id, { maxStudents }),
+    mutationFn: ({
+      id,
+      maxStudents,
+      officialTitle,
+    }: {
+      id: number;
+      maxStudents?: number;
+      officialTitle?: string;
+    }) => proposalService.accept(id, { maxStudents, officialTitle }),
     onSuccess: invalidate,
   });
 }
@@ -109,6 +116,53 @@ export function useCreateProposalComment() {
   return useMutation({
     mutationFn: ({ id, content }: { id: number; content: string }) =>
       proposalService.addComment(id, { content }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateProposalComment() {
+  const invalidate = useInvalidateProposals();
+
+  return useMutation({
+    mutationFn: ({
+      proposalId,
+      commentId,
+      content,
+    }: {
+      proposalId: number;
+      commentId: number;
+      content: string;
+    }) => proposalService.updateComment(proposalId, commentId, { content }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteProposalComment() {
+  const invalidate = useInvalidateProposals();
+
+  return useMutation({
+    mutationFn: ({
+      proposalId,
+      commentId,
+    }: {
+      proposalId: number;
+      commentId: number;
+    }) => proposalService.deleteComment(proposalId, commentId),
+    onSuccess: invalidate,
+  });
+}
+
+export function useToggleProposalCommentReaction() {
+  const invalidate = useInvalidateProposals();
+
+  return useMutation({
+    mutationFn: ({
+      proposalId,
+      commentId,
+    }: {
+      proposalId: number;
+      commentId: number;
+    }) => proposalService.toggleReaction(proposalId, commentId),
     onSuccess: invalidate,
   });
 }

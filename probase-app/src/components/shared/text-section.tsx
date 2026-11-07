@@ -30,7 +30,7 @@ export function TextSection({
       </TitleAs>
       <p
         className={cn(
-          'text-sm whitespace-pre-line break-words text-muted-foreground',
+          'text-sm whitespace-pre-line break-words [overflow-wrap:anywhere] text-muted-foreground',
           bodyClassName,
         )}
       >

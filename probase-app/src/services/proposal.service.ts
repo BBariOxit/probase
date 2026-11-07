@@ -3,6 +3,7 @@ import type {
   Paginated,
   ProposalAttachment,
   ProposalComment,
+  ProposalCommentReaction,
   ProposalStatus,
   TopicProposal,
 } from '@/lib/api/types';
@@ -20,11 +21,12 @@ export interface ProposalInput {
   title: string;
   description: string;
   expectedOutcomes: string;
+  maxStudents?: number;
   isDraft?: boolean;
 }
 
 export type ProposalPatch = Partial<
-  Pick<ProposalInput, 'title' | 'description' | 'expectedOutcomes'>
+  Pick<ProposalInput, 'title' | 'description' | 'expectedOutcomes' | 'maxStudents'>
 >;
 
 function toSearch(query: ProposalQuery): string {
@@ -74,7 +76,10 @@ export const proposalService = {
     });
   },
 
-  accept(id: number, input: { maxStudents?: number } = {}) {
+  accept(
+    id: number,
+    input: { maxStudents?: number; officialTitle?: string } = {},
+  ) {
     return api<TopicProposal>(`/proposals/${id}/accept`, {
       method: 'POST',
       body: input,
@@ -93,6 +98,34 @@ export const proposalService = {
       method: 'POST',
       body: input,
     });
+  },
+
+  updateComment(
+    proposalId: number,
+    commentId: number,
+    input: { content: string },
+  ) {
+    return api<ProposalComment>(
+      `/proposals/${proposalId}/comments/${commentId}`,
+      {
+        method: 'PATCH',
+        body: input,
+      },
+    );
+  },
+
+  deleteComment(proposalId: number, commentId: number) {
+    return api<{ success: boolean }>(
+      `/proposals/${proposalId}/comments/${commentId}`,
+      { method: 'DELETE' },
+    );
+  },
+
+  toggleReaction(proposalId: number, commentId: number) {
+    return api<ProposalCommentReaction[]>(
+      `/proposals/${proposalId}/comments/${commentId}/reaction`,
+      { method: 'POST' },
+    );
   },
 
   uploadAttachment(id: number, file: File) {

@@ -150,7 +150,9 @@ function Result() {
         <DialogTitle>
           {group.isLeader ? 'Đăng ký thành công' : 'Đã vào nhóm'}
         </DialogTitle>
-        <DialogDescription>{group.topic.title}</DialogDescription>
+        <DialogDescription className="break-words [overflow-wrap:anywhere]">
+          {group.topic.title}
+        </DialogDescription>
       </DialogHeader>
 
       {/*

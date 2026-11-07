@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { InfoTooltip } from '@/components/shared/info-tooltip';
+import { cn } from '@/lib/utils';
 
 function Field({
   label,
@@ -58,6 +59,8 @@ export function ProposalForm({
   projectTypes,
   defaultValues,
   fixed,
+  hideFixed = false,
+  className,
   submitLabel,
   draftLabel = 'Lưu bản nháp',
   children,
@@ -68,6 +71,8 @@ export function ProposalForm({
   projectTypes: ProjectType[];
   defaultValues?: Partial<ProposalFormValues>;
   fixed?: { projectType: string; lecturer: string };
+  hideFixed?: boolean;
+  className?: string;
   submitLabel: string;
   draftLabel?: string;
   children?: React.ReactNode;
@@ -92,6 +97,7 @@ export function ProposalForm({
       title: '',
       description: '',
       expectedOutcomes: '',
+      maxStudents: 1,
       projectTypeId: projectTypes.length === 1 ? projectTypes[0].id : undefined,
       ...defaultValues,
     },
@@ -111,12 +117,12 @@ export function ProposalForm({
   return (
     <form
       onSubmit={handleSubmit(submit)}
-      className="max-w-2xl space-y-5"
+      className={cn('max-w-2xl space-y-5', className)}
       noValidate
     >
       <FormError message={formError} />
 
-      {fixed ? (
+      {hideFixed ? null : fixed ? (
         <dl className="grid gap-x-6 gap-y-3 rounded-xl border bg-muted/40 px-4 py-3 sm:grid-cols-2">
           <Fact label="Loại đồ án" value={fixed.projectType} />
           <Fact label="Gửi tới" value={fixed.lecturer} />
@@ -237,6 +243,23 @@ export function ProposalForm({
         />
       </Field>
 
+      <Field
+        label="Số lượng sinh viên dự kiến"
+        htmlFor="maxStudents"
+        hint="Số lượng thành viên dự kiến cùng làm đề tài này (1 - 3 sinh viên). Giảng viên có thể điều chỉnh khi phê duyệt."
+        error={errors.maxStudents?.message}
+      >
+        <Input
+          id="maxStudents"
+          type="number"
+          min={1}
+          max={3}
+          className="w-28"
+          aria-invalid={!!errors.maxStudents}
+          {...register('maxStudents', { valueAsNumber: true })}
+        />
+      </Field>
+
       {children}
 
       <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -265,12 +288,12 @@ export function ProposalForm({
         )}
         <Button
           type="button"
-          variant="destructive"
+          variant="outline"
           disabled={isSubmitting}
           onClick={onCancel}
           className="cursor-pointer font-medium"
         >
-          Huỷ
+          Hủy
         </Button>
       </div>
     </form>

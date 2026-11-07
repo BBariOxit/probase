@@ -9,6 +9,12 @@ export const AcceptProposalSchema = z.object({
     .int()
     .min(1)
     .max(10),
+  officialTitle: z
+    .string()
+    .trim()
+    .min(1, 'Tên đề tài không được để trống')
+    .max(200, 'Tên đề tài tối đa 200 ký tự')
+    .optional(),
 });
 
 export class AcceptProposalDto extends createZodDto(AcceptProposalSchema) {}

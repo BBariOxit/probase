@@ -12,3 +12,9 @@ export const CreateProposalCommentSchema = z.object({
 export class CreateProposalCommentDto extends createZodDto(
   CreateProposalCommentSchema,
 ) {}
+
+export const UpdateProposalCommentSchema = CreateProposalCommentSchema;
+
+export class UpdateProposalCommentDto extends createZodDto(
+  UpdateProposalCommentSchema,
+) {}

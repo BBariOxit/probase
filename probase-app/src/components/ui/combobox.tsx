@@ -24,6 +24,7 @@ export interface ComboboxProps {
   className?: string;
   triggerClassName?: string;
   popupClassName?: string;
+  listClassName?: string;
   disabled?: boolean;
   size?: 'sm' | 'default';
   id?: string;
@@ -55,6 +56,7 @@ export function Combobox({
   className,
   triggerClassName,
   popupClassName,
+  listClassName,
   disabled = false,
   size = 'sm',
   id,
@@ -233,13 +235,17 @@ export function Combobox({
                 )}
               </div>
 
-              {/* Danh sách các options cuộn được */}
+              {/* Danh sách các options cuộn được (hiện ~5 mục rồi cuộn) */}
               <div
                 ref={listRef}
                 role="listbox"
                 tabIndex={-1}
                 onWheel={(e) => e.stopPropagation()}
-                className="max-h-64 overflow-y-auto p-1 text-xs space-y-0.5 scrollbar-thin"
+                className={cn(
+                  'max-h-[180px] overflow-y-auto p-1 text-xs space-y-0.5',
+                  '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-400 dark:hover:[&::-webkit-scrollbar-thumb]:bg-neutral-600',
+                  listClassName,
+                )}
               >
                 {filteredOptions.length === 0 ? (
                   <div className="py-6 text-center text-xs text-muted-foreground">

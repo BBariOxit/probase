@@ -74,14 +74,15 @@ export function TopicDetailView({
     [];
 
   return (
-    <article className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] shadow-xs overflow-hidden">
+    <article className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] shadow-xs overflow-hidden min-w-0 max-w-full break-words">
       {/* Header đề tài */}
       <div className="p-6 sm:p-8 space-y-4">
         {/* Hàng trạng thái & nút thao tác nhanh ở trên */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <TopicStatusBadge status={topic.status} />
-            <span className="text-xs font-medium text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs">
+            <TopicStatusBadge status={topic.status} variant="text" />
+            <span className="text-muted-foreground">•</span>
+            <span className="font-medium text-muted-foreground">
               {topic.projectType.name}
               {topic.major ? ` • ${topic.major.name}` : ''}
             </span>
@@ -100,15 +101,10 @@ export function TopicDetailView({
         </div>
 
         {/* Tiêu đề đề tài */}
-        <div className="space-y-1.5">
-          <h1 className="text-2xl sm:text-3xl font-bold font-heading text-slate-900 dark:text-neutral-50 tracking-tight leading-snug">
+        <div className="space-y-1.5 min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold font-heading text-slate-900 dark:text-neutral-50 tracking-tight leading-snug break-words [overflow-wrap:anywhere]">
             {topic.title}
           </h1>
-          {topic.titleEn && (
-            <p className="text-sm sm:text-base italic text-muted-foreground font-normal">
-              {topic.titleEn}
-            </p>
-          )}
         </div>
 
         {/* Thông tin metadata (GVHD, Loại đồ án, Số lượng SV) */}
@@ -140,12 +136,7 @@ export function TopicDetailView({
           <div className="inline-flex items-center gap-1.5">
             <Users className="size-4 text-muted-foreground/80 shrink-0" />
             <span>
-              Tối đa {topic.maxStudents} sinh viên
-              {topic.occupiedSeats !== undefined && (
-                <span className="text-muted-foreground ml-1">
-                  (Đã nhận {topic.occupiedSeats}/{topic.maxStudents})
-                </span>
-              )}
+              Sinh viên {topic.occupiedSeats ?? 0}/{topic.maxStudents}
             </span>
           </div>
         </div>
@@ -160,7 +151,7 @@ export function TopicDetailView({
               <FileText className="size-4 text-primary shrink-0" />
               <span>Mô tả nội dung yêu cầu</span>
             </h2>
-            <div className="text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify selection:bg-primary/20">
+            <div className="text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify selection:bg-primary/20 break-words [overflow-wrap:anywhere]">
               {topic.description}
             </div>
           </div>
@@ -172,7 +163,7 @@ export function TopicDetailView({
                 <Target className="size-4 text-primary shrink-0" />
                 <span>Mục tiêu đề tài</span>
               </h2>
-              <div className="text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify selection:bg-primary/20">
+              <div className="text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify selection:bg-primary/20 break-words [overflow-wrap:anywhere]">
                 {topic.objectives}
               </div>
             </div>
@@ -184,7 +175,7 @@ export function TopicDetailView({
               <CheckCircle2 className="size-4 text-primary shrink-0" />
               <span>Yêu cầu đầu ra</span>
             </h2>
-            <div className="text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify selection:bg-primary/20">
+            <div className="text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify selection:bg-primary/20 break-words [overflow-wrap:anywhere]">
               {topic.expectedOutcomes}
             </div>
           </div>

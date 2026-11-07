@@ -25,7 +25,7 @@ export function GroupTopicBrief({ topicId }: { topicId: number }) {
           <h4 className="text-xs font-semibold text-foreground">
             Mô tả đề tài
           </h4>
-          <p className="text-xs text-muted-foreground leading-relaxed">
+          <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere]">
             {topic.description}
           </p>
         </div>
@@ -36,7 +36,7 @@ export function GroupTopicBrief({ topicId }: { topicId: number }) {
           <h4 className="text-xs font-semibold text-foreground">
             Yêu cầu đầu ra
           </h4>
-          <p className="text-xs text-muted-foreground leading-relaxed">
+          <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere]">
             {topic.expectedOutcomes}
           </p>
         </div>

@@ -68,7 +68,7 @@ export function MyGroupPanel({
     <section className="space-y-6 rounded-2xl border border-[#b8c0d0] dark:border-[#333338] bg-white dark:bg-[#1e1e1e] p-5 sm:p-6 shadow-sm">
       <header className="space-y-3">
         <div className="flex items-start justify-between gap-3">
-          <h2 className="font-heading min-w-0 text-lg sm:text-xl leading-snug font-bold tracking-tight text-slate-900 dark:text-neutral-100">
+          <h2 className="font-heading min-w-0 text-lg sm:text-xl leading-snug font-bold tracking-tight text-slate-900 dark:text-neutral-100 break-words [overflow-wrap:anywhere]">
             <Link
               href={`/student/topics/${topic.id}`}
               className="rounded-sm hover:text-primary hover:underline transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"

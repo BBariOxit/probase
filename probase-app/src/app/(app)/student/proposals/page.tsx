@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRight,
+  FileText,
   GraduationCap,
   Info,
   Lightbulb,
   Loader2,
-  Pencil,
   Plus,
   Undo2,
 } from 'lucide-react';
@@ -22,23 +23,29 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { ProposalCard } from '@/components/proposals/proposal-card';
-import { ProposalDetailSheet } from '@/components/proposals/proposal-detail-sheet';
 import { Button } from '@/components/ui/button';
 import { PROPOSAL_PAGE_SIZE } from '@/constants/pagination.constant';
 import { usePagination } from '@/hooks';
 
-export default function StudentProposalsPage() {
+function StudentProposalsContent() {
   const allowed = useRequireRole('STUDENT');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const targetIdParam = searchParams.get('id');
+  const targetProposalId = targetIdParam ? Number(targetIdParam) : null;
+
+  useEffect(() => {
+    if (targetProposalId) {
+      router.replace(`/student/proposals/${targetProposalId}`);
+    }
+  }, [targetProposalId, router]);
+
   const semester = useActiveSemester();
   const { data: rounds } = useMyRounds(semester?.id);
   const { data: group } = useMyGroup();
   const { page, setPage } = usePagination({
     initialPageSize: PROPOSAL_PAGE_SIZE,
   });
-
-  const [viewingProposal, setViewingProposal] = useState<TopicProposal | null>(
-    null,
-  );
 
   const { data, isPending, error } = useProposals({
     page,
@@ -49,7 +56,10 @@ export default function StudentProposalsPage() {
 
   const proposals = data?.items ?? [];
   const pending = proposals.find(
-    (one) => one.status === 'PENDING' || one.status === 'DRAFT',
+    (one) =>
+      one.status === 'PENDING' ||
+      one.status === 'NEEDS_REVISION' ||
+      one.status === 'DRAFT',
   );
 
   /*
@@ -134,7 +144,7 @@ export default function StudentProposalsPage() {
               <SentProposal
                 proposal={proposal}
                 registeredTopicId={group?.topicId ?? null}
-                onClick={() => setViewingProposal(proposal)}
+                onClick={() => router.push(`/student/proposals/${proposal.id}`)}
               />
             </li>
           ))}
@@ -148,30 +158,21 @@ export default function StudentProposalsPage() {
           />
         )}
       </div>
-
-      <ProposalDetailSheet
-        proposal={viewingProposal}
-        onClose={() => setViewingProposal(null)}
-        counterparty={
-          viewingProposal && (
-            <span>
-              Giảng viên:{' '}
-              {viewingProposal.requestedLecturer.academicTitle
-                ? `${viewingProposal.requestedLecturer.academicTitle} ${viewingProposal.requestedLecturer.fullName}`
-                : viewingProposal.requestedLecturer.fullName}
-            </span>
-          )
-        }
-        footer={
-          viewingProposal && (
-            <Answer
-              proposal={viewingProposal}
-              registeredTopicId={group?.topicId ?? null}
-            />
-          )
-        }
-      />
     </>
+  );
+}
+
+export default function StudentProposalsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-16">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <StudentProposalsContent />
+    </Suspense>
   );
 }
 
@@ -187,12 +188,16 @@ function SentProposal({
   const withdraw = useWithdrawProposal();
   const [confirming, setConfirming] = useState(false);
   const isDraft = proposal.status === 'DRAFT';
-  const editable = proposal.status === 'PENDING' || isDraft;
+  const editable =
+    proposal.status === 'PENDING' ||
+    proposal.status === 'NEEDS_REVISION' ||
+    isDraft;
 
   return (
     <>
       <ProposalCard
         proposal={proposal}
+        titleHref={`/student/proposals/${proposal.id}`}
         onClick={onClick}
         counterparty={
           <span className="inline-flex items-center gap-1.5">
@@ -217,9 +222,10 @@ function SentProposal({
                 variant="default"
                 size="sm"
                 render={<Link href={`/student/proposals/${proposal.id}`} />}
+                className="gap-1.5 font-semibold shadow-xs"
               >
-                <Pencil />
-                {isDraft ? 'Chỉnh sửa & Gửi' : 'Xem chi tiết & Sửa'}
+                <FileText className="size-4" />
+                {isDraft ? 'Hoàn thiện & Gửi' : 'Xem chi tiết'}
               </Button>
               <Button
                 variant="ghost"
@@ -227,7 +233,7 @@ function SentProposal({
                 onClick={() => setConfirming(true)}
                 className="text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
               >
-                <Undo2 />
+                <Undo2 className="size-4" />
                 {isDraft ? 'Xoá nháp' : 'Rút lại'}
               </Button>
             </>

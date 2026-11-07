@@ -21,7 +21,10 @@ import {
   AcceptProposalDto,
   RejectProposalDto,
 } from './dto/answer-proposal.dto';
-import { CreateProposalCommentDto } from './dto/proposal-comment.dto';
+import {
+  CreateProposalCommentDto,
+  UpdateProposalCommentDto,
+} from './dto/proposal-comment.dto';
 import { CreateProposalDto } from './dto/create-proposal.dto';
 import { QueryProposalsDto } from './dto/query-proposals.dto';
 import { UpdateProposalDto } from './dto/update-proposal.dto';
@@ -79,6 +82,48 @@ export class ProposalsController {
     @GetUser('role') role: Role,
   ) {
     return this.proposalsService.addComment(id, dto, userId, role);
+  }
+
+  @Patch(':id/comments/:commentId')
+  updateComment(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('commentId', ParseIntPipe) commentId: number,
+    @Body() dto: UpdateProposalCommentDto,
+    @GetUser('id') userId: number,
+    @GetUser('role') role: Role,
+  ) {
+    return this.proposalsService.updateComment(
+      id,
+      commentId,
+      dto,
+      userId,
+      role,
+    );
+  }
+
+  @Delete(':id/comments/:commentId')
+  deleteComment(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('commentId', ParseIntPipe) commentId: number,
+    @GetUser('id') userId: number,
+    @GetUser('role') role: Role,
+  ) {
+    return this.proposalsService.deleteComment(id, commentId, userId, role);
+  }
+
+  @Post(':id/comments/:commentId/reaction')
+  toggleCommentReaction(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('commentId', ParseIntPipe) commentId: number,
+    @GetUser('id') userId: number,
+    @GetUser('role') role: Role,
+  ) {
+    return this.proposalsService.toggleCommentReaction(
+      id,
+      commentId,
+      userId,
+      role,
+    );
   }
 
   @Roles('STUDENT')

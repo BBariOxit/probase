@@ -28,7 +28,8 @@ export function SupervisorReviewSection({
   const { data: reviewsData, isPending } = useGroupReviews(groupId);
 
   const projectTypeCode = group?.topic?.round?.projectType?.code;
-  const expectedTemplate = projectTypeCode === 'KLTN' ? 'M04' : 'M02';
+  const isThesis = projectTypeCode === 'KLTN' || projectTypeCode === 'DATN';
+  const expectedTemplate = isThesis ? 'M04' : 'M02';
 
   const supervisorReview = reviewsData?.supervisorReview;
   const reviewerReview = reviewsData?.reviewerReview;

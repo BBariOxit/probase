@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Check, Inbox, Loader2, MessageSquareCode, X } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Check, FileText, Inbox, Loader2, MessageSquareCode, X } from 'lucide-react';
 import { useMyProfile } from '@/lib/api/me';
 import { useProposals } from '@/lib/api/proposals';
 import type {
@@ -20,7 +21,6 @@ import {
   RejectProposalDialog,
 } from '@/components/proposals/proposal-answer-dialogs';
 import { ProposalCard } from '@/components/proposals/proposal-card';
-import { ProposalDetailSheet } from '@/components/proposals/proposal-detail-sheet';
 import { UserAvatar } from '@/components/shared/user-avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,8 +34,19 @@ import { DEFAULT_PAGE_SIZE } from '@/constants/pagination.constant';
 import { PROPOSAL_STATUS_FILTERS } from '@/constants/status.constant';
 import { usePagination } from '@/hooks';
 
-export default function LecturerProposalsPage() {
+function LecturerProposalsContent() {
   const allowed = useRequireRole('LECTURER');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const targetIdParam = searchParams.get('id');
+  const targetProposalId = targetIdParam ? Number(targetIdParam) : null;
+
+  useEffect(() => {
+    if (targetProposalId) {
+      router.replace(`/lecturer/proposals/${targetProposalId}`);
+    }
+  }, [targetProposalId, router]);
+
   const { data: profile } = useMyProfile();
   const [status, setStatus] = useState<ProposalStatus | 'ALL'>('PENDING');
   const { page, setPage, resetPage } = usePagination({
@@ -152,6 +163,20 @@ export default function LecturerProposalsPage() {
   );
 }
 
+export default function LecturerProposalsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-16">
+          <Loader2 className="size-5 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <LecturerProposalsContent />
+    </Suspense>
+  );
+}
+
 function MentoringLoadCard({ load }: { load: MentoringLoad }) {
   return (
     <section
@@ -186,15 +211,16 @@ function MentoringLoadCard({ load }: { load: MentoringLoad }) {
 }
 
 function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
+  const router = useRouter();
   const [answering, setAnswering] = useState<'accept' | 'reject' | null>(null);
-  const [viewing, setViewing] = useState(false);
   const student = proposal.student;
 
   return (
     <>
       <ProposalCard
         proposal={proposal}
-        onClick={() => setViewing(true)}
+        titleHref={`/lecturer/proposals/${proposal.id}`}
+        onClick={() => router.push(`/lecturer/proposals/${proposal.id}`)}
         counterparty={
           <span className="inline-flex items-center gap-1.5">
             <UserAvatar
@@ -213,29 +239,41 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
         }
         footer={<Outcome proposal={proposal} />}
         actions={
-          proposal.status === 'PENDING' && (
+          proposal.status === 'PENDING' ||
+          proposal.status === 'NEEDS_REVISION' ? (
             <>
-              <Button size="sm" onClick={() => setAnswering('accept')}>
-                <Check />
+              <Button size="sm" onClick={() => setAnswering('accept')} className="gap-1 cursor-pointer">
+                <Check className="size-4" />
                 Nhận hướng dẫn
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setViewing(true)}
+                render={<Link href={`/lecturer/proposals/${proposal.id}`} />}
+                className="gap-1.5 font-semibold shadow-xs cursor-pointer"
               >
-                <MessageSquareCode />
+                <MessageSquareCode className="size-4" />
                 Xem & Nhận xét
               </Button>
               <Button
-                variant="ghost"
                 size="sm"
                 onClick={() => setAnswering('reject')}
+                className="gap-1.5 cursor-pointer font-semibold shadow-xs bg-rose-600 text-white hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-700 dark:text-white"
               >
-                <X />
+                <X className="size-4" />
                 Từ chối
               </Button>
             </>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              render={<Link href={`/lecturer/proposals/${proposal.id}`} />}
+              className="gap-1.5 font-semibold shadow-xs cursor-pointer"
+            >
+              <FileText className="size-4" />
+              Xem chi tiết
+            </Button>
           )
         }
       />
@@ -254,48 +292,6 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
           onOpenChange={(open) => !open && setAnswering(null)}
         />
       )}
-
-      <ProposalDetailSheet
-        proposal={viewing ? proposal : null}
-        onClose={() => setViewing(false)}
-        counterparty={
-          <span className="inline-flex items-center gap-1.5">
-            Sinh viên: {student.fullName} (
-            <span className="inline-flex items-center rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-primary">
-              {student.studentCode}
-            </span>
-            {student.class && <span>- {student.class}</span>})
-          </span>
-        }
-        footer={<Outcome proposal={proposal} />}
-        actions={
-          proposal.status === 'PENDING' && (
-            <>
-              <Button
-                size="sm"
-                onClick={() => {
-                  setViewing(false);
-                  setAnswering('accept');
-                }}
-              >
-                <Check />
-                Nhận hướng dẫn
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setViewing(false);
-                  setAnswering('reject');
-                }}
-              >
-                <X />
-                Từ chối
-              </Button>
-            </>
-          )
-        }
-      />
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { nextParam } from '@/lib/auth/next-path';
 import { useSession } from '@/lib/auth/session';
 import { authService } from '@/services/auth.service';
@@ -27,8 +28,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [status, user, router, pathname]);
 
+  const queryClient = useQueryClient();
+
   async function handleSignOut() {
     await authService.logout();
+    queryClient.clear();
     signOut();
     router.replace('/login');
   }
