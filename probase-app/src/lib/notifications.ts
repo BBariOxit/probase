@@ -11,7 +11,10 @@ export function notificationHref(
       // is at the top of it — pending first is the order the API returns.
       case 'PROPOSAL_SUBMITTED':
       case 'PROPOSAL_RESUBMITTED':
-        return '/lecturer/proposals';
+      case 'PROPOSAL_COMMENTED':
+        return notice.targetId
+          ? `/lecturer/proposals/${notice.targetId}`
+          : '/lecturer/proposals';
 
       // The office put somebody on their topic. `targetId` is that topic, and
       // it is where the new roster is.
@@ -68,7 +71,10 @@ export function notificationHref(
     case 'PROPOSAL_ACCEPTED':
     case 'PROPOSAL_REJECTED':
     case 'PROPOSAL_REVISION_REQUESTED':
-      return '/student/proposals';
+    case 'PROPOSAL_COMMENTED':
+      return notice.targetId
+        ? `/student/proposals/${notice.targetId}`
+        : '/student/proposals';
 
     case 'GROUP_MEMBER_JOINED':
     // The office placed the reader, or placed somebody beside them. Either way
@@ -164,6 +170,7 @@ export function notificationCategory(type: string): {
     case 'PROPOSAL_RESUBMITTED':
     case 'PROPOSAL_ACCEPTED':
     case 'PROPOSAL_REJECTED':
+    case 'PROPOSAL_COMMENTED':
       return { label: 'Đề xuất đề tài', color: neutral };
     case 'GROUP_MEMBER_JOINED':
     case 'GROUP_MEMBER_REMOVED':

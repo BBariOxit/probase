@@ -3,9 +3,9 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, Inbox, Loader2, MessageSquareCode, X } from 'lucide-react';
+import { Check, FileText, Inbox, Loader2, MessageSquareCode, X } from 'lucide-react';
 import { useMyProfile } from '@/lib/api/me';
-import { useProposal, useProposals } from '@/lib/api/proposals';
+import { useProposals } from '@/lib/api/proposals';
 import type {
   MentoringLoad,
   ProposalStatus,
@@ -21,7 +21,6 @@ import {
   RejectProposalDialog,
 } from '@/components/proposals/proposal-answer-dialogs';
 import { ProposalCard } from '@/components/proposals/proposal-card';
-import { ProposalDetailSheet } from '@/components/proposals/proposal-detail-sheet';
 import { UserAvatar } from '@/components/shared/user-avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -41,24 +40,12 @@ function LecturerProposalsContent() {
   const searchParams = useSearchParams();
   const targetIdParam = searchParams.get('id');
   const targetProposalId = targetIdParam ? Number(targetIdParam) : null;
-  const { data: directProposal } = useProposal(targetProposalId ?? 0);
-
-  const [directViewing, setDirectViewing] = useState(false);
-  const [directAnswering, setDirectAnswering] = useState<'accept' | 'reject' | null>(null);
 
   useEffect(() => {
-    if (targetProposalId && directProposal) {
-      setDirectViewing(true);
+    if (targetProposalId) {
+      router.replace(`/lecturer/proposals/${targetProposalId}`);
     }
-  }, [targetProposalId, directProposal]);
-
-  const handleCloseDirect = () => {
-    setDirectViewing(false);
-    const newParams = new URLSearchParams(searchParams.toString());
-    newParams.delete('id');
-    const query = newParams.toString();
-    router.replace(`/lecturer/proposals${query ? `?${query}` : ''}`);
-  };
+  }, [targetProposalId, router]);
 
   const { data: profile } = useMyProfile();
   const [status, setStatus] = useState<ProposalStatus | 'ALL'>('PENDING');
@@ -172,68 +159,6 @@ function LecturerProposalsContent() {
           onPageChange={setPage}
         />
       )}
-
-      {/* Sheet mở trực tiếp từ query param ?id= (ví dụ từ thông báo) */}
-      {directProposal && (
-        <>
-          {directAnswering === 'accept' && (
-            <AcceptProposalDialog
-              proposal={directProposal}
-              open
-              onOpenChange={(open) => !open && setDirectAnswering(null)}
-            />
-          )}
-          {directAnswering === 'reject' && (
-            <RejectProposalDialog
-              proposal={directProposal}
-              open
-              onOpenChange={(open) => !open && setDirectAnswering(null)}
-            />
-          )}
-
-          <ProposalDetailSheet
-            proposal={directViewing ? directProposal : null}
-            onClose={handleCloseDirect}
-            counterparty={
-              <span className="inline-flex items-center gap-1.5">
-                Sinh viên: {directProposal.student.fullName} (
-                <span className="inline-flex items-center rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-primary">
-                  {directProposal.student.studentCode}
-                </span>
-                {directProposal.student.class && <span>- {directProposal.student.class}</span>})
-              </span>
-            }
-            footer={<Outcome proposal={directProposal} />}
-            actions={
-              directProposal.status === 'PENDING' && (
-                <>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setDirectViewing(false);
-                      setDirectAnswering('accept');
-                    }}
-                  >
-                    <Check />
-                    Nhận hướng dẫn
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setDirectViewing(false);
-                      setDirectAnswering('reject');
-                    }}
-                  >
-                    <X />
-                    Từ chối
-                  </Button>
-                </>
-              )
-            }
-          />
-        </>
-      )}
     </PageWithRail>
   );
 }
@@ -286,16 +211,16 @@ function MentoringLoadCard({ load }: { load: MentoringLoad }) {
 }
 
 function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
+  const router = useRouter();
   const [answering, setAnswering] = useState<'accept' | 'reject' | null>(null);
-  const [viewing, setViewing] = useState(false);
   const student = proposal.student;
 
   return (
     <>
       <ProposalCard
         proposal={proposal}
-        titleHref={`/lecturer/proposals?id=${proposal.id}`}
-        onClick={() => setViewing(true)}
+        titleHref={`/lecturer/proposals/${proposal.id}`}
+        onClick={() => router.push(`/lecturer/proposals/${proposal.id}`)}
         counterparty={
           <span className="inline-flex items-center gap-1.5">
             <UserAvatar
@@ -314,29 +239,41 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
         }
         footer={<Outcome proposal={proposal} />}
         actions={
-          proposal.status === 'PENDING' && (
+          proposal.status === 'PENDING' ? (
             <>
-              <Button size="sm" onClick={() => setAnswering('accept')}>
-                <Check />
+              <Button size="sm" onClick={() => setAnswering('accept')} className="gap-1 cursor-pointer">
+                <Check className="size-4" />
                 Nhận hướng dẫn
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setViewing(true)}
+                render={<Link href={`/lecturer/proposals/${proposal.id}`} />}
+                className="gap-1.5 font-semibold shadow-xs cursor-pointer"
               >
-                <MessageSquareCode />
+                <MessageSquareCode className="size-4" />
                 Xem & Nhận xét
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setAnswering('reject')}
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
               >
-                <X />
+                <X className="size-4" />
                 Từ chối
               </Button>
             </>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              render={<Link href={`/lecturer/proposals/${proposal.id}`} />}
+              className="gap-1.5 font-semibold shadow-xs cursor-pointer"
+            >
+              <FileText className="size-4" />
+              Xem chi tiết
+            </Button>
           )
         }
       />
@@ -355,48 +292,6 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
           onOpenChange={(open) => !open && setAnswering(null)}
         />
       )}
-
-      <ProposalDetailSheet
-        proposal={viewing ? proposal : null}
-        onClose={() => setViewing(false)}
-        counterparty={
-          <span className="inline-flex items-center gap-1.5">
-            Sinh viên: {student.fullName} (
-            <span className="inline-flex items-center rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-primary">
-              {student.studentCode}
-            </span>
-            {student.class && <span>- {student.class}</span>})
-          </span>
-        }
-        footer={<Outcome proposal={proposal} />}
-        actions={
-          proposal.status === 'PENDING' && (
-            <>
-              <Button
-                size="sm"
-                onClick={() => {
-                  setViewing(false);
-                  setAnswering('accept');
-                }}
-              >
-                <Check />
-                Nhận hướng dẫn
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setViewing(false);
-                  setAnswering('reject');
-                }}
-              >
-                <X />
-                Từ chối
-              </Button>
-            </>
-          )
-        }
-      />
     </>
   );
 }

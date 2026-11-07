@@ -26,21 +26,23 @@ function getNotificationAction(
   if (
     notice.type === 'PROPOSAL_SUBMITTED' ||
     notice.type === 'PROPOSAL_RESUBMITTED' ||
-    notice.title.toLowerCase().includes('đề xuất')
+    notice.type === 'PROPOSAL_COMMENTED' ||
+    notice.title.toLowerCase().includes('đề xuất') ||
+    notice.title.toLowerCase().includes('nhận xét')
   ) {
     if (isLecturer) {
       return {
         label: 'Xem chi tiết đề xuất đề tài',
         url: notice.targetId
-          ? `/lecturer/proposals?id=${notice.targetId}`
+          ? `/lecturer/proposals/${notice.targetId}`
           : '/lecturer/proposals',
         icon: FileText,
       };
     }
     return {
-      label: 'Xem chi tiết đề xuất của bạn',
+      label: 'Xem chi tiết đề xuất & nhận xét',
       url: notice.targetId
-        ? `/student/proposals?id=${notice.targetId}`
+        ? `/student/proposals/${notice.targetId}`
         : '/student/proposals',
       icon: FileText,
     };
@@ -55,7 +57,7 @@ function getNotificationAction(
       return {
         label: 'Xem chi tiết đề xuất đề tài',
         url: notice.targetId
-          ? `/student/proposals?id=${notice.targetId}`
+          ? `/student/proposals/${notice.targetId}`
           : '/student/proposals',
         icon: FileText,
       };
@@ -63,7 +65,7 @@ function getNotificationAction(
     return {
       label: 'Xem chi tiết đề xuất',
       url: notice.targetId
-        ? `/lecturer/proposals?id=${notice.targetId}`
+        ? `/lecturer/proposals/${notice.targetId}`
         : '/lecturer/proposals',
       icon: FileText,
     };

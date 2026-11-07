@@ -432,8 +432,8 @@ export class ProposalsService {
         {
           userId: proposal.student.userId,
           type: 'PROPOSAL_COMMENTED',
-          title: 'Giảng viên đã nhận xét đề xuất của bạn',
-          content: `${lecturerName(lecturer ?? { fullName: 'Giảng viên', academicTitle: null })}: "${dto.content.slice(0, 80)}${dto.content.length > 80 ? '...' : ''}"`,
+          title: 'Nhận xét đề xuất đề tài',
+          content: `${lecturerName(lecturer ?? { fullName: 'Giảng viên', academicTitle: null })} đã gửi nhận xét cho đề xuất "${proposal.title}":\n\n"${dto.content}"`,
           targetId: proposal.id,
         },
       ]);
@@ -447,8 +447,8 @@ export class ProposalsService {
           {
             userId: lecturer.userId,
             type: 'PROPOSAL_COMMENTED',
-            title: 'Sinh viên đã phản hồi nhận xét',
-            content: `${proposal.student.fullName}: "${dto.content.slice(0, 80)}${dto.content.length > 80 ? '...' : ''}"`,
+            title: 'Phản hồi nhận xét đề xuất',
+            content: `Sinh viên ${proposal.student.fullName} (${proposal.student.studentCode}) đã phản hồi cho đề xuất "${proposal.title}":\n\n"${dto.content}"`,
             targetId: proposal.id,
           },
         ]);
