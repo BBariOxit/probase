@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, Loader2 } from 'lucide-react';
@@ -32,6 +33,7 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const { status, user, signIn } = useSession();
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -75,6 +77,7 @@ function LoginForm() {
     try {
       const result = await authService.login(values);
 
+      queryClient.clear();
       signIn(result, result.user);
       router.replace(destinationFor(result.user));
     } catch (err) {

@@ -1,16 +1,31 @@
 'use client';
 
-import { useState } from 'react';
-import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import { QueryCache, QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ThemeProvider, useTheme } from 'next-themes';
 import { Toaster } from 'sonner';
 import { ApiError } from '@/lib/api/client';
+import { useSession } from '@/lib/auth/session';
 import { useSessionBootstrap } from '@/lib/auth/use-session-bootstrap';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { GoogleAuthProvider } from '@/components/auth/google-auth-provider';
 
 function SessionBootstrap() {
   useSessionBootstrap();
+  const queryClient = useQueryClient();
+  const userId = useSession((s) => s.user?.id);
+  const prevUserIdRef = useRef<number | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (
+      prevUserIdRef.current !== undefined &&
+      prevUserIdRef.current !== userId
+    ) {
+      queryClient.clear();
+    }
+    prevUserIdRef.current = userId;
+  }, [userId, queryClient]);
+
   return null;
 }
 
