@@ -90,8 +90,8 @@ export default function LecturerProposalDetailPage({
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      {/* Thanh điều hướng & nút duyệt / từ chối */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Thanh điều hướng */}
+      <div>
         <Button
           variant="default"
           size="sm"
@@ -100,28 +100,6 @@ export default function LecturerProposalDetailPage({
         >
           <ArrowLeft className="size-4" /> Quay lại danh sách đề xuất
         </Button>
-
-        {isPendingStatus && (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => setAnswering('accept')}
-              className="gap-1.5 cursor-pointer font-semibold shadow-xs bg-primary text-white hover:bg-primary/90"
-            >
-              <Check className="size-4" />
-              <span>Nhận hướng dẫn</span>
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setAnswering('reject')}
-              className="gap-1.5 cursor-pointer font-semibold shadow-xs bg-rose-600 text-white hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-700 dark:text-white"
-            >
-              <X className="size-4" />
-              <span>Từ chối</span>
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Thẻ chi tiết đề tài đề xuất */}
@@ -203,8 +181,30 @@ export default function LecturerProposalDetailPage({
       </article>
 
       {/* Phần nhận xét, trao đổi và góp ý ở cuối trang */}
-      <section className="space-y-3">
+      <section className="space-y-4">
         <ProposalCommentThread proposal={proposal} />
+
+        {/* Các nút quyết định: Nhận hướng dẫn / Từ chối dưới phần nhận xét */}
+        {isPendingStatus && (
+          <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+            <Button
+              size="default"
+              onClick={() => setAnswering('accept')}
+              className="gap-2 cursor-pointer font-semibold shadow-xs bg-primary text-white hover:bg-primary/90 h-10 px-5"
+            >
+              <Check className="size-4.5" />
+              <span>Nhận hướng dẫn</span>
+            </Button>
+            <Button
+              size="default"
+              onClick={() => setAnswering('reject')}
+              className="gap-2 cursor-pointer font-semibold shadow-xs bg-rose-600 text-white hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-700 dark:text-white h-10 px-5"
+            >
+              <X className="size-4.5" />
+              <span>Từ chối</span>
+            </Button>
+          </div>
+        )}
       </section>
 
       {/* Hộp thoại nhận hướng dẫn / từ chối */}
