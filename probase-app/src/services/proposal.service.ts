@@ -3,6 +3,7 @@ import type {
   Paginated,
   ProposalAttachment,
   ProposalComment,
+  ProposalCommentReaction,
   ProposalStatus,
   TopicProposal,
 } from '@/lib/api/types';
@@ -97,6 +98,34 @@ export const proposalService = {
       method: 'POST',
       body: input,
     });
+  },
+
+  updateComment(
+    proposalId: number,
+    commentId: number,
+    input: { content: string },
+  ) {
+    return api<ProposalComment>(
+      `/proposals/${proposalId}/comments/${commentId}`,
+      {
+        method: 'PATCH',
+        body: input,
+      },
+    );
+  },
+
+  deleteComment(proposalId: number, commentId: number) {
+    return api<{ success: boolean }>(
+      `/proposals/${proposalId}/comments/${commentId}`,
+      { method: 'DELETE' },
+    );
+  },
+
+  toggleReaction(proposalId: number, commentId: number) {
+    return api<ProposalCommentReaction[]>(
+      `/proposals/${proposalId}/comments/${commentId}/reaction`,
+      { method: 'POST' },
+    );
   },
 
   uploadAttachment(id: number, file: File) {

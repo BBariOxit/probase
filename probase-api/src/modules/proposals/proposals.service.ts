@@ -24,7 +24,10 @@ import {
   AcceptProposalDto,
   RejectProposalDto,
 } from './dto/answer-proposal.dto';
-import { CreateProposalCommentDto } from './dto/proposal-comment.dto';
+import {
+  CreateProposalCommentDto,
+  UpdateProposalCommentDto,
+} from './dto/proposal-comment.dto';
 import { QueryProposalsDto } from './dto/query-proposals.dto';
 import { UpdateProposalDto } from './dto/update-proposal.dto';
 
@@ -74,6 +77,25 @@ const PROPOSAL_SELECT = {
       authorId: true,
       content: true,
       createdAt: true,
+      updatedAt: true,
+      reactions: {
+        select: {
+          id: true,
+          userId: true,
+          createdAt: true,
+          user: {
+            select: {
+              id: true,
+              role: true,
+              studentProfile: { select: { fullName: true } },
+              lecturerProfile: {
+                select: { fullName: true, academicTitle: true },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+      },
       author: {
         select: {
           id: true,
@@ -521,13 +543,260 @@ export class ProposalsService {
       authorId: comment.authorId,
       content: comment.content,
       createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
       author: {
         id: comment.author.id,
         fullName: authorName,
         avatarUrl: comment.author.avatarUrl,
         role: comment.author.role,
       },
+      reactions: [],
     };
+  }
+
+  async updateComment(
+    proposalId: number,
+    commentId: number,
+    dto: UpdateProposalCommentDto,
+    userId: number,
+    role: Role,
+  ) {
+    const proposal = await this.requireProposal(proposalId);
+
+    if (!(await this.canView(proposal.id, userId, role))) {
+      throw new NotFoundException('Không tìm thấy đề xuất');
+    }
+
+    if (
+      proposal.status === TopicProposalStatus.ACCEPTED ||
+      proposal.status === TopicProposalStatus.REJECTED
+    ) {
+      throw new ConflictException(
+        'Đề xuất này đã được chốt kết quả nên không thể chỉnh sửa nhận xét.',
+      );
+    }
+
+    const comment = await this.prisma.proposalComment.findUnique({
+      where: { id: commentId },
+      include: {
+        author: {
+          select: {
+            id: true,
+            role: true,
+            avatarUrl: true,
+            studentProfile: { select: { fullName: true } },
+            lecturerProfile: {
+              select: { fullName: true, academicTitle: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!comment || comment.proposalId !== proposalId) {
+      throw new NotFoundException('Không tìm thấy nhận xét');
+    }
+
+    if (comment.authorId !== userId) {
+      throw new ForbiddenException(
+        'Bạn chỉ có quyền chỉnh sửa nhận xét do chính mình gửi.',
+      );
+    }
+
+    const updated = await this.prisma.proposalComment.update({
+      where: { id: commentId },
+      data: { content: dto.content.trim() },
+      include: {
+        author: {
+          select: {
+            id: true,
+            role: true,
+            avatarUrl: true,
+            studentProfile: { select: { fullName: true } },
+            lecturerProfile: {
+              select: { fullName: true, academicTitle: true },
+            },
+          },
+        },
+        reactions: {
+          select: {
+            id: true,
+            userId: true,
+            createdAt: true,
+            user: {
+              select: {
+                id: true,
+                role: true,
+                studentProfile: { select: { fullName: true } },
+                lecturerProfile: {
+                  select: { fullName: true, academicTitle: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const authorName = updated.author.lecturerProfile
+      ? lecturerName(updated.author.lecturerProfile)
+      : (updated.author.studentProfile?.fullName ?? 'Người dùng');
+
+    return {
+      id: updated.id,
+      proposalId: updated.proposalId,
+      authorId: updated.authorId,
+      content: updated.content,
+      createdAt: updated.createdAt,
+      updatedAt: updated.updatedAt,
+      author: {
+        id: updated.author.id,
+        fullName: authorName,
+        avatarUrl: updated.author.avatarUrl,
+        role: updated.author.role,
+      },
+      reactions: updated.reactions.map((r) => ({
+        id: r.id,
+        userId: r.userId,
+        createdAt: r.createdAt,
+        user: {
+          id: r.user.id,
+          fullName: r.user.lecturerProfile
+            ? lecturerName(r.user.lecturerProfile)
+            : (r.user.studentProfile?.fullName ?? 'Người dùng'),
+          role: r.user.role,
+        },
+      })),
+    };
+  }
+
+  async deleteComment(
+    proposalId: number,
+    commentId: number,
+    userId: number,
+    role: Role,
+  ) {
+    const proposal = await this.requireProposal(proposalId);
+
+    if (!(await this.canView(proposal.id, userId, role))) {
+      throw new NotFoundException('Không tìm thấy đề xuất');
+    }
+
+    if (
+      proposal.status === TopicProposalStatus.ACCEPTED ||
+      proposal.status === TopicProposalStatus.REJECTED
+    ) {
+      throw new ConflictException(
+        'Đề xuất này đã được chốt kết quả nên không thể xóa nhận xét.',
+      );
+    }
+
+    const comment = await this.prisma.proposalComment.findUnique({
+      where: { id: commentId },
+    });
+
+    if (!comment || comment.proposalId !== proposalId) {
+      throw new NotFoundException('Không tìm thấy nhận xét');
+    }
+
+    if (comment.authorId !== userId) {
+      throw new ForbiddenException(
+        'Bạn chỉ có quyền xóa nhận xét do chính mình gửi.',
+      );
+    }
+
+    await this.prisma.proposalComment.delete({
+      where: { id: commentId },
+    });
+
+    return { success: true };
+  }
+
+  async toggleCommentReaction(
+    proposalId: number,
+    commentId: number,
+    userId: number,
+    role: Role,
+  ) {
+    const proposal = await this.requireProposal(proposalId);
+
+    if (!(await this.canView(proposal.id, userId, role))) {
+      throw new NotFoundException('Không tìm thấy đề xuất');
+    }
+
+    if (
+      proposal.status === TopicProposalStatus.ACCEPTED ||
+      proposal.status === TopicProposalStatus.REJECTED
+    ) {
+      throw new ConflictException(
+        'Đề xuất này đã được chốt kết quả nên không thể tương tác thêm.',
+      );
+    }
+
+    const comment = await this.prisma.proposalComment.findUnique({
+      where: { id: commentId },
+    });
+
+    if (!comment || comment.proposalId !== proposalId) {
+      throw new NotFoundException('Không tìm thấy nhận xét');
+    }
+
+    const existingReaction =
+      await this.prisma.proposalCommentReaction.findUnique({
+        where: {
+          commentId_userId: {
+            commentId,
+            userId,
+          },
+        },
+      });
+
+    if (existingReaction) {
+      await this.prisma.proposalCommentReaction.delete({
+        where: { id: existingReaction.id },
+      });
+    } else {
+      await this.prisma.proposalCommentReaction.create({
+        data: {
+          commentId,
+          userId,
+        },
+      });
+    }
+
+    const updatedReactions =
+      await this.prisma.proposalCommentReaction.findMany({
+        where: { commentId },
+        select: {
+          id: true,
+          userId: true,
+          createdAt: true,
+          user: {
+            select: {
+              id: true,
+              role: true,
+              studentProfile: { select: { fullName: true } },
+              lecturerProfile: {
+                select: { fullName: true, academicTitle: true },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+
+    return updatedReactions.map((r) => ({
+      id: r.id,
+      userId: r.userId,
+      createdAt: r.createdAt,
+      user: {
+        id: r.user.id,
+        fullName: r.user.lecturerProfile
+          ? lecturerName(r.user.lecturerProfile)
+          : (r.user.studentProfile?.fullName ?? 'Người dùng'),
+        role: r.user.role,
+      },
+    }));
   }
 
   async uploadAttachment(
@@ -798,18 +1067,34 @@ function render(proposal: ProposalRow) {
         const authorName = c.author.lecturerProfile
           ? lecturerName(c.author.lecturerProfile)
           : (c.author.studentProfile?.fullName ?? 'Người dùng');
+        const reactions =
+          c.reactions?.map((r) => ({
+            id: r.id,
+            userId: r.userId,
+            createdAt: r.createdAt,
+            user: {
+              id: r.user.id,
+              fullName: r.user.lecturerProfile
+                ? lecturerName(r.user.lecturerProfile)
+                : (r.user.studentProfile?.fullName ?? 'Người dùng'),
+              role: r.user.role,
+            },
+          })) ?? [];
+
         return {
           id: c.id,
           proposalId: c.proposalId,
           authorId: c.authorId,
           content: c.content,
           createdAt: c.createdAt,
+          updatedAt: c.updatedAt,
           author: {
             id: c.author.id,
             fullName: authorName,
             avatarUrl: c.author.avatarUrl,
             role: c.author.role,
           },
+          reactions,
         };
       }) ?? [],
   };

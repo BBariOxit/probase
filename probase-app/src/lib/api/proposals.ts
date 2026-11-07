@@ -120,6 +120,53 @@ export function useCreateProposalComment() {
   });
 }
 
+export function useUpdateProposalComment() {
+  const invalidate = useInvalidateProposals();
+
+  return useMutation({
+    mutationFn: ({
+      proposalId,
+      commentId,
+      content,
+    }: {
+      proposalId: number;
+      commentId: number;
+      content: string;
+    }) => proposalService.updateComment(proposalId, commentId, { content }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteProposalComment() {
+  const invalidate = useInvalidateProposals();
+
+  return useMutation({
+    mutationFn: ({
+      proposalId,
+      commentId,
+    }: {
+      proposalId: number;
+      commentId: number;
+    }) => proposalService.deleteComment(proposalId, commentId),
+    onSuccess: invalidate,
+  });
+}
+
+export function useToggleProposalCommentReaction() {
+  const invalidate = useInvalidateProposals();
+
+  return useMutation({
+    mutationFn: ({
+      proposalId,
+      commentId,
+    }: {
+      proposalId: number;
+      commentId: number;
+    }) => proposalService.toggleReaction(proposalId, commentId),
+    onSuccess: invalidate,
+  });
+}
+
 export function useUploadProposalAttachment() {
   const invalidate = useInvalidateProposals();
 

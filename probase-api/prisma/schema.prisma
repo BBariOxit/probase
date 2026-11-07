@@ -259,6 +259,7 @@ model User {
   membersAssigned          RegistrationGroupMember[] @relation("GroupMemberAssignedBy")
   topicAssignmentsAssigned TopicAssignment[]         @relation("TopicAssignmentAssignedBy")
   proposalComments         ProposalComment[]
+  proposalCommentReactions ProposalCommentReaction[]
   outlinesSubmitted        TopicOutline[]            @relation("OutlineSubmittedBy")
   weeklyLogsSubmitted      WeeklyLog[]               @relation("WeeklyLogSubmittedBy")
   progressReportsSubmitted ProgressReport[]          @relation("ProgressReportSubmittedBy")
@@ -581,13 +582,30 @@ model ProposalComment {
   authorId   Int
   content    String        @db.Text
   createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @default(now()) @updatedAt
 
   proposal   TopicProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
   author     User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  reactions  ProposalCommentReaction[]
 
   @@index([proposalId])
   @@index([authorId])
   @@map("proposal_comments")
+}
+
+model ProposalCommentReaction {
+  id        Int             @id @default(autoincrement())
+  commentId Int
+  userId    Int
+  createdAt DateTime        @default(now())
+
+  comment   ProposalComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+  @@index([userId])
+  @@map("proposal_comment_reactions")
 }
 
 // ─────────────────────────────────────────────────────────
