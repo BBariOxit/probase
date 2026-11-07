@@ -8,7 +8,6 @@ import {
   ArrowRight,
   CalendarDays,
   CheckCircle2,
-  FileEdit,
   FileText,
   Layers,
   Loader2,
@@ -32,6 +31,12 @@ import { ProposalCommentThread } from '@/components/proposals/proposal-comment-t
 import { ProposalForm } from '@/components/proposals/proposal-form';
 import { ProposalStatusBadge } from '@/components/proposals/proposal-card';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const dateFormat = new Intl.DateTimeFormat('vi-VN', {
   day: '2-digit',
@@ -61,14 +66,38 @@ export default function StudentProposalDetailPage({
 
   if (isPending) {
     return (
-      <div className="flex justify-center py-16">
-        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      <div className="mx-auto max-w-4xl space-y-4">
+        <Button
+          variant="default"
+          size="sm"
+          render={<Link href="/student/proposals" />}
+          className="gap-2 cursor-pointer shadow-xs font-semibold"
+        >
+          <ArrowLeft className="size-4" /> Quay lại danh sách đề xuất
+        </Button>
+        <div className="flex justify-center py-16">
+          <Loader2 className="size-6 animate-spin text-primary" />
+        </div>
       </div>
     );
   }
 
   if (error || !proposal) {
-    return <p className="text-sm text-destructive">Không tìm thấy đề xuất.</p>;
+    return (
+      <div className="mx-auto max-w-4xl space-y-4">
+        <Button
+          variant="default"
+          size="sm"
+          render={<Link href="/student/proposals" />}
+          className="gap-2 cursor-pointer shadow-xs font-semibold"
+        >
+          <ArrowLeft className="size-4" /> Quay lại danh sách đề xuất
+        </Button>
+        <p className="text-sm text-destructive font-medium">
+          Không tìm thấy thông tin đề xuất.
+        </p>
+      </div>
+    );
   }
 
   const isDraft = proposal.status === 'DRAFT';
@@ -80,9 +109,9 @@ export default function StudentProposalDetailPage({
     : proposal.requestedLecturer.fullName;
 
   return (
-    <div className="space-y-4 max-w-5xl">
+    <div className="mx-auto max-w-4xl space-y-6">
       {/* Thanh điều hướng & nút sửa */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Button
           variant="default"
           size="sm"
@@ -92,234 +121,240 @@ export default function StudentProposalDetailPage({
           <ArrowLeft className="size-4" /> Quay lại danh sách đề xuất
         </Button>
 
-        {isEditable && !isEditing && (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => setIsEditing(true)}
-            className="gap-1.5 cursor-pointer font-semibold shadow-xs bg-primary text-white hover:bg-primary/90"
-          >
-            <Pencil className="size-4" />
-            <span>Sửa đề xuất</span>
-          </Button>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-5">
+        <div className="flex items-center gap-2">
           {isDraft && (
-            <div className="rounded-xl border border-muted-foreground/30 bg-muted/40 p-4 space-y-2">
-              <h3 className="text-sm font-semibold flex items-center gap-1.5 text-foreground">
-                <FileEdit className="size-4 text-muted-foreground" />
-                Bản nháp đề xuất (Chỉ bạn nhìn thấy)
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Đề xuất này chỉ được lưu trên trang của bạn và giảng viên chưa nhận được.
-                Hãy kiểm tra kỹ thông tin, bổ sung tệp đính kèm rồi bấm &quot;Gửi cho giảng viên&quot; để nộp chính thức.
-              </p>
-            </div>
-          )}
-
-          {proposal.status === 'ACCEPTED' && (
-            <div className="rounded-xl border border-status-success/30 bg-status-success-bg/40 p-4 space-y-2">
-              <h3 className="text-sm font-semibold text-status-success flex items-center gap-1.5">
-                <CheckCircle2 className="size-4" />
-                Đề xuất đã được Giảng viên nhận hướng dẫn
-              </h3>
-              <p className="text-sm text-foreground">
-                Đề tài đã được tạo từ đề xuất này. Sau khi khoa phê duyệt, bạn có thể đăng ký giữ chỗ.
-              </p>
-              {proposal.convertedTopic && (
-                <Button
-                  size="sm"
-                  className="gap-1.5 mt-1"
-                  render={<Link href={`/student/topics/${proposal.convertedTopic.id}`} />}
-                >
-                  Xem đề tài & Đăng ký
-                  <ArrowRight className="size-3.5" />
-                </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={async () => {
+                await submitProposal.mutateAsync(proposal.id);
+                toast.success('Đã gửi đề xuất cho giảng viên thành công.');
+                router.push('/student/proposals');
+              }}
+              disabled={submitProposal.isPending}
+              className="gap-1.5 cursor-pointer font-semibold shadow-xs bg-primary text-white hover:bg-primary/90"
+            >
+              {submitProposal.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Send className="size-4" />
               )}
-            </div>
+              <span>Gửi cho giảng viên</span>
+            </Button>
           )}
 
-          {proposal.status === 'REJECTED' && (
-            <div className="rounded-xl border border-status-danger/30 bg-status-danger-bg/40 p-4 space-y-1.5">
-              <h3 className="text-sm font-semibold text-status-danger flex items-center gap-1.5">
-                <XCircle className="size-4" />
-                Đề xuất không được chấp nhận
-              </h3>
-              {proposal.lecturerFeedback && (
-                <p className="text-sm text-foreground whitespace-pre-line">
-                  Lý do: {proposal.lecturerFeedback}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Nếu đang chỉnh sửa: hiện ProposalForm; Nếu không: hiện trang chi tiết chuẩn */}
-          {isEditing && isEditable ? (
-            <div className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] p-6 shadow-xs">
-              <div className="mb-4 pb-3 border-b border-border flex items-center justify-between">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-neutral-100 flex items-center gap-2">
-                  <Pencil className="size-4 text-primary" />
-                  Chỉnh sửa nội dung đề xuất
-                </h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsEditing(false)}
-                  className="text-xs text-muted-foreground hover:text-foreground"
-                >
-                  Hủy chỉnh sửa
-                </Button>
-              </div>
-
-              <ProposalForm
-                projectTypes={[proposal.projectType]}
-                fixed={{
-                  projectType: proposal.projectType.name,
-                  lecturer: lecturerName,
-                }}
-                defaultValues={{
-                  projectTypeId: proposal.projectType.id,
-                  requestedLecturerId: proposal.requestedLecturer.id,
-                  title: proposal.title,
-                  description: proposal.description,
-                  expectedOutcomes: proposal.expectedOutcomes,
-                }}
-                submitLabel={isDraft ? 'Gửi cho giảng viên' : 'Lưu cập nhật'}
-                draftLabel={isDraft ? 'Lưu bản nháp' : undefined}
-                onSaveDraft={
-                  isDraft
-                    ? async (values) => {
-                        await update.mutateAsync({
-                          id: proposal.id,
-                          title: values.title,
-                          description: values.description,
-                          expectedOutcomes: values.expectedOutcomes,
-                        });
-                        toast.success('Đã lưu bản nháp đề xuất.');
-                        setIsEditing(false);
-                      }
-                    : undefined
-                }
-                onSubmit={async (values) => {
-                  await update.mutateAsync({
-                    id: proposal.id,
-                    title: values.title,
-                    description: values.description,
-                    expectedOutcomes: values.expectedOutcomes,
-                  });
-
-                  if (isDraft) {
-                    await submitProposal.mutateAsync(proposal.id);
-                    toast.success('Đã gửi đề xuất cho giảng viên thành công.');
-                    router.push('/student/proposals');
-                  } else {
-                    toast.success('Đã lưu cập nhật đề xuất.');
-                    setIsEditing(false);
-                  }
-                }}
-                onCancel={() => setIsEditing(false)}
-              >
-                <div className="pt-2">
-                  <ProposalAttachments
-                    attachments={proposal.attachments ?? []}
-                    canManage
-                    onUpload={(file) =>
-                      uploadAttachment.mutateAsync({ id: proposal.id, file })
-                    }
-                    onDelete={(attachmentId) =>
-                      deleteAttachment.mutateAsync({
-                        proposalId: proposal.id,
-                        attachmentId,
-                      })
-                    }
-                  />
-                </div>
-              </ProposalForm>
-            </div>
-          ) : (
-            <article className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] shadow-xs overflow-hidden">
-              {/* Header chi tiết đề xuất */}
-              <div className="p-6 sm:p-8 space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 text-xs">
-                    <ProposalStatusBadge status={proposal.status} />
-                    <span className="text-muted-foreground">•</span>
-                    <span className="font-medium text-muted-foreground">
-                      {proposal.projectType.name}
-                    </span>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="font-medium text-muted-foreground">
-                      Gửi tới: {lecturerName}
-                    </span>
-                  </div>
-                </div>
-
-                <h1 className="text-2xl sm:text-3xl font-bold font-heading text-slate-900 dark:text-neutral-50 tracking-tight leading-snug">
-                  {proposal.title}
-                </h1>
-
-                <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5 font-medium">
-                    <CalendarDays className="size-3.5" />
-                    Ngày gửi: {dateFormat.format(new Date(proposal.createdAt))}
-                  </span>
-                </div>
-              </div>
-
-              {/* Nội dung chi tiết các phần */}
-              <div className="p-6 sm:p-8 pt-0 space-y-6">
-                <div className="rounded-xl border border-slate-100 dark:border-neutral-800/80 bg-slate-50/50 dark:bg-neutral-900/40 p-5 space-y-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                    <FileText className="size-4 text-primary" />
-                    Mô tả nội dung yêu cầu
-                  </h3>
-                  <div className="text-sm sm:text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify font-normal">
-                    {proposal.description || 'Chưa có mô tả chi tiết.'}
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-100 dark:border-neutral-800/80 bg-slate-50/50 dark:bg-neutral-900/40 p-5 space-y-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                    <Target className="size-4 text-emerald-600 dark:text-emerald-400" />
-                    Yêu cầu đầu ra & Mục tiêu
-                  </h3>
-                  <div className="text-sm sm:text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify font-normal">
-                    {proposal.expectedOutcomes || 'Chưa có yêu cầu đầu ra cụ thể.'}
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-100 dark:border-neutral-800/80 bg-slate-50/50 dark:bg-neutral-900/40 p-5 space-y-3">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                    <Layers className="size-4 text-amber-500" />
-                    Tài liệu & Hình ảnh đính kèm ({proposal.attachments?.length ?? 0})
-                  </h3>
-                  <ProposalAttachments
-                    attachments={proposal.attachments ?? []}
-                    canManage={false}
-                  />
-                </div>
-              </div>
-            </article>
-          )}
-        </div>
-
-        <div className="lg:col-span-1">
-          {isDraft ? (
-            <div className="rounded-xl border border-dashed p-5 text-center text-xs text-muted-foreground space-y-2">
-              <Send className="size-5 mx-auto text-muted-foreground/60" />
-              <p className="font-medium text-foreground">Trao đổi & Góp ý</p>
-              <p>
-                Khung trao đổi sẽ mở sau khi bạn nhấn &quot;Gửi cho giảng viên&quot;.
-              </p>
-            </div>
-          ) : (
-            <ProposalCommentThread proposal={proposal} />
+          {isEditable && (
+            <Button
+              variant={isDraft ? 'outline' : 'default'}
+              size="sm"
+              onClick={() => setIsEditing(true)}
+              className="gap-1.5 cursor-pointer font-semibold shadow-xs"
+            >
+              <Pencil className="size-4" />
+              <span>Sửa đề xuất</span>
+            </Button>
           )}
         </div>
       </div>
+
+      {/* Thông báo trạng thái bản nháp */}
+      {isDraft && (
+        <div className="rounded-xl border border-muted-foreground/30 bg-muted/40 p-4 space-y-2">
+          <h3 className="text-sm font-semibold flex items-center gap-1.5 text-foreground">
+            <FileEdit className="size-4 text-muted-foreground" />
+            Bản nháp đề xuất (Chỉ bạn nhìn thấy)
+          </h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Đề xuất này chỉ được lưu trên trang của bạn và giảng viên chưa nhận được.
+            Hãy kiểm tra kỹ thông tin, bổ sung tệp đính kèm rồi bấm &quot;Gửi cho giảng viên&quot; để nộp chính thức.
+          </p>
+        </div>
+      )}
+
+      {/* Thông báo khi được nhận */}
+      {proposal.status === 'ACCEPTED' && (
+        <div className="rounded-xl border border-status-success/30 bg-status-success-bg/40 p-4 space-y-2">
+          <h3 className="text-sm font-semibold text-status-success flex items-center gap-1.5">
+            <CheckCircle2 className="size-4" />
+            Đề xuất đã được Giảng viên nhận hướng dẫn
+          </h3>
+          <p className="text-sm text-foreground">
+            Đề tài đã được tạo từ đề xuất này. Sau khi khoa phê duyệt, bạn có thể đăng ký giữ chỗ.
+          </p>
+          {proposal.convertedTopic && (
+            <Button
+              size="sm"
+              className="gap-1.5 mt-1"
+              render={<Link href={`/student/topics/${proposal.convertedTopic.id}`} />}
+            >
+              Xem đề tài & Đăng ký
+              <ArrowRight className="size-3.5" />
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Thông báo khi bị từ chối */}
+      {proposal.status === 'REJECTED' && (
+        <div className="rounded-xl border border-status-danger/30 bg-status-danger-bg/40 p-4 space-y-1.5">
+          <h3 className="text-sm font-semibold text-status-danger flex items-center gap-1.5">
+            <XCircle className="size-4" />
+            Đề xuất không được chấp nhận
+          </h3>
+          {proposal.lecturerFeedback && (
+            <p className="text-sm text-foreground whitespace-pre-line break-words [overflow-wrap:anywhere]">
+              Lý do: {proposal.lecturerFeedback}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Thẻ chi tiết đề xuất (giống chuẩn TopicDetailView) */}
+      <article className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] shadow-xs overflow-hidden min-w-0 max-w-full break-words">
+        {/* Header chi tiết đề xuất */}
+        <div className="p-6 sm:p-8 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <ProposalStatusBadge status={proposal.status} />
+              <span className="text-muted-foreground">•</span>
+              <span className="font-medium text-muted-foreground">
+                {proposal.projectType.name}
+              </span>
+              <span className="text-muted-foreground">•</span>
+              <span className="font-medium text-muted-foreground">
+                Gửi tới: {lecturerName}
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-1.5 min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold font-heading text-slate-900 dark:text-neutral-50 tracking-tight leading-snug break-words [overflow-wrap:anywhere]">
+              {proposal.title}
+            </h1>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 font-medium">
+              <CalendarDays className="size-3.5" />
+              Ngày gửi: {dateFormat.format(new Date(proposal.createdAt))}
+            </span>
+          </div>
+        </div>
+
+        {/* Nội dung chi tiết các phần */}
+        <div className="p-6 sm:p-8 pt-0 space-y-6">
+          <div className="rounded-xl border border-slate-100 dark:border-neutral-800/80 bg-slate-50/50 dark:bg-neutral-900/40 p-5 space-y-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <FileText className="size-4 text-primary shrink-0" />
+              Mô tả nội dung yêu cầu
+            </h3>
+            <div className="text-sm sm:text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify font-normal break-words [overflow-wrap:anywhere]">
+              {proposal.description || 'Chưa có mô tả chi tiết.'}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-100 dark:border-neutral-800/80 bg-slate-50/50 dark:bg-neutral-900/40 p-5 space-y-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Target className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              Yêu cầu đầu ra & Mục tiêu
+            </h3>
+            <div className="text-sm sm:text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify font-normal break-words [overflow-wrap:anywhere]">
+              {proposal.expectedOutcomes || 'Chưa có yêu cầu đầu ra cụ thể.'}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-100 dark:border-neutral-800/80 bg-slate-50/50 dark:bg-neutral-900/40 p-5 space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Layers className="size-4 text-amber-500 shrink-0" />
+              Tài liệu & Hình ảnh đính kèm ({proposal.attachments?.length ?? 0})
+            </h3>
+            <ProposalAttachments
+              attachments={proposal.attachments ?? []}
+              canManage={isEditable}
+              onUpload={isEditable ? (file) => uploadAttachment.mutateAsync({ id: proposal.id, file }) : undefined}
+              onDelete={isEditable ? (attachmentId) => deleteAttachment.mutateAsync({ proposalId: proposal.id, attachmentId }) : undefined}
+            />
+          </div>
+        </div>
+      </article>
+
+      {/* Phần trao đổi & góp ý ở cuối trang */}
+      <section className="space-y-3">
+        {isDraft ? (
+          <div className="rounded-xl border border-dashed p-6 text-center text-xs text-muted-foreground space-y-2 bg-card">
+            <Send className="size-5 mx-auto text-muted-foreground/60" />
+            <p className="font-semibold text-foreground text-sm">Trao đổi & Góp ý</p>
+            <p>
+              Khung trao đổi sẽ mở sau khi bạn nhấn &quot;Gửi cho giảng viên&quot;.
+            </p>
+          </div>
+        ) : (
+          <ProposalCommentThread proposal={proposal} />
+        )}
+      </section>
+
+      {/* Hộp thoại chỉnh sửa đề xuất (khi cần sửa) */}
+      {isEditable && (
+        <Dialog open={isEditing} onOpenChange={setIsEditing}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Pencil className="size-4 text-primary" />
+                Chỉnh sửa nội dung đề xuất
+              </DialogTitle>
+            </DialogHeader>
+
+            <ProposalForm
+              projectTypes={[proposal.projectType]}
+              fixed={{
+                projectType: proposal.projectType.name,
+                lecturer: lecturerName,
+              }}
+              defaultValues={{
+                projectTypeId: proposal.projectType.id,
+                requestedLecturerId: proposal.requestedLecturer.id,
+                title: proposal.title,
+                description: proposal.description,
+                expectedOutcomes: proposal.expectedOutcomes,
+              }}
+              submitLabel={isDraft ? 'Gửi cho giảng viên' : 'Lưu cập nhật'}
+              draftLabel={isDraft ? 'Lưu bản nháp' : undefined}
+              onSaveDraft={
+                isDraft
+                  ? async (values) => {
+                      await update.mutateAsync({
+                        id: proposal.id,
+                        title: values.title,
+                        description: values.description,
+                        expectedOutcomes: values.expectedOutcomes,
+                      });
+                      toast.success('Đã lưu bản nháp đề xuất.');
+                      setIsEditing(false);
+                    }
+                  : undefined
+              }
+              onSubmit={async (values) => {
+                await update.mutateAsync({
+                  id: proposal.id,
+                  title: values.title,
+                  description: values.description,
+                  expectedOutcomes: values.expectedOutcomes,
+                });
+
+                if (isDraft) {
+                  await submitProposal.mutateAsync(proposal.id);
+                  toast.success('Đã gửi đề xuất cho giảng viên thành công.');
+                  setIsEditing(false);
+                } else {
+                  toast.success('Đã lưu cập nhật đề xuất.');
+                  setIsEditing(false);
+                }
+              }}
+              onCancel={() => setIsEditing(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

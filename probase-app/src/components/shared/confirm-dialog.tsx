@@ -52,8 +52,8 @@ export function ConfirmDialog({
     >
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription className="pt-2 pb-4 text-sm leading-relaxed">
+          <DialogTitle className="break-words [overflow-wrap:anywhere]">{title}</DialogTitle>
+          <DialogDescription className="pt-2 pb-4 text-sm leading-relaxed break-words [overflow-wrap:anywhere]">
             {description}
           </DialogDescription>
         </DialogHeader>

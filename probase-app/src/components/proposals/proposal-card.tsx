@@ -47,7 +47,7 @@ export function ProposalCard({
 }) {
   return (
     <article
-      className={`space-y-3 rounded-xl border bg-card p-4 ${
+      className={`space-y-3 rounded-xl border bg-card p-4 overflow-hidden min-w-0 max-w-full break-words ${
         onClick
           ? 'cursor-pointer transition-colors hover:border-foreground/20 hover:bg-muted/30'
           : ''
@@ -62,21 +62,23 @@ export function ProposalCard({
         }
       }}
     >
-      <div className="flex items-start justify-between gap-3">
-        {titleHref ? (
-          <Link
-            href={titleHref}
-            onClick={(e) => e.stopPropagation()}
-            className="text-base font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors cursor-pointer leading-snug"
-          >
-            {proposal.title}
-          </Link>
-        ) : (
-          <h2 className="text-base font-bold text-slate-900 dark:text-neutral-100 group-hover:underline cursor-pointer leading-snug">
-            {proposal.title}
-          </h2>
-        )}
-        <ProposalStatusBadge status={proposal.status} />
+      <div className="flex items-start justify-between gap-3 min-w-0">
+        <div className="min-w-0 flex-1">
+          {titleHref ? (
+            <Link
+              href={titleHref}
+              onClick={(e) => e.stopPropagation()}
+              className="block text-base font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors cursor-pointer leading-snug break-words [overflow-wrap:anywhere]"
+            >
+              {proposal.title}
+            </Link>
+          ) : (
+            <h2 className="text-base font-bold text-slate-900 dark:text-neutral-100 group-hover:underline cursor-pointer leading-snug break-words [overflow-wrap:anywhere]">
+              {proposal.title}
+            </h2>
+          )}
+        </div>
+        <ProposalStatusBadge status={proposal.status} className="shrink-0" />
       </div>
 
       <div

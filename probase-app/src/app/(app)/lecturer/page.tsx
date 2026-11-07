@@ -284,7 +284,7 @@ export default function LecturerTopicsPage() {
                     <div className="w-full max-w-[440px] whitespace-normal">
                       <Link
                         href={`/lecturer/topics/${topic.id}`}
-                        className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words whitespace-normal line-clamp-2 cursor-pointer"
+                        className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal line-clamp-2 cursor-pointer"
                         title={topic.title}
                         onClick={(e) => {
                           e.stopPropagation();

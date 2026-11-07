@@ -89,10 +89,10 @@ export function TopicDetailSheet({
       onOpenChange={(open) => !open && onClose()}
       loading={isPending}
       title={
-        <div className="space-y-1">
-          <div>{topic?.title}</div>
+        <div className="space-y-1 min-w-0">
+          <div className="break-words [overflow-wrap:anywhere]">{topic?.title}</div>
           {topic?.titleEn && (
-            <div className="text-xs font-normal italic text-muted-foreground">
+            <div className="text-xs font-normal italic text-muted-foreground break-words [overflow-wrap:anywhere]">
               {topic.titleEn}
             </div>
           )}

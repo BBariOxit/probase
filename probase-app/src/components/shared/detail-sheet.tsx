@@ -46,11 +46,11 @@ export function DetailSheet({
         ) : (
           <>
             <SheetHeader className="border-b px-4 py-4 sm:px-5">
-              <div className="flex flex-wrap items-start gap-x-3 gap-y-1.5 pr-8">
-                <SheetTitle className="font-heading text-base leading-snug">
+              <div className="flex flex-wrap items-start gap-x-3 gap-y-1.5 pr-8 min-w-0">
+                <SheetTitle className="font-heading text-base leading-snug break-words [overflow-wrap:anywhere] min-w-0">
                   {title}
                 </SheetTitle>
-                {badge && <div className="mt-0.5">{badge}</div>}
+                {badge && <div className="mt-0.5 shrink-0">{badge}</div>}
               </div>
               <SheetDescription className="sr-only">
                 {descriptionAria}
@@ -62,7 +62,7 @@ export function DetailSheet({
               )}
             </SheetHeader>
 
-            <div className="flex-1 space-y-6 overflow-y-auto px-4 py-5 sm:px-5">
+            <div className="flex-1 space-y-6 overflow-y-auto px-4 py-5 sm:px-5 break-words [overflow-wrap:anywhere]">
               {children}
             </div>
 

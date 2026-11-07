@@ -10,12 +10,11 @@ import {
   Info,
   Lightbulb,
   Loader2,
-  Pencil,
   Plus,
   Undo2,
 } from 'lucide-react';
 import { useActiveSemester, useMyRounds } from '@/lib/api/master-data';
-import { useProposal, useProposals, useWithdrawProposal } from '@/lib/api/proposals';
+import { useProposals, useWithdrawProposal } from '@/lib/api/proposals';
 import { useMyGroup } from '@/lib/api/registration';
 import type { TopicProposal } from '@/lib/api/types';
 import { useRequireRole } from '@/lib/auth/use-require-role';
@@ -24,7 +23,6 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { ProposalCard } from '@/components/proposals/proposal-card';
-import { ProposalDetailSheet } from '@/components/proposals/proposal-detail-sheet';
 import { Button } from '@/components/ui/button';
 import { PROPOSAL_PAGE_SIZE } from '@/constants/pagination.constant';
 import { usePagination } from '@/hooks';
@@ -35,7 +33,12 @@ function StudentProposalsContent() {
   const searchParams = useSearchParams();
   const targetIdParam = searchParams.get('id');
   const targetProposalId = targetIdParam ? Number(targetIdParam) : null;
-  const { data: directProposal } = useProposal(targetProposalId ?? 0);
+
+  useEffect(() => {
+    if (targetProposalId) {
+      router.replace(`/student/proposals/${targetProposalId}`);
+    }
+  }, [targetProposalId, router]);
 
   const semester = useActiveSemester();
   const { data: rounds } = useMyRounds(semester?.id);
@@ -43,16 +46,6 @@ function StudentProposalsContent() {
   const { page, setPage } = usePagination({
     initialPageSize: PROPOSAL_PAGE_SIZE,
   });
-
-  const [viewingProposal, setViewingProposal] = useState<TopicProposal | null>(
-    null,
-  );
-
-  useEffect(() => {
-    if (targetProposalId && directProposal) {
-      setViewingProposal(directProposal);
-    }
-  }, [targetProposalId, directProposal]);
 
   const { data, isPending, error } = useProposals({
     page,
@@ -148,7 +141,7 @@ function StudentProposalsContent() {
               <SentProposal
                 proposal={proposal}
                 registeredTopicId={group?.topicId ?? null}
-                onClick={() => setViewingProposal(proposal)}
+                onClick={() => router.push(`/student/proposals/${proposal.id}`)}
               />
             </li>
           ))}
@@ -162,29 +155,6 @@ function StudentProposalsContent() {
           />
         )}
       </div>
-
-      <ProposalDetailSheet
-        proposal={viewingProposal}
-        onClose={() => setViewingProposal(null)}
-        counterparty={
-          viewingProposal && (
-            <span>
-              Giảng viên:{' '}
-              {viewingProposal.requestedLecturer.academicTitle
-                ? `${viewingProposal.requestedLecturer.academicTitle} ${viewingProposal.requestedLecturer.fullName}`
-                : viewingProposal.requestedLecturer.fullName}
-            </span>
-          )
-        }
-        footer={
-          viewingProposal && (
-            <Answer
-              proposal={viewingProposal}
-              registeredTopicId={group?.topicId ?? null}
-            />
-          )
-        }
-      />
     </>
   );
 }

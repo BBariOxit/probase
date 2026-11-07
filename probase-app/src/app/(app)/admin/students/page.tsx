@@ -691,7 +691,7 @@ function StudentRow({ student }: { student: StudentRosterRow }) {
               className="max-w-md p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-neutral-800 dark:text-neutral-100 rounded-lg shadow-xl border border-slate-700 dark:border-neutral-700 z-50"
             >
               <p className="font-semibold text-primary mb-1">Tên đề tài đầy đủ:</p>
-              <p className="text-slate-200 dark:text-neutral-200">
+              <p className="text-slate-200 dark:text-neutral-200 break-words [overflow-wrap:anywhere]">
                 {student.group.topic.title}
               </p>
             </TooltipContent>

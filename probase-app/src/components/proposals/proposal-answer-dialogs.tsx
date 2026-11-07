@@ -66,7 +66,9 @@ export function AcceptProposalDialog({
             Nhận hướng dẫn đề tài này?
             <InfoTooltip text="Đề tài được tạo ở trạng thái chờ khoa duyệt, giống như đề tài bạn tự ra. Sau khi khoa duyệt và bạn mở đăng ký, sinh viên mới giữ chỗ được." />
           </DialogTitle>
-          <DialogDescription>{proposal.title}</DialogDescription>
+          <DialogDescription className="break-words [overflow-wrap:anywhere]">
+            {proposal.title}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -148,7 +150,9 @@ export function RejectProposalDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Từ chối đề xuất này</DialogTitle>
-          <DialogDescription>{proposal.title}</DialogDescription>
+          <DialogDescription className="break-words [overflow-wrap:anywhere]">
+            {proposal.title}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

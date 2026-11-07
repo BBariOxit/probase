@@ -126,7 +126,7 @@ export default function LecturerProposalDetailPage({
       </div>
 
       {/* Thẻ chi tiết đề tài đề xuất */}
-      <article className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] shadow-xs overflow-hidden">
+      <article className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] shadow-xs overflow-hidden min-w-0 max-w-full break-words">
         {/* Header thông tin sinh viên & đề tài */}
         <div className="p-6 sm:p-8 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -154,9 +154,11 @@ export default function LecturerProposalDetailPage({
             </div>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-bold font-heading text-slate-900 dark:text-neutral-50 tracking-tight leading-snug">
-            {proposal.title}
-          </h1>
+          <div className="space-y-1.5 min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold font-heading text-slate-900 dark:text-neutral-50 tracking-tight leading-snug break-words [overflow-wrap:anywhere]">
+              {proposal.title}
+            </h1>
+          </div>
 
           <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1.5 font-medium">
@@ -170,20 +172,20 @@ export default function LecturerProposalDetailPage({
         <div className="p-6 sm:p-8 pt-0 space-y-6">
           <div className="rounded-xl border border-slate-100 dark:border-neutral-800/80 bg-slate-50/50 dark:bg-neutral-900/40 p-5 space-y-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <FileText className="size-4 text-primary" />
+              <FileText className="size-4 text-primary shrink-0" />
               Mô tả nội dung yêu cầu
             </h3>
-            <div className="text-sm sm:text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify font-normal">
+            <div className="text-sm sm:text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify font-normal break-words [overflow-wrap:anywhere]">
               {proposal.description || 'Chưa có mô tả chi tiết.'}
             </div>
           </div>
 
           <div className="rounded-xl border border-slate-100 dark:border-neutral-800/80 bg-slate-50/50 dark:bg-neutral-900/40 p-5 space-y-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <Target className="size-4 text-emerald-600 dark:text-emerald-400" />
+              <Target className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               Yêu cầu đầu ra & Mục tiêu
             </h3>
-            <div className="text-sm sm:text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify font-normal">
+            <div className="text-sm sm:text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify font-normal break-words [overflow-wrap:anywhere]">
               {proposal.expectedOutcomes || 'Chưa có yêu cầu đầu ra cụ thể.'}
             </div>
           </div>
@@ -224,3 +226,4 @@ export default function LecturerProposalDetailPage({
     </div>
   );
 }
+
