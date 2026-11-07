@@ -51,7 +51,7 @@ export default function LecturerProposalDetailPage({
 
   if (isPending) {
     return (
-      <div className="max-w-4xl space-y-4">
+      <div className="mx-auto max-w-4xl space-y-4">
         <Button
           variant="default"
           size="sm"
@@ -69,7 +69,7 @@ export default function LecturerProposalDetailPage({
 
   if (error || !proposal) {
     return (
-      <div className="max-w-4xl space-y-4">
+      <div className="mx-auto max-w-4xl space-y-4">
         <Button
           variant="default"
           size="sm"
@@ -89,7 +89,7 @@ export default function LecturerProposalDetailPage({
   const isPendingStatus = proposal.status === 'PENDING';
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="mx-auto max-w-4xl space-y-6">
       {/* Thanh điều hướng & nút duyệt / từ chối */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button
