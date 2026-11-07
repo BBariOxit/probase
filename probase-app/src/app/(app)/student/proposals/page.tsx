@@ -56,7 +56,10 @@ function StudentProposalsContent() {
 
   const proposals = data?.items ?? [];
   const pending = proposals.find(
-    (one) => one.status === 'PENDING' || one.status === 'DRAFT',
+    (one) =>
+      one.status === 'PENDING' ||
+      one.status === 'NEEDS_REVISION' ||
+      one.status === 'DRAFT',
   );
 
   /*
@@ -185,7 +188,10 @@ function SentProposal({
   const withdraw = useWithdrawProposal();
   const [confirming, setConfirming] = useState(false);
   const isDraft = proposal.status === 'DRAFT';
-  const editable = proposal.status === 'PENDING' || isDraft;
+  const editable =
+    proposal.status === 'PENDING' ||
+    proposal.status === 'NEEDS_REVISION' ||
+    isDraft;
 
   return (
     <>

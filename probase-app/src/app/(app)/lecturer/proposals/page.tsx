@@ -239,7 +239,8 @@ function ReceivedProposal({ proposal }: { proposal: TopicProposal }) {
         }
         footer={<Outcome proposal={proposal} />}
         actions={
-          proposal.status === 'PENDING' ? (
+          proposal.status === 'PENDING' ||
+          proposal.status === 'NEEDS_REVISION' ? (
             <>
               <Button size="sm" onClick={() => setAnswering('accept')} className="gap-1 cursor-pointer">
                 <Check className="size-4" />

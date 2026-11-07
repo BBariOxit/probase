@@ -14,6 +14,7 @@ import {
   Pencil,
   Send,
   Target,
+  Users,
   XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -101,7 +102,8 @@ export default function StudentProposalDetailPage({
   }
 
   const isDraft = proposal.status === 'DRAFT';
-  const isPendingStatus = proposal.status === 'PENDING';
+  const isPendingStatus =
+    proposal.status === 'PENDING' || proposal.status === 'NEEDS_REVISION';
   const isEditable = isDraft || isPendingStatus;
 
   const lecturerName = proposal.requestedLecturer.academicTitle
@@ -238,6 +240,10 @@ export default function StudentProposalDetailPage({
               <CalendarDays className="size-3.5" />
               Ngày gửi: {dateFormat.format(new Date(proposal.createdAt))}
             </span>
+            <span className="inline-flex items-center gap-1.5 font-medium">
+              <Users className="size-3.5" />
+              Sinh viên dự kiến: {proposal.maxStudents ?? 1} SV
+            </span>
           </div>
         </div>
 
@@ -316,6 +322,7 @@ export default function StudentProposalDetailPage({
                 title: proposal.title,
                 description: proposal.description,
                 expectedOutcomes: proposal.expectedOutcomes,
+                maxStudents: proposal.maxStudents ?? 1,
               }}
               submitLabel={isDraft ? 'Gửi cho giảng viên' : 'Lưu cập nhật'}
               draftLabel={isDraft ? 'Lưu bản nháp' : undefined}
@@ -327,6 +334,7 @@ export default function StudentProposalDetailPage({
                         title: values.title,
                         description: values.description,
                         expectedOutcomes: values.expectedOutcomes,
+                        maxStudents: values.maxStudents,
                       });
                       toast.success('Đã lưu bản nháp đề xuất.');
                       setIsEditing(false);
@@ -339,6 +347,7 @@ export default function StudentProposalDetailPage({
                   title: values.title,
                   description: values.description,
                   expectedOutcomes: values.expectedOutcomes,
+                  maxStudents: values.maxStudents,
                 });
 
                 if (isDraft) {

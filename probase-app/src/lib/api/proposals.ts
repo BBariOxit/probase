@@ -87,8 +87,15 @@ export function useAcceptProposal() {
   const invalidate = useInvalidateProposals();
 
   return useMutation({
-    mutationFn: ({ id, maxStudents }: { id: number; maxStudents: number }) =>
-      proposalService.accept(id, { maxStudents }),
+    mutationFn: ({
+      id,
+      maxStudents,
+      officialTitle,
+    }: {
+      id: number;
+      maxStudents?: number;
+      officialTitle?: string;
+    }) => proposalService.accept(id, { maxStudents, officialTitle }),
     onSuccess: invalidate,
   });
 }

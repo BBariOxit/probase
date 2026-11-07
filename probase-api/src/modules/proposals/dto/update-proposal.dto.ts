@@ -5,6 +5,7 @@ export const UpdateProposalSchema = CreateProposalSchema.pick({
   title: true,
   description: true,
   expectedOutcomes: true,
+  maxStudents: true,
 })
   .partial()
   .refine(

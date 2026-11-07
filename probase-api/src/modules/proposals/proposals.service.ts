@@ -34,6 +34,7 @@ const PROPOSAL_SELECT = {
   title: true,
   description: true,
   expectedOutcomes: true,
+  maxStudents: true,
   lecturerFeedback: true,
   createdAt: true,
   updatedAt: true,
@@ -142,6 +143,7 @@ export class ProposalsService {
         title: dto.title,
         description: dto.description,
         expectedOutcomes: dto.expectedOutcomes,
+        maxStudents: dto.maxStudents ?? 1,
         status,
       },
       select: PROPOSAL_SELECT,
@@ -163,8 +165,13 @@ export class ProposalsService {
   }
 
   async findAll(query: QueryProposalsDto, userId: number, role: Role) {
+    const statusFilter =
+      query.status === TopicProposalStatus.PENDING
+        ? { in: [TopicProposalStatus.PENDING, TopicProposalStatus.NEEDS_REVISION] }
+        : query.status;
+
     const where: Prisma.TopicProposalWhereInput = {
-      ...(query.status && { status: query.status }),
+      ...(query.status && { status: statusFilter }),
       ...(query.semesterId && { semesterId: query.semesterId }),
     };
 
@@ -178,7 +185,7 @@ export class ProposalsService {
       where.status = query.status
         ? query.status === TopicProposalStatus.DRAFT
           ? { not: TopicProposalStatus.DRAFT }
-          : query.status
+          : statusFilter
         : { not: TopicProposalStatus.DRAFT };
     }
 
@@ -220,11 +227,41 @@ export class ProposalsService {
 
     await this.requireOwnPending(id, student.id, proposal.status);
 
+    const nextStatus =
+      proposal.status === TopicProposalStatus.NEEDS_REVISION
+        ? TopicProposalStatus.PENDING
+        : undefined;
+
     const updated = await this.prisma.topicProposal.update({
       where: { id },
-      data: dto,
+      data: {
+        ...dto,
+        ...(nextStatus ? { status: nextStatus } : {}),
+      },
       select: PROPOSAL_SELECT,
     });
+
+    if (
+      proposal.status !== TopicProposalStatus.DRAFT &&
+      proposal.requestedLecturer
+    ) {
+      const lecturer = await this.prisma.lecturerProfile.findUnique({
+        where: { id: proposal.requestedLecturer.id },
+        select: { userId: true },
+      });
+
+      if (lecturer) {
+        await this.notifications.notify([
+          {
+            userId: lecturer.userId,
+            type: 'PROPOSAL_SUBMITTED',
+            title: 'Cập nhật đề xuất đề tài',
+            content: `Sinh viên ${student.fullName} (${student.studentCode}) đã cập nhật nội dung đề xuất "${updated.title}". Mời thầy/cô xem lại.`,
+            targetId: updated.id,
+          },
+        ]);
+      }
+    }
 
     return render(updated);
   }
@@ -323,13 +360,14 @@ export class ProposalsService {
     await this.mentoring.requireRoomForOneMore(lecturer, proposal.semesterId);
 
     const topic = await this.prisma.$transaction(async (tx) => {
+      const officialTitle = dto.officialTitle?.trim() || proposal.title;
       const created = await tx.topic.create({
         data: {
           semesterId: proposal.semesterId,
           roundId: round.id,
           lecturerId: lecturer.id,
           sourceProposalId: proposal.id,
-          title: proposal.title,
+          title: officialTitle,
           description: proposal.description,
           expectedOutcomes: proposal.expectedOutcomes,
           maxStudents: dto.maxStudents,
@@ -339,8 +377,10 @@ export class ProposalsService {
       });
 
       await tx.topicProposal.update({
-        where: { id, status: TopicProposalStatus.PENDING },
+        where: { id },
         data: {
+          title: officialTitle,
+          maxStudents: dto.maxStudents,
           status: TopicProposalStatus.ACCEPTED,
           acceptedByLecturerId: lecturer.id,
         },
@@ -367,7 +407,7 @@ export class ProposalsService {
     const proposal = await this.requireAnswerable(id, lecturer.id);
 
     const updated = await this.prisma.topicProposal.update({
-      where: { id, status: TopicProposalStatus.PENDING },
+      where: { id },
       data: {
         status: TopicProposalStatus.REJECTED,
         acceptedByLecturerId: null,
@@ -401,6 +441,15 @@ export class ProposalsService {
       throw new NotFoundException('Không tìm thấy đề xuất');
     }
 
+    if (
+      proposal.status === TopicProposalStatus.ACCEPTED ||
+      proposal.status === TopicProposalStatus.REJECTED
+    ) {
+      throw new ConflictException(
+        'Đề xuất này đã được chốt kết quả nên không thể gửi thêm trao đổi.',
+      );
+    }
+
     const comment = await this.prisma.proposalComment.create({
       data: {
         proposalId: id,
@@ -424,6 +473,13 @@ export class ProposalsService {
 
     // Auto-notify the other party
     if (role === Role.LECTURER && proposal.student) {
+      if (proposal.status === TopicProposalStatus.PENDING) {
+        await this.prisma.topicProposal.update({
+          where: { id },
+          data: { status: TopicProposalStatus.NEEDS_REVISION },
+        });
+      }
+
       const lecturer = await this.prisma.lecturerProfile.findFirst({
         where: { userId },
         select: { fullName: true, academicTitle: true },
@@ -663,6 +719,7 @@ export class ProposalsService {
 
     if (
       status !== TopicProposalStatus.PENDING &&
+      status !== TopicProposalStatus.NEEDS_REVISION &&
       status !== TopicProposalStatus.DRAFT
     ) {
       throw new ConflictException(
@@ -678,7 +735,10 @@ export class ProposalsService {
       throw new NotFoundException('Không tìm thấy đề xuất');
     }
 
-    if (proposal.status !== TopicProposalStatus.PENDING) {
+    if (
+      proposal.status !== TopicProposalStatus.PENDING &&
+      proposal.status !== TopicProposalStatus.NEEDS_REVISION
+    ) {
       throw new ConflictException('Đề xuất này đã được trả lời rồi');
     }
 
@@ -708,7 +768,11 @@ export class ProposalsService {
       where: {
         studentId,
         status: {
-          in: [TopicProposalStatus.PENDING, TopicProposalStatus.DRAFT],
+          in: [
+            TopicProposalStatus.PENDING,
+            TopicProposalStatus.NEEDS_REVISION,
+            TopicProposalStatus.DRAFT,
+          ],
         },
       },
       select: { id: true },

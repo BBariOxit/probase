@@ -809,6 +809,7 @@ export interface TopicProposal {
   title: string;
   description: string;
   expectedOutcomes: string;
+  maxStudents?: number;
 
   lecturerFeedback: string | null;
   createdAt: string;

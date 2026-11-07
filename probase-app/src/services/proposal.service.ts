@@ -20,11 +20,12 @@ export interface ProposalInput {
   title: string;
   description: string;
   expectedOutcomes: string;
+  maxStudents?: number;
   isDraft?: boolean;
 }
 
 export type ProposalPatch = Partial<
-  Pick<ProposalInput, 'title' | 'description' | 'expectedOutcomes'>
+  Pick<ProposalInput, 'title' | 'description' | 'expectedOutcomes' | 'maxStudents'>
 >;
 
 function toSearch(query: ProposalQuery): string {
@@ -74,7 +75,10 @@ export const proposalService = {
     });
   },
 
-  accept(id: number, input: { maxStudents?: number } = {}) {
+  accept(
+    id: number,
+    input: { maxStudents?: number; officialTitle?: string } = {},
+  ) {
     return api<TopicProposal>(`/proposals/${id}/accept`, {
       method: 'POST',
       body: input,

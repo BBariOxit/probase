@@ -12,6 +12,7 @@ import {
   Loader2,
   Target,
   User,
+  Users,
   X,
 } from 'lucide-react';
 import { useProposal } from '@/lib/api/proposals';
@@ -86,7 +87,8 @@ export default function LecturerProposalDetailPage({
   }
 
   const student = proposal.student;
-  const isPendingStatus = proposal.status === 'PENDING';
+  const isPendingStatus =
+    proposal.status === 'PENDING' || proposal.status === 'NEEDS_REVISION';
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -141,6 +143,10 @@ export default function LecturerProposalDetailPage({
             <span className="inline-flex items-center gap-1.5 font-medium">
               <CalendarDays className="size-3.5" />
               Ngày gửi: {dateFormat.format(new Date(proposal.createdAt))}
+            </span>
+            <span className="inline-flex items-center gap-1.5 font-medium">
+              <Users className="size-3.5" />
+              Sinh viên dự kiến: {proposal.maxStudents ?? 1} SV
             </span>
           </div>
         </div>

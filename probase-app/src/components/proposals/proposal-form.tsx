@@ -92,6 +92,7 @@ export function ProposalForm({
       title: '',
       description: '',
       expectedOutcomes: '',
+      maxStudents: 1,
       projectTypeId: projectTypes.length === 1 ? projectTypes[0].id : undefined,
       ...defaultValues,
     },
@@ -234,6 +235,23 @@ export function ProposalForm({
           maxLength={3000}
           aria-invalid={!!errors.expectedOutcomes}
           {...register('expectedOutcomes')}
+        />
+      </Field>
+
+      <Field
+        label="Số lượng sinh viên dự kiến"
+        htmlFor="maxStudents"
+        hint="Số lượng thành viên dự kiến cùng làm đề tài này (1 - 3 sinh viên). Giảng viên có thể điều chỉnh khi phê duyệt."
+        error={errors.maxStudents?.message}
+      >
+        <Input
+          id="maxStudents"
+          type="number"
+          min={1}
+          max={3}
+          className="w-28"
+          aria-invalid={!!errors.maxStudents}
+          {...register('maxStudents', { valueAsNumber: true })}
         />
       </Field>
 

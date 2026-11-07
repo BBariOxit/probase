@@ -536,6 +536,7 @@ model TopicProposal {
   title                String
   description          String              @db.Text
   expectedOutcomes     String              @db.Text
+  maxStudents          Int                 @default(1)
   requestedLecturerId  Int? // Nullable — student may leave open
   acceptedByLecturerId Int? // Set when a lecturer approves
   status               TopicProposalStatus @default(PENDING)

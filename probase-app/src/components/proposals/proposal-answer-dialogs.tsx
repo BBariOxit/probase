@@ -34,16 +34,24 @@ export function AcceptProposalDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const accept = useAcceptProposal();
-  const [maxStudents, setMaxStudents] = useState('1');
+  const [officialTitle, setOfficialTitle] = useState(proposal.title);
+  const [maxStudents, setMaxStudents] = useState(
+    String(proposal.maxStudents ?? 1),
+  );
   const [error, setError] = useState<string | null>(null);
 
   const size = Number(maxStudents);
   const valid = Number.isInteger(size) && size >= 1 && size <= 10;
+  const titleValid = officialTitle.trim().length > 0;
 
   async function submit() {
     setError(null);
     try {
-      await accept.mutateAsync({ id: proposal.id, maxStudents: size });
+      await accept.mutateAsync({
+        id: proposal.id,
+        maxStudents: size,
+        officialTitle: officialTitle.trim(),
+      });
       toast.success('Đã chấp nhận đề xuất.');
       onOpenChange(false);
     } catch (err) {
@@ -60,14 +68,14 @@ export function AcceptProposalDialog({
         if (!accept.isPending) onOpenChange(next);
       }}
     >
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-1.5">
             Nhận hướng dẫn đề tài này?
             <InfoTooltip text="Đề tài được tạo ở trạng thái chờ khoa duyệt, giống như đề tài bạn tự ra. Sau khi khoa duyệt và bạn mở đăng ký, sinh viên mới giữ chỗ được." />
           </DialogTitle>
           <DialogDescription className="break-words [overflow-wrap:anywhere]">
-            {proposal.title}
+            Sinh viên đề xuất: {proposal.student.fullName} ({proposal.student.studentCode})
           </DialogDescription>
         </DialogHeader>
 
@@ -75,7 +83,29 @@ export function AcceptProposalDialog({
           <FormError message={error} />
 
           <div className="space-y-2">
-            <Label htmlFor="maxStudents">Số sinh viên tối đa</Label>
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="officialTitle">Tên đề tài chính thức</Label>
+              <InfoTooltip text="Bạn có thể chỉnh sửa lại tên đề tài cho chuẩn văn phong học thuật trước khi gửi duyệt Khoa." />
+            </div>
+            <Input
+              id="officialTitle"
+              maxLength={200}
+              value={officialTitle}
+              aria-invalid={!titleValid}
+              onChange={(e) => setOfficialTitle(e.target.value)}
+            />
+            {!titleValid && (
+              <p className="text-xs text-destructive">
+                Tên đề tài không được để trống.
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="maxStudents">Số sinh viên tối đa</Label>
+              <InfoTooltip text="Số lượng sinh viên tối đa được phép đăng ký đề tài này." />
+            </div>
             <Input
               id="maxStudents"
               type="number"
@@ -102,9 +132,13 @@ export function AcceptProposalDialog({
           >
             Huỷ
           </Button>
-          <Button disabled={!valid || accept.isPending} onClick={submit}>
+          <Button
+            disabled={!valid || !titleValid || accept.isPending}
+            onClick={submit}
+            className="cursor-pointer font-semibold shadow-xs bg-primary text-white hover:bg-primary/90"
+          >
             {accept.isPending && <Loader2 className="animate-spin" />}
-            Nhận hướng dẫn
+            Xác nhận nhận hướng dẫn
           </Button>
         </DialogFooter>
       </DialogContent>

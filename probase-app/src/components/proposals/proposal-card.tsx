@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CalendarDays, Layers, MessageSquare } from 'lucide-react';
+import { CalendarDays, Layers, MessageSquare, Users } from 'lucide-react';
 import type { ProposalStatus, TopicProposal } from '@/lib/api/types';
 import { StatusPill, type StatusLabel } from '@/components/shared/status-pill';
 import { TextSection } from '@/components/shared/text-section';
@@ -89,6 +89,10 @@ export function ProposalCard({
         <span className="inline-flex items-center gap-1.5">
           <Layers className="size-3.5 shrink-0" />
           {proposal.projectType.name}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <Users className="size-3.5 shrink-0" />
+          {proposal.maxStudents ?? 1} SV
         </span>
         <span className="inline-flex items-center gap-1.5">
           <CalendarDays className="size-3.5 shrink-0" />

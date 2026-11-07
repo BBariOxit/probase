@@ -29,7 +29,8 @@ export function ProposalCommentThread({
 }: ProposalCommentThreadProps) {
   const [content, setContent] = useState('');
   const createComment = useCreateProposalComment();
-  const isClosed = proposal.status !== 'PENDING';
+  const isClosed =
+    proposal.status === 'ACCEPTED' || proposal.status === 'REJECTED';
   const comments = proposal.comments ?? [];
 
   async function handleSubmit(e: React.FormEvent) {
