@@ -79,9 +79,10 @@ export function TopicDetailView({
       <div className="p-6 sm:p-8 space-y-4">
         {/* Hàng trạng thái & nút thao tác nhanh ở trên */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <TopicStatusBadge status={topic.status} />
-            <span className="text-xs font-medium text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs">
+            <TopicStatusBadge status={topic.status} variant="text" />
+            <span className="text-muted-foreground">•</span>
+            <span className="font-medium text-muted-foreground">
               {topic.projectType.name}
               {topic.major ? ` • ${topic.major.name}` : ''}
             </span>

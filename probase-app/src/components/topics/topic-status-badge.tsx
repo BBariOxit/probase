@@ -17,7 +17,7 @@ const TOPIC_STATUS: Record<TopicStatus, StatusLabel> = {
 
 export function TopicStatusBadge({
   status,
-  variant = 'tag',
+  variant = 'text',
   className,
 }: {
   status: TopicStatus;
@@ -36,7 +36,7 @@ export function TopicStatusBadge({
 export function TopicOwnerBadge({
   status,
   activeGroup,
-  variant = 'tag',
+  variant = 'text',
   className,
 }: {
   status: TopicStatus;
