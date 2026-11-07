@@ -21,6 +21,7 @@ export interface LecturerComboboxProps {
   emptyText?: string;
   className?: string;
   triggerClassName?: string;
+  listClassName?: string;
   disabled?: boolean;
 }
 
@@ -34,6 +35,7 @@ export function LecturerCombobox({
   emptyText = 'Không tìm thấy giảng viên nào.',
   className = 'w-52 shrink-0',
   triggerClassName,
+  listClassName,
   disabled,
 }: LecturerComboboxProps) {
   const options: ComboboxOption[] = useMemo(() => {
@@ -59,6 +61,7 @@ export function LecturerCombobox({
       emptyText={emptyText}
       className={className}
       triggerClassName={triggerClassName}
+      listClassName={listClassName}
       disabled={disabled}
       size="sm"
     />
