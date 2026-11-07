@@ -25,7 +25,6 @@ import type {
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/shared/empty-state';
-import { InfoTooltip } from '@/components/shared/info-tooltip';
 import { FinalizeRoundDialog } from '@/components/admin/finalize-round-dialog';
 import { UnlockRoundDialog } from '@/components/admin/unlock-round-dialog';
 import { UserAvatar } from '@/components/shared/user-avatar';
@@ -44,13 +43,6 @@ export default function AllocationDeskPage() {
   const { data: rounds } = useRoundsForSemester(semester?.id);
   const [picked, setPicked] = useState<number | null>(null);
 
-  /*
-    The round that actually needs working, rather than the first one listed:
-    this screen is opened because a gate has shut, and that is the round it shut
-    on. Derived rather than pushed into state by an effect — the rounds arrive
-    after the first render, and an effect that set the choice would render the
-    page once with nothing selected and again a tick later.
-  */
   const roundId =
     picked ??
     (rounds?.find((round) => round.phase === 'RECONCILING') ?? rounds?.[0])?.id;
@@ -61,54 +53,56 @@ export default function AllocationDeskPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <Select
-          value={roundId ?? null}
-          onValueChange={(value) => setPicked(value as number)}
-        >
-          <SelectTrigger className="w-64" aria-label="Chọn đợt đăng ký">
-            <SelectValue>
-              {(value) => {
-                const round = rounds?.find((one) => one.id === value);
-                return round ? round.projectType.name : 'Chọn đợt';
-              }}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {rounds?.map((round) => (
-              <SelectItem key={round.id} value={round.id}>
-                <span className="flex flex-col items-start">
-                  <span>{round.projectType.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {PHASE_LABEL[round.phase]} · khóa {round.cohorts.join(', ')}
+      {/* Thanh chọn đợt & các nút thao tác chốt/mở đợt */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Select
+            value={roundId ?? null}
+            onValueChange={(value) => setPicked(value as number)}
+          >
+            <SelectTrigger
+              className="w-64 h-9.5 rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] font-semibold text-slate-900 dark:text-neutral-100 shadow-2xs cursor-pointer"
+              aria-label="Chọn đợt đăng ký"
+            >
+              <SelectValue>
+                {(value) => {
+                  const round = rounds?.find((one) => one.id === value);
+                  return round ? round.projectType.name : 'Chọn đợt';
+                }}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="border-slate-200 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e]">
+              {rounds?.map((round) => (
+                <SelectItem key={round.id} value={round.id}>
+                  <span className="flex flex-col items-start">
+                    <span className="font-semibold">{round.projectType.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {PHASE_LABEL[round.phase]} · khóa {round.cohorts.join(', ')}
+                    </span>
                   </span>
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        {/*
-          Never both: one is offered while the round is being worked, the other
-          only once it has been settled.
-        */}
         {data && roundId !== undefined && (
-          <>
+          <div className="flex items-center gap-2">
             <FinalizeRoundDialog roundId={roundId} desk={data} />
             <UnlockRoundDialog roundId={roundId} desk={data} />
-          </>
+          </div>
         )}
       </div>
 
       {error && (
-        <p className="text-sm text-destructive">
+        <p className="text-sm text-destructive font-medium">
           Không tải được danh sách phân bổ.
         </p>
       )}
 
       {isPending && roundId !== undefined && (
         <div className="flex justify-center py-16">
-          <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          <Loader2 className="size-6 animate-spin text-primary" />
         </div>
       )}
 
@@ -129,8 +123,6 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
   const place = usePlaceStudent();
   const [selected, setSelected] = useState<UnplacedStudent | null>(null);
 
-  // The selected student may have just been placed — by this desk or by
-  // somebody working the other round out of the same pool of students.
   const stillUnplaced =
     selected && desk.students.some((one) => one.id === selected.id)
       ? selected
@@ -150,12 +142,13 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
       <Summary desk={desk} />
 
       {place.error && (
-        <p className="rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-3 text-sm text-destructive">
+        <p className="rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-3 text-sm text-destructive font-medium">
           {place.error.message}
         </p>
       )}
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
+        {/* Cột trái: Sinh viên chưa có đề tài */}
         <Panel
           title="Chưa có đề tài"
           count={desk.students.length}
@@ -178,25 +171,28 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
                   )
                 }
                 className={cn(
-                  'flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors',
+                  'flex w-full items-center gap-3.5 px-4 py-3 text-left transition-colors cursor-pointer',
                   desk.canPlace
-                    ? 'hover:bg-muted/50'
+                    ? 'hover:bg-slate-50 dark:hover:bg-[#1f2330]'
                     : 'cursor-default opacity-70',
-                  stillUnplaced?.id === student.id &&
-                    'bg-primary/8 ring-1 ring-primary/30 ring-inset',
+                  stillUnplaced?.id === student.id
+                    ? 'bg-primary/10 dark:bg-primary/20 ring-2 ring-primary ring-inset'
+                    : '',
                 )}
               >
                 <UserAvatar
                   name={student.fullName}
                   src={student.avatarUrl}
-                  className="size-8"
+                  className="size-9 ring-1 ring-slate-200 dark:ring-neutral-700"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">
+                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-neutral-100">
                     {student.fullName}
                   </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {student.studentCode}
+                  <p className="truncate text-xs text-muted-foreground mt-0.5">
+                    <span className="font-mono font-semibold text-primary">
+                      {student.studentCode}
+                    </span>
                     {student.class && ` · ${student.class}`}
                     {student.major && ` · ${student.major.name}`}
                   </p>
@@ -206,6 +202,7 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
           ))}
         </Panel>
 
+        {/* Cột phải: Đề tài còn chỗ */}
         <Panel
           title="Đề tài còn chỗ"
           count={desk.topics.length}
@@ -219,42 +216,49 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
           {desk.topics.map((topic) => (
             <li
               key={topic.id}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm"
+              className="flex items-center gap-3.5 px-4 py-3 text-sm hover:bg-slate-50/60 dark:hover:bg-[#1f2330]/50 transition-colors"
             >
               <div className="min-w-0 flex-1">
-                <p className="truncate font-medium">{topic.title}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {topic.lecturer.academicTitle
-                    ? `${topic.lecturer.academicTitle} ${topic.lecturer.fullName}`
-                    : topic.lecturer.fullName}{' '}
-                  · {topic.occupiedSeats}/{topic.maxStudents} ·{' '}
-                  {topic.group ? 'đã có nhóm' : 'chưa có nhóm'}
+                <p className="truncate font-semibold text-slate-900 dark:text-neutral-100 leading-snug">
+                  {topic.title}
+                </p>
+                <p className="truncate text-xs text-muted-foreground mt-0.5">
+                  <span className="font-medium text-slate-700 dark:text-neutral-300">
+                    {topic.lecturer.academicTitle
+                      ? `${topic.lecturer.academicTitle} ${topic.lecturer.fullName}`
+                      : topic.lecturer.fullName}
+                  </span>
+                  {' · '}
+                  <span className="font-mono font-semibold text-primary">
+                    {topic.occupiedSeats}/{topic.maxStudents}
+                  </span>
+                  {' · '}
+                  <span>{topic.group ? 'đã có nhóm' : 'chưa có nhóm'}</span>
                 </p>
               </div>
 
-              <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                còn {topic.freeSeats}
+              <span className="shrink-0 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30 tabular-nums">
+                còn {topic.freeSeats} chỗ
               </span>
 
-              {/*
-                Only on the topics, not on the students. One of the two lists has
-                to be the one you press, and it is this one: the sentence being
-                built is "xếp em này vào đề tài kia", so the verb belongs at the
-                end of it.
-              */}
               <Button
                 size="sm"
-                variant="outline"
-                className="shrink-0"
+                variant={stillUnplaced && desk.canPlace ? 'default' : 'outline'}
+                className={cn(
+                  'shrink-0 h-8 font-semibold gap-1.5 transition-all cursor-pointer shadow-2xs',
+                  stillUnplaced && desk.canPlace
+                    ? 'bg-primary text-white hover:bg-primary/90'
+                    : 'border-slate-300 dark:border-neutral-700 text-slate-500 dark:text-neutral-400',
+                )}
                 disabled={!desk.canPlace || !stillUnplaced || place.isPending}
                 onClick={() => assign(topic)}
               >
                 {place.isPending && place.variables?.topicId === topic.id ? (
-                  <Loader2 className="animate-spin" />
+                  <Loader2 className="size-3.5 animate-spin" />
                 ) : (
-                  <ArrowRight />
+                  <ArrowRight className="size-3.5" />
                 )}
-                Xếp vào
+                <span>Xếp vào</span>
               </Button>
             </li>
           ))}
@@ -270,45 +274,40 @@ function Summary({ desk }: { desk: AllocationDesk }) {
   const { summary } = desk;
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border px-4 py-3 text-sm">
+    <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-300 dark:border-neutral-800 bg-white dark:bg-[#1a1d26] px-5 py-3.5 shadow-2xs text-sm">
+      <div className="flex flex-wrap items-center gap-6">
         <Figure
           value={summary.unplacedCount}
           label="sinh viên chưa có đề tài"
         />
+        <div className="h-4 w-px bg-slate-200 dark:bg-neutral-800 hidden sm:block" />
         <Figure value={summary.openSeats} label="chỗ trống" />
         {summary.shortfall > 0 && (
-          <span className="inline-flex items-center gap-1.5 font-medium text-status-danger">
-            <TriangleAlert className="size-4 shrink-0" />
-            Thiếu {summary.shortfall} chỗ
-            {summary.unopenedTopics > 0 && (
-              <InfoTooltip
-                text={`Còn ${summary.unopenedTopics} đề tài đã duyệt chưa mở (${summary.unopenedSeats} chỗ). Bạn có thể mở đồng loạt ở mục Quản lý đề tài.`}
-              />
-            )}
-            {summary.unopenedTopics === 0 && (
-              <InfoTooltip
-                text={`Không còn đề tài nào để mở thêm. ${summary.shortfall} sinh viên sẽ không có chỗ, hãy yêu cầu giảng viên ra thêm đề tài.`}
-              />
-            )}
-          </span>
-        )}
-        {!desk.canPlace && desk.blockedReason && (
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-            <Info className="size-4 shrink-0" />
-            {desk.blockedReason}
-          </span>
+          <>
+            <div className="h-4 w-px bg-slate-200 dark:bg-neutral-800 hidden sm:block" />
+            <span className="inline-flex items-center gap-1.5 font-semibold text-destructive">
+              <TriangleAlert className="size-4 shrink-0" />
+              Thiếu {summary.shortfall} chỗ
+            </span>
+          </>
         )}
       </div>
+
+      {!desk.canPlace && desk.blockedReason && (
+        <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-slate-100/80 dark:bg-neutral-800/80 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-neutral-700">
+          <Info className="size-3.5 shrink-0 text-primary" />
+          <span>{desk.blockedReason}</span>
+        </div>
+      )}
     </div>
   );
 }
 
 function Figure({ value, label }: { value: number; label: string }) {
   return (
-    <span className="inline-flex items-baseline gap-1.5">
-      <span className="text-lg font-semibold tabular-nums">{value}</span>
-      <span className="text-muted-foreground">{label}</span>
+    <span className="inline-flex items-baseline gap-2">
+      <span className="text-xl font-bold text-primary tabular-nums">{value}</span>
+      <span className="text-sm font-medium text-slate-700 dark:text-neutral-300">{label}</span>
     </span>
   );
 }
@@ -325,17 +324,19 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-xl border">
-      <h2 className="flex items-baseline gap-2 border-b px-4 py-2.5 text-sm font-medium">
-        {title}
-        <span className="text-xs font-normal text-muted-foreground tabular-nums">
+    <section className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-800 bg-white dark:bg-[#1a1d26] shadow-2xs">
+      <h2 className="flex items-center justify-between border-b border-slate-200 dark:border-neutral-800 bg-slate-50/80 dark:bg-[#161920] px-4 py-3 text-sm font-bold text-slate-900 dark:text-neutral-100">
+        <span>{title}</span>
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary tabular-nums">
           {count}
         </span>
       </h2>
       {count === 0 ? (
-        empty
+        <div className="p-6">{empty}</div>
       ) : (
-        <ul className="max-h-[28rem] divide-y overflow-y-auto">{children}</ul>
+        <ul className="max-h-[30rem] divide-y divide-slate-100 dark:divide-neutral-800 overflow-y-auto">
+          {children}
+        </ul>
       )}
     </section>
   );
@@ -353,48 +354,46 @@ function PlacementsMade({
   if (desk.placements.length === 0) return null;
 
   return (
-    <section className="overflow-hidden rounded-xl border">
-      <h2 className="flex items-baseline gap-2 border-b px-4 py-2.5 text-sm font-medium">
-        Khoa đã xếp
-        <span className="text-xs font-normal text-muted-foreground tabular-nums">
+    <section className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-800 bg-white dark:bg-[#1a1d26] shadow-2xs">
+      <h2 className="flex items-center justify-between border-b border-slate-200 dark:border-neutral-800 bg-slate-50/80 dark:bg-[#161920] px-4 py-3 text-sm font-bold text-slate-900 dark:text-neutral-100">
+        <span>Khoa đã xếp</span>
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30 tabular-nums">
           {desk.placements.length}
         </span>
       </h2>
 
       {unplace.error && (
-        <p className="border-b bg-destructive/8 px-4 py-2.5 text-sm text-destructive">
+        <p className="border-b bg-destructive/8 px-4 py-2.5 text-sm text-destructive font-medium">
           {unplace.error.message}
         </p>
       )}
 
-      <ul className="max-h-80 divide-y overflow-y-auto">
+      <ul className="max-h-80 divide-y divide-slate-100 dark:divide-neutral-800 overflow-y-auto">
         {desk.placements.map((placement) => (
           <li
             key={placement.student.id}
-            className="flex items-center gap-3 px-4 py-2.5 text-sm"
+            className="flex items-center gap-3.5 px-4 py-3 text-sm hover:bg-slate-50/50 dark:hover:bg-[#1f2330]/50 transition-colors"
           >
-            <CheckCircle2 className="size-4 shrink-0 text-status-success" />
+            <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
             <div className="min-w-0 flex-1">
               <p className="truncate">
-                <span className="font-medium">
+                <span className="font-semibold text-slate-900 dark:text-neutral-100">
                   {placement.student.fullName}
                 </span>{' '}
-                <span className="text-muted-foreground">
+                <span className="font-mono text-xs font-semibold text-primary ml-1">
                   {placement.student.studentCode}
                 </span>
               </p>
-              <p className="truncate text-xs text-muted-foreground">
+              <p className="truncate text-xs text-muted-foreground mt-0.5">
                 {placement.topicTitle}
               </p>
             </div>
 
-            {/* Only while the round can still be worked: after it is settled
-                these rows are the record, not a queue. */}
             {desk.canPlace && (
               <Button
                 size="sm"
                 variant="ghost"
-                className="shrink-0"
+                className="shrink-0 h-8 text-xs font-medium text-slate-500 hover:text-destructive transition-colors cursor-pointer"
                 disabled={unplace.isPending}
                 onClick={() =>
                   unplace.mutate({
@@ -405,11 +404,11 @@ function PlacementsMade({
               >
                 {unplace.isPending &&
                 unplace.variables?.studentId === placement.student.id ? (
-                  <Loader2 className="animate-spin" />
+                  <Loader2 className="size-3.5 animate-spin" />
                 ) : (
-                  <Undo2 />
+                  <Undo2 className="size-3.5" />
                 )}
-                Bỏ xếp
+                <span>Bỏ xếp</span>
               </Button>
             )}
           </li>
