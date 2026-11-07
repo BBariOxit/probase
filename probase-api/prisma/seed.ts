@@ -322,6 +322,7 @@ async function main() {
   // 5. Seed Yêu cầu nộp bài (Submission Requirements)
   const datnRound = roundByCode.get('DATN');
   if (datnRound) {
+    await prisma.submission.deleteMany({});
     await prisma.submissionRequirement.deleteMany({ where: { roundId: datnRound.id } });
     const requirements = [
       {
@@ -502,6 +503,7 @@ async function main() {
   await prisma.topicOutline.deleteMany({ where: { group: { semesterId: semester.id } } });
   await prisma.submission.deleteMany({ where: { group: { semesterId: semester.id } } });
   await prisma.progressReport.deleteMany({ where: { group: { semesterId: semester.id } } });
+  await prisma.weeklyLog.deleteMany({ where: { group: { semesterId: semester.id } } });
   await prisma.registrationGroupMember.deleteMany({ where: { semesterId: semester.id } });
   await prisma.registrationGroup.deleteMany({ where: { semesterId: semester.id } });
   await prisma.topicProposal.deleteMany({ where: { semesterId: semester.id } });
@@ -719,6 +721,11 @@ async function main() {
   const studentBProfile = studentProfileByEmail.get('2277777@dlu.edu.vn')?.profile;
   const studentDProfile = studentProfileByEmail.get('2299999@dlu.edu.vn')?.profile;
 
+  const userA = studentProfileByEmail.get('2266666@dlu.edu.vn')?.user;
+  const userB = studentProfileByEmail.get('2277777@dlu.edu.vn')?.user;
+  const userC = studentProfileByEmail.get('2288888@dlu.edu.vn')?.user;
+  const userD = studentProfileByEmail.get('2299999@dlu.edu.vn')?.user;
+
   if (topic1 && studentAProfile && studentBProfile) {
     // Nhóm 1: SV A (Trưởng nhóm) & SV B (Thành viên) làm Đề tài 1
     const group1 = await prisma.registrationGroup.create({
@@ -765,7 +772,7 @@ async function main() {
         fileName: 'M03_De_cuong_chi_tiet_KLTN_Nhom01.pdf',
         fileSize: 1048576, // 1MB
         attachmentUrl: 'https://storage.dlu.edu.vn/outlines/m03_nhom1.pdf',
-        submittedById: studentAProfile.id,
+        submittedById: userA?.id,
         submittedAt: daysFromNow(-15),
         status: 'APPROVED_BY_LECTURER',
         lecturerFeedback: 'Đề cương chi tiết, phương pháp nghiên cứu và phân công công việc rõ ràng. Đồng ý thông qua để nhóm triển khai.',
@@ -826,6 +833,7 @@ async function main() {
         { councilId: council.id, lecturerId: cnkProfile.id, councilRole: 'PRESIDENT' },
         { councilId: council.id, lecturerId: abProfile.id, councilRole: 'SECRETARY' },
         { councilId: council.id, lecturerId: pbProfile.id, councilRole: 'MEMBER' },
+        { councilId: council.id, lecturerId: cdProfile.id, councilRole: 'MEMBER' },
       ],
     });
 
@@ -860,10 +868,137 @@ async function main() {
       ],
     });
 
-    console.log(`[✓] 10. Nhóm 01 (KLTN KTPM): Đã tạo nhóm, nộp đề cương M03, phân công GVPB, nhận xét M04/M05 và xếp Hội đồng`);
+    // Submissions cho Nhóm 1
+    if (datnRound) {
+      const requirements = await prisma.submissionRequirement.findMany({
+        where: { roundId: datnRound.id },
+        orderBy: { sortOrder: 'asc' },
+      });
+
+      for (const req of requirements) {
+        let fileName = 'Nop_bai_dinh_ky.pdf';
+        let submissionUrl: string | null = null;
+        if (req.sortOrder === 1) fileName = 'M03_De_cuong_chi_tiet_KLTN_Nhom01.pdf';
+        else if (req.sortOrder === 2) fileName = 'Bao_cao_tien_do_1_Nhom01.pdf';
+        else if (req.sortOrder === 3) fileName = 'Bao_cao_tien_do_2_Nhom01.pdf';
+        else if (req.sortOrder === 4) fileName = 'Quyen_bao_cao_toan_van_va_slide_Nhom01.pdf';
+        else if (req.sortOrder === 5) {
+          fileName = 'Goi_luu_tru_3_thu_muc_Nhom01.zip';
+          submissionUrl = 'https://github.com/BBariOxit/probase';
+        }
+
+        await prisma.submission.create({
+          data: {
+            topicId: topic1.id,
+            groupId: group1.id,
+            requirementId: req.id,
+            fileName,
+            fileSize: 1048576,
+            fileUrl: `https://storage.dlu.edu.vn/submissions/${fileName}`,
+            submissionUrl,
+            submittedById: studentAProfile.id,
+            submittedAt: daysFromNow(-15 + req.sortOrder * 2),
+            lecturerFeedback: req.sortOrder <= 3 ? 'Đã duyệt nội dung bài nộp.' : null,
+            feedbackAt: req.sortOrder <= 3 ? daysFromNow(-13 + req.sortOrder * 2) : null,
+          },
+        });
+      }
+    }
+
+    // Đánh giá tiến độ (ProgressReport) cho Nhóm 1
+    await prisma.progressReport.createMany({
+      data: [
+        {
+          groupId: group1.id,
+          stage: 'STAGE_1',
+          reportFileName: 'Bao_cao_tien_do_1_Nhom01.pdf',
+          reportFileSize: 1048576,
+          sourceCodeUrl: 'https://github.com/BBariOxit/probase',
+          submittedById: userA?.id,
+          submittedAt: daysFromNow(-30),
+          supervisorGrade: 9.0,
+          supervisorFeedback: 'Tiến độ bám sát kế hoạch, module backend REST API chạy tốt.',
+          finalStageGrade: 9.0,
+          workloadPercentage: 45,
+          isPassed: true,
+        },
+        {
+          groupId: group1.id,
+          stage: 'STAGE_2',
+          reportFileName: 'Bao_cao_tien_do_2_Nhom01.pdf',
+          reportFileSize: 2097152,
+          sourceCodeUrl: 'https://github.com/BBariOxit/probase',
+          submittedById: userA?.id,
+          submittedAt: daysFromNow(-10),
+          supervisorGrade: 9.0,
+          supervisorFeedback: 'Giao diện mượt mà, đầy đủ các luồng nghiệp vụ.',
+          reviewerGrade: 8.5,
+          reviewerFeedback: 'Sản phẩm hoàn thiện đạt yêu cầu tốt nghiệp.',
+          finalStageGrade: 8.75,
+          workloadPercentage: 85,
+          isPassed: true,
+        },
+      ],
+    });
+
+    // Nhật ký tiến độ (WeeklyLog) cho Nhóm 1
+    await prisma.weeklyLog.createMany({
+      data: [
+        {
+          groupId: group1.id,
+          weekNumber: 1,
+          title: 'Khảo sát quy trình nghiệp vụ đồ án tại Khoa CNTT',
+          completionPercentage: 25,
+          gitCommitUrl: 'https://github.com/BBariOxit/probase/commit/1a2b3c4',
+          summaryNotes: 'Tổng hợp mẫu M01 - M10, phỏng vấn trợ lý giáo vụ và sinh viên.',
+          submittedById: userA?.id,
+          lecturerComment: 'Hướng nghiên cứu thực tế, bám sát nghiệp vụ Khoa.',
+          isAcknowledged: true,
+          feedbackAt: daysFromNow(-25),
+        },
+        {
+          groupId: group1.id,
+          weekNumber: 2,
+          title: 'Thiết kế cơ sở dữ liệu và dựng khung NestJS API',
+          completionPercentage: 50,
+          gitCommitUrl: 'https://github.com/BBariOxit/probase/commit/5d6e7f8',
+          summaryNotes: 'Hoàn thành Schema Prisma với 20+ bảng thực thể, RBAC và JWT auth.',
+          submittedById: userB?.id,
+          lecturerComment: 'Schema chặt chẽ, tối ưu index các khóa ngoại.',
+          isAcknowledged: true,
+          feedbackAt: daysFromNow(-18),
+        },
+        {
+          groupId: group1.id,
+          weekNumber: 3,
+          title: 'Xây dựng giao diện Next.js và tích hợp REST API',
+          completionPercentage: 75,
+          gitCommitUrl: 'https://github.com/BBariOxit/probase/commit/9a0b1c2',
+          summaryNotes: 'Triển khai bàn phân bổ, quản lý đề tài, nộp đề cương và form đánh giá.',
+          submittedById: userA?.id,
+          lecturerComment: 'Giao diện trực quan, tiếp tục tối ưu trải nghiệm người dùng.',
+          isAcknowledged: true,
+          feedbackAt: daysFromNow(-11),
+        },
+        {
+          groupId: group1.id,
+          weekNumber: 4,
+          title: 'Kiểm thử toàn diện và đóng gói Docker',
+          completionPercentage: 95,
+          gitCommitUrl: 'https://github.com/BBariOxit/probase/commit/3d4e5f6',
+          summaryNotes: 'Kiểm thử e2e luồng duyệt đề tài, chuẩn bị báo cáo toàn văn và slide.',
+          submittedById: userB?.id,
+          lecturerComment: 'Hệ thống đạt chất lượng cao, chuẩn bị tốt cho buổi bảo vệ.',
+          isAcknowledged: true,
+          feedbackAt: daysFromNow(-4),
+        },
+      ],
+    });
+
+    console.log(`[✓] 10. Nhóm 01 (KLTN KTPM): Đã tạo nhóm, nộp đề cương M03, bài nộp 5 mốc, phân công GVPB, nhận xét M04/M05 và xếp Hội đồng`);
   }
 
-  // Nhóm 2: SV C & SV D làm Đề tài 3 (NIDS - MMT)
+  // Nhóm 2: SV C & SV D làm Đề tài 3 (NIDS - MMT, GVHD: ThS. Chu Đình)
   if (topic3 && studentCProfile && studentDProfile) {
     const group2 = await prisma.registrationGroup.create({
       data: {
@@ -871,8 +1006,8 @@ async function main() {
         semesterId: semester.id,
         leaderId: studentCProfile.id,
         name: 'Nhóm 02 - An toàn Mạng CTK46',
-        status: 'FORMING',
-        openForJoin: true,
+        status: 'SUBMITTED',
+        openForJoin: false,
         declaredSize: 2,
         joinCode: 'DLU-DATN-4602',
       },
@@ -886,6 +1021,8 @@ async function main() {
           studentId: studentCProfile.id,
           status: 'ACCEPTED',
           joinSource: 'SELF',
+          mentorGrade: 9.0,
+          mentorComment: 'Sinh viên nắm vững kỹ thuật bắt gói tin và phân tích luồng mạng Suricata, hoàn thành tốt nhiệm vụ.',
         },
         {
           groupId: group2.id,
@@ -893,10 +1030,229 @@ async function main() {
           studentId: studentDProfile.id,
           status: 'ACCEPTED',
           joinSource: 'LINK',
+          mentorGrade: 8.5,
+          mentorComment: 'Kỹ năng tiền xử lý dữ liệu và huấn luyện mô hình XGBoost tốt, phối hợp nhóm hiệu quả.',
         },
       ],
     });
-    console.log(`[✓] 11. Nhóm 02 (KLTN MMT): Đang ở trạng thái lập nhóm (FORMING)`);
+
+    // Đề cương M03 cho Nhóm 2 (Đã duyệt)
+    await prisma.topicOutline.create({
+      data: {
+        groupId: group2.id,
+        topicId: topic3.id,
+        fileName: 'M03_De_cuong_chi_tiet_KLTN_Nhom02_NIDS.pdf',
+        fileSize: 1048576,
+        attachmentUrl: 'https://storage.dlu.edu.vn/outlines/m03_nhom2.pdf',
+        submittedById: userC?.id,
+        submittedAt: daysFromNow(-15),
+        status: 'APPROVED_BY_LECTURER',
+        lecturerFeedback: 'Đề cương chi tiết, phương pháp tiếp cận mô hình học máy và giám sát Suricata hợp lý. Đồng ý thông qua.',
+        approvedAt: daysFromNow(-12),
+        objectives: 'Thiết kế và triển khai giải pháp phát hiện xâm nhập mạng NIDS bằng Machine Learning.',
+        scopeAndContent: 'Xử lý tập dữ liệu mạng, huấn luyện mô hình Random Forest/XGBoost, tích hợp Suricata và cảnh báo thời gian thực.',
+      },
+    });
+
+    // Phân công GVPB cho Nhóm 2 (TS. Phan Bửu phản biện)
+    const adminUser = staffProfileByEmail.get('gvgvk@dlu.edu.vn')!.user;
+    await prisma.topicAssignment.create({
+      data: {
+        groupId: group2.id,
+        topicId: topic3.id,
+        supervisorId: cdProfile.id,
+        reviewerId: pbProfile.id,
+        assignedById: adminUser.id,
+      },
+    });
+
+    // Phiếu nhận xét phản biện cho Nhóm 2 (M04 & M05)
+    await prisma.topicReview.createMany({
+      data: [
+        {
+          groupId: group2.id,
+          lecturerId: cdProfile.id,
+          reviewerType: 'SUPERVISOR',
+          templateCode: 'M04',
+          generalComment: 'Nhóm nghiên cứu nghiêm túc, triển khai hệ thống NIDS hoạt động ổn định và chính xác trên môi trường mạng lab. Đủ điều kiện bảo vệ trước Hội đồng.',
+          isDefenseAllowed: true,
+        },
+        {
+          groupId: group2.id,
+          lecturerId: pbProfile.id,
+          reviewerType: 'REVIEWER',
+          templateCode: 'M05',
+          generalComment: 'Đề tài có tính ứng dụng thực tiễn cao trong an toàn mạng. Kết quả thực nghiệm thuyết phục. Đủ điều kiện bảo vệ.',
+          isDefenseAllowed: true,
+        },
+      ],
+    });
+
+    // Xếp Nhóm 2 vào Hội đồng 01
+    const council = await prisma.council.findFirst({
+      where: { semesterId: semester.id },
+    });
+    if (council) {
+      const councilTopic2 = await prisma.councilTopic.create({
+        data: {
+          councilId: council.id,
+          topicId: topic3.id,
+          groupId: group2.id,
+          reviewerId: pbProfile.id,
+          timeSlot: '09:30 - 11:00',
+          defenseOrder: 2,
+          status: 'SCHEDULED',
+        },
+      });
+
+      await prisma.councilTopicGrade.createMany({
+        data: [
+          {
+            councilTopicId: councilTopic2.id,
+            studentId: studentCProfile.id,
+            councilGrade: 9.0,
+            reviewerGrade: 9.0,
+            finalGrade: 9.0,
+          },
+          {
+            councilTopicId: councilTopic2.id,
+            studentId: studentDProfile.id,
+            councilGrade: 8.5,
+            reviewerGrade: 8.5,
+            finalGrade: 8.5,
+          },
+        ],
+      });
+    }
+
+    // Đánh giá tiến độ (ProgressReport) cho Nhóm 2
+    await prisma.progressReport.createMany({
+      data: [
+        {
+          groupId: group2.id,
+          stage: 'STAGE_1',
+          reportFileName: 'Bao_cao_tien_do_1_Nhom02_NIDS.pdf',
+          reportFileSize: 1048576,
+          sourceCodeUrl: 'https://github.com/dlu-nids/nids-core',
+          submittedById: userC?.id,
+          submittedAt: daysFromNow(-30),
+          supervisorGrade: 9.0,
+          supervisorFeedback: 'Cài đặt Suricata và bắt gói tin mạng lab thành công.',
+          finalStageGrade: 9.0,
+          workloadPercentage: 45,
+          isPassed: true,
+        },
+        {
+          groupId: group2.id,
+          stage: 'STAGE_2',
+          reportFileName: 'Bao_cao_tien_do_2_Nhom02_NIDS.pdf',
+          reportFileSize: 2097152,
+          sourceCodeUrl: 'https://github.com/dlu-nids/nids-core',
+          submittedById: userC?.id,
+          submittedAt: daysFromNow(-10),
+          supervisorGrade: 9.0,
+          supervisorFeedback: 'Mô hình học máy phân loại lưu lượng độc hại chính xác.',
+          reviewerGrade: 8.5,
+          reviewerFeedback: 'Hệ thống chạy thực nghiệm tốt, đồ án đạt chất lượng.',
+          finalStageGrade: 8.75,
+          workloadPercentage: 80,
+          isPassed: true,
+        },
+      ],
+    });
+
+    // Nhật ký tiến độ (WeeklyLog) cho Nhóm 2
+    await prisma.weeklyLog.createMany({
+      data: [
+        {
+          groupId: group2.id,
+          weekNumber: 1,
+          title: 'Khảo sát kiến trúc mạng và công cụ Suricata',
+          completionPercentage: 25,
+          gitCommitUrl: 'https://github.com/dlu-nids/nids-core/commit/a1b2c3d',
+          summaryNotes: 'Tìm hiểu giao thức mạng, cài đặt Suricata IDS trên máy ảo Ubuntu Server.',
+          submittedById: userC?.id,
+          lecturerComment: 'Đã xem và đồng ý hướng tiếp cận.',
+          isAcknowledged: true,
+          feedbackAt: daysFromNow(-25),
+        },
+        {
+          groupId: group2.id,
+          weekNumber: 2,
+          title: 'Thu thập tập dữ liệu CIC-IDS2017 và tiền xử lý',
+          completionPercentage: 50,
+          gitCommitUrl: 'https://github.com/dlu-nids/nids-core/commit/e4f5g6h',
+          summaryNotes: 'Trích xuất 78 đặc trưng luồng mạng (Flow features) và xử lý giá trị khuyết.',
+          submittedById: userD?.id,
+          lecturerComment: 'Tiền xử lý tốt, chú ý chuẩn hóa dữ liệu trước khi train.',
+          isAcknowledged: true,
+          feedbackAt: daysFromNow(-18),
+        },
+        {
+          groupId: group2.id,
+          weekNumber: 3,
+          title: 'Huấn luyện mô hình XGBoost & Random Forest',
+          completionPercentage: 75,
+          gitCommitUrl: 'https://github.com/dlu-nids/nids-core/commit/i7j8k9l',
+          summaryNotes: 'Đánh giá độ chính xác Precision/Recall, F1-score đạt 94.2% trên tập test.',
+          submittedById: userC?.id,
+          lecturerComment: 'Kết quả khả quan, tiến hành tối ưu hóa độ trễ suy luận.',
+          isAcknowledged: true,
+          feedbackAt: daysFromNow(-11),
+        },
+        {
+          groupId: group2.id,
+          weekNumber: 4,
+          title: 'Tích hợp cảnh báo thời gian thực và Dashboard',
+          completionPercentage: 90,
+          gitCommitUrl: 'https://github.com/dlu-nids/nids-core/commit/m0n1o2p',
+          summaryNotes: 'Kết nối đường ống phân tích thời gian thực với giao diện giám sát SOC.',
+          submittedById: userD?.id,
+          lecturerComment: 'Hệ thống hoạt động tốt, chuẩn bị báo cáo toàn văn.',
+          isAcknowledged: true,
+          feedbackAt: daysFromNow(-4),
+        },
+      ],
+    });
+
+    // Bài nộp các mốc (Submissions) cho Nhóm 2 theo các requirements của đợt DATN
+    if (datnRound) {
+      const requirements = await prisma.submissionRequirement.findMany({
+        where: { roundId: datnRound.id },
+        orderBy: { sortOrder: 'asc' },
+      });
+
+      for (const req of requirements) {
+        let fileName = 'Nop_bai_dinh_ky.pdf';
+        let submissionUrl: string | null = null;
+        if (req.sortOrder === 1) fileName = 'M03_De_cuong_chi_tiet_KLTN_Nhom02_NIDS.pdf';
+        else if (req.sortOrder === 2) fileName = 'Bao_cao_tien_do_1_Nhom02_NIDS.pdf';
+        else if (req.sortOrder === 3) fileName = 'Bao_cao_tien_do_2_Nhom02_NIDS.pdf';
+        else if (req.sortOrder === 4) fileName = 'Quyen_bao_cao_toan_van_va_slide_Nhom02_NIDS.pdf';
+        else if (req.sortOrder === 5) {
+          fileName = 'Goi_luu_tru_3_thu_muc_Nhom02.zip';
+          submissionUrl = 'https://github.com/dlu-nids/nids-core';
+        }
+
+        await prisma.submission.create({
+          data: {
+            topicId: topic3.id,
+            groupId: group2.id,
+            requirementId: req.id,
+            fileName,
+            fileSize: 1048576,
+            fileUrl: `https://storage.dlu.edu.vn/submissions/${fileName}`,
+            submissionUrl,
+            submittedById: studentCProfile.id,
+            submittedAt: daysFromNow(-15 + req.sortOrder * 2),
+            lecturerFeedback: req.sortOrder <= 3 ? 'Đã duyệt nội dung bài nộp.' : null,
+            feedbackAt: req.sortOrder <= 3 ? daysFromNow(-13 + req.sortOrder * 2) : null,
+          },
+        });
+      }
+    }
+
+    console.log(`[✓] 11. Nhóm 02 (KLTN MMT): Đã tạo nhóm, nộp đề cương M03, bài nộp 5 mốc, phân công GVPB, nhận xét M04/M05 và xếp Hội đồng`);
   }
 
   // 15. Seed Thông báo (Notifications)
