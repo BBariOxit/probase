@@ -60,7 +60,7 @@ export default function AllocationDeskPage() {
             onValueChange={(value) => setPicked(value as number)}
           >
             <SelectTrigger
-              className="w-64 h-9.5 rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1a1d26] font-semibold text-slate-900 dark:text-neutral-100 shadow-2xs cursor-pointer"
+              className="w-64 h-9.5 rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] font-semibold text-slate-900 dark:text-neutral-100 shadow-2xs cursor-pointer"
               aria-label="Chọn đợt đăng ký"
             >
               <SelectValue>
@@ -172,10 +172,10 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
                 className={cn(
                   'flex w-full items-center gap-3.5 px-4 py-3 text-left transition-colors cursor-pointer',
                   desk.canPlace
-                    ? 'hover:bg-slate-50 dark:hover:bg-[#1f2330]'
+                    ? 'hover:bg-slate-50/70 dark:hover:bg-neutral-800/50'
                     : 'cursor-default opacity-70',
                   stillUnplaced?.id === student.id
-                    ? 'bg-slate-100 dark:bg-white/10 ring-1 ring-slate-400 dark:ring-neutral-500'
+                    ? 'bg-primary/10 dark:bg-primary/20 ring-1.5 ring-primary ring-inset'
                     : '',
                 )}
               >
@@ -189,7 +189,9 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
                     {student.fullName}
                   </p>
                   <p className="truncate text-xs text-muted-foreground mt-0.5">
-                    <span>{student.studentCode}</span>
+                    <span className="font-mono text-primary font-semibold text-xs">
+                      {student.studentCode}
+                    </span>
                     {student.class && ` · ${student.class}`}
                     {student.major && ` · ${student.major.name}`}
                   </p>
@@ -213,7 +215,7 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
           {desk.topics.map((topic) => (
             <li
               key={topic.id}
-              className="flex items-center gap-3.5 px-4 py-3 text-sm hover:bg-slate-50/60 dark:hover:bg-[#1f2330]/50 transition-colors"
+              className="flex items-center gap-3.5 px-4 py-3 text-sm hover:bg-slate-50/70 dark:hover:bg-neutral-800/40 transition-colors"
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold text-slate-900 dark:text-neutral-100 leading-snug">
@@ -226,7 +228,7 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
                       : topic.lecturer.fullName}
                   </span>
                   {' · '}
-                  <span>
+                  <span className="font-mono text-xs font-semibold text-primary">
                     {topic.occupiedSeats}/{topic.maxStudents}
                   </span>
                   {' · '}
@@ -245,7 +247,7 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
                   'shrink-0 h-8 font-semibold gap-1.5 transition-all cursor-pointer shadow-2xs',
                   stillUnplaced && desk.canPlace
                     ? 'bg-primary text-white hover:bg-primary/90'
-                    : 'border-slate-300 dark:border-neutral-700 text-slate-500 dark:text-neutral-400',
+                    : 'border-slate-300 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800',
                 )}
                 disabled={!desk.canPlace || !stillUnplaced || place.isPending}
                 onClick={() => assign(topic)}
@@ -271,16 +273,16 @@ function Summary({ desk }: { desk: AllocationDesk }) {
   const { summary } = desk;
 
   return (
-    <div className="flex flex-wrap items-center gap-6 rounded-xl border border-slate-300 dark:border-neutral-800 bg-white dark:bg-[#1a1d26] px-5 py-3.5 shadow-2xs text-sm">
+    <div className="flex flex-wrap items-center gap-6 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] px-5 py-3.5 shadow-2xs text-sm">
       <Figure
         value={summary.unplacedCount}
         label="sinh viên chưa có đề tài"
       />
-      <div className="h-4 w-px bg-slate-200 dark:bg-neutral-800 hidden sm:block" />
+      <div className="h-4 w-px bg-slate-200 dark:bg-neutral-700 hidden sm:block" />
       <Figure value={summary.openSeats} label="chỗ trống" />
       {summary.shortfall > 0 && (
         <>
-          <div className="h-4 w-px bg-slate-200 dark:bg-neutral-800 hidden sm:block" />
+          <div className="h-4 w-px bg-slate-200 dark:bg-neutral-700 hidden sm:block" />
           <span className="inline-flex items-center gap-1.5 font-semibold text-destructive">
             <TriangleAlert className="size-4 shrink-0" />
             Thiếu {summary.shortfall} chỗ
@@ -316,8 +318,8 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-800 bg-white dark:bg-[#1a1d26] shadow-2xs">
-      <h2 className="border-b border-slate-200 dark:border-neutral-800 bg-slate-50/80 dark:bg-[#161920] px-4 py-3 text-sm font-bold text-slate-900 dark:text-neutral-100">
+    <section className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
+      <h2 className="border-b border-slate-200 dark:border-neutral-700 bg-slate-50/80 dark:bg-[#181818] px-4 py-3 text-sm font-bold text-slate-900 dark:text-neutral-100">
         <span>{title}</span>
         <span className="font-normal text-muted-foreground ml-1.5 tabular-nums">
           {count}
@@ -326,7 +328,7 @@ function Panel({
       {count === 0 ? (
         <div className="p-6">{empty}</div>
       ) : (
-        <ul className="max-h-[30rem] divide-y divide-slate-100 dark:divide-neutral-800 overflow-y-auto">
+        <ul className="max-h-[30rem] divide-y divide-slate-100 dark:divide-neutral-700/80 overflow-y-auto">
           {children}
         </ul>
       )}
@@ -346,8 +348,8 @@ function PlacementsMade({
   if (desk.placements.length === 0) return null;
 
   return (
-    <section className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-800 bg-white dark:bg-[#1a1d26] shadow-2xs">
-      <h2 className="border-b border-slate-200 dark:border-neutral-800 bg-slate-50/80 dark:bg-[#161920] px-4 py-3 text-sm font-bold text-slate-900 dark:text-neutral-100">
+    <section className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
+      <h2 className="border-b border-slate-200 dark:border-neutral-700 bg-slate-50/80 dark:bg-[#181818] px-4 py-3 text-sm font-bold text-slate-900 dark:text-neutral-100">
         <span>Khoa đã xếp</span>
         <span className="font-normal text-muted-foreground ml-1.5 tabular-nums">
           {desk.placements.length}
@@ -360,11 +362,11 @@ function PlacementsMade({
         </p>
       )}
 
-      <ul className="max-h-80 divide-y divide-slate-100 dark:divide-neutral-800 overflow-y-auto">
+      <ul className="max-h-80 divide-y divide-slate-100 dark:divide-neutral-700/80 overflow-y-auto">
         {desk.placements.map((placement) => (
           <li
             key={placement.student.id}
-            className="flex items-center gap-3.5 px-4 py-3 text-sm hover:bg-slate-50/50 dark:hover:bg-[#1f2330]/50 transition-colors"
+            className="flex items-center gap-3.5 px-4 py-3 text-sm hover:bg-slate-50/50 dark:hover:bg-neutral-800/40 transition-colors"
           >
             <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
             <div className="min-w-0 flex-1">
@@ -372,7 +374,7 @@ function PlacementsMade({
                 <span className="font-semibold text-slate-900 dark:text-neutral-100">
                   {placement.student.fullName}
                 </span>{' '}
-                <span className="text-xs text-muted-foreground ml-1">
+                <span className="font-mono text-xs font-semibold text-primary ml-1">
                   {placement.student.studentCode}
                 </span>
               </p>
@@ -385,7 +387,7 @@ function PlacementsMade({
               <Button
                 size="sm"
                 variant="ghost"
-                className="shrink-0 h-8 text-xs font-medium text-slate-500 hover:text-destructive transition-colors cursor-pointer"
+                className="shrink-0 h-8 text-xs font-medium text-slate-500 hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                 disabled={unplace.isPending}
                 onClick={() =>
                   unplace.mutate({
