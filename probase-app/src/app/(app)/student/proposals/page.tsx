@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRight,
   GraduationCap,
@@ -13,7 +14,7 @@ import {
   Undo2,
 } from 'lucide-react';
 import { useActiveSemester, useMyRounds } from '@/lib/api/master-data';
-import { useProposals, useWithdrawProposal } from '@/lib/api/proposals';
+import { useProposal, useProposals, useWithdrawProposal } from '@/lib/api/proposals';
 import { useMyGroup } from '@/lib/api/registration';
 import type { TopicProposal } from '@/lib/api/types';
 import { useRequireRole } from '@/lib/auth/use-require-role';
@@ -27,8 +28,14 @@ import { Button } from '@/components/ui/button';
 import { PROPOSAL_PAGE_SIZE } from '@/constants/pagination.constant';
 import { usePagination } from '@/hooks';
 
-export default function StudentProposalsPage() {
+function StudentProposalsContent() {
   const allowed = useRequireRole('STUDENT');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const targetIdParam = searchParams.get('id');
+  const targetProposalId = targetIdParam ? Number(targetIdParam) : null;
+  const { data: directProposal } = useProposal(targetProposalId ?? 0);
+
   const semester = useActiveSemester();
   const { data: rounds } = useMyRounds(semester?.id);
   const { data: group } = useMyGroup();
@@ -39,6 +46,12 @@ export default function StudentProposalsPage() {
   const [viewingProposal, setViewingProposal] = useState<TopicProposal | null>(
     null,
   );
+
+  useEffect(() => {
+    if (targetProposalId && directProposal) {
+      setViewingProposal(directProposal);
+    }
+  }, [targetProposalId, directProposal]);
 
   const { data, isPending, error } = useProposals({
     page,
@@ -172,6 +185,20 @@ export default function StudentProposalsPage() {
         }
       />
     </>
+  );
+}
+
+export default function StudentProposalsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-16">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <StudentProposalsContent />
+    </Suspense>
   );
 }
 

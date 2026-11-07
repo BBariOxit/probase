@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, Inbox, Loader2, MessageSquareCode, X } from 'lucide-react';
 import { useMyProfile } from '@/lib/api/me';
-import { useProposals } from '@/lib/api/proposals';
+import { useProposal, useProposals } from '@/lib/api/proposals';
 import type {
   MentoringLoad,
   ProposalStatus,
@@ -34,8 +35,31 @@ import { DEFAULT_PAGE_SIZE } from '@/constants/pagination.constant';
 import { PROPOSAL_STATUS_FILTERS } from '@/constants/status.constant';
 import { usePagination } from '@/hooks';
 
-export default function LecturerProposalsPage() {
+function LecturerProposalsContent() {
   const allowed = useRequireRole('LECTURER');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const targetIdParam = searchParams.get('id');
+  const targetProposalId = targetIdParam ? Number(targetIdParam) : null;
+  const { data: directProposal } = useProposal(targetProposalId ?? 0);
+
+  const [directViewing, setDirectViewing] = useState(false);
+  const [directAnswering, setDirectAnswering] = useState<'accept' | 'reject' | null>(null);
+
+  useEffect(() => {
+    if (targetProposalId && directProposal) {
+      setDirectViewing(true);
+    }
+  }, [targetProposalId, directProposal]);
+
+  const handleCloseDirect = () => {
+    setDirectViewing(false);
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.delete('id');
+    const query = newParams.toString();
+    router.replace(`/lecturer/proposals${query ? `?${query}` : ''}`);
+  };
+
   const { data: profile } = useMyProfile();
   const [status, setStatus] = useState<ProposalStatus | 'ALL'>('PENDING');
   const { page, setPage, resetPage } = usePagination({
@@ -148,7 +172,83 @@ export default function LecturerProposalsPage() {
           onPageChange={setPage}
         />
       )}
+
+      {/* Sheet mở trực tiếp từ query param ?id= (ví dụ từ thông báo) */}
+      {directProposal && (
+        <>
+          {directAnswering === 'accept' && (
+            <AcceptProposalDialog
+              proposal={directProposal}
+              open
+              onOpenChange={(open) => !open && setDirectAnswering(null)}
+            />
+          )}
+          {directAnswering === 'reject' && (
+            <RejectProposalDialog
+              proposal={directProposal}
+              open
+              onOpenChange={(open) => !open && setDirectAnswering(null)}
+            />
+          )}
+
+          <ProposalDetailSheet
+            proposal={directViewing ? directProposal : null}
+            onClose={handleCloseDirect}
+            counterparty={
+              <span className="inline-flex items-center gap-1.5">
+                Sinh viên: {directProposal.student.fullName} (
+                <span className="inline-flex items-center rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-primary">
+                  {directProposal.student.studentCode}
+                </span>
+                {directProposal.student.class && <span>- {directProposal.student.class}</span>})
+              </span>
+            }
+            footer={<Outcome proposal={directProposal} />}
+            actions={
+              directProposal.status === 'PENDING' && (
+                <>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setDirectViewing(false);
+                      setDirectAnswering('accept');
+                    }}
+                  >
+                    <Check />
+                    Nhận hướng dẫn
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setDirectViewing(false);
+                      setDirectAnswering('reject');
+                    }}
+                  >
+                    <X />
+                    Từ chối
+                  </Button>
+                </>
+              )
+            }
+          />
+        </>
+      )}
     </PageWithRail>
+  );
+}
+
+export default function LecturerProposalsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-16">
+          <Loader2 className="size-5 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <LecturerProposalsContent />
+    </Suspense>
   );
 }
 
