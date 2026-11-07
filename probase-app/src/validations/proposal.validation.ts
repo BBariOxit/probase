@@ -21,12 +21,11 @@ export const ProposalSchema = z.object({
     .trim()
     .min(1, 'Vui lòng nêu bạn định làm ra được gì')
     .max(3000, 'Yêu cầu đầu ra tối đa 3000 ký tự'),
-  maxStudents: z.coerce
+  maxStudents: z
     .number()
     .int()
     .min(1, 'Tối thiểu 1 sinh viên')
-    .max(10, 'Tối đa 10 sinh viên')
-    .default(1),
+    .max(10, 'Tối đa 10 sinh viên'),
 });
 
 export type ProposalFormValues = z.infer<typeof ProposalSchema>;
