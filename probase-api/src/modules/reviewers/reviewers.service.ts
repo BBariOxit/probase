@@ -151,7 +151,8 @@ export class ReviewersService {
     // 2. Truy vấn danh sách Giảng viên khả dụng để chọn phản biện
     const candidateLecturers = await this.prisma.lecturerProfile.findMany({
       where: {
-        user: { isActive: true },
+        user: { isActive: true, role: Role.LECTURER },
+        isAcademicAssistant: false,
         ...(targetMajorId ? { majorId: targetMajorId } : {}),
       },
       select: {
@@ -410,7 +411,8 @@ export class ReviewersService {
     // 2. Lấy danh sách giảng viên khả dụng
     const candidates = await this.prisma.lecturerProfile.findMany({
       where: {
-        user: { isActive: true },
+        user: { isActive: true, role: Role.LECTURER },
+        isAcademicAssistant: false,
         ...(targetMajorId ? { majorId: targetMajorId } : {}),
       },
       include: {

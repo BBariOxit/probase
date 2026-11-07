@@ -80,9 +80,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     response.status(status).json({
       success: false,
       statusCode: status,
-      ...(code && { code }),
+      ...(code ? { code } : {}),
       message,
-      ...(errors && { errors }),
+      ...(errors ? { errors } : {}),
       timestamp: new Date().toISOString(),
       path: request.url,
     });

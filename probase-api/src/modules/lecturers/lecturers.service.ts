@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, type Role } from '../../../generated/prisma/client';
+import { Prisma, Role } from '../../../generated/prisma/client';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { QueryLecturersDto } from './dto/query-lecturers.dto';
 import {
@@ -29,9 +29,9 @@ export class LecturersService {
 
   async findAll(query: QueryLecturersDto) {
     const where: Prisma.LecturerProfileWhereInput = {
-      // A locked or departed account cannot answer a proposal, so offering it
-      // as a choice only produces a wait that ends in nothing.
-      user: { isActive: true },
+      // Chỉ lấy giảng viên thực thụ tham gia hướng dẫn (loại trừ tài khoản Giáo vụ / ADMIN và tài khoản bị khóa)
+      user: { isActive: true, role: Role.LECTURER },
+      isAcademicAssistant: false,
       ...(query.q && {
         OR: [
           { fullName: { contains: query.q, mode: 'insensitive' } },
