@@ -5,10 +5,10 @@ import {
   ChevronUp,
   FileText,
   Plus,
-  Sparkles,
   Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { DEFAULT_STANDARD_MILESTONES } from '@/constants';
 
@@ -84,33 +84,36 @@ export function RoundRequirementsEditor({
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-neutral-100">
           Danh mục bài phải nộp
-          <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-semibold">
-            {requirements.length}
+          <span className="text-xs font-normal text-muted-foreground">
+            ({requirements.length})
           </span>
         </h3>
 
         <div className="flex items-center gap-2">
           {requirements.length === 0 && (
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               disabled={disabled}
               onClick={applyPreset}
-              className="flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="h-8 px-3 text-xs font-medium border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:bg-slate-50 dark:hover:bg-neutral-700 text-slate-700 dark:text-neutral-200 cursor-pointer shadow-2xs"
             >
-              Áp dụng mẫu chuẩn (4 mốc)
-            </button>
+              Áp dụng mẫu
+            </Button>
           )}
 
-          {/* Nút thêm mốc nộp bài - Màu chủ đạo primary */}
-          <button
+          {/* Nút thêm mốc nộp bài */}
+          <Button
             type="button"
+            size="sm"
             disabled={disabled}
             onClick={() => add()}
-            className="flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 px-3.5 py-1.5 text-xs font-semibold shadow-xs transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="h-8 px-3 text-xs font-semibold bg-primary text-white hover:bg-primary/90 shadow-xs cursor-pointer gap-1.5"
           >
             <Plus className="size-3.5" />
-            Thêm mốc nộp bài
-          </button>
+            <span>Thêm mốc nộp bài</span>
+          </Button>
         </div>
       </div>
 
@@ -125,23 +128,32 @@ export function RoundRequirementsEditor({
           <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-slate-200/80 dark:bg-neutral-800 text-slate-500 dark:text-neutral-400">
             <FileText className="size-5" />
           </div>
-          <div className="space-y-0.5">
+          <div>
             <p className="text-sm font-semibold text-slate-800 dark:text-neutral-200">
               Chưa có mốc nộp bài nào
             </p>
-            <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-sm mx-auto">
-              Thiết lập các mốc nộp tài liệu (Đề cương, Báo cáo tiến độ, Toàn văn) cho đợt này.
-            </p>
           </div>
-          <div>
-            <button
+          <div className="flex items-center justify-center gap-2 pt-1">
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               disabled={disabled}
               onClick={applyPreset}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="h-8 px-3.5 text-xs font-medium border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:bg-slate-50 dark:hover:bg-neutral-700 text-slate-700 dark:text-neutral-200 cursor-pointer shadow-2xs"
             >
-              Áp dụng mẫu 4 mốc chuẩn
-            </button>
+              Áp dụng mẫu
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              disabled={disabled}
+              onClick={() => add()}
+              className="h-8 px-3.5 text-xs font-semibold bg-primary text-white hover:bg-primary/90 shadow-xs cursor-pointer gap-1.5"
+            >
+              <Plus className="size-3.5" />
+              <span>Thêm mốc nộp bài</span>
+            </Button>
           </div>
         </div>
       ) : (

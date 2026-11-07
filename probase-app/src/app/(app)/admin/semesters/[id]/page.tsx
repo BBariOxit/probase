@@ -457,7 +457,8 @@ function PlanTabsForm({
     const row = formState[type.id];
     const round = byType.get(type.id);
     const locked =
-      round !== undefined && !SCHEDULE_EDITABLE.includes(round.phase);
+      round !== undefined &&
+      !(SCHEDULE_EDITABLE as readonly string[]).includes(round.phase);
 
     return { type, row, round, locked };
   });
@@ -709,13 +710,14 @@ function PlanTabsForm({
                     <p className="text-sm font-medium text-slate-700 dark:text-neutral-300">
                       {type.name} chưa kích hoạt
                     </p>
-                    <button
+                    <Button
                       type="button"
+                      size="sm"
                       onClick={() => patch(type.id, { enabled: true })}
-                      className="inline-flex items-center rounded-lg border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer"
+                      className="h-8 px-4 text-xs font-semibold shadow-xs"
                     >
                       Kích hoạt đợt
-                    </button>
+                    </Button>
                   </div>
                 ) : (
                   <>
@@ -860,14 +862,6 @@ function PlanTabsForm({
                         patch(type.id, { requirements })
                       }
                     />
-
-                    <div className="pt-2 text-xs text-slate-500 dark:text-neutral-400">
-                      Áp dụng cho đợt:{' '}
-                      <strong className="text-slate-800 dark:text-neutral-200">
-                        {type.name}{' '}
-                        {row.targetCohort ? `(${row.targetCohort})` : ''}
-                      </strong>
-                    </div>
                   </>
                 )}
               </div>
