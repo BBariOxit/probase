@@ -4,7 +4,6 @@ import { useState } from 'react';
 import {
   ArrowRight,
   CheckCircle2,
-  Info,
   Loader2,
   TriangleAlert,
   Undo2,
@@ -176,7 +175,7 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
                     ? 'hover:bg-slate-50 dark:hover:bg-[#1f2330]'
                     : 'cursor-default opacity-70',
                   stillUnplaced?.id === student.id
-                    ? 'bg-primary/10 dark:bg-primary/20 ring-2 ring-primary ring-inset'
+                    ? 'bg-slate-100 dark:bg-white/10 ring-1 ring-slate-400 dark:ring-neutral-500'
                     : '',
                 )}
               >
@@ -190,9 +189,7 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
                     {student.fullName}
                   </p>
                   <p className="truncate text-xs text-muted-foreground mt-0.5">
-                    <span className="font-mono font-semibold text-primary">
-                      {student.studentCode}
-                    </span>
+                    <span>{student.studentCode}</span>
                     {student.class && ` · ${student.class}`}
                     {student.major && ` · ${student.major.name}`}
                   </p>
@@ -229,7 +226,7 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
                       : topic.lecturer.fullName}
                   </span>
                   {' · '}
-                  <span className="font-mono font-semibold text-primary">
+                  <span>
                     {topic.occupiedSeats}/{topic.maxStudents}
                   </span>
                   {' · '}
@@ -237,7 +234,7 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
                 </p>
               </div>
 
-              <span className="shrink-0 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30 tabular-nums">
+              <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
                 còn {topic.freeSeats} chỗ
               </span>
 
@@ -274,30 +271,21 @@ function Summary({ desk }: { desk: AllocationDesk }) {
   const { summary } = desk;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-300 dark:border-neutral-800 bg-white dark:bg-[#1a1d26] px-5 py-3.5 shadow-2xs text-sm">
-      <div className="flex flex-wrap items-center gap-6">
-        <Figure
-          value={summary.unplacedCount}
-          label="sinh viên chưa có đề tài"
-        />
-        <div className="h-4 w-px bg-slate-200 dark:bg-neutral-800 hidden sm:block" />
-        <Figure value={summary.openSeats} label="chỗ trống" />
-        {summary.shortfall > 0 && (
-          <>
-            <div className="h-4 w-px bg-slate-200 dark:bg-neutral-800 hidden sm:block" />
-            <span className="inline-flex items-center gap-1.5 font-semibold text-destructive">
-              <TriangleAlert className="size-4 shrink-0" />
-              Thiếu {summary.shortfall} chỗ
-            </span>
-          </>
-        )}
-      </div>
-
-      {!desk.canPlace && desk.blockedReason && (
-        <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-slate-100/80 dark:bg-neutral-800/80 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-neutral-700">
-          <Info className="size-3.5 shrink-0 text-primary" />
-          <span>{desk.blockedReason}</span>
-        </div>
+    <div className="flex flex-wrap items-center gap-6 rounded-xl border border-slate-300 dark:border-neutral-800 bg-white dark:bg-[#1a1d26] px-5 py-3.5 shadow-2xs text-sm">
+      <Figure
+        value={summary.unplacedCount}
+        label="sinh viên chưa có đề tài"
+      />
+      <div className="h-4 w-px bg-slate-200 dark:bg-neutral-800 hidden sm:block" />
+      <Figure value={summary.openSeats} label="chỗ trống" />
+      {summary.shortfall > 0 && (
+        <>
+          <div className="h-4 w-px bg-slate-200 dark:bg-neutral-800 hidden sm:block" />
+          <span className="inline-flex items-center gap-1.5 font-semibold text-destructive">
+            <TriangleAlert className="size-4 shrink-0" />
+            Thiếu {summary.shortfall} chỗ
+          </span>
+        </>
       )}
     </div>
   );
@@ -306,8 +294,12 @@ function Summary({ desk }: { desk: AllocationDesk }) {
 function Figure({ value, label }: { value: number; label: string }) {
   return (
     <span className="inline-flex items-baseline gap-2">
-      <span className="text-xl font-bold text-primary tabular-nums">{value}</span>
-      <span className="text-sm font-medium text-slate-700 dark:text-neutral-300">{label}</span>
+      <span className="text-xl font-bold text-slate-900 dark:text-neutral-100 tabular-nums">
+        {value}
+      </span>
+      <span className="text-sm font-medium text-slate-600 dark:text-neutral-400">
+        {label}
+      </span>
     </span>
   );
 }
@@ -325,9 +317,9 @@ function Panel({
 }) {
   return (
     <section className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-800 bg-white dark:bg-[#1a1d26] shadow-2xs">
-      <h2 className="flex items-center justify-between border-b border-slate-200 dark:border-neutral-800 bg-slate-50/80 dark:bg-[#161920] px-4 py-3 text-sm font-bold text-slate-900 dark:text-neutral-100">
+      <h2 className="border-b border-slate-200 dark:border-neutral-800 bg-slate-50/80 dark:bg-[#161920] px-4 py-3 text-sm font-bold text-slate-900 dark:text-neutral-100">
         <span>{title}</span>
-        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary tabular-nums">
+        <span className="font-normal text-muted-foreground ml-1.5 tabular-nums">
           {count}
         </span>
       </h2>
@@ -355,9 +347,9 @@ function PlacementsMade({
 
   return (
     <section className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-800 bg-white dark:bg-[#1a1d26] shadow-2xs">
-      <h2 className="flex items-center justify-between border-b border-slate-200 dark:border-neutral-800 bg-slate-50/80 dark:bg-[#161920] px-4 py-3 text-sm font-bold text-slate-900 dark:text-neutral-100">
+      <h2 className="border-b border-slate-200 dark:border-neutral-800 bg-slate-50/80 dark:bg-[#161920] px-4 py-3 text-sm font-bold text-slate-900 dark:text-neutral-100">
         <span>Khoa đã xếp</span>
-        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30 tabular-nums">
+        <span className="font-normal text-muted-foreground ml-1.5 tabular-nums">
           {desk.placements.length}
         </span>
       </h2>
@@ -380,7 +372,7 @@ function PlacementsMade({
                 <span className="font-semibold text-slate-900 dark:text-neutral-100">
                   {placement.student.fullName}
                 </span>{' '}
-                <span className="font-mono text-xs font-semibold text-primary ml-1">
+                <span className="text-xs text-muted-foreground ml-1">
                   {placement.student.studentCode}
                 </span>
               </p>
