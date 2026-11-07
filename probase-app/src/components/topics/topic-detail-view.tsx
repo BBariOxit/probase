@@ -105,11 +105,6 @@ export function TopicDetailView({
           <h1 className="text-2xl sm:text-3xl font-bold font-heading text-slate-900 dark:text-neutral-50 tracking-tight leading-snug break-words [overflow-wrap:anywhere]">
             {topic.title}
           </h1>
-          {topic.titleEn && (
-            <p className="text-sm sm:text-base italic text-muted-foreground font-normal break-words [overflow-wrap:anywhere]">
-              {topic.titleEn}
-            </p>
-          )}
         </div>
 
         {/* Thông tin metadata (GVHD, Loại đồ án, Số lượng SV) */}
@@ -141,12 +136,7 @@ export function TopicDetailView({
           <div className="inline-flex items-center gap-1.5">
             <Users className="size-4 text-muted-foreground/80 shrink-0" />
             <span>
-              Tối đa {topic.maxStudents} sinh viên
-              {topic.occupiedSeats !== undefined && (
-                <span className="text-muted-foreground ml-1">
-                  (Đã nhận {topic.occupiedSeats}/{topic.maxStudents})
-                </span>
-              )}
+              Sinh viên {topic.occupiedSeats ?? 0}/{topic.maxStudents}
             </span>
           </div>
         </div>
