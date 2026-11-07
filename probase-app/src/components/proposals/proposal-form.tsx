@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { InfoTooltip } from '@/components/shared/info-tooltip';
+import { cn } from '@/lib/utils';
 
 function Field({
   label,
@@ -58,6 +59,8 @@ export function ProposalForm({
   projectTypes,
   defaultValues,
   fixed,
+  hideFixed = false,
+  className,
   submitLabel,
   draftLabel = 'Lưu bản nháp',
   children,
@@ -68,6 +71,8 @@ export function ProposalForm({
   projectTypes: ProjectType[];
   defaultValues?: Partial<ProposalFormValues>;
   fixed?: { projectType: string; lecturer: string };
+  hideFixed?: boolean;
+  className?: string;
   submitLabel: string;
   draftLabel?: string;
   children?: React.ReactNode;
@@ -112,12 +117,12 @@ export function ProposalForm({
   return (
     <form
       onSubmit={handleSubmit(submit)}
-      className="max-w-2xl space-y-5"
+      className={cn('max-w-2xl space-y-5', className)}
       noValidate
     >
       <FormError message={formError} />
 
-      {fixed ? (
+      {hideFixed ? null : fixed ? (
         <dl className="grid gap-x-6 gap-y-3 rounded-xl border bg-muted/40 px-4 py-3 sm:grid-cols-2">
           <Fact label="Loại đồ án" value={fixed.projectType} />
           <Fact label="Gửi tới" value={fixed.lecturer} />
@@ -283,12 +288,12 @@ export function ProposalForm({
         )}
         <Button
           type="button"
-          variant="destructive"
+          variant="outline"
           disabled={isSubmitting}
           onClick={onCancel}
           className="cursor-pointer font-medium"
         >
-          Huỷ
+          Hủy
         </Button>
       </div>
     </form>
