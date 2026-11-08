@@ -506,12 +506,17 @@ export class ProposalsService {
         where: { userId },
         select: { fullName: true, academicTitle: true },
       });
+      const commentPreview =
+        dto.content.trim().length > 200
+          ? `${dto.content.trim().slice(0, 200)}...`
+          : dto.content.trim();
+
       await this.notifications.notify([
         {
           userId: proposal.student.userId,
           type: 'PROPOSAL_COMMENTED',
           title: 'Nhận xét đề xuất đề tài',
-          content: `${lecturerName(lecturer ?? { fullName: 'Giảng viên', academicTitle: null })} đã gửi nhận xét cho đề xuất "${proposal.title}":\n\n"${dto.content}"`,
+          content: `${lecturerName(lecturer ?? { fullName: 'Giảng viên', academicTitle: null })} đã gửi nhận xét cho đề xuất "${proposal.title}":\n\n"${commentPreview}"`,
           targetId: proposal.id,
         },
       ]);
@@ -521,12 +526,17 @@ export class ProposalsService {
         select: { userId: true },
       });
       if (lecturer) {
+        const commentPreview =
+          dto.content.trim().length > 200
+            ? `${dto.content.trim().slice(0, 200)}...`
+            : dto.content.trim();
+
         await this.notifications.notify([
           {
             userId: lecturer.userId,
             type: 'PROPOSAL_COMMENTED',
             title: 'Phản hồi nhận xét đề xuất',
-            content: `Sinh viên ${proposal.student.fullName} (${proposal.student.studentCode}) đã phản hồi cho đề xuất "${proposal.title}":\n\n"${dto.content}"`,
+            content: `Sinh viên ${proposal.student.fullName} (${proposal.student.studentCode}) đã phản hồi cho đề xuất "${proposal.title}":\n\n"${commentPreview}"`,
             targetId: proposal.id,
           },
         ]);
