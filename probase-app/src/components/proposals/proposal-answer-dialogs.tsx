@@ -69,11 +69,10 @@ export function AcceptProposalDialog({
         if (!accept.isPending) onOpenChange(next);
       }}
     >
-      <DialogContent className="sm:max-w-[540px]">
+      <DialogContent className="sm:max-w-[520px]">
         <DialogHeader className="space-y-1">
-          <DialogTitle className="flex items-center gap-1.5 text-lg font-semibold">
+          <DialogTitle className="text-lg font-semibold text-foreground">
             Nhận hướng dẫn đề tài này?
-            <InfoTooltip text="Đề tài sẽ được tạo ở trạng thái chờ khoa duyệt, giống như đề tài bạn tự ra. Sau khi khoa duyệt và bạn mở đăng ký, sinh viên mới giữ chỗ được." />
           </DialogTitle>
           <DialogDescription className="sr-only">
             Xác nhận nhận hướng dẫn đề xuất đề tài của sinh viên
@@ -81,7 +80,7 @@ export function AcceptProposalDialog({
         </DialogHeader>
 
         {/* Thông tin sinh viên & loại đề tài */}
-        <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/40 px-3.5 py-2.5 text-xs">
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200/80 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900/40 px-3.5 py-2.5 text-xs">
           <div className="flex items-center gap-2.5 min-w-0">
             <UserAvatar
               name={proposal.student.fullName}
@@ -104,7 +103,7 @@ export function AcceptProposalDialog({
               </div>
             </div>
           </div>
-          <span className="shrink-0 rounded border bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+          <span className="shrink-0 rounded border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
             {proposal.projectType.name}
           </span>
         </div>
@@ -112,7 +111,7 @@ export function AcceptProposalDialog({
         <div className="space-y-4 pt-1">
           <FormError message={error} />
 
-          {/* Ô nhập tên đề tài chính thức dạng Textarea hiển thị đầy đủ */}
+          {/* Ô 1: Tên đề tài chính thức dạng Textarea hiển thị đầy đủ, màu nền tương phản */}
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
@@ -133,7 +132,7 @@ export function AcceptProposalDialog({
               aria-invalid={!titleValid}
               onChange={(e) => setOfficialTitle(e.target.value)}
               placeholder="Nhập tên đề tài chính thức..."
-              className="min-h-[80px] text-sm leading-relaxed resize-none break-words [overflow-wrap:anywhere]"
+              className="min-h-[84px] text-sm leading-relaxed resize-none break-words [overflow-wrap:anywhere] bg-slate-100/80 hover:bg-slate-100 focus:bg-white dark:bg-[#121212] dark:hover:bg-[#171717] dark:focus:bg-[#0c0c0c] border-slate-300 hover:border-slate-400 dark:border-neutral-700 dark:hover:border-neutral-600 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-2xs"
             />
             {!titleValid && (
               <p className="text-xs text-destructive">
@@ -142,35 +141,26 @@ export function AcceptProposalDialog({
             )}
           </div>
 
-          {/* Thiết lập số sinh viên tối đa dạng hàng ngang cân đối */}
-          <div className="rounded-lg border bg-card p-3 space-y-2">
-            <div className="flex items-center justify-between gap-3">
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-                  <Users className="size-4 text-muted-foreground shrink-0" />
-                  <Label htmlFor="maxStudents" className="cursor-pointer">
-                    Số sinh viên tối đa
-                  </Label>
-                  <InfoTooltip text="Số lượng sinh viên tối đa được phép đăng ký đề tài này (thường từ 1 - 3 sinh viên)." />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Quy mô nhóm sinh viên tham gia thực hiện đề tài
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <Input
-                  id="maxStudents"
-                  type="number"
-                  min={1}
-                  max={10}
-                  className="w-20 text-center font-semibold text-sm h-9"
-                  value={maxStudents}
-                  aria-invalid={!valid}
-                  onChange={(event) => setMaxStudents(event.target.value)}
-                />
-                <span className="text-xs font-medium text-muted-foreground">sinh viên</span>
-              </div>
+          {/* Ô 2: Số sinh viên tối đa, màu nền tương phản và cân đối */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="maxStudents" className="text-sm font-medium">
+                Số sinh viên tối đa
+              </Label>
+              <InfoTooltip text="Số lượng sinh viên tối đa được phép đăng ký đề tài này (thường từ 1 - 3 sinh viên)." />
+            </div>
+            <div className="flex items-center gap-2.5">
+              <Input
+                id="maxStudents"
+                type="number"
+                min={1}
+                max={10}
+                className="w-24 font-semibold text-sm h-9 bg-slate-100/80 hover:bg-slate-100 focus:bg-white dark:bg-[#121212] dark:hover:bg-[#171717] dark:focus:bg-[#0c0c0c] border-slate-300 hover:border-slate-400 dark:border-neutral-700 dark:hover:border-neutral-600 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-2xs"
+                value={maxStudents}
+                aria-invalid={!valid}
+                onChange={(event) => setMaxStudents(event.target.value)}
+              />
+              <span className="text-xs font-medium text-muted-foreground">sinh viên</span>
             </div>
             {!valid && (
               <p className="text-xs text-destructive">
@@ -300,7 +290,7 @@ export function RejectProposalDialog({
               value={feedback}
               aria-invalid={trimmed === ''}
               onChange={(event) => setFeedback(event.target.value)}
-              className="min-h-[96px] text-sm leading-relaxed resize-none"
+              className="min-h-[96px] text-sm leading-relaxed resize-none bg-slate-100/80 hover:bg-slate-100 focus:bg-white dark:bg-[#121212] dark:hover:bg-[#171717] dark:focus:bg-[#0c0c0c] border-slate-300 hover:border-slate-400 dark:border-neutral-700 dark:hover:border-neutral-600 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-2xs"
             />
           </div>
         </div>
