@@ -70,9 +70,9 @@ function RowActions({ topic }: { topic: TopicListItem }) {
       <div className="flex items-center gap-1.5 justify-end">
         {topic.status === 'DRAFT' && (
           <Button
-            size="sm"
-            variant="outline"
-            className="h-8 gap-1 text-xs border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+            size="xs"
+            variant="default"
+            className="h-7.5 px-2.5 gap-1.5 text-xs font-semibold shadow-xs cursor-pointer"
             disabled={transition.isPending}
             onClick={(e) => {
               e.stopPropagation();
@@ -87,7 +87,7 @@ function RowActions({ topic }: { topic: TopicListItem }) {
             ) : (
               <Send className="size-3" />
             )}
-            Gửi duyệt
+            <span>Gửi duyệt</span>
           </Button>
         )}
         <DropdownMenu>
