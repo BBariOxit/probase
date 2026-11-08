@@ -58,7 +58,7 @@ export default function StudentProposalDetailPage({
 
   const [isEditing, setIsEditing] = useState(false);
 
-  useBreadcrumbLabel(proposal?.title ? proposal.title : undefined);
+  useBreadcrumbLabel(id, proposal?.title);
 
   if (!allowed) return null;
 
