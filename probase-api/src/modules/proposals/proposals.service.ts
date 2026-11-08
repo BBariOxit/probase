@@ -872,7 +872,7 @@ export class ProposalsService {
   private async requireStudent(userId: number) {
     const student = await this.prisma.studentProfile.findUnique({
       where: { userId },
-      select: { id: true, fullName: true, cohort: true },
+      select: { id: true, fullName: true, studentCode: true, cohort: true },
     });
 
     if (!student) {
