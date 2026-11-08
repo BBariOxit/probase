@@ -246,7 +246,7 @@ export default function NotificationDetailPage() {
           <hr className="border-border my-4" />
 
           {/* Dưới gạch ngang là nội dung thông báo */}
-          <div className="text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line font-normal py-2 selection:bg-primary/20">
+          <div className="text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line font-normal py-2 selection:bg-primary/20 break-words [overflow-wrap:anywhere]">
             {notice.content}
           </div>
 

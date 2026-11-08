@@ -21,6 +21,7 @@ import {
   uniqueConstraintFields,
 } from '../../common/utils/prisma-error.util';
 import { checkClassCode } from './class-code.util';
+import { nextLecturerCodeFromList } from './lecturer-code.util';
 import {
   formatImportRowError,
   ImportRowSchema,
@@ -235,6 +236,16 @@ export class UsersService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  // ── next lecturer code ────────────────────────────────────
+
+  async getNextLecturerCode(): Promise<{ nextCode: string }> {
+    const lecturers = await this.prisma.lecturerProfile.findMany({
+      select: { lecturerCode: true },
+    });
+    const existing = lecturers.map((l) => l.lecturerCode);
+    return { nextCode: nextLecturerCodeFromList(existing) };
   }
 
   // ── findOne ───────────────────────────────────────────────
@@ -1041,10 +1052,14 @@ export class UsersService {
           },
         });
       } else if (dto.role === 'LECTURER') {
+        const lecturerCode =
+          dto.lecturerCode?.trim() ||
+          (await this.getNextLecturerCode()).nextCode;
+
         await tx.lecturerProfile.create({
           data: {
             userId: user.id,
-            lecturerCode: dto.lecturerCode,
+            lecturerCode,
             fullName: dto.fullName,
             academicTitle: dto.academicTitle,
             researchInterests: dto.researchInterests,

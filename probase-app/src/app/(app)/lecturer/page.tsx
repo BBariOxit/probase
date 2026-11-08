@@ -13,6 +13,7 @@ import {
   Search,
   Send,
   Trash2,
+  Undo2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { TopicListItem, TopicStatus } from '@/lib/api/types';
@@ -60,19 +61,27 @@ function RowActions({ topic }: { topic: TopicListItem }) {
   const transition = useTopicTransition();
   const remove = useDeleteTopic();
   const deleteDialog = useDisclosure();
+  const withdrawDialog = useDisclosure();
 
+  const isPendingReview =
+    topic.status === 'PENDING_DEPARTMENT' || topic.status === 'PENDING';
   const canEdit =
-    topic.status !== 'IN_PROGRESS' && topic.status !== 'COMPLETED';
-  const canDelete = topic.activeGroup === null;
+    !isPendingReview &&
+    topic.status !== 'IN_PROGRESS' &&
+    topic.status !== 'COMPLETED';
+  const canDelete =
+    topic.activeGroup === null &&
+    topic.status !== 'IN_PROGRESS' &&
+    topic.status !== 'COMPLETED';
 
   return (
     <>
       <div className="flex items-center gap-1.5 justify-end">
         {topic.status === 'DRAFT' && (
           <Button
-            size="sm"
-            variant="outline"
-            className="h-8 gap-1 text-xs border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+            size="xs"
+            variant="default"
+            className="h-7.5 px-2.5 gap-1.5 text-xs font-semibold shadow-xs cursor-pointer"
             disabled={transition.isPending}
             onClick={(e) => {
               e.stopPropagation();
@@ -87,7 +96,7 @@ function RowActions({ topic }: { topic: TopicListItem }) {
             ) : (
               <Send className="size-3" />
             )}
-            Gửi duyệt
+            <span>Gửi duyệt</span>
           </Button>
         )}
         <DropdownMenu>
@@ -112,8 +121,18 @@ function RowActions({ topic }: { topic: TopicListItem }) {
                     .catch(() => toast.error('Không thể gửi duyệt đề tài.'));
                 }}
               >
-                <Send />
+                <Send className="size-4" />
                 Gửi duyệt Bộ môn
+              </DropdownMenuItem>
+            )}
+
+            {isPendingReview && (
+              <DropdownMenuItem
+                onClick={withdrawDialog.onOpen}
+                className="text-amber-600 focus:text-amber-600 dark:text-amber-500 dark:focus:text-amber-500 cursor-pointer"
+              >
+                <Undo2 className="size-4" />
+                Thu hồi gửi duyệt
               </DropdownMenuItem>
             )}
 
@@ -121,7 +140,7 @@ function RowActions({ topic }: { topic: TopicListItem }) {
               <DropdownMenuItem
                 render={<Link href={`/lecturer/topics/${topic.id}?edit=true`} />}
               >
-                <Pencil />
+                <Pencil className="size-4" />
                 Sửa
               </DropdownMenuItem>
             )}
@@ -131,13 +150,31 @@ function RowActions({ topic }: { topic: TopicListItem }) {
                 variant="destructive"
                 onClick={deleteDialog.onOpen}
               >
-                <Trash2 />
+                <Trash2 className="size-4" />
                 Xoá
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <ConfirmDialog
+        open={withdrawDialog.isOpen}
+        onOpenChange={withdrawDialog.setIsOpen}
+        title="Thu hồi gửi duyệt đề tài?"
+        description={`Đề tài "${topic.title}" sẽ được chuyển về trạng thái Bản nháp để bạn có thể chỉnh sửa và gửi duyệt lại sau.`}
+        confirmLabel="Thu hồi về bản nháp"
+        onConfirm={async () => {
+          try {
+            await transition.mutateAsync({ id: topic.id, to: 'withdraw' });
+            toast.success('Đã thu hồi đề tài về bản nháp thành công.');
+          } catch (err: any) {
+            toast.error(
+              err instanceof Error ? err.message : 'Không thể thu hồi đề tài.',
+            );
+          }
+        }}
+      />
 
       <ConfirmDialog
         open={deleteDialog.isOpen}

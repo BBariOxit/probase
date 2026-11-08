@@ -88,6 +88,15 @@ export function useCreateUser() {
   });
 }
 
+export function useNextLecturerCode(enabled = false) {
+  return useQuery({
+    queryKey: ['users', 'next-lecturer-code'],
+    queryFn: () => api<{ nextCode: string }>('/users/next-lecturer-code'),
+    enabled,
+    staleTime: 0,
+  });
+}
+
 export interface UserPatch {
   email?: string;
   role?: Role;

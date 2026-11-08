@@ -89,32 +89,20 @@ export function RoundRequirementsEditor({
           </span>
         </h3>
 
-        <div className="flex items-center gap-2">
-          {requirements.length === 0 && (
+        {requirements.length > 0 && (
+          <div className="flex items-center gap-2">
             <Button
               type="button"
-              variant="outline"
               size="sm"
               disabled={disabled}
-              onClick={applyPreset}
-              className="h-8 px-3 text-xs font-medium border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:bg-slate-50 dark:hover:bg-neutral-700 text-slate-700 dark:text-neutral-200 cursor-pointer shadow-2xs"
+              onClick={() => add()}
+              className="h-8 px-3 text-xs font-semibold bg-primary text-white hover:bg-primary/90 shadow-xs cursor-pointer gap-1.5"
             >
-              Áp dụng mẫu
+              <Plus className="size-3.5" />
+              <span>Thêm mốc nộp bài</span>
             </Button>
-          )}
-
-          {/* Nút thêm mốc nộp bài */}
-          <Button
-            type="button"
-            size="sm"
-            disabled={disabled}
-            onClick={() => add()}
-            className="h-8 px-3 text-xs font-semibold bg-primary text-white hover:bg-primary/90 shadow-xs cursor-pointer gap-1.5"
-          >
-            <Plus className="size-3.5" />
-            <span>Thêm mốc nộp bài</span>
-          </Button>
-        </div>
+          </div>
+        )}
       </div>
 
       {duplicated && (

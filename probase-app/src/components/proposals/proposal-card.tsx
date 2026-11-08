@@ -63,7 +63,7 @@ export function ProposalCard({
       }}
     >
       <div className="flex items-start justify-between gap-3 min-w-0">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 space-y-3">
           {titleHref ? (
             <Link
               href={titleHref}
@@ -77,42 +77,42 @@ export function ProposalCard({
               {proposal.title}
             </h2>
           )}
+
+          <div
+            className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {counterparty}
+            <span className="inline-flex items-center gap-1.5">
+              <Layers className="size-3.5 shrink-0" />
+              {proposal.projectType.name}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Users className="size-3.5 shrink-0" />
+              {proposal.maxStudents ?? 1} SV
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <CalendarDays className="size-3.5 shrink-0" />
+              Gửi {dateFormat.format(new Date(proposal.createdAt))}
+            </span>
+            {proposal.comments && proposal.comments.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 text-primary font-medium">
+                <MessageSquare className="size-3.5 shrink-0" />
+                {proposal.comments.length} trao đổi
+              </span>
+            )}
+          </div>
+
+          <TextSection
+            title="Mô tả"
+            body={proposal.description}
+            titleAs="h3"
+            titleClassName="text-xs text-muted-foreground"
+            bodyClassName="line-clamp-3 text-foreground"
+          />
         </div>
         <ProposalStatusBadge status={proposal.status} className="shrink-0" />
       </div>
-
-      <div
-        className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {counterparty}
-        <span className="inline-flex items-center gap-1.5">
-          <Layers className="size-3.5 shrink-0" />
-          {proposal.projectType.name}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <Users className="size-3.5 shrink-0" />
-          {proposal.maxStudents ?? 1} SV
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <CalendarDays className="size-3.5 shrink-0" />
-          Gửi {dateFormat.format(new Date(proposal.createdAt))}
-        </span>
-        {proposal.comments && proposal.comments.length > 0 && (
-          <span className="inline-flex items-center gap-1.5 text-primary font-medium">
-            <MessageSquare className="size-3.5 shrink-0" />
-            {proposal.comments.length} trao đổi
-          </span>
-        )}
-      </div>
-
-      <TextSection
-        title="Mô tả"
-        body={proposal.description}
-        titleAs="h3"
-        titleClassName="text-xs text-muted-foreground"
-        bodyClassName="line-clamp-3 text-foreground"
-      />
       {/* Hide expected outcomes on card to keep it compact */}
 
       {footer && <div onClick={(e) => e.stopPropagation()}>{footer}</div>}
