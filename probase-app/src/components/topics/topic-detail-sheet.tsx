@@ -59,8 +59,13 @@ export function TopicDetailSheet({
     isLecturer &&
     (profile?.lecturer?.id === topic?.lecturer.id ||
       user?.fullName === topic?.lecturer.fullName);
+  const isPendingReview =
+    topic?.status === 'PENDING_DEPARTMENT' ||
+    topic?.status === 'PENDING' ||
+    topic?.status === 'PENDING_FACULTY';
   const canEdit =
     (isOwner || isAdmin) &&
+    !isPendingReview &&
     topic?.status !== 'IN_PROGRESS' &&
     topic?.status !== 'COMPLETED';
 

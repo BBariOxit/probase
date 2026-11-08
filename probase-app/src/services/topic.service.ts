@@ -43,7 +43,12 @@ export interface TopicInput {
 }
 
 export type TopicPatch = Partial<Omit<TopicInput, 'semesterId'>>;
-export type TopicTransition = 'submit' | 'approve' | 'open' | 'close';
+export type TopicTransition =
+  | 'submit'
+  | 'withdraw'
+  | 'approve'
+  | 'open'
+  | 'close';
 
 function toSearchParams(query: TopicQuery): string {
   const params = new URLSearchParams();

@@ -535,6 +535,15 @@ export class TopicsService {
       );
     }
 
+    if (
+      topic.status === TopicStatus.PENDING_DEPARTMENT ||
+      topic.status === TopicStatus.PENDING_FACULTY
+    ) {
+      throw new ConflictException(
+        'Đề tài đang trong quá trình thẩm định. Vui lòng thu hồi về bản nháp trước khi chỉnh sửa.',
+      );
+    }
+
     const { projectTypeId, ...rest } = dto;
 
     // Moving a topic to another kind of project moves it to another round, and
@@ -635,6 +644,46 @@ export class TopicsService {
     });
 
     return this.setStatus(id, TopicStatus.PENDING_DEPARTMENT);
+  }
+
+  async withdraw(id: number, userId: number, role: Role) {
+    const topic = await this.requireOwnTopic(id, userId, role);
+
+    if (
+      topic.status !== TopicStatus.PENDING_DEPARTMENT &&
+      topic.status !== TopicStatus.PENDING
+    ) {
+      throw new ConflictException(
+        'Chỉ có thể thu hồi đề tài đang ở trạng thái chờ Bộ môn thẩm định.',
+      );
+    }
+
+    if (topic.activeGroupCount > 0) {
+      throw new ConflictException(
+        'Không thể thu hồi đề tài đã có nhóm sinh viên đăng ký.',
+      );
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const res = await tx.topic.update({
+        where: { id },
+        data: { status: TopicStatus.DRAFT },
+        include: DETAIL_INCLUDE,
+      });
+
+      await recordAudit(tx, {
+        userId,
+        action: 'TOPIC_WITHDRAW',
+        targetTable: 'topics',
+        targetId: id,
+        oldValue: { status: topic.status },
+        newValue: { status: TopicStatus.DRAFT },
+      });
+
+      return res;
+    });
+
+    return this.presentDetail(updated);
   }
 
   async submitDrafts(userId: number, topicIds?: number[]) {

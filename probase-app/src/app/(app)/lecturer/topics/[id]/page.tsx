@@ -3,12 +3,13 @@
 import { Suspense, use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Send, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useTopic, useUpdateTopic } from '@/lib/api/topics';
+import { useTopic, useTopicTransition, useUpdateTopic } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useBreadcrumbLabel } from '@/lib/breadcrumb-context';
 import { PageHeading } from '@/components/layout/page-heading';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import {
   AttachmentUploader,
   type ExistingAttachment,
@@ -26,6 +27,8 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
   const router = useRouter();
   const { data: topic, isPending, error } = useTopic(topicId);
   const update = useUpdateTopic(topicId);
+  const transition = useTopicTransition();
+  const [confirmWithdraw, setConfirmWithdraw] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [existingFiles, setExistingFiles] = useState<ExistingAttachment[]>([]);
 
@@ -161,6 +164,9 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
     );
   }
 
+  const isPendingReview =
+    topic.status === 'PENDING_DEPARTMENT' || topic.status === 'PENDING';
+
   return (
     <div className="mx-auto max-w-4xl space-y-4">
       {/* Nút quay lại danh sách đề tài */}
@@ -177,7 +183,72 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
       </div>
 
       {/* Chi tiết nội dung đề tài */}
-      <TopicDetailView topic={topic} onEdit={() => setIsEditing(true)} />
+      <TopicDetailView
+        topic={topic}
+        onEdit={() => setIsEditing(true)}
+        actions={
+          isPendingReview ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setConfirmWithdraw(true)}
+                disabled={transition.isPending}
+                className="gap-2 font-semibold text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-500 dark:hover:bg-amber-950/30 border-amber-300 dark:border-amber-700 cursor-pointer shadow-xs"
+              >
+                {transition.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Undo2 className="size-4" />
+                )}
+                <span>Thu hồi gửi duyệt</span>
+              </Button>
+              <ConfirmDialog
+                open={confirmWithdraw}
+                onOpenChange={setConfirmWithdraw}
+                title="Thu hồi gửi duyệt đề tài?"
+                description={`Đề tài "${topic.title}" sẽ được chuyển về trạng thái Bản nháp để bạn có thể chỉnh sửa và gửi duyệt lại sau.`}
+                confirmLabel="Thu hồi về bản nháp"
+                onConfirm={async () => {
+                  try {
+                    await transition.mutateAsync({
+                      id: topic.id,
+                      to: 'withdraw',
+                    });
+                    toast.success('Đã thu hồi đề tài về bản nháp thành công.');
+                  } catch (err: any) {
+                    toast.error(
+                      err instanceof Error
+                        ? err.message
+                        : 'Không thể thu hồi đề tài.',
+                    );
+                  }
+                }}
+              />
+            </>
+          ) : topic.status === 'DRAFT' ? (
+            <Button
+              variant="default"
+              onClick={() => {
+                transition
+                  .mutateAsync({ id: topic.id, to: 'submit' })
+                  .then(() =>
+                    toast.success('Đã gửi đề tài lên Bộ môn thẩm định.'),
+                  )
+                  .catch(() => toast.error('Không thể gửi duyệt đề tài.'));
+              }}
+              disabled={transition.isPending}
+              className="gap-2 font-semibold bg-primary text-white hover:bg-primary/90 cursor-pointer shadow-xs"
+            >
+              {transition.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Send className="size-4" />
+              )}
+              <span>Gửi duyệt Bộ môn</span>
+            </Button>
+          ) : null
+        }
+      />
     </div>
   );
 }

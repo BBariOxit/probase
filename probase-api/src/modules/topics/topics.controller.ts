@@ -118,6 +118,16 @@ export class TopicsController {
     return this.topicsService.submit(id, userId);
   }
 
+  @Roles('LECTURER', 'ADMIN')
+  @Patch(':id/withdraw')
+  withdraw(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser('id') userId: number,
+    @GetUser('role') role: Role,
+  ) {
+    return this.topicsService.withdraw(id, userId, role);
+  }
+
   @Roles('ADMIN')
   @Patch(':id/close')
   close(
