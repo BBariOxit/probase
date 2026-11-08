@@ -14,15 +14,12 @@ import {
   Users,
 } from 'lucide-react';
 import { ApiError } from '@/lib/api/client';
-import { useMajors } from '@/lib/api/majors';
 import {
-  useCreateUser,
   useDeactivateUser,
   useHardDeleteUser,
   useResetUserPassword,
   useUpdateUser,
   useUsers,
-  type CreateUserInput,
 } from '@/lib/api/users';
 import type { Role, UserAccount } from '@/lib/api/types';
 import { useRequireRole } from '@/lib/auth/use-require-role';
@@ -35,6 +32,7 @@ import { FormError } from '@/components/shared/form-error';
 import { StatusPill } from '@/components/shared/status-pill';
 import { UserImportDialog } from '@/components/admin/user-import-dialog';
 import { UserProfileDialog } from '@/components/admin/user-profile-dialog';
+import { CreateUserDialog } from '@/components/admin/create-user-dialog';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -421,201 +419,6 @@ export default function AccountsPage() {
         }}
       />
     </div>
-  );
-}
-
-function CreateUserDialog({ onClose }: { onClose: () => void }) {
-  const create = useCreateUser();
-  const { data: majors } = useMajors();
-
-  const [role, setRole] = useState<Role>('STUDENT');
-  const [email, setEmail] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [code, setCode] = useState('');
-  const [className, setClassName] = useState('');
-  const [majorId, setMajorId] = useState<number | null>(null);
-  const [academicTitle, setAcademicTitle] = useState('');
-  const [error, setError] = useState<string | null>(null);
-
-  const needsProfile = role !== 'ADMIN';
-  const ready =
-    email.trim() !== '' &&
-    (!needsProfile || (fullName.trim() !== '' && code.trim() !== ''));
-
-  async function submit() {
-    setError(null);
-    try {
-      const input: CreateUserInput =
-        role === 'STUDENT'
-          ? {
-              role: 'STUDENT',
-              email: email.trim(),
-              studentCode: code.trim(),
-              fullName: fullName.trim(),
-              ...(className.trim() && { class: className.trim() }),
-              ...(majorId !== null && { majorId }),
-            }
-          : role === 'LECTURER'
-            ? {
-                role: 'LECTURER',
-                email: email.trim(),
-                lecturerCode: code.trim(),
-                fullName: fullName.trim(),
-                ...(academicTitle.trim() && {
-                  academicTitle: academicTitle.trim(),
-                }),
-              }
-            : { role: 'ADMIN', email: email.trim() };
-
-      await create.mutateAsync(input);
-      onClose();
-    } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : 'Không kết nối được máy chủ',
-      );
-    }
-  }
-
-  return (
-    <Dialog
-      open
-      onOpenChange={(next) => !next && !create.isPending && onClose()}
-    >
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Thêm tài khoản</DialogTitle>
-          <DialogDescription className="sr-only">
-            Thêm tài khoản mới
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <FormError message={error} />
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="new-role">Vai trò</Label>
-              <Select
-                value={role}
-                onValueChange={(value) => setRole(value as Role)}
-              >
-                <SelectTrigger id="new-role" className="w-full">
-                  <SelectValue>
-                    {(value) => ROLE_LABEL[value as Role]}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="STUDENT">Sinh viên</SelectItem>
-                  <SelectItem value="LECTURER">Giảng viên</SelectItem>
-                  <SelectItem value="ADMIN">Quản trị</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="new-email">Email</Label>
-              <Input
-                id="new-email"
-                type="email"
-                autoFocus
-                placeholder={
-                  role === 'STUDENT' ? '2212345@dlu.edu.vn' : 'gv001@dlu.edu.vn'
-                }
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-              />
-            </div>
-          </div>
-
-          {needsProfile && (
-            <>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="new-name">Họ và tên</Label>
-                  <Input
-                    id="new-name"
-                    value={fullName}
-                    onChange={(event) => setFullName(event.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="new-code">
-                    {role === 'STUDENT' ? 'Mã sinh viên' : 'Mã giảng viên'}
-                  </Label>
-                  <Input
-                    id="new-code"
-                    value={code}
-                    onChange={(event) => setCode(event.target.value)}
-                  />
-                </div>
-              </div>
-
-              {role === 'STUDENT' ? (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="new-class">Lớp</Label>
-                    <Input
-                      id="new-class"
-                      placeholder="CTK46"
-                      value={className}
-                      onChange={(event) => setClassName(event.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-major">Chuyên ngành</Label>
-                    <Select
-                      value={majorId}
-                      onValueChange={(value) => setMajorId(value as number)}
-                    >
-                      <SelectTrigger id="new-major" className="w-full">
-                        <SelectValue>
-                          {(value) =>
-                            majors?.find((major) => major.id === value)?.name ??
-                            'Chưa chọn'
-                          }
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {majors?.map((major) => (
-                          <SelectItem key={major.id} value={major.id}>
-                            {major.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Label htmlFor="new-title">Học hàm, học vị</Label>
-                  <Input
-                    id="new-title"
-                    className="w-40"
-                    placeholder="TS."
-                    value={academicTitle}
-                    onChange={(event) => setAcademicTitle(event.target.value)}
-                  />
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        <DialogFooter>
-          <Button
-            variant="outline"
-            disabled={create.isPending}
-            onClick={onClose}
-          >
-            Huỷ
-          </Button>
-          <Button disabled={!ready || create.isPending} onClick={submit}>
-            {create.isPending && <Loader2 className="animate-spin" />}
-            Tạo tài khoản
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 

@@ -49,6 +49,11 @@ export class UsersController {
     return this.usersService.findAll(query);
   }
 
+  @Get('next-lecturer-code')
+  getNextLecturerCode() {
+    return this.usersService.getNextLecturerCode();
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.findOne(id);
