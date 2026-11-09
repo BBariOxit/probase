@@ -8,6 +8,8 @@ import {
 } from '@tanstack/react-query';
 import {
   topicService,
+  type ExportTopicsMode,
+  type TopicExportQuery,
   type TopicInput,
   type TopicLecturer,
   type TopicPatch,
@@ -16,6 +18,8 @@ import {
 } from '@/services/topic.service';
 
 export type {
+  ExportTopicsMode,
+  TopicExportQuery,
   TopicInput,
   TopicLecturer,
   TopicPatch,
@@ -142,6 +146,12 @@ export function useBulkOpenTopics() {
     mutationFn: (semesterId?: number) => topicService.bulkOpen(semesterId),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: topicKeys.all }),
+  });
+}
+
+export function useExportTopics() {
+  return useMutation({
+    mutationFn: (query: TopicExportQuery) => topicService.exportExcel(query),
   });
 }
 

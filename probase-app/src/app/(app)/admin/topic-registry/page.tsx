@@ -30,6 +30,7 @@ import { useDebouncedValue } from '@/lib/use-debounced-value';
 import type { TopicListItem, TopicStatus } from '@/lib/api/types';
 import { useSemesters } from '@/lib/api/master-data';
 import { BulkOpenDialog } from '@/components/admin/bulk-open-dialog';
+import { TopicExportMenu } from '@/components/admin/topic-export-menu';
 import { EmptyState } from '@/components/shared/empty-state';
 import { LecturerCombobox } from '@/components/shared/lecturer-combobox';
 import { PaginationBar } from '@/components/shared/pagination-bar';
@@ -290,19 +291,34 @@ export default function AdminTopicRegistryPage() {
             )}
           </div>
 
-          <Button
-            className="ml-auto gap-2"
-            onClick={() => setBulkOpen(true)}
-            disabled={!hasActiveSemester || approvedCount === 0}
-          >
-            <Check className="size-4" />
-            Mở đăng ký đồng loạt
-            {approvedCount > 0 && (
-              <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-xs font-semibold">
-                {approvedCount}
-              </span>
-            )}
-          </Button>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <TopicExportMenu
+              semesterId={activeSemesterId}
+              semesterCode={activeSemester?.code}
+              approvedCount={approvedCount}
+              filteredCount={data?.total ?? 0}
+              filters={{
+                status: statusFilter === 'ALL' ? undefined : statusFilter,
+                lecturerId: lecturerId || undefined,
+                q: debouncedSearch || undefined,
+              }}
+              disabled={!hasActiveSemester}
+            />
+
+            <Button
+              className="gap-2 cursor-pointer"
+              onClick={() => setBulkOpen(true)}
+              disabled={!hasActiveSemester || approvedCount === 0}
+            >
+              <Check className="size-4" />
+              Mở đăng ký đồng loạt
+              {approvedCount > 0 && (
+                <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-xs font-semibold">
+                  {approvedCount}
+                </span>
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* ── Filters ── */}
