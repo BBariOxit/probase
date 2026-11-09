@@ -468,5 +468,28 @@ describe('TopicsService', () => {
       );
     });
   });
+
+  describe('update', () => {
+    it('throws ConflictException when lecturer attempts to edit a REJECTED topic', async () => {
+      prisma.topic.findUnique.mockResolvedValue({
+        id: 45,
+        status: TopicStatus.REJECTED,
+        lecturerId: 5,
+        majorId: 1,
+        semesterId: 5,
+        _count: { registrationGroups: 0 },
+      });
+      prisma.lecturerProfile.findUnique.mockResolvedValue({
+        id: 5,
+        isHeadOfDepartment: false,
+        majorId: 1,
+      });
+
+      await expect(
+        service.update(45, { title: 'Edited Title' }, 50, Role.LECTURER),
+      ).rejects.toThrow(ConflictException);
+      expect(prisma.topic.update).not.toHaveBeenCalled();
+    });
+  });
 });
 

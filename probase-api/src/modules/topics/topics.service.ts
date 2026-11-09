@@ -552,6 +552,10 @@ export class TopicsService {
       );
     }
 
+    if (topic.status === TopicStatus.REJECTED) {
+      throw new ConflictException('Đề tài đã bị từ chối, không thể chỉnh sửa.');
+    }
+
     const { projectTypeId, ...rest } = dto;
 
     // Moving a topic to another kind of project moves it to another round, and
