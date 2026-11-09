@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import {
   BookMarked,
+  CalendarRange,
   Check,
   Eye,
   Loader2,
@@ -26,7 +27,7 @@ import {
 } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
-import type { Semester, TopicListItem, TopicStatus } from '@/lib/api/types';
+import type { TopicListItem, TopicStatus } from '@/lib/api/types';
 import { useSemesters } from '@/lib/api/master-data';
 import { BulkOpenDialog } from '@/components/admin/bulk-open-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -205,40 +206,72 @@ export default function AdminTopicRegistryPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<TopicStatus | 'ALL'>('ALL');
-  const [semesterId, setSemesterId] = useState<number | undefined>(undefined);
   const [lecturerId, setLecturerId] = useState(0);
   const [bulkOpen, setBulkOpen] = useState(false);
 
   const debouncedSearch = useDebouncedValue(search);
-  const { data: semestersData } = useSemesters();
-  const semesters: Semester[] = semestersData ?? [];
-  const { data: lecturers } = useTopicLecturers(semesterId, {
-    enabled: allowed,
+  const {
+    data: semestersData,
+    isPending: isSemestersPending,
+    error: semestersError,
+  } = useSemesters();
+  const activeSemester = semestersData?.find((s) => s.isActive);
+  const activeSemesterId = activeSemester?.id;
+  const hasActiveSemester = activeSemesterId !== undefined;
+
+  const { data: lecturers } = useTopicLecturers(activeSemesterId, {
+    enabled: allowed && hasActiveSemester,
   });
 
-  const { data, isPending, error } = useTopics({
-    status: statusFilter === 'ALL' ? undefined : statusFilter,
-    semesterId,
-    lecturerId: lecturerId || undefined,
-    q: debouncedSearch || undefined,
-    page,
-    limit: PAGE_SIZE,
-  });
+  const { data, isPending, error } = useTopics(
+    {
+      status: statusFilter === 'ALL' ? undefined : statusFilter,
+      semesterId: activeSemesterId,
+      lecturerId: lecturerId || undefined,
+      q: debouncedSearch || undefined,
+      page,
+      limit: PAGE_SIZE,
+    },
+    { enabled: allowed && hasActiveSemester },
+  );
 
-  // Count of APPROVED topics in selected semester for the bulk-open dialog.
-  const { data: approvedData } = useTopics({
-    status: 'APPROVED',
-    semesterId,
-    limit: 1,
-  });
-  const approvedCount = approvedData?.total ?? 0;
+  // Count of APPROVED topics in active semester for the bulk-open dialog.
+  const { data: approvedData } = useTopics(
+    {
+      status: 'APPROVED',
+      semesterId: activeSemesterId,
+      limit: 1,
+    },
+    { enabled: allowed && hasActiveSemester },
+  );
+  const approvedCount = hasActiveSemester ? (approvedData?.total ?? 0) : 0;
 
-  const selectedSemester = semesters.find((s) => s.id === semesterId);
   const hasFilters = Boolean(
-    debouncedSearch || semesterId || statusFilter !== 'ALL' || lecturerId !== 0,
+    debouncedSearch || statusFilter !== 'ALL' || lecturerId !== 0,
   );
 
   if (!allowed) return null;
+
+  if (!isSemestersPending && !semestersError && !activeSemester) {
+    return (
+      <div className="w-full min-w-0 space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-lg font-semibold">Quản lý đề tài</h1>
+        </div>
+        <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
+          <EmptyState
+            icon={CalendarRange}
+            title="Chưa có học kỳ nào đang mở. Vui lòng kích hoạt một học kỳ để quản lý đề tài."
+            action={
+              <Button render={<Link href="/admin/semesters" />} size="sm">
+                Đi tới quản lý học kỳ
+              </Button>
+            }
+          />
+        </div>
+      </div>
+    );
+  }
 
   const topics = data?.items ?? [];
 
@@ -247,12 +280,20 @@ export default function AdminTopicRegistryPage() {
       <div className="w-full min-w-0 space-y-4">
         {/* ── Header ── */}
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-lg font-semibold">Quản lý đề tài</h1>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-lg font-semibold">Quản lý đề tài</h1>
+            {activeSemester && (
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 dark:border-neutral-700 bg-slate-100/80 dark:bg-neutral-800/80 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:text-neutral-300">
+                <CalendarRange className="size-3.5 text-primary shrink-0" />
+                {activeSemester.name}
+              </span>
+            )}
+          </div>
 
           <Button
             className="ml-auto gap-2"
             onClick={() => setBulkOpen(true)}
-            disabled={approvedCount === 0}
+            disabled={!hasActiveSemester || approvedCount === 0}
           >
             <Check className="size-4" />
             Mở đăng ký đồng loạt
@@ -279,33 +320,6 @@ export default function AdminTopicRegistryPage() {
               aria-label="Tìm đề tài"
             />
           </div>
-
-          <Select
-            value={semesterId ? semesterId.toString() : 'ALL'}
-            onValueChange={(v) => {
-              setSemesterId(v === 'ALL' ? undefined : Number(v));
-              setLecturerId(0);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-[280px]" aria-label="Lọc theo học kỳ">
-              <SelectValue>
-                {(value) =>
-                  value === 'ALL'
-                    ? 'Tất cả học kỳ'
-                    : semesters.find((s) => s.id.toString() === value)?.name
-                }
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Tất cả học kỳ</SelectItem>
-              {semesters.map((s) => (
-                <SelectItem key={s.id} value={s.id.toString()}>
-                  {s.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
           <Select
             value={statusFilter}
@@ -353,7 +367,7 @@ export default function AdminTopicRegistryPage() {
           )}
         </div>
 
-        {error && (
+        {(semestersError || error) && (
           <p className="text-sm text-destructive">Không tải được danh sách.</p>
         )}
 
@@ -457,24 +471,27 @@ export default function AdminTopicRegistryPage() {
             </TableBody>
           </Table>
 
-          {isPending && (
+          {(isSemestersPending || (hasActiveSemester && isPending)) && (
             <div className="flex justify-center py-14">
               <Loader2 className="size-5 animate-spin text-muted-foreground" />
             </div>
           )}
 
-          {!isPending && topics.length === 0 && (
-            <EmptyState
-              icon={BookMarked}
-              title={
-                debouncedSearch
-                  ? 'Không có đề tài nào khớp từ khoá.'
-                  : hasFilters
-                    ? 'Không có đề tài nào khớp bộ lọc.'
-                    : 'Không có đề tài nào.'
-              }
-            />
-          )}
+          {!isSemestersPending &&
+            !(hasActiveSemester && isPending) &&
+            !semestersError &&
+            topics.length === 0 && (
+              <EmptyState
+                icon={BookMarked}
+                title={
+                  debouncedSearch
+                    ? 'Không có đề tài nào khớp từ khoá.'
+                    : hasFilters
+                      ? 'Không có đề tài nào khớp bộ lọc.'
+                      : 'Chưa có đề tài nào trong học kỳ hiện tại.'
+                }
+              />
+            )}
         </div>
 
         {data && (
@@ -490,8 +507,8 @@ export default function AdminTopicRegistryPage() {
           open={bulkOpen}
           onOpenChange={setBulkOpen}
           approvedCount={approvedCount}
-          semesterId={semesterId}
-          semesterName={selectedSemester?.name ?? 'Tất cả học kỳ'}
+          semesterId={activeSemesterId}
+          semesterName={activeSemester?.name ?? 'Học kỳ hiện tại'}
         />
       </div>
     </TooltipProvider>
