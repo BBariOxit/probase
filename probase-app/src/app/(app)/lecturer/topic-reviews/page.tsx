@@ -136,7 +136,7 @@ export default function LecturerTopicReviewsPage() {
                 <TableCell className="w-[340px] max-w-[380px] min-w-[280px] px-5 py-3.5 align-middle font-medium whitespace-normal">
                   <div className="w-full max-w-[380px] whitespace-normal">
                     <Link
-                      href={`/lecturer/topics/${topic.id}`}
+                      href={`/lecturer/topics/${topic.id}?from=topic-reviews`}
                       className="line-clamp-2 font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal"
                       title={topic.title}
                       onClick={(e) => {

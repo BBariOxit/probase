@@ -1,14 +1,29 @@
 'use client';
 
-import { Suspense, use, useState } from 'react';
+import { Suspense, use, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, ClipboardCheck, Loader2, Send, Undo2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  Check,
+  Loader2,
+  MessageSquareText,
+  RotateCcw,
+  Send,
+  Undo2,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useMyProfile } from '@/lib/api/me';
-import { useTopic, useTopicTransition, useUpdateTopic } from '@/lib/api/topics';
+import {
+  useDepartmentReviewTopic,
+  useTopic,
+  useTopicTransition,
+  useUpdateTopic,
+} from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useBreadcrumbLabel } from '@/lib/breadcrumb-context';
+import { sanitizeLecturerName } from '@/lib/utils';
 import { PageHeading } from '@/components/layout/page-heading';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import {
@@ -17,9 +32,10 @@ import {
 } from '@/components/shared/attachment-uploader';
 import { TopicDetailView } from '@/components/topics/topic-detail-view';
 import { TopicForm } from '@/components/topics/topic-form';
-import { TopicReviewSheet } from '@/components/topics/topic-review-sheet';
 import { TopicStatusBadge } from '@/components/topics/topic-status-badge';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 type RawTopicAttachment = {
   id: number | string;
@@ -41,17 +57,32 @@ type TopicWithAttachments = {
 function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
   const searchParams = useSearchParams();
   const isEditing = searchParams.get('edit') === 'true';
+  const fromTopicReviews = searchParams.get('from') === 'topic-reviews';
+  const backHref = fromTopicReviews ? '/lecturer/topic-reviews' : '/lecturer';
+  const backLabel = fromTopicReviews
+    ? 'Quay lại duyệt đề tài'
+    : 'Quay lại danh sách đề tài';
   const router = useRouter();
   const { data: profile } = useMyProfile();
   const { data: topic, isPending, error } = useTopic(topicId);
   const update = useUpdateTopic(topicId);
   const transition = useTopicTransition();
+  const departmentReview = useDepartmentReviewTopic();
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
-  const [reviewOpen, setReviewOpen] = useState(false);
+  const [draftFeedback, setDraftFeedback] = useState<{
+    topicId: number | null;
+    text: string;
+  }>({ topicId: null, text: '' });
+  const [actionInProgress, setActionInProgress] = useState<
+    'APPROVE' | 'REQUEST_REVISION' | 'REJECT' | null
+  >(null);
+  const feedbackRef = useRef<HTMLTextAreaElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [deletedFileIds, setDeletedFileIds] = useState<Array<number | string>>(
     [],
   );
+
+  const feedback = draftFeedback.topicId === topicId ? draftFeedback.text : '';
 
   // Swap the raw ID in the breadcrumb for the topic title once it loads.
   useBreadcrumbLabel(String(topicId), topic?.title);
@@ -62,10 +93,10 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
         <Button
           variant="default"
           size="sm"
-          render={<Link href="/lecturer" />}
+          render={<Link href={backHref} />}
           className="gap-2 cursor-pointer shadow-xs font-semibold"
         >
-          <ArrowLeft className="size-4" /> Quay lại danh sách đề tài
+          <ArrowLeft className="size-4" /> {backLabel}
         </Button>
         <div className="rounded-2xl border border-border bg-card p-12 text-center shadow-xs">
           <Loader2 className="mx-auto size-7 animate-spin text-primary" />
@@ -83,10 +114,10 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
         <Button
           variant="default"
           size="sm"
-          render={<Link href="/lecturer" />}
+          render={<Link href={backHref} />}
           className="gap-2 cursor-pointer shadow-xs font-semibold"
         >
-          <ArrowLeft className="size-4" /> Quay lại danh sách đề tài
+          <ArrowLeft className="size-4" /> {backLabel}
         </Button>
         <div className="rounded-2xl border border-border bg-card p-12 text-center shadow-xs">
           <p className="text-sm text-destructive font-medium">
@@ -132,6 +163,27 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
           />
           <TopicStatusBadge status={topic.status} className="mt-1.5" />
         </div>
+
+        {topic.departmentFeedback && (
+          <div className="rounded-xl border border-amber-200/80 dark:border-amber-800/50 bg-amber-50/70 dark:bg-amber-950/20 px-4 py-3 space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+              <MessageSquareText className="size-3.5 shrink-0" />
+              <span>
+                Góp ý từ Bộ môn
+                {topic.departmentReviewer &&
+                  ` (${
+                    sanitizeLecturerName(
+                      topic.departmentReviewer.fullName,
+                      topic.departmentReviewer.academicTitle,
+                    ).displayName
+                  })`}
+              </span>
+            </p>
+            <p className="text-sm leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line break-words [overflow-wrap:anywhere]">
+              {topic.departmentFeedback}
+            </p>
+          </div>
+        )}
 
         <TopicForm
           defaultValues={{
@@ -192,6 +244,43 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
     canDepartmentReview ||
     (isOwner && (isPendingReview || topic.status === 'DRAFT'));
 
+  async function handleDepartmentAction(
+    action: 'APPROVE' | 'REQUEST_REVISION' | 'REJECT',
+  ) {
+    if (!topic) return;
+
+    if (action !== 'APPROVE' && !feedback.trim()) {
+      toast.error('Vui lòng nhập nhận xét để phản hồi cho giảng viên.');
+      feedbackRef.current?.focus();
+      return;
+    }
+
+    try {
+      setActionInProgress(action);
+      await departmentReview.mutateAsync({
+        id: topic.id,
+        data: {
+          action,
+          feedback: feedback.trim() || undefined,
+        },
+      });
+
+      const messages = {
+        APPROVE: 'Đã duyệt đề tài. Đề tài sẵn sàng để Giáo vụ mở đăng ký.',
+        REQUEST_REVISION: 'Đã yêu cầu giảng viên chỉnh sửa lại đề tài.',
+        REJECT: 'Đã từ chối đề tài.',
+      };
+      toast.success(messages[action]);
+      setDraftFeedback({ topicId: null, text: '' });
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error ? err.message : 'Có lỗi xảy ra khi duyệt đề tài.',
+      );
+    } finally {
+      setActionInProgress(null);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-4xl space-y-4">
       {/* Nút quay lại danh sách đề tài */}
@@ -199,11 +288,11 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
         <Button
           variant="default"
           size="sm"
-          render={<Link href="/lecturer" />}
+          render={<Link href={backHref} />}
           className="gap-2 cursor-pointer shadow-xs font-semibold"
         >
           <ArrowLeft className="size-4" />
-          <span>Quay lại danh sách đề tài</span>
+          <span>{backLabel}</span>
         </Button>
       </div>
 
@@ -215,18 +304,81 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
             ? () => router.replace(`/lecturer/topics/${topicId}?edit=true`)
             : undefined
         }
+        extraContent={
+          canDepartmentReview ? (
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Label
+                  htmlFor="department-review-feedback"
+                  className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2"
+                >
+                  <MessageSquareText className="size-4 text-primary shrink-0" />
+                  <span>Nhận xét chuyên môn (TTBM)</span>
+                </Label>
+                <span className="text-xs text-muted-foreground">
+                  Bắt buộc khi Yêu cầu sửa hoặc Từ chối
+                </span>
+              </div>
+              <Textarea
+                ref={feedbackRef}
+                id="department-review-feedback"
+                rows={3}
+                value={feedback}
+                disabled={departmentReview.isPending}
+                onChange={(e) =>
+                  setDraftFeedback({ topicId: topic.id, text: e.target.value })
+                }
+                placeholder="Nhập nhận xét hoặc góp ý để giảng viên chỉnh sửa đề tài…"
+                className="resize-y text-sm"
+              />
+            </div>
+          ) : undefined
+        }
         actions={
           hasActions ? (
             <>
               {canDepartmentReview && (
-                <Button
-                  variant="default"
-                  onClick={() => setReviewOpen(true)}
-                  className="gap-2 font-semibold bg-primary text-white hover:bg-primary/90 cursor-pointer shadow-xs"
-                >
-                  <ClipboardCheck className="size-4" />
-                  <span>Duyệt đề tài</span>
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    disabled={departmentReview.isPending}
+                    onClick={() => handleDepartmentAction('REJECT')}
+                    className="gap-1.5 font-semibold border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer shadow-xs"
+                  >
+                    {actionInProgress === 'REJECT' ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <X className="size-4" />
+                    )}
+                    <span>Từ chối</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={departmentReview.isPending}
+                    onClick={() => handleDepartmentAction('REQUEST_REVISION')}
+                    className="gap-1.5 font-semibold cursor-pointer shadow-xs"
+                  >
+                    {actionInProgress === 'REQUEST_REVISION' ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <RotateCcw className="size-4" />
+                    )}
+                    <span>Yêu cầu sửa</span>
+                  </Button>
+                  <Button
+                    variant="default"
+                    disabled={departmentReview.isPending}
+                    onClick={() => handleDepartmentAction('APPROVE')}
+                    className="gap-1.5 font-semibold bg-primary text-white hover:bg-primary/90 cursor-pointer shadow-xs"
+                  >
+                    {actionInProgress === 'APPROVE' ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Check className="size-4" />
+                    )}
+                    <span>Duyệt</span>
+                  </Button>
+                </>
               )}
 
               {isOwner && isPendingReview && (
@@ -296,13 +448,6 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
             </>
           ) : null
         }
-      />
-
-      <TopicReviewSheet
-        topicId={reviewOpen ? topic.id : null}
-        onClose={() => setReviewOpen(false)}
-        stage="DEPARTMENT"
-        isHeadOfDepartment={isHeadOfDepartment}
       />
     </div>
   );
