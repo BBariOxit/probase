@@ -45,7 +45,6 @@ export type TopicPatch = Partial<Omit<TopicInput, 'semesterId'>>;
 export type TopicTransition =
   | 'submit'
   | 'withdraw'
-  | 'approve'
   | 'open'
   | 'close';
 

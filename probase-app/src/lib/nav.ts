@@ -168,20 +168,14 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
       label: 'Vận hành',
       items: [
         {
-          href: '/admin',
-          label: 'Duyệt đề tài',
-          icon: ClipboardCheck,
-          ready: true,
-        },
-        {
           href: '/admin/topic-registry',
           label: 'Quản lý đề tài',
           icon: LibraryBig,
           ready: true,
         },
-        // Between approving topics and running councils, which is where it sits
-        // in the term as well: it is the work that turns a closed registration
-        // window into the list everything afterwards is built on.
+        // Between TTBM-approved topics and running councils, which is where
+        // it sits in the term as well: it is the work that turns a closed
+        // registration window into the list everything afterwards is built on.
         {
           href: '/admin/allocations',
           label: 'Phân bổ đề tài',
@@ -295,6 +289,7 @@ const TITLE_BY_PREFIX: { prefix: string; label: string }[] = [
   // "/lecturers" (the list) and "/lecturers/42" (one person) both say
   // "Giảng viên" because the sub-page is the person, not a new section.
   { prefix: '/lecturers', label: 'Giảng viên' },
+  { prefix: '/admin/topics', label: 'Chi tiết đề tài' },
 ];
 
 export function topicHref(role: Role, topicId: number): string {
@@ -345,6 +340,7 @@ export function breadcrumbsFor(
   // appear as nav items (because they are reached from content links rather
   // than the sidebar).
   const STATIC_SEGMENT_LABELS: Record<string, string> = {
+    admin: 'Quản trị',
     moi: 'Tạo mới',
     new: 'Tạo mới',
     topics: 'Đề tài',

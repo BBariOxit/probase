@@ -135,10 +135,48 @@ describe('TopicsService', () => {
         }),
       );
     });
+
+    it('throws ForbiddenException when ADMIN requests reviewStage queue', async () => {
+      await expect(
+        service.findAll(
+          {
+            reviewStage: 'DEPARTMENT',
+            mine: false,
+            forMyCohort: false,
+            page: 1,
+            limit: 10,
+          },
+          1,
+          Role.ADMIN,
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('returns APPROVED topics for ADMIN topic registry without reviewStage', async () => {
+      await service.findAll(
+        {
+          status: TopicStatus.APPROVED,
+          mine: false,
+          forMyCohort: false,
+          page: 1,
+          limit: 15,
+        },
+        1,
+        Role.ADMIN,
+      );
+
+      expect(prisma.topic.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: { equals: TopicStatus.APPROVED },
+          }),
+        }),
+      );
+    });
   });
 
   describe('reviewDepartment', () => {
-    it('throws ForbiddenException when caller is neither TTBM nor ADMIN', async () => {
+    it('throws ForbiddenException when caller is a regular lecturer (not TTBM)', async () => {
       await expect(
         service.reviewDepartment(
           38,
@@ -147,6 +185,20 @@ describe('TopicsService', () => {
             id: 5,
             role: Role.LECTURER,
             lecturerProfile: { id: 5, isHeadOfDepartment: false, majorId: 1 },
+          },
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws ForbiddenException when caller is ADMIN (Giáo vụ cannot review topics)', async () => {
+      await expect(
+        service.reviewDepartment(
+          38,
+          { action: 'APPROVE' },
+          {
+            id: 1,
+            role: Role.ADMIN,
+            lecturerProfile: null,
           },
         ),
       ).rejects.toThrow(ForbiddenException);

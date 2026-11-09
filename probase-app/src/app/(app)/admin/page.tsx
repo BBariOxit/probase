@@ -1,175 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { ClipboardCheck, Eye, Loader2, Search } from 'lucide-react';
-import { useTopics } from '@/lib/api/topics';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useRequireRole } from '@/lib/auth/use-require-role';
-import { useDebouncedValue } from '@/lib/use-debounced-value';
-import { EmptyState } from '@/components/shared/empty-state';
-import { PaginationBar } from '@/components/shared/pagination-bar';
-import { TopicReviewModal } from '@/components/topics/topic-review-modal';
-import { TopicStatusBadge } from '@/components/topics/topic-status-badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 
-const PAGE_SIZE = 10;
-
-const dateFormat = new Intl.DateTimeFormat('vi-VN', {
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-});
-
-export default function AdminTopicQueuePage() {
+export default function AdminLandingPage() {
   const allowed = useRequireRole('ADMIN');
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
-  const debouncedSearch = useDebouncedValue(search);
+  const router = useRouter();
 
-  const { data, isPending, error } = useTopics({
-    reviewStage: 'DEPARTMENT',
-    page,
-    limit: PAGE_SIZE,
-    q: debouncedSearch || undefined,
-  });
+  useEffect(() => {
+    if (allowed) {
+      router.replace('/admin/topic-registry');
+    }
+  }, [allowed, router]);
 
-  if (!allowed) return null;
-
-  const topics = data?.items ?? [];
-
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-52 flex-1 sm:max-w-xs">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
-              setPage(1);
-            }}
-            placeholder="Tìm theo tên đề tài…"
-            className="pl-8"
-            aria-label="Tìm đề tài"
-          />
-        </div>
-
-        {data && (
-          <span className="ml-auto text-sm text-muted-foreground">
-            {data.total} đề tài chờ duyệt
-          </span>
-        )}
-      </div>
-
-      {error && (
-        <p className="text-sm text-destructive">Không tải được hàng chờ.</p>
-      )}
-
-      <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
-        <Table className="w-full min-w-[920px] table-fixed text-left text-sm">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[340px] max-w-[380px] min-w-[260px]">Tiêu đề</TableHead>
-              <TableHead className="w-44 whitespace-nowrap">Giảng viên</TableHead>
-              <TableHead className="w-36 whitespace-nowrap">Loại đồ án</TableHead>
-              <TableHead className="w-36 whitespace-nowrap">Trạng thái</TableHead>
-              <TableHead className="w-28 whitespace-nowrap">Ngày gửi</TableHead>
-              <TableHead className="w-32 text-right whitespace-nowrap" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {topics.map((topic) => (
-              <TableRow
-                key={topic.id}
-                className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
-                onClick={() => setSelectedTopicId(topic.id)}
-              >
-                <TableCell className="w-[340px] max-w-[380px] min-w-[260px] font-medium whitespace-normal">
-                  <div className="w-full max-w-[380px] whitespace-normal">
-                    <Link
-                      href={`/admin/topics/${topic.id}`}
-                      className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal line-clamp-2"
-                      title={topic.title}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
-                    >
-                      {topic.title}
-                    </Link>
-                  </div>
-                </TableCell>
-                <TableCell className="w-44 whitespace-nowrap text-slate-800 dark:text-neutral-200 font-medium">
-                  {topic.lecturer.fullName}
-                </TableCell>
-                <TableCell className="w-36 whitespace-nowrap text-slate-700 dark:text-neutral-300 font-medium">
-                  {topic.projectType.name}
-                </TableCell>
-                <TableCell className="w-36 whitespace-nowrap">
-                  <TopicStatusBadge status={topic.status} />
-                </TableCell>
-                <TableCell className="w-28 whitespace-nowrap text-muted-foreground tabular-nums">
-                  {dateFormat.format(new Date(topic.createdAt))}
-                </TableCell>
-                <TableCell
-                  className="w-32 text-right whitespace-nowrap"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Button
-                    size="sm"
-                    onClick={() => setSelectedTopicId(topic.id)}
-                    className="cursor-pointer gap-1.5"
-                  >
-                    <Eye className="size-3.5" />
-                    Thẩm định
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        {isPending && (
-          <div className="flex justify-center py-14">
-            <Loader2 className="size-5 animate-spin text-muted-foreground" />
-          </div>
-        )}
-
-        {!isPending && topics.length === 0 && (
-          <EmptyState
-            icon={ClipboardCheck}
-            title={
-              debouncedSearch
-                ? 'Không có đề tài nào khớp từ khoá.'
-                : 'Không còn đề tài nào chờ duyệt.'
-            }
-          />
-        )}
-      </div>
-
-      {data && (
-        <PaginationBar
-          page={data.page}
-          totalPages={data.totalPages}
-          onPageChange={setPage}
-        />
-      )}
-
-      <TopicReviewModal
-        topicId={selectedTopicId}
-        onClose={() => setSelectedTopicId(null)}
-        stage="DEPARTMENT"
-        isAdmin
-      />
-    </div>
-  );
+  return null;
 }

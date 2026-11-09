@@ -1,13 +1,13 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ClipboardCheck, Loader2 } from 'lucide-react';
-import { useTopic } from '@/lib/api/topics';
+import { ArrowLeft, Loader2, Lock, LockOpen } from 'lucide-react';
+import { toast } from 'sonner';
+import { useTopic, useTopicTransition } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useBreadcrumbLabel } from '@/lib/breadcrumb-context';
 import { TopicDetailView } from '@/components/topics/topic-detail-view';
-import { TopicReviewModal } from '@/components/topics/topic-review-modal';
 import { Button } from '@/components/ui/button';
 
 export default function AdminTopicDetailPage({
@@ -18,7 +18,7 @@ export default function AdminTopicDetailPage({
   const { id } = use(params);
   const allowed = useRequireRole('ADMIN');
   const { data: topic, isPending, error } = useTopic(Number(id));
-  const [reviewOpen, setReviewOpen] = useState(false);
+  const transition = useTopicTransition();
 
   // Swap the raw ID in the breadcrumb for the topic title once it loads.
   useBreadcrumbLabel(id, topic?.title);
@@ -66,9 +66,6 @@ export default function AdminTopicDetailPage({
     );
   }
 
-  const canReview =
-    topic.status === 'PENDING_DEPARTMENT' || topic.status === 'PENDING';
-
   return (
     <div className="mx-auto max-w-4xl space-y-4">
       {/* Top Navigation */}
@@ -87,23 +84,45 @@ export default function AdminTopicDetailPage({
       <TopicDetailView
         topic={topic}
         actions={
-          canReview ? (
+          topic.status === 'APPROVED' ? (
             <Button
-              onClick={() => setReviewOpen(true)}
+              disabled={transition.isPending}
+              onClick={() =>
+                transition
+                  .mutateAsync({ id: topic.id, to: 'open' })
+                  .then(() => toast.success('Đã mở đăng ký đề tài.'))
+                  .catch(() => toast.error('Không thực hiện được.'))
+              }
               className="gap-1.5 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
             >
-              <ClipboardCheck className="size-4" />
-              <span>Thẩm định đề tài</span>
+              {transition.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <LockOpen className="size-4" />
+              )}
+              <span>Mở đăng ký</span>
+            </Button>
+          ) : topic.status === 'OPEN' ? (
+            <Button
+              variant="outline"
+              disabled={transition.isPending}
+              onClick={() =>
+                transition
+                  .mutateAsync({ id: topic.id, to: 'close' })
+                  .then(() => toast.success('Đã đóng đăng ký đề tài.'))
+                  .catch(() => toast.error('Không thực hiện được.'))
+              }
+              className="gap-1.5 font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30 shadow-xs cursor-pointer"
+            >
+              {transition.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Lock className="size-4" />
+              )}
+              <span>Đóng đăng ký</span>
             </Button>
           ) : undefined
         }
-      />
-
-      <TopicReviewModal
-        topicId={reviewOpen ? topic.id : null}
-        onClose={() => setReviewOpen(false)}
-        stage="DEPARTMENT"
-        isAdmin
       />
     </div>
   );

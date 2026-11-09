@@ -97,12 +97,6 @@ export class TopicsController {
   }
 
   @Roles('ADMIN')
-  @Patch(':id/approve')
-  approve(@Param('id', ParseIntPipe) id: number) {
-    return this.topicsService.approve(id);
-  }
-
-  @Roles('ADMIN')
   @Patch(':id/open')
   open(
     @Param('id', ParseIntPipe) id: number,
@@ -138,7 +132,7 @@ export class TopicsController {
     return this.topicsService.close(id, userId, role);
   }
 
-  @Roles('LECTURER', 'ADMIN')
+  @Roles('LECTURER')
   @Patch(':id/department-review')
   reviewDepartment(
     @Param('id', ParseIntPipe) id: number,

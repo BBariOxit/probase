@@ -47,7 +47,6 @@ interface TopicReviewModalProps {
   // Can explicitly override stage, or auto-detect from topic.status
   stage?: 'DEPARTMENT' | 'AUTO';
   isHeadOfDepartment?: boolean;
-  isAdmin?: boolean;
 }
 
 export function TopicReviewModal({
@@ -55,7 +54,6 @@ export function TopicReviewModal({
   onClose,
   stage = 'AUTO',
   isHeadOfDepartment = false,
-  isAdmin = false,
 }: TopicReviewModalProps) {
   if (!topicId) return null;
 
@@ -66,7 +64,6 @@ export function TopicReviewModal({
       onClose={onClose}
       stage={stage}
       isHeadOfDepartment={isHeadOfDepartment}
-      isAdmin={isAdmin}
     />
   );
 }
@@ -76,7 +73,6 @@ function TopicReviewModalContent({
   onClose,
   stage = 'AUTO',
   isHeadOfDepartment = false,
-  isAdmin = false,
 }: Omit<TopicReviewModalProps, 'topicId'> & { topicId: number }) {
   const { data: topic, isPending } = useTopic(topicId);
   const similarityQuery = useTopicSimilarity(topicId, {
@@ -89,13 +85,13 @@ function TopicReviewModalContent({
   const [feedback, setFeedback] = useState('');
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
 
-  // Determine which review stage is applicable
+  // Only Tổ trưởng Bộ môn (TTBM) can act on topics pending department review.
   const currentStatus: TopicStatus | undefined = topic?.status;
   const isDepartmentStage =
-    stage === 'DEPARTMENT' ||
-    (stage === 'AUTO' &&
-      (currentStatus === 'PENDING_DEPARTMENT' || currentStatus === 'PENDING') &&
-      (isHeadOfDepartment || isAdmin));
+    !isPending &&
+    isHeadOfDepartment &&
+    (stage === 'DEPARTMENT' || stage === 'AUTO') &&
+    (currentStatus === 'PENDING_DEPARTMENT' || currentStatus === 'PENDING');
 
   const isMutating = departmentReview.isPending;
 

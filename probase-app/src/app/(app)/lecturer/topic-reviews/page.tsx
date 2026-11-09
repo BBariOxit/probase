@@ -46,9 +46,8 @@ import { cn } from '@/lib/utils';
 type ReviewTab = 'DEPARTMENT' | 'ALL';
 
 export default function LecturerTopicReviewsPage() {
-  const allowed = useRequireRole(['LECTURER', 'ADMIN']);
+  const allowed = useRequireRole('LECTURER');
   const user = useSession((s) => s.user);
-  const isAdmin = user?.role === 'ADMIN';
   const { data: profile, isPending: isProfilePending } = useMyProfile({
     enabled: user?.role === 'LECTURER',
   });
@@ -56,7 +55,6 @@ export default function LecturerTopicReviewsPage() {
   const isProfileLoading = user?.role === 'LECTURER' && isProfilePending;
   const lecturer = profile?.lecturer;
   const isHeadOfDepartment = lecturer?.isHeadOfDepartment ?? false;
-  const hasReviewAccess = isHeadOfDepartment || isAdmin;
 
   const [tab, setTab] = useState<ReviewTab>('DEPARTMENT');
   const { page, setPage, pageSize, setPageSize, resetPage } = usePagination({
@@ -90,14 +88,12 @@ export default function LecturerTopicReviewsPage() {
     {
       semesterId: currentSemesterId,
       reviewStage: tab,
-      ...(isHeadOfDepartment && !isAdmin && lecturer?.major?.id
-        ? { majorId: lecturer.major.id }
-        : {}),
+      ...(lecturer?.major?.id ? { majorId: lecturer.major.id } : {}),
       q: debouncedSearch || undefined,
       page,
       limit: pageSize,
     },
-    { enabled: allowed && !isProfileLoading && hasReviewAccess },
+    { enabled: allowed && !isProfileLoading && isHeadOfDepartment },
   );
 
   if (!allowed) return null;
@@ -111,7 +107,7 @@ export default function LecturerTopicReviewsPage() {
     );
   }
 
-  if (!hasReviewAccess) {
+  if (!isHeadOfDepartment) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-12">
         <div className="space-y-3 rounded-xl border bg-card p-8 text-center">
@@ -157,15 +153,6 @@ export default function LecturerTopicReviewsPage() {
             >
               <Building2 className="size-3.5" />
               Tổ trưởng Bộ môn {lecturer?.major ? `(${lecturer.major.name})` : ''}
-            </Badge>
-          )}
-          {isAdmin && !isHeadOfDepartment && (
-            <Badge
-              variant="secondary"
-              className="gap-1.5 bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800 dark:bg-blue-950 dark:text-blue-300"
-            >
-              <ClipboardCheck className="size-3.5" />
-              Quản trị / Giáo vụ Khoa
             </Badge>
           )}
         </div>
@@ -401,7 +388,6 @@ export default function LecturerTopicReviewsPage() {
         onClose={() => setReviewingTopicId(null)}
         stage={tab === 'ALL' ? 'AUTO' : 'DEPARTMENT'}
         isHeadOfDepartment={isHeadOfDepartment}
-        isAdmin={isAdmin}
       />
     </div>
   );

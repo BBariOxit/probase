@@ -296,9 +296,9 @@ export class TopicsService {
         where.status = { equals: query.status };
       }
     } else if (query.reviewStage) {
-      if (role !== Role.LECTURER && role !== Role.ADMIN) {
+      if (role !== Role.LECTURER) {
         throw new ForbiddenException(
-          'Chỉ cán bộ/giảng viên mới có quyền xem danh sách thẩm định',
+          'Chỉ Tổ trưởng Bộ môn (giảng viên) mới có quyền xem hàng chờ thẩm định.',
         );
       }
       if (query.reviewStage === 'DEPARTMENT') {
@@ -588,16 +588,6 @@ export class TopicsService {
     return { message: 'Đã xóa đề tài thành công.' };
   }
 
-  async approve(id: number) {
-    const topic = await this.requireTopic(id);
-
-    if (topic.status !== TopicStatus.PENDING) {
-      throw new ConflictException('Chỉ đề tài đang chờ duyệt mới có thể phê duyệt.');
-    }
-
-    return this.setStatus(id, TopicStatus.APPROVED);
-  }
-
   async bulkOpen(semesterId: number) {
     // Guard: the semester must exist — a caller that passes a non-existent id
     // would silently update zero rows, which is hard to debug.
@@ -747,11 +737,12 @@ export class TopicsService {
       } | null;
     },
   ) {
-    const isHead = user.lecturerProfile?.isHeadOfDepartment ?? false;
-    const isAdmin = user.role === Role.ADMIN;
-    if (!isHead && !isAdmin) {
+    const isHead =
+      user.role === Role.LECTURER &&
+      (user.lecturerProfile?.isHeadOfDepartment ?? false);
+    if (!isHead) {
       throw new ForbiddenException(
-        'Chỉ Tổ trưởng Bộ môn (TTBM) hoặc Quản trị viên mới có quyền thẩm định đề tài cấp Bộ môn',
+        'Chỉ Tổ trưởng Bộ môn (TTBM) mới có quyền thẩm định đề tài.',
       );
     }
 
@@ -768,7 +759,7 @@ export class TopicsService {
     if (!topic) throw new NotFoundException('Không tìm thấy đề tài');
 
     const effectiveMajorId = topic.majorId ?? topic.lecturer.majorId;
-    if (!isAdmin && user.lecturerProfile?.majorId && effectiveMajorId) {
+    if (user.lecturerProfile?.majorId && effectiveMajorId) {
       if (effectiveMajorId !== user.lecturerProfile.majorId) {
         throw new ForbiddenException(
           'Bạn chỉ có quyền thẩm định các đề tài thuộc Tổ chuyên môn của mình',

@@ -5,14 +5,12 @@ import { useState } from 'react';
 import {
   BookMarked,
   Check,
-  ChevronDown,
   Eye,
   Loader2,
   Lock,
   LockOpen,
   MoreHorizontal,
   Search,
-  X,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -22,7 +20,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import {
-  useBulkOpenTopics,
   useTopicTransition,
   useTopics,
 } from '@/lib/api/topics';
@@ -77,7 +74,7 @@ const STATUS_LABELS: Record<TopicStatus, { label: string; className: string }> =
       className: 'text-emerald-600 dark:text-emerald-400',
     },
     APPROVED: {
-      label: 'Đã duyệt',
+      label: 'Đã duyệt — chờ mở',
       className: 'text-amber-600 dark:text-amber-400',
     },
     OPEN: { label: 'Đang mở', className: 'text-green-600 dark:text-green-400' },

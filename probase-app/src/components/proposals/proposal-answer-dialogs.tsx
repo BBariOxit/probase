@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Loader2, Users } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { ApiError } from '@/lib/api/client';
 import {
   useAcceptProposal,
@@ -118,7 +118,7 @@ export function AcceptProposalDialog({
                 <Label htmlFor="officialTitle" className="text-sm font-medium">
                   Tên đề tài chính thức
                 </Label>
-                <InfoTooltip text="Bạn có thể chỉnh sửa lại tên đề tài cho chuẩn văn phong học thuật trước khi gửi duyệt Khoa." />
+                <InfoTooltip text="Bạn có thể chỉnh sửa lại tên đề tài cho chuẩn văn phong học thuật trước khi gửi Tổ trưởng Bộ môn thẩm định." />
               </div>
               <span className="text-[11px] text-muted-foreground tabular-nums">
                 {officialTitle.length}/200
