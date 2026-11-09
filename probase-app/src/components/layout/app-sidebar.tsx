@@ -62,7 +62,7 @@ function NavEntry({ item, badge }: { item: NavItem; badge?: number }) {
         <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
       </SidebarMenuButton>
       {hasBadge && (
-        <SidebarMenuBadge className="top-2 right-2 h-5 min-w-5 rounded-full bg-orange-600 px-1.5 text-[11px] font-semibold text-white peer-hover/menu-button:text-white peer-data-active/menu-button:text-white">
+        <SidebarMenuBadge className="top-2 right-2 h-5 min-w-5 rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground peer-hover/menu-button:text-primary-foreground peer-data-active/menu-button:text-primary-foreground">
           {badge > 99 ? '99+' : badge}
         </SidebarMenuBadge>
       )}

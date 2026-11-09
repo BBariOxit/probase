@@ -222,7 +222,7 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
                 <Button
                   variant="default"
                   onClick={() => setReviewOpen(true)}
-                  className="gap-2 font-semibold bg-orange-600 text-white hover:bg-orange-700 cursor-pointer shadow-xs"
+                  className="gap-2 font-semibold bg-primary text-white hover:bg-primary/90 cursor-pointer shadow-xs"
                 >
                   <ClipboardCheck className="size-4" />
                   <span>Duyệt đề tài</span>
