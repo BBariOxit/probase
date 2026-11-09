@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useNotification } from '@/lib/api/notifications';
 import { useSession } from '@/lib/auth/session';
+import { isTopicDepartmentReviewNotification } from '@/lib/notifications';
 import { Button } from '@/components/ui/button';
 
 function getNotificationAction(
@@ -21,6 +22,17 @@ function getNotificationAction(
 ) {
   const isLecturer = role === 'LECTURER';
   const isStudent = role === 'STUDENT';
+
+  // 0. Kết quả thẩm định đề tài từ Tổ trưởng Bộ môn
+  if (isTopicDepartmentReviewNotification(notice)) {
+    return {
+      label: 'Xem chi tiết đề tài',
+      url: notice.targetId
+        ? `/lecturer/topics/${notice.targetId}`
+        : '/lecturer',
+      icon: FileText,
+    };
+  }
 
   // 1. Đề xuất đề tài từ sinh viên
   if (

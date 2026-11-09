@@ -147,7 +147,7 @@ export default function NotificationsPage() {
       ) : (
         <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden divide-y divide-border/60">
           {items.map((notice) => {
-            const cat = notificationCategory(notice.type);
+            const cat = notificationCategory(notice.type, notice.title);
             return (
               <div
                 key={notice.id}
