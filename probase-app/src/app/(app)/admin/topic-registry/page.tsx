@@ -45,6 +45,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const PAGE_SIZE = 15;
 
@@ -228,234 +234,253 @@ export default function AdminTopicRegistryPage() {
   const topics = data?.items ?? [];
 
   return (
-    <div className="w-full min-w-0 space-y-4">
-      {/* ── Header ── */}
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-lg font-semibold">Quản lý đề tài</h1>
+    <TooltipProvider delay={200}>
+      <div className="w-full min-w-0 space-y-4">
+        {/* ── Header ── */}
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-lg font-semibold">Quản lý đề tài</h1>
 
-        <Button
-          className="ml-auto gap-2"
-          onClick={() => setBulkOpen(true)}
-          disabled={approvedCount === 0}
-        >
-          <Check className="size-4" />
-          Mở đăng ký đồng loạt
-          {approvedCount > 0 && (
-            <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-xs font-semibold">
-              {approvedCount}
-            </span>
-          )}
-        </Button>
-      </div>
-
-      {/* ── Filters ── */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-52 flex-1 sm:max-w-xs">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Tìm theo tên đề tài…"
-            className="pl-8"
-            aria-label="Tìm đề tài"
-          />
+          <Button
+            className="ml-auto gap-2"
+            onClick={() => setBulkOpen(true)}
+            disabled={approvedCount === 0}
+          >
+            <Check className="size-4" />
+            Mở đăng ký đồng loạt
+            {approvedCount > 0 && (
+              <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-xs font-semibold">
+                {approvedCount}
+              </span>
+            )}
+          </Button>
         </div>
 
-        <Select
-          value={semesterId ? semesterId.toString() : 'ALL'}
-          onValueChange={(v) => {
-            setSemesterId(v === 'ALL' ? undefined : Number(v));
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-[280px]" aria-label="Lọc theo học kỳ">
-            <SelectValue>
-              {(value) =>
-                value === 'ALL'
-                  ? 'Tất cả học kỳ'
-                  : semesters.find((s) => s.id.toString() === value)?.name
-              }
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">Tất cả học kỳ</SelectItem>
-            {semesters.map((s) => (
-              <SelectItem key={s.id} value={s.id.toString()}>
-                {s.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* ── Filters ── */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-52 flex-1 sm:max-w-xs">
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Tìm theo tên đề tài…"
+              className="pl-8"
+              aria-label="Tìm đề tài"
+            />
+          </div>
 
-        <Select
-          value={statusFilter}
-          onValueChange={(v) => {
-            setStatusFilter(v as TopicStatus | 'ALL');
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-48" aria-label="Lọc theo trạng thái">
-            <SelectValue>
-              {(value) =>
-                STATUS_OPTIONS.find((opt) => opt.value === value)?.label
+          <Select
+            value={semesterId ? semesterId.toString() : 'ALL'}
+            onValueChange={(v) => {
+              setSemesterId(v === 'ALL' ? undefined : Number(v));
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[280px]" aria-label="Lọc theo học kỳ">
+              <SelectValue>
+                {(value) =>
+                  value === 'ALL'
+                    ? 'Tất cả học kỳ'
+                    : semesters.find((s) => s.id.toString() === value)?.name
+                }
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Tất cả học kỳ</SelectItem>
+              {semesters.map((s) => (
+                <SelectItem key={s.id} value={s.id.toString()}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => {
+              setStatusFilter(v as TopicStatus | 'ALL');
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-48" aria-label="Lọc theo trạng thái">
+              <SelectValue>
+                {(value) =>
+                  STATUS_OPTIONS.find((opt) => opt.value === value)?.label
+                }
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {data && (
+            <span className="ml-auto text-sm font-medium text-slate-600 dark:text-neutral-400 select-none">
+              <strong className="text-primary font-bold text-sm">
+                {data.total}
+              </strong>{' '}
+              đề tài
+            </span>
+          )}
+        </div>
+
+        {error && (
+          <p className="text-sm text-destructive">Không tải được danh sách.</p>
+        )}
+
+        {/* ── Table ── */}
+        <div className="isolate w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
+          <Table
+            containerClassName="w-full overflow-x-auto"
+            className="w-full min-w-[1040px] table-fixed text-left text-sm"
+          >
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[236px] min-w-[220px] px-4">
+                  Tiêu đề
+                </TableHead>
+                <TableHead className="w-[124px] px-2.5 whitespace-nowrap">
+                  Giảng viên
+                </TableHead>
+                <TableHead className="w-[170px] px-2.5 whitespace-nowrap">
+                  Loại đồ án
+                </TableHead>
+                <TableHead className="w-14 px-2 text-center whitespace-nowrap">
+                  Chỗ
+                </TableHead>
+                <TableHead className="w-[122px] px-2.5 whitespace-nowrap">
+                  Nguồn gốc
+                </TableHead>
+                <TableHead className="w-[152px] px-3 whitespace-nowrap">
+                  Trạng thái
+                </TableHead>
+                <TableHead className="w-[100px] px-2.5 whitespace-nowrap">
+                  Tạo lúc
+                </TableHead>
+                <TableHead className="w-20 px-2 text-center whitespace-nowrap">
+                  Thao tác
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {topics.map((topic) => (
+                <TableRow
+                  key={topic.id}
+                  className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
+                  onClick={() => setSelectedTopicId(topic.id)}
+                >
+                  <TableCell className="w-[236px] min-w-[220px] px-4 font-medium whitespace-normal">
+                    <div className="w-full whitespace-normal">
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Link
+                              href={`/admin/topics/${topic.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="line-clamp-2 font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal cursor-pointer"
+                            />
+                          }
+                        >
+                          {topic.title}
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="top"
+                          align="start"
+                          className="max-w-md p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-neutral-800 dark:text-neutral-100 rounded-lg shadow-xl border border-slate-700 dark:border-neutral-700 z-50"
+                        >
+                          <p className="font-semibold text-primary mb-1">
+                            Tên đề tài đầy đủ:
+                          </p>
+                          <p className="text-slate-200 dark:text-neutral-200 break-words [overflow-wrap:anywhere]">
+                            {topic.title}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TableCell>
+                  <TableCell className="w-[124px] px-2.5 truncate whitespace-nowrap text-slate-800 dark:text-neutral-200 font-medium">
+                    {topic.lecturer.academicTitle
+                      ? `${topic.lecturer.academicTitle} ${topic.lecturer.fullName}`
+                      : topic.lecturer.fullName}
+                  </TableCell>
+                  <TableCell className="w-[170px] px-2.5 truncate whitespace-nowrap text-slate-700 dark:text-neutral-300 font-medium">
+                    {topic.projectType.name}
+                  </TableCell>
+                  <TableCell className="w-14 px-2 text-center whitespace-nowrap">
+                    <OccupancyBadge topic={topic} />
+                  </TableCell>
+                  <TableCell className="w-[122px] px-2.5 whitespace-nowrap">
+                    <OriginBadge fromProposal={topic.fromProposal} />
+                  </TableCell>
+                  <TableCell className="w-[152px] px-3 whitespace-nowrap">
+                    <span
+                      className={`text-sm font-medium ${STATUS_LABELS[topic.status]?.className ?? ''}`}
+                    >
+                      {STATUS_LABELS[topic.status]?.label ?? topic.status}
+                    </span>
+                  </TableCell>
+                  <TableCell className="w-[100px] px-2.5 whitespace-nowrap tabular-nums text-muted-foreground">
+                    {dateFormat.format(new Date(topic.createdAt))}
+                  </TableCell>
+                  <TableCell
+                    className="w-20 px-2 text-center whitespace-nowrap"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <TopicActionsDropdown topic={topic} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          {isPending && (
+            <div className="flex justify-center py-14">
+              <Loader2 className="size-5 animate-spin text-muted-foreground" />
+            </div>
+          )}
+
+          {!isPending && topics.length === 0 && (
+            <EmptyState
+              icon={BookMarked}
+              title={
+                debouncedSearch
+                  ? 'Không có đề tài nào khớp từ khoá.'
+                  : 'Không có đề tài nào.'
               }
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            />
+          )}
+        </div>
 
         {data && (
-          <span className="ml-auto text-sm font-medium text-slate-600 dark:text-neutral-400 select-none">
-            <strong className="text-primary font-bold text-sm">
-              {data.total}
-            </strong>{' '}
-            đề tài
-          </span>
-        )}
-      </div>
-
-      {error && (
-        <p className="text-sm text-destructive">Không tải được danh sách.</p>
-      )}
-
-      {/* ── Table ── */}
-      <div className="isolate w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
-        <Table
-          containerClassName="w-full overflow-x-auto"
-          className="w-full min-w-[1040px] table-fixed text-left text-sm"
-        >
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[236px] min-w-[220px] px-4">
-                Tiêu đề
-              </TableHead>
-              <TableHead className="w-[124px] px-2.5 whitespace-nowrap">
-                Giảng viên
-              </TableHead>
-              <TableHead className="w-[170px] px-2.5 whitespace-nowrap">
-                Loại đồ án
-              </TableHead>
-              <TableHead className="w-14 px-2 text-center whitespace-nowrap">
-                Chỗ
-              </TableHead>
-              <TableHead className="w-[122px] px-2.5 whitespace-nowrap">
-                Nguồn gốc
-              </TableHead>
-              <TableHead className="w-[152px] px-3 whitespace-nowrap">
-                Trạng thái
-              </TableHead>
-              <TableHead className="w-[100px] px-2.5 whitespace-nowrap">
-                Tạo lúc
-              </TableHead>
-              <TableHead className="w-20 px-2 text-center whitespace-nowrap">
-                Thao tác
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {topics.map((topic) => (
-              <TableRow
-                key={topic.id}
-                className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
-                onClick={() => setSelectedTopicId(topic.id)}
-              >
-                <TableCell className="w-[236px] min-w-[220px] px-4 font-medium whitespace-normal">
-                  <div className="w-full whitespace-normal">
-                    <Link
-                      href={`/admin/topics/${topic.id}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="line-clamp-2 font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal cursor-pointer"
-                      title={topic.title}
-                    >
-                      {topic.title}
-                    </Link>
-                  </div>
-                </TableCell>
-                <TableCell className="w-[124px] px-2.5 truncate whitespace-nowrap text-slate-800 dark:text-neutral-200 font-medium">
-                  {topic.lecturer.academicTitle
-                    ? `${topic.lecturer.academicTitle} ${topic.lecturer.fullName}`
-                    : topic.lecturer.fullName}
-                </TableCell>
-                <TableCell className="w-[170px] px-2.5 truncate whitespace-nowrap text-slate-700 dark:text-neutral-300 font-medium">
-                  {topic.projectType.name}
-                </TableCell>
-                <TableCell className="w-14 px-2 text-center whitespace-nowrap">
-                  <OccupancyBadge topic={topic} />
-                </TableCell>
-                <TableCell className="w-[122px] px-2.5 whitespace-nowrap">
-                  <OriginBadge fromProposal={topic.fromProposal} />
-                </TableCell>
-                <TableCell className="w-[152px] px-3 whitespace-nowrap">
-                  <span
-                    className={`text-sm font-medium ${STATUS_LABELS[topic.status]?.className ?? ''}`}
-                  >
-                    {STATUS_LABELS[topic.status]?.label ?? topic.status}
-                  </span>
-                </TableCell>
-                <TableCell className="w-[100px] px-2.5 whitespace-nowrap tabular-nums text-muted-foreground">
-                  {dateFormat.format(new Date(topic.createdAt))}
-                </TableCell>
-                <TableCell
-                  className="w-20 px-2 text-center whitespace-nowrap"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <TopicActionsDropdown topic={topic} />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        {isPending && (
-          <div className="flex justify-center py-14">
-            <Loader2 className="size-5 animate-spin text-muted-foreground" />
-          </div>
-        )}
-
-        {!isPending && topics.length === 0 && (
-          <EmptyState
-            icon={BookMarked}
-            title={
-              debouncedSearch
-                ? 'Không có đề tài nào khớp từ khoá.'
-                : 'Không có đề tài nào.'
-            }
+          <PaginationBar
+            page={data.page}
+            totalPages={data.totalPages}
+            onPageChange={setPage}
           />
         )}
-      </div>
 
-      {data && (
-        <PaginationBar
-          page={data.page}
-          totalPages={data.totalPages}
-          onPageChange={setPage}
+        {/* ── Topic detail sheet (mở bên phải) ── */}
+        <TopicDetailSheet
+          topicId={selectedTopicId}
+          onClose={() => setSelectedTopicId(null)}
+          hideRegisterButton={true}
         />
-      )}
 
-      {/* ── Topic detail sheet (mở bên phải) ── */}
-      <TopicDetailSheet
-        topicId={selectedTopicId}
-        onClose={() => setSelectedTopicId(null)}
-        hideRegisterButton={true}
-      />
-
-      {/* ── Bulk open dialog ── */}
-      <BulkOpenDialog
-        open={bulkOpen}
-        onOpenChange={setBulkOpen}
-        approvedCount={approvedCount}
-        semesterId={semesterId ?? 0}
-        semesterName={selectedSemester?.name ?? 'Tất cả học kỳ'}
-      />
-    </div>
+        {/* ── Bulk open dialog ── */}
+        <BulkOpenDialog
+          open={bulkOpen}
+          onOpenChange={setBulkOpen}
+          approvedCount={approvedCount}
+          semesterId={semesterId ?? 0}
+          semesterName={selectedSemester?.name ?? 'Tất cả học kỳ'}
+        />
+      </div>
+    </TooltipProvider>
   );
 }
