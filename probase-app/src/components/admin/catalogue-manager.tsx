@@ -4,10 +4,10 @@ import { useState } from 'react';
 import {
   CircleHelp,
   Loader2,
+  MoreHorizontal,
   Pencil,
   Plus,
   Trash2,
-  TriangleAlert,
 } from 'lucide-react';
 import { ApiError } from '@/lib/api/client';
 import type { CatalogueInput } from '@/lib/api/master-data';
@@ -23,6 +23,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -130,7 +136,7 @@ export function CatalogueManager<T extends CatalogueItem>({
                   </span>
                 </TableHead>
                 <TableHead className="w-32">Đang dùng</TableHead>
-                <TableHead className="w-20" />
+                <TableHead className="w-16" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -138,7 +144,7 @@ export function CatalogueManager<T extends CatalogueItem>({
                 const used = usage(item);
 
                 return (
-                  <TableRow key={item.id}>
+                  <TableRow key={item.id} className="group/row">
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell className="text-muted-foreground tabular-nums">
                       {item.code}
@@ -147,31 +153,46 @@ export function CatalogueManager<T extends CatalogueItem>({
                       {used.count > 0 ? used.label : '—'}
                     </TableCell>
                     <TableCell>
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label={`Sửa ${item.name}`}
-                          onClick={() => setEditing(item)}
-                        >
-                          <Pencil />
-                        </Button>
-                        {/*
-                          Hidden rather than disabled once something depends on
-                          it: a greyed button invites hunting for the trick that
-                          enables it, and the count in the column beside it has
-                          already given the reason.
-                        */}
-                        {used.count === 0 && (
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label={`Xoá ${item.name}`}
-                            onClick={() => setDeleting(item)}
-                          >
-                            <Trash2 />
-                          </Button>
-                        )}
+                      <div className="flex justify-end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            render={
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label={`Thao tác cho ${item.name}`}
+                                className="cursor-pointer opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100 aria-expanded:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+                              >
+                                <MoreHorizontal className="size-4" />
+                              </Button>
+                            }
+                          />
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              className="cursor-pointer gap-2"
+                              onClick={() => setEditing(item)}
+                            >
+                              <Pencil className="size-4" />
+                              <span>Chỉnh sửa</span>
+                            </DropdownMenuItem>
+                            {/*
+                              Hidden rather than disabled once something depends on
+                              it: a greyed button invites hunting for the trick that
+                              enables it, and the count in the column beside it has
+                              already given the reason.
+                            */}
+                            {used.count === 0 && (
+                              <DropdownMenuItem
+                                variant="destructive"
+                                className="cursor-pointer gap-2"
+                                onClick={() => setDeleting(item)}
+                              >
+                                <Trash2 className="size-4" />
+                                <span>Xoá</span>
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
