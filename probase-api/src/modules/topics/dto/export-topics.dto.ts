@@ -16,4 +16,4 @@ export const ExportTopicsSchema = z.object({
 
 export type ExportTopicsMode = z.infer<typeof ExportTopicsModeSchema>;
 
-export class ExportTopicsDto extends createZodDto(ExportTopicsSchema) {}
+export class ExportTopicsDto extends createZodDto(ExportTopicsSchema) { }
