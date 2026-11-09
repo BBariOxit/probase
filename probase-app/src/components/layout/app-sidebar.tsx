@@ -4,10 +4,10 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useActiveSemester, useMyEligibleProjectTypes } from '@/lib/api/master-data';
+import { useMyProfile } from '@/lib/api/me';
 import { useMyGroup } from '@/lib/api/registration';
 import type { SessionUser } from '@/lib/api/types';
 import { NAV_BY_ROLE, type NavItem } from '@/lib/nav';
-import { cn } from '@/lib/utils';
 import { Brand, Logo } from '@/components/layout/brand';
 import {
   Sidebar,
@@ -62,6 +62,9 @@ function NavEntry({ item }: { item: NavItem }) {
 
 export function AppSidebar({ user }: { user: SessionUser }) {
   const isStudent = user.role === 'STUDENT';
+  const isLecturer = user.role === 'LECTURER';
+  const { data: myProfile } = useMyProfile({ enabled: isLecturer });
+  const isHeadOfDepartment = myProfile?.lecturer?.isHeadOfDepartment ?? false;
   const { data: myGroup } = useMyGroup({ enabled: isStudent });
   const activeSemester = useActiveSemester();
   const { data: eligibleTypes } = useMyEligibleProjectTypes(
@@ -96,6 +99,21 @@ export function AppSidebar({ user }: { user: SessionUser }) {
 
   const navGroups = useMemo(() => {
     const rawGroups = NAV_BY_ROLE[user.role];
+
+    if (isLecturer) {
+      return rawGroups
+        .map((group) => ({
+          ...group,
+          items: group.items.filter((item) => {
+            if (item.href === '/lecturer/topic-reviews') {
+              return isHeadOfDepartment;
+            }
+            return true;
+          }),
+        }))
+        .filter((group) => group.items.length > 0);
+    }
+
     if (!isStudent) return rawGroups;
 
     return rawGroups.map((group) => ({
@@ -107,7 +125,7 @@ export function AppSidebar({ user }: { user: SessionUser }) {
         return true;
       }),
     }));
-  }, [user.role, isStudent, isKLTN]);
+  }, [user.role, isLecturer, isHeadOfDepartment, isStudent, isKLTN]);
 
   return (
     <Sidebar variant="sidebar" collapsible="icon">

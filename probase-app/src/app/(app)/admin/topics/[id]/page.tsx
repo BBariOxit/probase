@@ -1,13 +1,13 @@
 'use client';
 
-import { use } from 'react';
+import { use, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, Loader2 } from 'lucide-react';
-import { useTopic, useTopicTransition } from '@/lib/api/topics';
+import { ArrowLeft, ClipboardCheck, Loader2 } from 'lucide-react';
+import { useTopic } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useBreadcrumbLabel } from '@/lib/breadcrumb-context';
 import { TopicDetailView } from '@/components/topics/topic-detail-view';
+import { TopicReviewModal } from '@/components/topics/topic-review-modal';
 import { Button } from '@/components/ui/button';
 
 export default function AdminTopicDetailPage({
@@ -17,9 +17,8 @@ export default function AdminTopicDetailPage({
 }) {
   const { id } = use(params);
   const allowed = useRequireRole('ADMIN');
-  const router = useRouter();
   const { data: topic, isPending, error } = useTopic(Number(id));
-  const transition = useTopicTransition();
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   // Swap the raw ID in the breadcrumb for the topic title once it loads.
   useBreadcrumbLabel(id, topic?.title);
@@ -67,11 +66,8 @@ export default function AdminTopicDetailPage({
     );
   }
 
-  async function approve() {
-    if (!topic) return;
-    await transition.mutateAsync({ id: topic.id, to: 'approve' });
-    router.push('/admin/topic-registry');
-  }
+  const canReview =
+    topic.status === 'PENDING_DEPARTMENT' || topic.status === 'PENDING';
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
@@ -91,21 +87,23 @@ export default function AdminTopicDetailPage({
       <TopicDetailView
         topic={topic}
         actions={
-          topic.status === 'PENDING' ? (
+          canReview ? (
             <Button
-              disabled={transition.isPending}
-              onClick={approve}
+              onClick={() => setReviewOpen(true)}
               className="gap-1.5 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
             >
-              {transition.isPending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Check className="size-4" />
-              )}
-              <span>Duyệt đề tài</span>
+              <ClipboardCheck className="size-4" />
+              <span>Thẩm định đề tài</span>
             </Button>
           ) : undefined
         }
+      />
+
+      <TopicReviewModal
+        topicId={reviewOpen ? topic.id : null}
+        onClose={() => setReviewOpen(false)}
+        stage="DEPARTMENT"
+        isAdmin
       />
     </div>
   );

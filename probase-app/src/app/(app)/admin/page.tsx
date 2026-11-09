@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Check, ClipboardCheck, Loader2, Search } from 'lucide-react';
-import { useTopicTransition, useTopics } from '@/lib/api/topics';
+import { ClipboardCheck, Eye, Loader2, Search } from 'lucide-react';
+import { useTopics } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
-import { TopicReviewSheet } from '@/components/admin/topic-review-sheet';
+import { TopicReviewModal } from '@/components/topics/topic-review-modal';
+import { TopicStatusBadge } from '@/components/topics/topic-status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -34,10 +35,9 @@ export default function AdminTopicQueuePage() {
   const [search, setSearch] = useState('');
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const debouncedSearch = useDebouncedValue(search);
-  const transition = useTopicTransition();
 
   const { data, isPending, error } = useTopics({
-    status: 'PENDING',
+    reviewStage: 'DEPARTMENT',
     page,
     limit: PAGE_SIZE,
     q: debouncedSearch || undefined,
@@ -76,14 +76,15 @@ export default function AdminTopicQueuePage() {
       )}
 
       <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
-        <Table className="w-full min-w-[850px] table-fixed text-left text-sm">
+        <Table className="w-full min-w-[920px] table-fixed text-left text-sm">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[340px] max-w-[380px] min-w-[280px]">Tiêu đề</TableHead>
-              <TableHead className="w-48 whitespace-nowrap">Giảng viên</TableHead>
+              <TableHead className="w-[340px] max-w-[380px] min-w-[260px]">Tiêu đề</TableHead>
+              <TableHead className="w-44 whitespace-nowrap">Giảng viên</TableHead>
               <TableHead className="w-36 whitespace-nowrap">Loại đồ án</TableHead>
+              <TableHead className="w-36 whitespace-nowrap">Trạng thái</TableHead>
               <TableHead className="w-28 whitespace-nowrap">Ngày gửi</TableHead>
-              <TableHead className="w-28 text-right whitespace-nowrap" />
+              <TableHead className="w-32 text-right whitespace-nowrap" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -93,7 +94,7 @@ export default function AdminTopicQueuePage() {
                 className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                 onClick={() => setSelectedTopicId(topic.id)}
               >
-                <TableCell className="w-[340px] max-w-[380px] min-w-[280px] font-medium whitespace-normal">
+                <TableCell className="w-[340px] max-w-[380px] min-w-[260px] font-medium whitespace-normal">
                   <div className="w-full max-w-[380px] whitespace-normal">
                     <Link
                       href={`/admin/topics/${topic.id}`}
@@ -107,37 +108,35 @@ export default function AdminTopicQueuePage() {
                     </Link>
                   </div>
                 </TableCell>
-                <TableCell className="w-48 whitespace-nowrap text-slate-800 dark:text-neutral-200 font-medium">
+                <TableCell className="w-44 whitespace-nowrap text-slate-800 dark:text-neutral-200 font-medium">
                   {topic.lecturer.fullName}
                 </TableCell>
                 <TableCell className="w-36 whitespace-nowrap text-slate-700 dark:text-neutral-300 font-medium">
                   {topic.projectType.name}
                 </TableCell>
+                <TableCell className="w-36 whitespace-nowrap">
+                  <TopicStatusBadge status={topic.status} />
+                </TableCell>
                 <TableCell className="w-28 whitespace-nowrap text-muted-foreground tabular-nums">
                   {dateFormat.format(new Date(topic.createdAt))}
                 </TableCell>
-                <TableCell className="w-28 text-right whitespace-nowrap">
-                    <Button
-                      size="sm"
-                      disabled={transition.isPending}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        transition.mutate({ id: topic.id, to: 'approve' });
-                      }}
-                    >
-                      {transition.isPending &&
-                      transition.variables?.id === topic.id ? (
-                        <Loader2 className="animate-spin" />
-                      ) : (
-                        <Check />
-                      )}
-                      Duyệt
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                <TableCell
+                  className="w-32 text-right whitespace-nowrap"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Button
+                    size="sm"
+                    onClick={() => setSelectedTopicId(topic.id)}
+                    className="cursor-pointer gap-1.5"
+                  >
+                    <Eye className="size-3.5" />
+                    Thẩm định
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
         {isPending && (
           <div className="flex justify-center py-14">
@@ -165,9 +164,11 @@ export default function AdminTopicQueuePage() {
         />
       )}
 
-      <TopicReviewSheet
+      <TopicReviewModal
         topicId={selectedTopicId}
         onClose={() => setSelectedTopicId(null)}
+        stage="DEPARTMENT"
+        isAdmin
       />
     </div>
   );

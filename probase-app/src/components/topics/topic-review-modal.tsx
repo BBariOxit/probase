@@ -22,11 +22,10 @@ import {
 import { toast } from 'sonner';
 import {
   useDepartmentReviewTopic,
-  useFacultyReviewTopic,
   useTopic,
   useTopicSimilarity,
 } from '@/lib/api/topics';
-import type { TopicDetail, TopicStatus } from '@/lib/api/types';
+import type { TopicStatus } from '@/lib/api/types';
 import { TopicStatusBadge } from '@/components/topics/topic-status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -46,9 +45,8 @@ interface TopicReviewModalProps {
   topicId: number | null;
   onClose: () => void;
   // Can explicitly override stage, or auto-detect from topic.status
-  stage?: 'DEPARTMENT' | 'FACULTY' | 'AUTO';
+  stage?: 'DEPARTMENT' | 'AUTO';
   isHeadOfDepartment?: boolean;
-  isFacultyBoard?: boolean;
   isAdmin?: boolean;
 }
 
@@ -57,22 +55,39 @@ export function TopicReviewModal({
   onClose,
   stage = 'AUTO',
   isHeadOfDepartment = false,
-  isFacultyBoard = false,
   isAdmin = false,
 }: TopicReviewModalProps) {
-  const { data: topic, isPending } = useTopic(topicId ?? 0);
-  const similarityQuery = useTopicSimilarity(topicId ?? 0, {
+  if (!topicId) return null;
+
+  return (
+    <TopicReviewModalContent
+      key={topicId}
+      topicId={topicId}
+      onClose={onClose}
+      stage={stage}
+      isHeadOfDepartment={isHeadOfDepartment}
+      isAdmin={isAdmin}
+    />
+  );
+}
+
+function TopicReviewModalContent({
+  topicId,
+  onClose,
+  stage = 'AUTO',
+  isHeadOfDepartment = false,
+  isAdmin = false,
+}: Omit<TopicReviewModalProps, 'topicId'> & { topicId: number }) {
+  const { data: topic, isPending } = useTopic(topicId);
+  const similarityQuery = useTopicSimilarity(topicId, {
     enabled: !!topicId,
   });
 
   const departmentReview = useDepartmentReviewTopic();
-  const facultyReview = useFacultyReviewTopic();
 
   const [activeTab, setActiveTab] = useState<'details' | 'similarity'>('details');
   const [feedback, setFeedback] = useState('');
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
-
-  if (!topicId) return null;
 
   // Determine which review stage is applicable
   const currentStatus: TopicStatus | undefined = topic?.status;
@@ -82,14 +97,7 @@ export function TopicReviewModal({
       (currentStatus === 'PENDING_DEPARTMENT' || currentStatus === 'PENDING') &&
       (isHeadOfDepartment || isAdmin));
 
-  const isFacultyStage =
-    stage === 'FACULTY' ||
-    (stage === 'AUTO' &&
-      currentStatus === 'PENDING_FACULTY' &&
-      (isFacultyBoard || isAdmin));
-
-  const isMutating =
-    departmentReview.isPending || facultyReview.isPending;
+  const isMutating = departmentReview.isPending;
 
   async function handleDepartmentAction(
     action: 'APPROVE' | 'REQUEST_REVISION' | 'REJECT',
@@ -112,7 +120,7 @@ export function TopicReviewModal({
       });
 
       const messages = {
-        APPROVE: 'Đã duyệt đề tài chuyển lên Ban Chủ nhiệm Khoa.',
+        APPROVE: 'Đã duyệt đề tài. Đề tài sẵn sàng để Giáo vụ mở đăng ký.',
         REQUEST_REVISION: 'Đã yêu cầu giảng viên chỉnh sửa lại đề tài.',
         REJECT: 'Đã từ chối đề tài.',
       };
@@ -122,43 +130,6 @@ export function TopicReviewModal({
     } catch (err: unknown) {
       toast.error(
         err instanceof Error ? err.message : 'Có lỗi xảy ra khi thẩm định đề tài',
-      );
-    } finally {
-      setActionInProgress(null);
-    }
-  }
-
-  async function handleFacultyAction(
-    action: 'APPROVE' | 'REQUEST_REVISION' | 'REJECT',
-  ) {
-    if (!topic) return;
-
-    if (action !== 'APPROVE' && !feedback.trim()) {
-      toast.error('Vui lòng nhập lý do/ý kiến chỉ đạo cho Bộ môn/Giảng viên');
-      return;
-    }
-
-    try {
-      setActionInProgress(action);
-      await facultyReview.mutateAsync({
-        id: topic.id,
-        data: {
-          action,
-          feedback: feedback.trim() || undefined,
-        },
-      });
-
-      const messages = {
-        APPROVE: 'Ban Chủ nhiệm Khoa đã phê duyệt chính thức đề tài.',
-        REQUEST_REVISION: 'Đã gửi yêu cầu Bộ môn xem xét lại đề tài.',
-        REJECT: 'Đã từ chối phê duyệt đề tài.',
-      };
-      toast.success(messages[action]);
-      setFeedback('');
-      onClose();
-    } catch (err: unknown) {
-      toast.error(
-        err instanceof Error ? err.message : 'Có lỗi xảy ra khi phê duyệt đề tài',
       );
     } finally {
       setActionInProgress(null);
@@ -266,34 +237,21 @@ export function TopicReviewModal({
           ) : activeTab === 'details' ? (
             <div className="space-y-5">
               {/* Previous Review Feedback (if any) */}
-              {(topic.departmentFeedback || topic.facultyFeedback) && (
+              {topic.departmentFeedback && (
                 <div className="rounded-lg border bg-amber-50/60 dark:bg-amber-950/20 p-4 space-y-2.5">
                   <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400 font-semibold text-xs tracking-wider uppercase">
                     <AlertCircle className="size-4" />
                     Lịch sử thẩm định & Nhận xét
                   </div>
-                  {topic.departmentFeedback && (
-                    <div className="text-xs space-y-0.5">
-                      <span className="font-medium text-foreground">
-                        Ý kiến Tổ trưởng Bộ môn
-                        {topic.departmentReviewer && ` (${topic.departmentReviewer.fullName})`}:
-                      </span>
-                      <p className="text-muted-foreground italic pl-2 border-l-2 border-amber-300">
-                        &ldquo;{topic.departmentFeedback}&rdquo;
-                      </p>
-                    </div>
-                  )}
-                  {topic.facultyFeedback && (
-                    <div className="text-xs space-y-0.5">
-                      <span className="font-medium text-foreground">
-                        Ý kiến Ban Chủ nhiệm Khoa
-                        {topic.facultyApprover && ` (${topic.facultyApprover.fullName})`}:
-                      </span>
-                      <p className="text-muted-foreground italic pl-2 border-l-2 border-blue-300">
-                        &ldquo;{topic.facultyFeedback}&rdquo;
-                      </p>
-                    </div>
-                  )}
+                  <div className="text-xs space-y-0.5">
+                    <span className="font-medium text-foreground">
+                      Ý kiến Tổ trưởng Bộ môn
+                      {topic.departmentReviewer && ` (${topic.departmentReviewer.fullName})`}:
+                    </span>
+                    <p className="text-muted-foreground italic pl-2 border-l-2 border-amber-300">
+                      &ldquo;{topic.departmentFeedback}&rdquo;
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -471,20 +429,11 @@ export function TopicReviewModal({
           )}
 
           {/* Review Action Form (Rendered only if in a reviewable stage) */}
-          {(isDepartmentStage || isFacultyStage) && topic && (
+          {isDepartmentStage && topic && (
             <div className="rounded-xl border bg-card/90 shadow-xs p-4 space-y-3 pt-3">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
-                {isDepartmentStage ? (
-                  <>
-                    <Building2 className="size-4" />
-                    Thẩm định Chuyên môn (Tổ trưởng Bộ môn)
-                  </>
-                ) : (
-                  <>
-                    <FileCheck2 className="size-4" />
-                    Phê duyệt Chính thức (Ban Chủ nhiệm Khoa)
-                  </>
-                )}
+                <Building2 className="size-4" />
+                Thẩm định Chuyên môn (Tổ trưởng Bộ môn)
               </div>
 
               <div className="space-y-1.5">
@@ -498,11 +447,7 @@ export function TopicReviewModal({
                   id="review-feedback"
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
-                  placeholder={
-                    isDepartmentStage
-                      ? 'Nhập góp ý chuyên môn, tính khả thi, công nghệ dự kiến hoặc yêu cầu giảng viên chỉnh sửa...'
-                      : 'Nhập ý kiến chỉ đạo, nhận xét phê duyệt của Ban Chủ nhiệm Khoa...'
-                  }
+                  placeholder="Nhập góp ý chuyên môn, tính khả thi, công nghệ dự kiến hoặc yêu cầu giảng viên chỉnh sửa..."
                   rows={3}
                   className="text-xs resize-none"
                 />
@@ -561,53 +506,7 @@ export function TopicReviewModal({
                   ) : (
                     <CheckCircle2 className="size-3.5 mr-1.5" />
                   )}
-                  Duyệt chuyển lên Khoa
-                </Button>
-              </>
-            ) : isFacultyStage ? (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleFacultyAction('REJECT')}
-                  disabled={isMutating}
-                  className="text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950"
-                >
-                  {actionInProgress === 'REJECT' ? (
-                    <Loader2 className="size-3.5 animate-spin mr-1.5" />
-                  ) : (
-                    <XCircle className="size-3.5 mr-1.5" />
-                  )}
-                  Từ chối
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleFacultyAction('REQUEST_REVISION')}
-                  disabled={isMutating}
-                  className="text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950"
-                >
-                  {actionInProgress === 'REQUEST_REVISION' ? (
-                    <Loader2 className="size-3.5 animate-spin mr-1.5" />
-                  ) : (
-                    <RotateCcw className="size-3.5 mr-1.5" />
-                  )}
-                  Yêu cầu xem xét lại
-                </Button>
-
-                <Button
-                  size="sm"
-                  onClick={() => handleFacultyAction('APPROVE')}
-                  disabled={isMutating}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  {actionInProgress === 'APPROVE' ? (
-                    <Loader2 className="size-3.5 animate-spin mr-1.5" />
-                  ) : (
-                    <CheckCircle2 className="size-3.5 mr-1.5" />
-                  )}
-                  Khoa phê duyệt chính thức
+                  Duyệt đề tài
                 </Button>
               </>
             ) : null}

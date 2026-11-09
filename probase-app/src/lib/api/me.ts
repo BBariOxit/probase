@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { groupKeys } from '@/lib/api/registration';
-import type { MyProfile, UpdateMyProfileInput } from '@/lib/api/types';
+import type { UpdateMyProfileInput } from '@/lib/api/types';
 import { useSession } from '@/lib/auth/session';
 import { profileService } from '@/services/profile.service';
 
@@ -11,13 +11,13 @@ export const meKeys = {
   profile: (userId?: number | null) => ['me', 'profile', userId ?? 'anonymous'] as const,
 };
 
-export function useMyProfile() {
+export function useMyProfile(options?: { enabled?: boolean }) {
   const user = useSession((state) => state.user);
 
   return useQuery({
     queryKey: meKeys.profile(user?.id),
     queryFn: () => profileService.getProfile(),
-    enabled: !!user?.id,
+    enabled: !!user?.id && (options?.enabled ?? true),
     staleTime: 30_000,
   });
 }

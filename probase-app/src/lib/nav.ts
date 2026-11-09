@@ -7,7 +7,6 @@ import {
   ClipboardCheck,
   ClipboardPen,
   FileCheck2,
-  FileSearch,
   FileUp,
   Gavel,
   GraduationCap,
@@ -136,6 +135,17 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           ready: true,
         },
         { href: '/lecturer/cham-diem', label: 'Chấm điểm', icon: ClipboardPen },
+      ],
+    },
+    {
+      label: 'Tổ chuyên môn',
+      items: [
+        {
+          href: '/lecturer/topic-reviews',
+          label: 'Thẩm định đề tài',
+          icon: ClipboardCheck,
+          ready: true,
+        },
       ],
     },
     {

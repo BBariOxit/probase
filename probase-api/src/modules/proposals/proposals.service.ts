@@ -388,6 +388,7 @@ export class ProposalsService {
           semesterId: proposal.semesterId,
           roundId: round.id,
           lecturerId: lecturer.id,
+          majorId: proposal.student.majorId ?? lecturer.majorId ?? null,
           sourceProposalId: proposal.id,
           title: officialTitle,
           description: proposal.description,
@@ -416,7 +417,7 @@ export class ProposalsService {
         userId: proposal.student.userId,
         type: 'PROPOSAL_ACCEPTED',
         title: 'Đề xuất của bạn đã được nhận',
-        content: `${lecturerName(lecturer)} nhận hướng dẫn đề tài "${topic.title}". Đề tài đã được lưu vào danh sách của GV và sẽ được gửi duyệt Khoa/Bộ môn.`,
+        content: `${lecturerName(lecturer)} nhận hướng dẫn đề tài "${topic.title}". Đề tài đã được lưu vào danh sách của GV và sẽ được gửi Bộ môn thẩm định.`,
         targetId: topic.id,
       },
     ]);
@@ -901,6 +902,7 @@ export class ProposalsService {
         id: true,
         fullName: true,
         academicTitle: true,
+        majorId: true,
         maxMentoringQuota: true,
       },
     });
@@ -953,6 +955,7 @@ export class ProposalsService {
             fullName: true,
             studentCode: true,
             class: true,
+            majorId: true,
             userId: true,
             user: { select: { avatarUrl: true } },
           },

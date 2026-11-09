@@ -22,7 +22,7 @@ import { RoundsService } from '../rounds/rounds.service';
 import { CreateTopicDto } from './dto/create-topic.dto';
 import { QueryTopicsDto } from './dto/query-topics.dto';
 import { UpdateTopicDto } from './dto/update-topic.dto';
-import { DepartmentReviewDto, FacultyReviewDto } from './dto/review-topic.dto';
+import { DepartmentReviewDto } from './dto/review-topic.dto';
 import { TopicSimilarityService } from './topic-similarity.service';
 
 const PUBLISHED_STATUSES = [
@@ -64,11 +64,7 @@ const LIST_SELECT = {
   majorId: true,
   major: { select: { id: true, name: true, code: true } },
   departmentFeedback: true,
-  facultyFeedback: true,
   departmentReviewer: {
-    select: { id: true, fullName: true, academicTitle: true },
-  },
-  facultyApprover: {
     select: { id: true, fullName: true, academicTitle: true },
   },
   createdAt: true,
@@ -220,9 +216,6 @@ const DETAIL_INCLUDE = {
   departmentReviewer: {
     select: { id: true, fullName: true, academicTitle: true },
   },
-  facultyApprover: {
-    select: { id: true, fullName: true, academicTitle: true },
-  },
   lecturer: {
     select: {
       id: true,
@@ -254,6 +247,7 @@ export class TopicsService {
 
   async findAll(query: QueryTopicsDto, userId: number, role: Role) {
     const where: Prisma.TopicWhereInput = {};
+    const andConditions: Prisma.TopicWhereInput[] = [];
 
     if (query.semesterId) where.semesterId = query.semesterId;
     // Still asked for by kind of project, which is what a reader picks from a
@@ -263,14 +257,34 @@ export class TopicsService {
     }
 
     if (query.q) {
-      where.OR = [
-        { title: { contains: query.q, mode: 'insensitive' } },
-        { description: { contains: query.q, mode: 'insensitive' } },
-      ];
+      andConditions.push({
+        OR: [
+          { title: { contains: query.q, mode: 'insensitive' } },
+          { description: { contains: query.q, mode: 'insensitive' } },
+        ],
+      });
     }
 
     if (query.majorId) {
-      where.majorId = query.majorId;
+      if (query.reviewStage) {
+        // When TTBM inspects their department queue, also surface topics whose
+        // majorId was left unset (e.g. ĐACS or legacy proposal-converted rows)
+        // when their supervising lecturer belongs to this department (or neither
+        // has a major assigned).
+        andConditions.push({
+          OR: [
+            { majorId: query.majorId },
+            { majorId: null, lecturer: { majorId: query.majorId } },
+            { majorId: null, lecturer: { majorId: null } },
+          ],
+        });
+      } else {
+        where.majorId = query.majorId;
+      }
+    }
+
+    if (andConditions.length > 0) {
+      where.AND = andConditions;
     }
 
     if (query.mine) {
@@ -291,16 +305,10 @@ export class TopicsService {
         where.status = {
           in: [TopicStatus.PENDING_DEPARTMENT, TopicStatus.PENDING],
         };
-      } else if (query.reviewStage === 'FACULTY') {
-        where.status = { in: [TopicStatus.PENDING_FACULTY] };
       } else {
-        where.status = {
-          in: [
-            TopicStatus.PENDING_DEPARTMENT,
-            TopicStatus.PENDING,
-            TopicStatus.PENDING_FACULTY,
-          ],
-        };
+        where.status = query.status
+          ? visibleStatusFilter(role, query.status)
+          : { not: TopicStatus.DRAFT };
       }
       if (query.lecturerId) {
         where.lecturerId = query.lecturerId;
@@ -537,7 +545,7 @@ export class TopicsService {
 
     if (
       topic.status === TopicStatus.PENDING_DEPARTMENT ||
-      topic.status === TopicStatus.PENDING_FACULTY
+      topic.status === TopicStatus.PENDING
     ) {
       throw new ConflictException(
         'Đề tài đang trong quá trình thẩm định. Vui lòng thu hồi về bản nháp trước khi chỉnh sửa.',
@@ -750,15 +758,18 @@ export class TopicsService {
     const topic = await this.prisma.topic.findUnique({
       where: { id },
       include: {
-        lecturer: { select: { id: true, userId: true, fullName: true } },
+        lecturer: {
+          select: { id: true, userId: true, fullName: true, majorId: true },
+        },
         major: true,
       },
     });
 
     if (!topic) throw new NotFoundException('Không tìm thấy đề tài');
 
-    if (!isAdmin && user.lecturerProfile?.majorId && topic.majorId) {
-      if (topic.majorId !== user.lecturerProfile.majorId) {
+    const effectiveMajorId = topic.majorId ?? topic.lecturer.majorId;
+    if (!isAdmin && user.lecturerProfile?.majorId && effectiveMajorId) {
+      if (effectiveMajorId !== user.lecturerProfile.majorId) {
         throw new ForbiddenException(
           'Bạn chỉ có quyền thẩm định các đề tài thuộc Tổ chuyên môn của mình',
         );
@@ -780,10 +791,10 @@ export class TopicsService {
     let notifContent: string;
 
     if (dto.action === 'APPROVE') {
-      nextStatus = TopicStatus.PENDING_FACULTY;
+      nextStatus = TopicStatus.APPROVED;
       auditAction = 'TOPIC_DEPARTMENT_APPROVED';
-      notifTitle = 'Đề tài đã được Bộ môn thông qua';
-      notifContent = `Đề tài "${topic.title}" đã được Tổ trưởng Bộ môn thông qua và chuyển lên Ban Chủ nhiệm Khoa phê duyệt.${dto.feedback ? ` Nhận xét: ${dto.feedback}` : ''}`;
+      notifTitle = 'Đề tài đã được Bộ môn phê duyệt';
+      notifContent = `Đề tài "${topic.title}" đã được Tổ trưởng Bộ môn phê duyệt và chuyển sang trạng thái Đã duyệt, sẵn sàng chờ Giáo vụ mở đăng ký.${dto.feedback ? ` Nhận xét: ${dto.feedback}` : ''}`;
     } else if (dto.action === 'REQUEST_REVISION') {
       nextStatus = TopicStatus.DRAFT;
       auditAction = 'TOPIC_DEPARTMENT_REVISION_REQUESTED';
@@ -816,109 +827,6 @@ export class TopicsService {
         newValue: {
           status: nextStatus,
           departmentReviewerId: user.lecturerProfile?.id ?? null,
-          feedback: dto.feedback,
-        },
-      });
-
-      return res;
-    });
-
-    await this.notifications.notify([
-      {
-        userId: topic.lecturer.userId,
-        type: NotificationType.SUBMISSION_FEEDBACK,
-        title: notifTitle,
-        content: notifContent,
-        targetId: id,
-      },
-    ]);
-
-    return this.presentDetail(updated);
-  }
-
-  async reviewFaculty(
-    id: number,
-    dto: FacultyReviewDto,
-    user: {
-      id: number;
-      role: Role;
-      lecturerProfile?: {
-        id: number;
-        isFacultyBoard: boolean;
-        isAcademicAssistant: boolean;
-      } | null;
-    },
-  ) {
-    const isFaculty =
-      user.lecturerProfile?.isFacultyBoard ||
-      user.lecturerProfile?.isAcademicAssistant;
-    const isAdmin = user.role === Role.ADMIN;
-    if (!isFaculty && !isAdmin) {
-      throw new ForbiddenException(
-        'Chỉ Ban Chủ nhiệm Khoa (BCN Khoa) hoặc Giáo vụ / Quản trị viên mới có quyền phê duyệt đề tài cấp Khoa',
-      );
-    }
-
-    const topic = await this.prisma.topic.findUnique({
-      where: { id },
-      include: {
-        lecturer: { select: { id: true, userId: true, fullName: true } },
-      },
-    });
-
-    if (!topic) throw new NotFoundException('Không tìm thấy đề tài');
-
-    if (
-      topic.status !== TopicStatus.PENDING_FACULTY &&
-      topic.status !== TopicStatus.PENDING
-    ) {
-      throw new ConflictException(
-        'Chỉ có thể phê duyệt đề tài đang ở trạng thái Chờ Khoa duyệt',
-      );
-    }
-
-    let nextStatus: TopicStatus;
-    let auditAction: string;
-    let notifTitle: string;
-    let notifContent: string;
-
-    if (dto.action === 'APPROVE') {
-      nextStatus = TopicStatus.APPROVED;
-      auditAction = 'TOPIC_FACULTY_APPROVED';
-      notifTitle = 'Đề tài đã được Khoa phê duyệt';
-      notifContent = `Đề tài "${topic.title}" đã được Ban Chủ nhiệm Khoa phê duyệt chính thức.${dto.feedback ? ` Nhận xét: ${dto.feedback}` : ''}`;
-    } else if (dto.action === 'REQUEST_REVISION') {
-      nextStatus = TopicStatus.PENDING_DEPARTMENT;
-      auditAction = 'TOPIC_FACULTY_REVISION_REQUESTED';
-      notifTitle = 'Khoa yêu cầu xem xét lại đề tài';
-      notifContent = `Ban Chủ nhiệm Khoa yêu cầu Bộ môn xem xét lại đề tài "${topic.title}". Ý kiến: ${dto.feedback}`;
-    } else {
-      nextStatus = TopicStatus.REJECTED;
-      auditAction = 'TOPIC_FACULTY_REJECTED';
-      notifTitle = 'Khoa từ chối đề tài';
-      notifContent = `Đề tài "${topic.title}" đã bị Ban Chủ nhiệm Khoa từ chối. Lý do: ${dto.feedback}`;
-    }
-
-    const updated = await this.prisma.$transaction(async (tx) => {
-      const res = await tx.topic.update({
-        where: { id },
-        data: {
-          status: nextStatus,
-          facultyApproverId: user.lecturerProfile?.id ?? null,
-          facultyFeedback: dto.feedback ?? null,
-        },
-        include: DETAIL_INCLUDE,
-      });
-
-      await recordAudit(tx, {
-        userId: user.id,
-        action: auditAction,
-        targetTable: 'topics',
-        targetId: id,
-        oldValue: { status: topic.status },
-        newValue: {
-          status: nextStatus,
-          facultyApproverId: user.lecturerProfile?.id ?? null,
           feedback: dto.feedback,
         },
       });
