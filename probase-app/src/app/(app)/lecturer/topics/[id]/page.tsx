@@ -23,7 +23,7 @@ import {
 } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useBreadcrumbLabel } from '@/lib/breadcrumb-context';
-import { sanitizeLecturerName } from '@/lib/utils';
+import { cn, sanitizeLecturerName } from '@/lib/utils';
 import { PageHeading } from '@/components/layout/page-heading';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import {
@@ -73,6 +73,10 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
     topicId: number | null;
     text: string;
   }>({ topicId: null, text: '' });
+  const [draftFeedbackError, setDraftFeedbackError] = useState<{
+    topicId: number | null;
+    message: string | null;
+  }>({ topicId: null, message: null });
   const [actionInProgress, setActionInProgress] = useState<
     'APPROVE' | 'REQUEST_REVISION' | 'REJECT' | null
   >(null);
@@ -83,6 +87,8 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
   );
 
   const feedback = draftFeedback.topicId === topicId ? draftFeedback.text : '';
+  const feedbackError =
+    draftFeedbackError.topicId === topicId ? draftFeedbackError.message : null;
 
   // Swap the raw ID in the breadcrumb for the topic title once it loads.
   useBreadcrumbLabel(String(topicId), topic?.title);
@@ -250,10 +256,18 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
     if (!topic) return;
 
     if (action !== 'APPROVE' && !feedback.trim()) {
-      toast.error('Vui lòng nhập nhận xét để phản hồi cho giảng viên.');
+      setDraftFeedbackError({
+        topicId: topic.id,
+        message:
+          action === 'REJECT'
+            ? 'Vui lòng nhập nhận xét trước khi từ chối đề tài.'
+            : 'Vui lòng nhập nhận xét trước khi yêu cầu sửa đề tài.',
+      });
       feedbackRef.current?.focus();
       return;
     }
+
+    setDraftFeedbackError({ topicId: null, message: null });
 
     try {
       setActionInProgress(action);
@@ -272,6 +286,7 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
       };
       toast.success(messages[action]);
       setDraftFeedback({ topicId: null, text: '' });
+      setDraftFeedbackError({ topicId: null, message: null });
     } catch (err: unknown) {
       toast.error(
         err instanceof Error ? err.message : 'Có lỗi xảy ra khi duyệt đề tài.',
@@ -307,30 +322,45 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
         extraContent={
           canDepartmentReview ? (
             <div className="space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Label
-                  htmlFor="department-review-feedback"
-                  className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2"
-                >
-                  <MessageSquareText className="size-4 text-primary shrink-0" />
-                  <span>Nhận xét chuyên môn (TTBM)</span>
-                </Label>
-                <span className="text-xs text-muted-foreground">
-                  Bắt buộc khi Yêu cầu sửa hoặc Từ chối
-                </span>
-              </div>
+              <Label
+                htmlFor="department-review-feedback"
+                className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2"
+              >
+                <MessageSquareText className="size-4 text-primary shrink-0" />
+                <span>Nhận xét chuyên môn (TTBM)</span>
+              </Label>
               <Textarea
                 ref={feedbackRef}
                 id="department-review-feedback"
                 rows={3}
                 value={feedback}
                 disabled={departmentReview.isPending}
-                onChange={(e) =>
-                  setDraftFeedback({ topicId: topic.id, text: e.target.value })
+                aria-invalid={Boolean(feedbackError)}
+                aria-describedby={
+                  feedbackError ? 'department-review-feedback-error' : undefined
                 }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setDraftFeedback({ topicId: topic.id, text: value });
+                  if (feedbackError && value.trim()) {
+                    setDraftFeedbackError({ topicId: null, message: null });
+                  }
+                }}
                 placeholder="Nhập nhận xét hoặc góp ý để giảng viên chỉnh sửa đề tài…"
-                className="resize-y text-sm"
+                className={cn(
+                  'resize-y text-sm',
+                  feedbackError &&
+                    'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20 dark:border-destructive/70 dark:focus-visible:border-destructive dark:focus-visible:ring-destructive/30',
+                )}
               />
+              {feedbackError && (
+                <p
+                  id="department-review-feedback-error"
+                  className="text-xs font-medium text-destructive"
+                >
+                  {feedbackError}
+                </p>
+              )}
             </div>
           ) : undefined
         }

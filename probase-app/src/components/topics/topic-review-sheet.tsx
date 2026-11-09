@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Check,
   GraduationCap,
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDepartmentReviewTopic, useTopic } from '@/lib/api/topics';
+import { cn } from '@/lib/utils';
 import { DetailSheet } from '@/components/shared/detail-sheet';
 import { TextSection } from '@/components/shared/text-section';
 import { TopicStatusBadge } from '@/components/topics/topic-status-badge';
@@ -56,10 +57,23 @@ export function TopicReviewSheet({
     topicId: null,
     text: '',
   });
+  const [draftError, setDraftError] = useState<{
+    topicId: number | null;
+    message: string | null;
+  }>({ topicId: null, message: null });
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+  const feedbackRef = useRef<HTMLTextAreaElement>(null);
 
   const feedback = draft.topicId === topicId ? draft.text : '';
+  const feedbackError =
+    draftError.topicId === topicId ? draftError.message : null;
   const isMutating = departmentReview.isPending;
+
+  function handleClose() {
+    if (isMutating) return;
+    setDraftError({ topicId: null, message: null });
+    onClose();
+  }
 
   const canReview =
     !isPending &&
@@ -74,9 +88,22 @@ export function TopicReviewSheet({
     if (!topic) return;
 
     if (action !== 'APPROVE' && !feedback.trim()) {
-      toast.error('Vui lòng nhập nhận xét để phản hồi cho giảng viên.');
+      setDraftError({
+        topicId: topic.id,
+        message:
+          action === 'REJECT'
+            ? 'Vui lòng nhập nhận xét trước khi từ chối đề tài.'
+            : 'Vui lòng nhập nhận xét trước khi yêu cầu sửa đề tài.',
+      });
+      feedbackRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+      feedbackRef.current?.focus();
       return;
     }
+
+    setDraftError({ topicId: null, message: null });
 
     try {
       setActionInProgress(action);
@@ -95,6 +122,7 @@ export function TopicReviewSheet({
       };
       toast.success(messages[action]);
       setDraft({ topicId: null, text: '' });
+      setDraftError({ topicId: null, message: null });
       onClose();
     } catch (err: unknown) {
       toast.error(
@@ -164,7 +192,7 @@ export function TopicReviewSheet({
         </Button>
       </>
     ) : (
-      <Button variant="ghost" onClick={onClose}>
+      <Button variant="ghost" onClick={handleClose}>
         Đóng
       </Button>
     )
@@ -173,7 +201,7 @@ export function TopicReviewSheet({
   return (
     <DetailSheet
       open={!!topicId}
-      onOpenChange={(open) => !open && !isMutating && onClose()}
+      onOpenChange={(open) => !open && handleClose()}
       loading={isPending}
       title={
         <div className="min-w-0 break-words [overflow-wrap:anywhere]">
@@ -234,21 +262,45 @@ export function TopicReviewSheet({
           {canReview && (
             <div className="space-y-1.5 border-t pt-4">
               <Label
-                htmlFor="department-review-feedback"
+                htmlFor="sheet-department-review-feedback"
                 className="text-sm font-medium"
               >
                 Nhận xét chuyên môn
               </Label>
               <Textarea
-                id="department-review-feedback"
+                ref={feedbackRef}
+                id="sheet-department-review-feedback"
                 rows={3}
                 value={feedback}
-                onChange={(e) =>
-                  setDraft({ topicId: topic.id, text: e.target.value })
+                disabled={isMutating}
+                aria-invalid={Boolean(feedbackError)}
+                aria-describedby={
+                  feedbackError
+                    ? 'sheet-department-review-feedback-error'
+                    : undefined
                 }
-                placeholder="Nhập nhận xét hoặc góp ý (bắt buộc khi Yêu cầu sửa hoặc Từ chối)…"
-                className="resize-none text-sm"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setDraft({ topicId: topic.id, text: value });
+                  if (feedbackError && value.trim()) {
+                    setDraftError({ topicId: null, message: null });
+                  }
+                }}
+                placeholder="Nhập nhận xét hoặc góp ý để giảng viên chỉnh sửa đề tài…"
+                className={cn(
+                  'resize-none text-sm',
+                  feedbackError &&
+                    'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20 dark:border-destructive/70 dark:focus-visible:border-destructive dark:focus-visible:ring-destructive/30',
+                )}
               />
+              {feedbackError && (
+                <p
+                  id="sheet-department-review-feedback-error"
+                  className="text-xs font-medium text-destructive"
+                >
+                  {feedbackError}
+                </p>
+              )}
             </div>
           )}
         </>
