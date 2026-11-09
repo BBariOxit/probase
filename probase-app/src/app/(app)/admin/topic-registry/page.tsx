@@ -118,13 +118,7 @@ function OriginBadge({ fromProposal }: { fromProposal: boolean }) {
 }
 
 /** Quick actions dropdown for a single topic row. */
-function TopicActionsDropdown({
-  topic,
-  onViewDetail,
-}: {
-  topic: TopicListItem;
-  onViewDetail: () => void;
-}) {
+function TopicActionsDropdown({ topic }: { topic: TopicListItem }) {
   const transition = useTopicTransition();
   const mine = transition.variables?.id === topic.id && transition.isPending;
 
@@ -149,11 +143,9 @@ function TopicActionsDropdown({
       />
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem
+          render={<Link href={`/admin/topics/${topic.id}`} />}
           className="cursor-pointer gap-2"
-          onClick={(e) => {
-            e.stopPropagation();
-            onViewDetail();
-          }}
+          onClick={(e) => e.stopPropagation()}
         >
           <Eye className="size-4 text-slate-500 dark:text-neutral-400" />
           <span>Xem chi tiết</span>
@@ -416,10 +408,7 @@ export default function AdminTopicRegistryPage() {
                   className="w-20 px-2 text-center whitespace-nowrap"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <TopicActionsDropdown
-                    topic={topic}
-                    onViewDetail={() => setSelectedTopicId(topic.id)}
-                  />
+                  <TopicActionsDropdown topic={topic} />
                 </TableCell>
               </TableRow>
             ))}
