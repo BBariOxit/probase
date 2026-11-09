@@ -1,4 +1,4 @@
-import { api } from '@/lib/api/client';
+import { api, download } from '@/lib/api/client';
 import type {
   BulkOpenResult,
   DepartmentReviewInput,
@@ -8,6 +8,19 @@ import type {
   TopicListItem,
   TopicStatus,
 } from '@/lib/api/types';
+
+export type ExportTopicsMode = 'SIGN_OFF' | 'FILTERED';
+
+export interface TopicExportQuery {
+  mode: ExportTopicsMode;
+  semesterId?: number;
+  projectTypeId?: number;
+  lecturerId?: number;
+  majorId?: number;
+  status?: TopicStatus;
+  q?: string;
+  semesterCode?: string;
+}
 
 export interface TopicQuery {
   semesterId?: number;
@@ -107,16 +120,21 @@ export const topicService = {
   },
 
   submitDrafts(topicIds?: number[]) {
-    return api<{ count: number; message: string }>('/topics/submit-drafts', {
+    return api<{
+      count: number;
+      approvedCount?: number;
+      pendingCount?: number;
+      message: string;
+    }>('/topics/submit-drafts', {
       method: 'POST',
       body: { topicIds },
     });
   },
 
-  bulkOpen(semesterId: number) {
+  bulkOpen(semesterId?: number) {
     return api<BulkOpenResult>('/topics/bulk-open', {
       method: 'PATCH',
-      body: { semesterId },
+      body: semesterId !== undefined ? { semesterId } : {},
     });
   },
 
@@ -124,5 +142,42 @@ export const topicService = {
     return api<TopicLecturer[]>(
       `/topics/lecturers${semesterId ? `?semesterId=${semesterId}` : ''}`,
     );
+  },
+
+  exportExcel(query: TopicExportQuery) {
+    const params = new URLSearchParams();
+    params.set('mode', query.mode);
+
+    if (query.semesterId !== undefined) {
+      params.set('semesterId', String(query.semesterId));
+    }
+
+    if (query.mode === 'FILTERED') {
+      if (query.projectTypeId !== undefined) {
+        params.set('projectTypeId', String(query.projectTypeId));
+      }
+      if (query.lecturerId !== undefined) {
+        params.set('lecturerId', String(query.lecturerId));
+      }
+      if (query.majorId !== undefined) {
+        params.set('majorId', String(query.majorId));
+      }
+      if (query.status !== undefined) {
+        params.set('status', query.status);
+      }
+      if (query.q) {
+        params.set('q', query.q);
+      }
+    }
+
+    const codeSuffix = query.semesterCode
+      ? `-${query.semesterCode.toLowerCase()}`
+      : '';
+    const fallbackName =
+      query.mode === 'SIGN_OFF'
+        ? `trinh-ky-de-tai${codeSuffix}.xlsx`
+        : `danh-sach-de-tai${codeSuffix}.xlsx`;
+
+    return download(`/topics/export?${params.toString()}`, fallbackName);
   },
 };

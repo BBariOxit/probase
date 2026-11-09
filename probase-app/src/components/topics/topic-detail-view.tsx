@@ -11,6 +11,7 @@ import {
   GraduationCap,
   ImageIcon,
   Layers,
+  MessageSquareText,
   Pencil,
   Target,
   Users,
@@ -39,10 +40,12 @@ const dateFormat = new Intl.DateTimeFormat('vi-VN', {
 export function TopicDetailView({
   topic,
   actions,
+  extraContent,
   onEdit,
 }: {
   topic: TopicDetail;
   actions?: React.ReactNode;
+  extraContent?: React.ReactNode;
   onEdit?: () => void;
 }) {
   const user = useSession((s) => s.user);
@@ -64,6 +67,7 @@ export function TopicDetailView({
   const canEdit =
     (isTopicOwner || isAdmin) &&
     !isPendingReview &&
+    topic.status !== 'REJECTED' &&
     topic.status !== 'IN_PROGRESS' &&
     topic.status !== 'COMPLETED';
 
@@ -267,6 +271,39 @@ export function TopicDetailView({
               </div>
             </div>
           )}
+
+          {/* 6. Góp ý từ Bộ môn (chỉ hiển thị cho giảng viên & giáo vụ) */}
+          {!isStudent && topic.departmentFeedback && (
+            <div className="space-y-2 pt-4 border-t border-slate-200/80 dark:border-neutral-800/80">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <MessageSquareText className="size-4 text-amber-500 shrink-0" />
+                <span>
+                  Góp ý từ Bộ môn
+                  {topic.departmentReviewer && (
+                    <span className="ml-1.5 font-normal normal-case tracking-normal text-xs text-muted-foreground">
+                      (
+                      {
+                        sanitizeLecturerName(
+                          topic.departmentReviewer.fullName,
+                          topic.departmentReviewer.academicTitle,
+                        ).displayName
+                      }
+                      )
+                    </span>
+                  )}
+                </span>
+              </h2>
+              <div className="rounded-xl border border-amber-200/80 dark:border-amber-800/50 bg-amber-50/70 dark:bg-amber-950/20 px-4 py-3 text-sm leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line break-words [overflow-wrap:anywhere]">
+                {topic.departmentFeedback}
+              </div>
+            </div>
+          )}
+
+          {extraContent && (
+            <div className="pt-4 border-t border-slate-200/80 dark:border-neutral-800/80">
+              {extraContent}
+            </div>
+          )}
         </div>
       </div>
 
@@ -283,7 +320,7 @@ export function TopicDetailView({
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Phía sinh viên */}
           {isStudent && (
             <>

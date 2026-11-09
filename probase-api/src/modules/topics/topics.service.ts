@@ -552,6 +552,10 @@ export class TopicsService {
       );
     }
 
+    if (topic.status === TopicStatus.REJECTED) {
+      throw new ConflictException('Đề tài đã bị từ chối, không thể chỉnh sửa.');
+    }
+
     const { projectTypeId, ...rest } = dto;
 
     // Moving a topic to another kind of project moves it to another round, and
@@ -588,13 +592,18 @@ export class TopicsService {
     return { message: 'Đã xóa đề tài thành công.' };
   }
 
-  async bulkOpen(semesterId: number) {
-    // Guard: the semester must exist — a caller that passes a non-existent id
-    // would silently update zero rows, which is hard to debug.
-    await this.requireSemester(semesterId);
+  async bulkOpen(semesterId?: number) {
+    // Guard: if a specific semester is provided, it must exist — an invalid id
+    // would otherwise silently update zero rows, which is hard to debug.
+    if (semesterId !== undefined) {
+      await this.requireSemester(semesterId);
+    }
 
     const result = await this.prisma.topic.updateMany({
-      where: { semesterId, status: TopicStatus.APPROVED },
+      where: {
+        ...(semesterId !== undefined && { semesterId }),
+        status: TopicStatus.APPROVED,
+      },
       data: { status: TopicStatus.OPEN },
     });
 
@@ -624,10 +633,10 @@ export class TopicsService {
   }
 
   async submit(id: number, userId: number) {
-    const lecturerId = await this.requireLecturerProfileId(userId);
+    const lecturer = await this.requireLecturerProfile(userId);
     const topic = await this.requireTopic(id);
 
-    if (topic.lecturerId !== lecturerId) {
+    if (topic.lecturerId !== lecturer.id) {
       throw new ForbiddenException('Bạn không phải chủ sở hữu đề tài này');
     }
 
@@ -641,7 +650,38 @@ export class TopicsService {
       this.logger.warn(`Failed async similarity check for topic ${id}: ${err}`);
     });
 
-    return this.setStatus(id, TopicStatus.PENDING_DEPARTMENT);
+    if (!canHeadAutoApproveOwnTopic(lecturer, topic.majorId)) {
+      return this.setStatus(id, TopicStatus.PENDING_DEPARTMENT);
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const res = await tx.topic.update({
+        where: { id },
+        data: {
+          status: TopicStatus.APPROVED,
+          departmentReviewerId: lecturer.id,
+          departmentFeedback: null,
+        },
+        include: DETAIL_INCLUDE,
+      });
+
+      await recordAudit(tx, {
+        userId,
+        action: 'TOPIC_DEPARTMENT_APPROVED',
+        targetTable: 'topics',
+        targetId: id,
+        oldValue: { status: topic.status },
+        newValue: {
+          status: TopicStatus.APPROVED,
+          departmentReviewerId: lecturer.id,
+          autoApproved: true,
+        },
+      });
+
+      return res;
+    });
+
+    return this.presentDetail(updated);
   }
 
   async withdraw(id: number, userId: number, role: Role) {
@@ -685,29 +725,68 @@ export class TopicsService {
   }
 
   async submitDrafts(userId: number, topicIds?: number[]) {
-    const lecturerId = await this.requireLecturerProfileId(userId);
+    const lecturer = await this.requireLecturerProfile(userId);
 
     const where: Prisma.TopicWhereInput = {
-      lecturerId,
+      lecturerId: lecturer.id,
       status: TopicStatus.DRAFT,
       ...(topicIds && topicIds.length > 0 && { id: { in: topicIds } }),
     };
 
     const draftTopics = await this.prisma.topic.findMany({
       where,
-      select: { id: true, title: true },
+      select: { id: true, title: true, majorId: true },
     });
 
     if (draftTopics.length === 0) {
       return {
         count: 0,
+        approvedCount: 0,
+        pendingCount: 0,
         message: 'Không có đề tài bản nháp nào cần gửi duyệt',
       };
     }
 
-    await this.prisma.topic.updateMany({
-      where: { id: { in: draftTopics.map((t) => t.id) } },
-      data: { status: TopicStatus.PENDING_DEPARTMENT },
+    const autoApproveTopics = draftTopics.filter((t) =>
+      canHeadAutoApproveOwnTopic(lecturer, t.majorId),
+    );
+    const pendingTopics = draftTopics.filter(
+      (t) => !canHeadAutoApproveOwnTopic(lecturer, t.majorId),
+    );
+
+    await this.prisma.$transaction(async (tx) => {
+      if (autoApproveTopics.length > 0) {
+        await tx.topic.updateMany({
+          where: { id: { in: autoApproveTopics.map((t) => t.id) } },
+          data: {
+            status: TopicStatus.APPROVED,
+            departmentReviewerId: lecturer.id,
+            departmentFeedback: null,
+          },
+        });
+
+        for (const t of autoApproveTopics) {
+          await recordAudit(tx, {
+            userId,
+            action: 'TOPIC_DEPARTMENT_APPROVED',
+            targetTable: 'topics',
+            targetId: t.id,
+            oldValue: { status: TopicStatus.DRAFT },
+            newValue: {
+              status: TopicStatus.APPROVED,
+              departmentReviewerId: lecturer.id,
+              autoApproved: true,
+            },
+          });
+        }
+      }
+
+      if (pendingTopics.length > 0) {
+        await tx.topic.updateMany({
+          where: { id: { in: pendingTopics.map((t) => t.id) } },
+          data: { status: TopicStatus.PENDING_DEPARTMENT },
+        });
+      }
     });
 
     for (const t of draftTopics) {
@@ -718,9 +797,23 @@ export class TopicsService {
       });
     }
 
+    let message: string;
+    if (autoApproveTopics.length > 0 && pendingTopics.length > 0) {
+      message = `Đã tự động phê duyệt ${autoApproveTopics.length} đề tài (TTBM) và gửi ${pendingTopics.length} đề tài lên Bộ môn thẩm định.`;
+    } else if (autoApproveTopics.length > 0) {
+      message =
+        autoApproveTopics.length === 1
+          ? 'Đề tài đã được tự động phê duyệt (TTBM), sẵn sàng chờ Giáo vụ mở đăng ký.'
+          : `Đã tự động phê duyệt ${autoApproveTopics.length} đề tài (TTBM), sẵn sàng chờ Giáo vụ mở đăng ký.`;
+    } else {
+      message = `Đã gửi duyệt thành công ${pendingTopics.length} đề tài cho Bộ môn.`;
+    }
+
     return {
       count: draftTopics.length,
-      message: `Đã gửi duyệt thành công ${draftTopics.length} đề tài cho Bộ môn.`,
+      approvedCount: autoApproveTopics.length,
+      pendingCount: pendingTopics.length,
+      message,
     };
   }
 
@@ -869,6 +962,7 @@ export class TopicsService {
         id: true,
         status: true,
         lecturerId: true,
+        majorId: true,
         semesterId: true,
         _count: {
           select: {
@@ -899,10 +993,10 @@ export class TopicsService {
     return topic;
   }
 
-  private async requireLecturerProfileId(userId: number) {
+  private async requireLecturerProfile(userId: number) {
     const profile = await this.prisma.lecturerProfile.findUnique({
       where: { userId },
-      select: { id: true },
+      select: { id: true, isHeadOfDepartment: true, majorId: true },
     });
 
     if (!profile) {
@@ -911,7 +1005,11 @@ export class TopicsService {
       );
     }
 
-    return profile.id;
+    return profile;
+  }
+
+  private async requireLecturerProfileId(userId: number) {
+    return (await this.requireLecturerProfile(userId)).id;
   }
 
   private async requireSemester(id: number) {
@@ -922,6 +1020,19 @@ export class TopicsService {
 
     if (!semester) throw new NotFoundException(`Không tìm thấy học kỳ mã #${id}`);
   }
+}
+
+function canHeadAutoApproveOwnTopic(
+  lecturer: { isHeadOfDepartment: boolean; majorId: number | null },
+  topicMajorId: number | null,
+): boolean {
+  if (!lecturer.isHeadOfDepartment) return false;
+  const effectiveMajorId = topicMajorId ?? lecturer.majorId;
+  return (
+    !lecturer.majorId ||
+    !effectiveMajorId ||
+    effectiveMajorId === lecturer.majorId
+  );
 }
 
 function visibleStatusFilter(

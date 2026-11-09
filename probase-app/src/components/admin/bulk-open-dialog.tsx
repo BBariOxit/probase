@@ -19,7 +19,7 @@ interface BulkOpenDialogProps {
   onOpenChange: (open: boolean) => void;
   /** Number of APPROVED topics that would be opened. */
   approvedCount: number;
-  semesterId: number;
+  semesterId?: number;
   semesterName: string;
 }
 
@@ -39,8 +39,12 @@ export function BulkOpenDialog({
       const result = await bulkOpen.mutateAsync(semesterId);
       toast.success(`Đã mở đăng ký cho ${result.updated} đề tài.`);
       onOpenChange(false);
-    } catch {
-      setError('Không thực hiện được. Vui lòng thử lại.');
+    } catch (err) {
+      setError(
+        err instanceof Error && err.message
+          ? err.message
+          : 'Không thực hiện được. Vui lòng thử lại.',
+      );
     }
   }
 
@@ -61,7 +65,9 @@ export function BulkOpenDialog({
         <div className="space-y-3 text-sm">
           {approvedCount === 0 ? (
             <p className="text-muted-foreground">
-              Không có đề tài nào đang chờ mở đăng ký trong học kỳ này.
+              {semesterId !== undefined
+                ? 'Không có đề tài nào đang chờ mở đăng ký trong học kỳ này.'
+                : 'Không có đề tài nào đang chờ mở đăng ký.'}
             </p>
           ) : (
             <p>

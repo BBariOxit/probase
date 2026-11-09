@@ -4,7 +4,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import {
   BookOpen,
+  Eye,
   Loader2,
+  MessageSquareText,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -15,6 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { TopicListItem, TopicStatus } from '@/lib/api/types';
+import { useMyProfile } from '@/lib/api/me';
 import {
   useDeleteTopic,
   useSubmitDraftTopics,
@@ -25,7 +28,6 @@ import { useRequireRole } from '@/lib/auth/use-require-role';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
-import { TopicDetailSheet } from '@/components/topics/topic-detail-sheet';
 import { TopicOwnerBadge } from '@/components/topics/topic-status-badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -54,7 +56,15 @@ import { TOPIC_PAGE_SIZE } from '@/constants/pagination.constant';
 import { TOPIC_STATUS_FILTERS } from '@/constants/status.constant';
 import { useDebounce, useDisclosure, usePagination } from '@/hooks';
 
-function RowActions({ topic }: { topic: TopicListItem }) {
+function RowActions({
+  topic,
+  isHeadOfDepartment,
+  lecturerMajorId,
+}: {
+  topic: TopicListItem;
+  isHeadOfDepartment: boolean;
+  lecturerMajorId?: number;
+}) {
   const transition = useTopicTransition();
   const remove = useDeleteTopic();
   const deleteDialog = useDisclosure();
@@ -62,14 +72,33 @@ function RowActions({ topic }: { topic: TopicListItem }) {
 
   const isPendingReview =
     topic.status === 'PENDING_DEPARTMENT' || topic.status === 'PENDING';
+  const topicMajorId = topic.majorId ?? topic.major?.id;
+  const willAutoApprove =
+    isHeadOfDepartment &&
+    (!lecturerMajorId || !topicMajorId || topicMajorId === lecturerMajorId);
+  const submitLabel = willAutoApprove ? 'Gửi & duyệt' : 'Gửi duyệt';
   const canEdit =
     !isPendingReview &&
+    topic.status !== 'REJECTED' &&
     topic.status !== 'IN_PROGRESS' &&
     topic.status !== 'COMPLETED';
   const canDelete =
     topic.activeGroup === null &&
     topic.status !== 'IN_PROGRESS' &&
     topic.status !== 'COMPLETED';
+
+  function handleSubmitTopic() {
+    return transition
+      .mutateAsync({ id: topic.id, to: 'submit' })
+      .then((updated) =>
+        toast.success(
+          updated.status === 'APPROVED'
+            ? 'Đề tài đã được tự động phê duyệt (TTBM), sẵn sàng chờ Giáo vụ mở đăng ký.'
+            : 'Đã gửi đề tài lên Bộ môn thẩm định.',
+        ),
+      )
+      .catch(() => toast.error('Không thể gửi duyệt đề tài.'));
+  }
 
   return (
     <>
@@ -82,10 +111,7 @@ function RowActions({ topic }: { topic: TopicListItem }) {
             disabled={transition.isPending}
             onClick={(e) => {
               e.stopPropagation();
-              transition
-                .mutateAsync({ id: topic.id, to: 'submit' })
-                .then(() => toast.success('Đã gửi đề tài lên Bộ môn thẩm định.'))
-                .catch(() => toast.error('Không thể gửi duyệt đề tài.'));
+              void handleSubmitTopic();
             }}
           >
             {transition.isPending && transition.variables?.id === topic.id ? (
@@ -93,7 +119,7 @@ function RowActions({ topic }: { topic: TopicListItem }) {
             ) : (
               <Send className="size-3" />
             )}
-            <span>Gửi duyệt</span>
+            <span>{submitLabel}</span>
           </Button>
         )}
         <DropdownMenu>
@@ -109,17 +135,22 @@ function RowActions({ topic }: { topic: TopicListItem }) {
             }
           />
           <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              render={<Link href={`/lecturer/topics/${topic.id}`} />}
+              className="cursor-pointer"
+            >
+              <Eye className="size-4" />
+              Xem chi tiết
+            </DropdownMenuItem>
+
             {topic.status === 'DRAFT' && (
               <DropdownMenuItem
                 onClick={() => {
-                  transition
-                    .mutateAsync({ id: topic.id, to: 'submit' })
-                    .then(() => toast.success('Đã gửi đề tài lên Bộ môn thẩm định.'))
-                    .catch(() => toast.error('Không thể gửi duyệt đề tài.'));
+                  void handleSubmitTopic();
                 }}
               >
                 <Send className="size-4" />
-                Gửi duyệt
+                {submitLabel}
               </DropdownMenuItem>
             )}
 
@@ -187,12 +218,14 @@ function RowActions({ topic }: { topic: TopicListItem }) {
 
 export default function LecturerTopicsPage() {
   const allowed = useRequireRole('LECTURER');
+  const { data: profile } = useMyProfile({ enabled: allowed });
+  const isHeadOfDepartment = profile?.lecturer?.isHeadOfDepartment ?? false;
+  const lecturerMajorId = profile?.lecturer?.major?.id;
   const { page, setPage, resetPage } = usePagination({
     initialPageSize: TOPIC_PAGE_SIZE,
   });
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('ALL');
-  const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const debouncedSearch = useDebounce(search);
 
   const { data, isPending, error } = useTopics({
@@ -280,7 +313,9 @@ export default function LecturerTopicsPage() {
               ) : (
                 <Send className="size-4" />
               )}
-              Gửi duyệt cho Bộ môn ({draftCount})
+              {isHeadOfDepartment
+                ? `Gửi & duyệt (${draftCount})`
+                : `Gửi duyệt cho Bộ môn (${draftCount})`}
             </Button>
           )}
           <Button render={<Link href="/lecturer/topics/new" />}>
@@ -311,8 +346,7 @@ export default function LecturerTopicsPage() {
               {topics.map((topic) => (
                 <TableRow
                   key={topic.id}
-                  className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
-                  onClick={() => setSelectedTopicId(topic.id)}
+                  className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                 >
                   <TableCell className="w-[380px] max-w-[440px] min-w-[280px] px-5 py-3.5 align-middle whitespace-normal">
                     <div className="w-full max-w-[440px] whitespace-normal">
@@ -320,17 +354,28 @@ export default function LecturerTopicsPage() {
                         href={`/lecturer/topics/${topic.id}`}
                         className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal line-clamp-2 cursor-pointer"
                         title={topic.title}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                        }}
                       >
                         {topic.title}
                       </Link>
-                      <span className="mt-1 block text-xs font-normal text-muted-foreground">
-                        {topic.activeGroup
-                          ? `Nhóm ${topic.activeGroup.occupiedSeats}/${topic.maxStudents} sinh viên`
-                          : 'Chưa có nhóm sinh viên'}
-                      </span>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-normal text-muted-foreground">
+                        <span>
+                          {topic.activeGroup
+                            ? `Nhóm ${topic.activeGroup.occupiedSeats}/${topic.maxStudents} sinh viên`
+                            : 'Chưa có nhóm sinh viên'}
+                        </span>
+                        {(topic.status === 'DRAFT' ||
+                          topic.status === 'REJECTED') &&
+                          topic.departmentFeedback?.trim() && (
+                            <Link
+                              href={`/lecturer/topics/${topic.id}`}
+                              title={topic.departmentFeedback}
+                              className="inline-flex items-center gap-1 rounded-md border border-amber-200/80 bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-700 hover:bg-amber-100/80 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-400 dark:hover:bg-amber-950/60 transition-colors"
+                            >
+                              <MessageSquareText className="size-3 shrink-0" />
+                              <span>Có góp ý Bộ môn</span>
+                            </Link>
+                          )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="w-40 px-3 py-3.5 align-middle whitespace-nowrap font-medium text-slate-700 dark:text-neutral-300">
@@ -343,8 +388,12 @@ export default function LecturerTopicsPage() {
                       variant="text"
                     />
                   </TableCell>
-                  <TableCell className="w-24 px-4 py-3.5 align-middle text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                    <RowActions topic={topic} />
+                  <TableCell className="w-24 px-4 py-3.5 align-middle text-right whitespace-nowrap">
+                    <RowActions
+                      topic={topic}
+                      isHeadOfDepartment={isHeadOfDepartment}
+                      lecturerMajorId={lecturerMajorId}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
@@ -389,12 +438,6 @@ export default function LecturerTopicsPage() {
           onPageChange={setPage}
         />
       )}
-
-      <TopicDetailSheet
-        topicId={selectedTopicId}
-        onClose={() => setSelectedTopicId(null)}
-        hideRegisterButton
-      />
     </div>
   );
 }

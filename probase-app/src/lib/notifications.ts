@@ -1,5 +1,21 @@
 import type { AppNotification, Role } from '@/lib/api/types';
 
+const TOPIC_DEPARTMENT_REVIEW_TITLES = new Set([
+  'Đề tài đã được Bộ môn phê duyệt',
+  'Yêu cầu chỉnh sửa đề tài',
+  'Đề tài bị từ chối',
+]);
+
+export function isTopicDepartmentReviewNotification(notice: {
+  type: string;
+  title?: string;
+}): boolean {
+  return (
+    notice.type === 'SUBMISSION_FEEDBACK' &&
+    Boolean(notice.title && TOPIC_DEPARTMENT_REVIEW_TITLES.has(notice.title))
+  );
+}
+
 export function notificationHref(
   notice: AppNotification,
   role: Role,
@@ -24,6 +40,11 @@ export function notificationHref(
         return '/lecturer/outlines';
 
       case 'SUBMISSION_FEEDBACK':
+        if (isTopicDepartmentReviewNotification(notice)) {
+          return notice.targetId
+            ? `/lecturer/topics/${notice.targetId}`
+            : '/lecturer';
+        }
         return '/lecturer/reports';
 
       case 'PROGRESS_LOG_SUBMITTED':
@@ -159,12 +180,19 @@ export function timeAgo(iso: string): string {
   }).format(new Date(iso));
 }
 
-export function notificationCategory(type: string): {
+export function notificationCategory(
+  type: string,
+  title?: string,
+): {
   label: string;
   color: string;
 } {
   const neutral =
     'bg-slate-100 text-slate-600 dark:bg-neutral-800 dark:text-neutral-400 border-slate-200/80 dark:border-neutral-700/80';
+
+  if (isTopicDepartmentReviewNotification({ type, title })) {
+    return { label: 'Thẩm định đề tài', color: neutral };
+  }
 
   switch (type) {
     case 'PROPOSAL_SUBMITTED':

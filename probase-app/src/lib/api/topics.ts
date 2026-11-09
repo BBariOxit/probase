@@ -8,6 +8,8 @@ import {
 } from '@tanstack/react-query';
 import {
   topicService,
+  type ExportTopicsMode,
+  type TopicExportQuery,
   type TopicInput,
   type TopicLecturer,
   type TopicPatch,
@@ -16,6 +18,8 @@ import {
 } from '@/services/topic.service';
 
 export type {
+  ExportTopicsMode,
+  TopicExportQuery,
   TopicInput,
   TopicLecturer,
   TopicPatch,
@@ -62,11 +66,14 @@ export function useInfiniteTopics(
   });
 }
 
-export function useTopicLecturers(semesterId: number | undefined) {
+export function useTopicLecturers(
+  semesterId: number | undefined,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: [...topicKeys.all, 'lecturers', semesterId],
     queryFn: () => topicService.getLecturers(semesterId),
-    enabled: semesterId !== undefined,
+    enabled: options?.enabled ?? semesterId !== undefined,
     staleTime: 60_000,
   });
 }
@@ -136,9 +143,15 @@ export function useBulkOpenTopics() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (semesterId: number) => topicService.bulkOpen(semesterId),
+    mutationFn: (semesterId?: number) => topicService.bulkOpen(semesterId),
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: topicKeys.lists() }),
+      queryClient.invalidateQueries({ queryKey: topicKeys.all }),
+  });
+}
+
+export function useExportTopics() {
+  return useMutation({
+    mutationFn: (query: TopicExportQuery) => topicService.exportExcel(query),
   });
 }
 

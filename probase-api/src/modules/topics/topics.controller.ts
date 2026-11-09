@@ -8,11 +8,16 @@ import {
   Patch,
   Post,
   Query,
+  Res,
+  StreamableFile,
 } from '@nestjs/common';
+import type { Response } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import { Role } from '../../../generated/prisma/client';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CreateTopicDto } from './dto/create-topic.dto';
+import { ExportTopicsDto } from './dto/export-topics.dto';
 import { QueryTopicLecturersDto } from './dto/query-topic-lecturers.dto';
 import { QueryTopicsDto } from './dto/query-topics.dto';
 import { UpdateTopicDto } from './dto/update-topic.dto';
@@ -20,12 +25,16 @@ import { BulkOpenTopicsDto } from './dto/bulk-open-topics.dto';
 import { SubmitTopicsDto } from './dto/submit-topics.dto';
 import { DepartmentReviewDto } from './dto/review-topic.dto';
 import { TopicSimilarityService } from './topic-similarity.service';
+import { TopicsExportService } from './topics-export.service';
 import { TopicsService } from './topics.service';
+
+const TOPIC_EXPORT_RATE_LIMIT = { default: { limit: 20, ttl: 60_000 } };
 
 @Controller('topics')
 export class TopicsController {
   constructor(
     private readonly topicsService: TopicsService,
+    private readonly topicsExportService: TopicsExportService,
     private readonly topicSimilarityService: TopicSimilarityService,
   ) {}
 
@@ -44,6 +53,32 @@ export class TopicsController {
     @GetUser('role') role: Role,
   ) {
     return this.topicsService.findLecturers(role, query.semesterId);
+  }
+
+  // Literal routes must be declared before wildcard :id routes so NestJS does
+  // not treat 'export' as an id parameter.
+  @Roles('ADMIN')
+  @Throttle(TOPIC_EXPORT_RATE_LIMIT)
+  @Get('export')
+  async export(
+    @Query() query: ExportTopicsDto,
+    @GetUser('id') userId: number,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { buffer, filename } = await this.topicsExportService.exportWorkbook(
+      query,
+      userId,
+    );
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+
+    return new StreamableFile(buffer);
   }
 
   @Get(':id')
