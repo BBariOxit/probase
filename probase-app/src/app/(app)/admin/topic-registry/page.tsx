@@ -236,7 +236,7 @@ export default function AdminTopicRegistryPage() {
   const topics = data?.items ?? [];
 
   return (
-    <div className="space-y-4">
+    <div className="w-full min-w-0 space-y-4">
       {/* ── Header ── */}
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-lg font-semibold">Quản lý đề tài</h1>
@@ -336,8 +336,11 @@ export default function AdminTopicRegistryPage() {
       )}
 
       {/* ── Table ── */}
-      <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
-        <Table className="w-full min-w-[1040px] table-fixed text-left text-sm">
+      <div className="isolate w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
+        <Table
+          containerClassName="w-full overflow-x-auto"
+          className="w-full min-w-[1040px] table-fixed text-left text-sm"
+        >
           <TableHeader>
             <TableRow>
               <TableHead className="w-[236px] min-w-[220px] px-4">

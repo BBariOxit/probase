@@ -77,7 +77,7 @@ export default function LecturerTopicReviewsPage() {
   const topics = data?.items ?? [];
 
   return (
-    <div className="min-w-0 space-y-4">
+    <div className="w-full min-w-0 space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-52 flex-1 sm:max-w-xs">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -104,8 +104,11 @@ export default function LecturerTopicReviewsPage() {
         <p className="text-sm text-destructive">Không tải được hàng chờ.</p>
       )}
 
-      <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
-        <Table className="w-full min-w-[850px] table-fixed text-left text-sm">
+      <div className="isolate w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
+        <Table
+          containerClassName="w-full overflow-x-auto"
+          className="w-full min-w-[850px] table-fixed text-left text-sm"
+        >
           <TableHeader>
             <TableRow>
               <TableHead className="w-[340px] max-w-[380px] min-w-[280px] px-5 py-3.5 whitespace-nowrap">
