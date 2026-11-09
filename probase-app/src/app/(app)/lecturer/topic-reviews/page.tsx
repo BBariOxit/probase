@@ -105,10 +105,10 @@ export default function LecturerTopicReviewsPage() {
       )}
 
       <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
-        <Table className="w-full table-fixed text-left text-sm">
+        <Table className="w-full min-w-[850px] table-fixed text-left text-sm">
           <TableHeader>
             <TableRow>
-              <TableHead className="px-5 py-3.5 whitespace-nowrap">
+              <TableHead className="w-[340px] max-w-[380px] min-w-[280px] px-5 py-3.5 whitespace-nowrap">
                 Tiêu đề
               </TableHead>
               <TableHead className="w-40 px-3 py-3.5 whitespace-nowrap">
@@ -130,17 +130,19 @@ export default function LecturerTopicReviewsPage() {
                 className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                 onClick={() => setSelectedTopicId(topic.id)}
               >
-                <TableCell className="px-5 py-3.5 align-middle font-medium whitespace-normal">
-                  <Link
-                    href={`/lecturer/topics/${topic.id}`}
-                    className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal line-clamp-2"
-                    title={topic.title}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                  >
-                    {topic.title}
-                  </Link>
+                <TableCell className="w-[340px] max-w-[380px] min-w-[280px] px-5 py-3.5 align-middle font-medium whitespace-normal">
+                  <div className="w-full max-w-[380px] whitespace-normal">
+                    <Link
+                      href={`/lecturer/topics/${topic.id}`}
+                      className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal line-clamp-2"
+                      title={topic.title}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                    >
+                      {topic.title}
+                    </Link>
+                  </div>
                 </TableCell>
                 <TableCell className="w-40 px-3 py-3.5 align-middle truncate font-medium text-slate-800 dark:text-neutral-200">
                   {topic.lecturer.fullName}
