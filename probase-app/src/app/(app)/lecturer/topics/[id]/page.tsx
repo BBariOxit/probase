@@ -459,8 +459,12 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
                   onClick={() => {
                     transition
                       .mutateAsync({ id: topic.id, to: 'submit' })
-                      .then(() =>
-                        toast.success('Đã gửi đề tài lên Bộ môn thẩm định.'),
+                      .then((updated) =>
+                        toast.success(
+                          updated.status === 'APPROVED'
+                            ? 'Đề tài đã được tự động phê duyệt (TTBM), sẵn sàng chờ Giáo vụ mở đăng ký.'
+                            : 'Đã gửi đề tài lên Bộ môn thẩm định.',
+                        ),
                       )
                       .catch(() => toast.error('Không thể gửi duyệt đề tài.'));
                   }}
@@ -472,7 +476,11 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
                   ) : (
                     <Send className="size-4" />
                   )}
-                  <span>Gửi duyệt</span>
+                  <span>
+                    {isHeadOfDepartment && matchesMajor
+                      ? 'Gửi & duyệt đề tài'
+                      : 'Gửi duyệt'}
+                  </span>
                 </Button>
               )}
             </>

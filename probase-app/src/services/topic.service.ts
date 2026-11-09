@@ -120,7 +120,12 @@ export const topicService = {
   },
 
   submitDrafts(topicIds?: number[]) {
-    return api<{ count: number; message: string }>('/topics/submit-drafts', {
+    return api<{
+      count: number;
+      approvedCount?: number;
+      pendingCount?: number;
+      message: string;
+    }>('/topics/submit-drafts', {
       method: 'POST',
       body: { topicIds },
     });

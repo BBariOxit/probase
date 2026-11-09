@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { TopicListItem, TopicStatus } from '@/lib/api/types';
+import { useMyProfile } from '@/lib/api/me';
 import {
   useDeleteTopic,
   useSubmitDraftTopics,
@@ -54,7 +55,15 @@ import { TOPIC_PAGE_SIZE } from '@/constants/pagination.constant';
 import { TOPIC_STATUS_FILTERS } from '@/constants/status.constant';
 import { useDebounce, useDisclosure, usePagination } from '@/hooks';
 
-function RowActions({ topic }: { topic: TopicListItem }) {
+function RowActions({
+  topic,
+  isHeadOfDepartment,
+  lecturerMajorId,
+}: {
+  topic: TopicListItem;
+  isHeadOfDepartment: boolean;
+  lecturerMajorId?: number;
+}) {
   const transition = useTopicTransition();
   const remove = useDeleteTopic();
   const deleteDialog = useDisclosure();
@@ -62,6 +71,11 @@ function RowActions({ topic }: { topic: TopicListItem }) {
 
   const isPendingReview =
     topic.status === 'PENDING_DEPARTMENT' || topic.status === 'PENDING';
+  const topicMajorId = topic.majorId ?? topic.major?.id;
+  const willAutoApprove =
+    isHeadOfDepartment &&
+    (!lecturerMajorId || !topicMajorId || topicMajorId === lecturerMajorId);
+  const submitLabel = willAutoApprove ? 'Gửi & duyệt' : 'Gửi duyệt';
   const canEdit =
     !isPendingReview &&
     topic.status !== 'IN_PROGRESS' &&
@@ -70,6 +84,19 @@ function RowActions({ topic }: { topic: TopicListItem }) {
     topic.activeGroup === null &&
     topic.status !== 'IN_PROGRESS' &&
     topic.status !== 'COMPLETED';
+
+  function handleSubmitTopic() {
+    return transition
+      .mutateAsync({ id: topic.id, to: 'submit' })
+      .then((updated) =>
+        toast.success(
+          updated.status === 'APPROVED'
+            ? 'Đề tài đã được tự động phê duyệt (TTBM), sẵn sàng chờ Giáo vụ mở đăng ký.'
+            : 'Đã gửi đề tài lên Bộ môn thẩm định.',
+        ),
+      )
+      .catch(() => toast.error('Không thể gửi duyệt đề tài.'));
+  }
 
   return (
     <>
@@ -82,10 +109,7 @@ function RowActions({ topic }: { topic: TopicListItem }) {
             disabled={transition.isPending}
             onClick={(e) => {
               e.stopPropagation();
-              transition
-                .mutateAsync({ id: topic.id, to: 'submit' })
-                .then(() => toast.success('Đã gửi đề tài lên Bộ môn thẩm định.'))
-                .catch(() => toast.error('Không thể gửi duyệt đề tài.'));
+              void handleSubmitTopic();
             }}
           >
             {transition.isPending && transition.variables?.id === topic.id ? (
@@ -93,7 +117,7 @@ function RowActions({ topic }: { topic: TopicListItem }) {
             ) : (
               <Send className="size-3" />
             )}
-            <span>Gửi duyệt</span>
+            <span>{submitLabel}</span>
           </Button>
         )}
         <DropdownMenu>
@@ -120,14 +144,11 @@ function RowActions({ topic }: { topic: TopicListItem }) {
             {topic.status === 'DRAFT' && (
               <DropdownMenuItem
                 onClick={() => {
-                  transition
-                    .mutateAsync({ id: topic.id, to: 'submit' })
-                    .then(() => toast.success('Đã gửi đề tài lên Bộ môn thẩm định.'))
-                    .catch(() => toast.error('Không thể gửi duyệt đề tài.'));
+                  void handleSubmitTopic();
                 }}
               >
                 <Send className="size-4" />
-                Gửi duyệt
+                {submitLabel}
               </DropdownMenuItem>
             )}
 
@@ -195,6 +216,9 @@ function RowActions({ topic }: { topic: TopicListItem }) {
 
 export default function LecturerTopicsPage() {
   const allowed = useRequireRole('LECTURER');
+  const { data: profile } = useMyProfile({ enabled: allowed });
+  const isHeadOfDepartment = profile?.lecturer?.isHeadOfDepartment ?? false;
+  const lecturerMajorId = profile?.lecturer?.major?.id;
   const { page, setPage, resetPage } = usePagination({
     initialPageSize: TOPIC_PAGE_SIZE,
   });
@@ -287,7 +311,9 @@ export default function LecturerTopicsPage() {
               ) : (
                 <Send className="size-4" />
               )}
-              Gửi duyệt cho Bộ môn ({draftCount})
+              {isHeadOfDepartment
+                ? `Gửi & duyệt (${draftCount})`
+                : `Gửi duyệt cho Bộ môn (${draftCount})`}
             </Button>
           )}
           <Button render={<Link href="/lecturer/topics/new" />}>
@@ -347,7 +373,11 @@ export default function LecturerTopicsPage() {
                     />
                   </TableCell>
                   <TableCell className="w-24 px-4 py-3.5 align-middle text-right whitespace-nowrap">
-                    <RowActions topic={topic} />
+                    <RowActions
+                      topic={topic}
+                      isHeadOfDepartment={isHeadOfDepartment}
+                      lecturerMajorId={lecturerMajorId}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
