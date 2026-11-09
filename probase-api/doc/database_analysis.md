@@ -15,12 +15,12 @@ Tài liệu này định nghĩa chi tiết kiến trúc cơ sở dữ liệu qua
      - `MMT`: **Mạng máy tính** (mã lớp tách thành dạng `CTK46MMT`, `CTK47MMT`).
    - Hai chuyên ngành này đồng thời là hai **Tổ chuyên môn** quản lý đề tài và phân công giảng viên cho **Đồ án chuyên ngành (ĐACN)** và **Khóa luận tốt nghiệp (KLTN)**.
 
-2. **Cơ cấu Giảng viên & 6 Tác nhân (Actors):**
-   - Không tạo các bảng role rời rạc gây phân mảnh. Hệ thống sử dụng bảng `lecturer_profiles` có các cờ chức vụ kiêm nhiệm trong Khoa:
-     - `is_head_of_department` (Tổ trưởng Bộ môn - TTBM phụ trách Tổ KTPM hoặc Tổ MMT).
-     - `is_faculty_board` (Ban Chủ nhiệm Khoa - BCN Khoa).
+2. **Cơ cấu Giảng viên & Các Tác nhân (Actors) trên hệ thống:**
+   - Không tạo các bảng role rời rạc gây phân mảnh. Hệ thống sử dụng bảng `lecturer_profiles` với các cờ chức vụ kiêm nhiệm trong Khoa:
+     - `is_head_of_department` (Tổ trưởng Bộ môn - TTBM phụ trách Tổ CNPM/KTPM hoặc Tổ MMT).
      - `is_academic_assistant` (Trợ lý Giáo vụ Khoa - TLGV).
-     - Đồng thời mỗi giảng viên đều có thể đóng vai trò `GVHD` (hướng dẫn) hoặc `GVPB` (phản biện) tùy theo từng đề tài.
+     - Đồng thời mỗi giảng viên đều có thể đóng vai trò `GVHD` (hướng dẫn), `GVPB` (phản biện) hoặc Thành viên Hội đồng bảo vệ tùy theo từng đề tài.
+   - *(Ban Chủ nhiệm Khoa chỉ ký duyệt hành chính bản giấy ngoài hệ thống ở 2 mốc: duyệt danh mục đề tài và Quyết định giao đề tài sau M03, nên không tạo tài khoản/cờ phân quyền riêng trên hệ thống).*
 
 3. **Cơ cấu điểm 3 cột chuẩn DLU:**
    $$\text{Điểm TK} = (20\% \times \text{Điểm TĐ1}) + (30\% \times \text{Điểm TĐ2}) + (50\% \times \text{Điểm BV})$$
@@ -91,7 +91,6 @@ Hồ sơ cán bộ giảng viên thuộc Khoa CNTT - DLU.
 - `max_mentoring_quota` (INT, Default: 5): Hạn mức số lượng đề tài tối đa nhận hướng dẫn trong kỳ.
 - **Cờ chức vụ kiêm nhiệm (Role Flags):**
   - `is_head_of_department` (BOOLEAN, Default: false): Là **Tổ trưởng Bộ môn (TTBM)**.
-  - `is_faculty_board` (BOOLEAN, Default: false): Là **Ban Chủ nhiệm Khoa (BCN Khoa)**.
   - `is_academic_assistant` (BOOLEAN, Default: false): Là **Trợ lý Giáo vụ Khoa (TLGV)**.
 
 ---
@@ -157,7 +156,7 @@ Danh sách chi tiết từng sinh viên chính thức đủ điều kiện tham 
 
 ---
 
-### NHÓM 3: Đề tài & Quy trình Xét duyệt 2 cấp (Topics & Approval)
+### NHÓM 3: Đề tài & Quy trình Thẩm định Bộ môn (Topics & Approval)
 
 #### 9. `topics`
 Ngân hàng đề tài đồ án của Khoa.
@@ -174,18 +173,17 @@ Ngân hàng đề tài đồ án của Khoa.
 - `tech_stack` (VARCHAR(255), Nullable): Công nghệ, công cụ dự kiến (VD: React, NestJS, Docker).
 - `max_students` (INT, Default: 3): Tối đa từ 1 đến 3 sinh viên.
 - `status` (ENUM):
+  - `'DRAFT'`: Bản nháp của Giảng viên, chưa gửi duyệt.
   - `'PENDING_DEPARTMENT'`: Chờ Tổ trưởng Bộ môn (TTBM) thẩm định chuyên môn.
-  - `'PENDING_FACULTY'`: TTBM đã duyệt, chờ BCN Khoa phê duyệt.
-  - `'APPROVED_OPEN'`: Đã phê duyệt, mở cổng cho SV đăng ký.
+  - `'APPROVED'`: TTBM đã phê duyệt, sẵn sàng chờ Giáo vụ mở đăng ký.
+  - `'OPEN'`: Giáo vụ đã mở cổng cho SV đăng ký.
   - `'ASSIGNED'`: Đã có nhóm nhận hoặc được Khoa phân công.
   - `'IN_PROGRESS'`: Đang thực hiện (đã nộp đề cương M03).
   - `'COMPLETED'`: Đã hoàn thành bảo vệ và lưu trữ.
   - `'REJECTED'`: Bị từ chối.
-- **Thông tin thẩm định cấp Bộ môn & Khoa (BR-05):**
-  - `department_reviewer_id` (INT, FK → `lecturer_profiles.id`, Nullable): TTBM thẩm định.
+- **Thông tin thẩm định cấp Bộ môn (BR-05):**
+  - `department_reviewer_id` (INT, FK → `lecturer_profiles.id`, Nullable): TTBM thẩm định chuyên môn.
   - `department_feedback` (TEXT, Nullable): Ý kiến chuyên môn của TTBM.
-  - `faculty_approver_id` (INT, FK → `lecturer_profiles.id`, Nullable): Đại diện BCN Khoa ký duyệt.
-  - `faculty_feedback` (TEXT, Nullable)
 - `source_proposal_id` (INT, Nullable, Unique): Trỏ về đề xuất gốc nếu bắt nguồn từ ý tưởng của SV.
 - `created_at`, `updated_at` (TIMESTAMP)
 
@@ -307,7 +305,7 @@ Bảng ghi nhận phân công Giảng viên phản biện (GVPB) do TTBM thực 
 - `topic_id` (INT, FK → `topics.id`, Not Null)
 - `supervisor_id` (INT, FK → `lecturer_profiles.id`, Not Null): GVHD.
 - `reviewer_id` (INT, FK → `lecturer_profiles.id`, Not Null): GVPB (khác GVHD, cùng Chuyên ngành CNPM/MMT).
-- `assigned_by_id` (INT, FK → `users.id`, Not Null): TTBM/BCN phân công.
+- `assigned_by_id` (INT, FK → `users.id`, Not Null): TTBM / Giáo vụ phân công.
 - `assigned_at` (TIMESTAMP, Default: now())
 
 #### 18. `topic_reviews`
@@ -397,9 +395,9 @@ Xử lý các phát sinh điều chỉnh đề tài trong quá trình thực hi�
 - `reason` (TEXT, Not Null): Lý do xin thay đổi.
 - `old_value` (TEXT, Nullable): Giá trị cũ (tên đề tài cũ, thành viên cũ).
 - `new_value` (TEXT, Nullable): Giá trị mới mong muốn.
-- `status` (ENUM: `'PENDING_SUPERVISOR'`, `'PENDING_FACULTY'`, `'APPROVED'`, `'REJECTED'`)
+- `status` (VARCHAR / ENUM: `'PENDING'`, `'APPROVED'`, `'REJECTED'`)
 - `supervisor_comment` (TEXT, Nullable)
-- `faculty_comment` (TEXT, Nullable)
+- `faculty_comment` (TEXT, Nullable): Ý kiến phản hồi từ Giáo vụ / Khoa (TLGV).
 - `created_at`, `updated_at` (TIMESTAMP)
 
 ---
