@@ -9,7 +9,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
@@ -82,45 +81,36 @@ export function TopicExportMenu({
         }
       />
 
-      <DropdownMenuContent align="end" className="w-80 p-1.5">
+      <DropdownMenuContent align="end" className="w-max min-w-56">
         <DropdownMenuItem
           disabled={isBusy || approvedCount === 0}
           onClick={() => void handleExport('SIGN_OFF')}
-          className="cursor-pointer items-start gap-2.5 py-2 whitespace-normal"
+          className="cursor-pointer justify-between gap-4"
         >
-          <FileCheck2 className="mt-0.5 size-4 shrink-0 text-primary" />
-          <div className="min-w-0 space-y-0.5 whitespace-normal">
-            <p className="text-sm font-medium leading-snug">
-              Danh sách trình ký BCN Khoa
-            </p>
-            <p className="text-xs text-muted-foreground leading-snug">
-              {approvedCount > 0
-                ? `Chỉ gồm ${approvedCount} đề tài Đã duyệt — chờ mở`
-                : 'Chưa có đề tài nào ở trạng thái Đã duyệt — chờ mở'}
-            </p>
-          </div>
+          <span className="flex items-center gap-2">
+            <FileCheck2 className="size-4 text-primary" />
+            <span>Trình ký BCN Khoa</span>
+          </span>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {approvedCount}
+          </span>
         </DropdownMenuItem>
-
-        <DropdownMenuSeparator />
 
         <DropdownMenuItem
           disabled={isBusy || filteredCount === 0}
           onClick={() => void handleExport('FILTERED')}
-          className="cursor-pointer items-start gap-2.5 py-2 whitespace-normal"
+          className="cursor-pointer justify-between gap-4"
         >
-          <Filter className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-          <div className="min-w-0 space-y-0.5 whitespace-normal">
-            <p className="text-sm font-medium leading-snug">
-              Theo bộ lọc hiện tại trên bảng
-            </p>
-            <p className="text-xs text-muted-foreground leading-snug">
-              {filteredCount > 0
-                ? `Xuất toàn bộ ${filteredCount} đề tài khớp bộ lọc`
-                : 'Không có đề tài nào khớp bộ lọc hiện tại'}
-            </p>
-          </div>
+          <span className="flex items-center gap-2">
+            <Filter className="size-4 text-muted-foreground" />
+            <span>Theo bộ lọc hiện tại</span>
+          </span>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {filteredCount}
+          </span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
+
