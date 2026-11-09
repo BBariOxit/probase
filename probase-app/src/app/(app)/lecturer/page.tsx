@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import {
   BookOpen,
+  Eye,
   Loader2,
   MoreHorizontal,
   Pencil,
@@ -25,7 +26,6 @@ import { useRequireRole } from '@/lib/auth/use-require-role';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
-import { TopicDetailSheet } from '@/components/topics/topic-detail-sheet';
 import { TopicOwnerBadge } from '@/components/topics/topic-status-badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -109,6 +109,14 @@ function RowActions({ topic }: { topic: TopicListItem }) {
             }
           />
           <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              render={<Link href={`/lecturer/topics/${topic.id}`} />}
+              className="cursor-pointer"
+            >
+              <Eye className="size-4" />
+              Xem chi tiết
+            </DropdownMenuItem>
+
             {topic.status === 'DRAFT' && (
               <DropdownMenuItem
                 onClick={() => {
@@ -192,7 +200,6 @@ export default function LecturerTopicsPage() {
   });
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('ALL');
-  const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const debouncedSearch = useDebounce(search);
 
   const { data, isPending, error } = useTopics({
@@ -311,8 +318,7 @@ export default function LecturerTopicsPage() {
               {topics.map((topic) => (
                 <TableRow
                   key={topic.id}
-                  className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
-                  onClick={() => setSelectedTopicId(topic.id)}
+                  className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                 >
                   <TableCell className="w-[380px] max-w-[440px] min-w-[280px] px-5 py-3.5 align-middle whitespace-normal">
                     <div className="w-full max-w-[440px] whitespace-normal">
@@ -320,9 +326,6 @@ export default function LecturerTopicsPage() {
                         href={`/lecturer/topics/${topic.id}`}
                         className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal line-clamp-2 cursor-pointer"
                         title={topic.title}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                        }}
                       >
                         {topic.title}
                       </Link>
@@ -343,7 +346,7 @@ export default function LecturerTopicsPage() {
                       variant="text"
                     />
                   </TableCell>
-                  <TableCell className="w-24 px-4 py-3.5 align-middle text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                  <TableCell className="w-24 px-4 py-3.5 align-middle text-right whitespace-nowrap">
                     <RowActions topic={topic} />
                   </TableCell>
                 </TableRow>
@@ -389,12 +392,6 @@ export default function LecturerTopicsPage() {
           onPageChange={setPage}
         />
       )}
-
-      <TopicDetailSheet
-        topicId={selectedTopicId}
-        onClose={() => setSelectedTopicId(null)}
-        hideRegisterButton
-      />
     </div>
   );
 }

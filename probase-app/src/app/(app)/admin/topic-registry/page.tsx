@@ -25,7 +25,6 @@ import { useDebouncedValue } from '@/lib/use-debounced-value';
 import type { Semester, TopicListItem, TopicStatus } from '@/lib/api/types';
 import { useSemesters } from '@/lib/api/master-data';
 import { BulkOpenDialog } from '@/components/admin/bulk-open-dialog';
-import { TopicDetailSheet } from '@/components/topics/topic-detail-sheet';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { Button } from '@/components/ui/button';
@@ -202,7 +201,6 @@ export default function AdminTopicRegistryPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<TopicStatus | 'ALL'>('ALL');
   const [semesterId, setSemesterId] = useState<number | undefined>(undefined);
-  const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
 
   const debouncedSearch = useDebouncedValue(search);
@@ -370,8 +368,7 @@ export default function AdminTopicRegistryPage() {
               {topics.map((topic) => (
                 <TableRow
                   key={topic.id}
-                  className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
-                  onClick={() => setSelectedTopicId(topic.id)}
+                  className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                 >
                   <TableCell className="w-[236px] min-w-[220px] px-4 font-medium whitespace-normal">
                     <div className="w-full whitespace-normal">
@@ -380,7 +377,6 @@ export default function AdminTopicRegistryPage() {
                           render={
                             <Link
                               href={`/admin/topics/${topic.id}`}
-                              onClick={(e) => e.stopPropagation()}
                               className="line-clamp-2 font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal cursor-pointer"
                             />
                           }
@@ -426,10 +422,7 @@ export default function AdminTopicRegistryPage() {
                   <TableCell className="w-[100px] px-2.5 whitespace-nowrap tabular-nums text-muted-foreground">
                     {dateFormat.format(new Date(topic.createdAt))}
                   </TableCell>
-                  <TableCell
-                    className="w-20 px-2 text-center whitespace-nowrap"
-                    onClick={(e) => e.stopPropagation()}
-                  >
+                  <TableCell className="w-20 px-2 text-center whitespace-nowrap">
                     <TopicActionsDropdown topic={topic} />
                   </TableCell>
                 </TableRow>
@@ -462,13 +455,6 @@ export default function AdminTopicRegistryPage() {
             onPageChange={setPage}
           />
         )}
-
-        {/* ── Topic detail sheet (mở bên phải) ── */}
-        <TopicDetailSheet
-          topicId={selectedTopicId}
-          onClose={() => setSelectedTopicId(null)}
-          hideRegisterButton={true}
-        />
 
         {/* ── Bulk open dialog ── */}
         <BulkOpenDialog
