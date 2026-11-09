@@ -168,7 +168,7 @@
      - Soạn thảo đề tài: Tên đề tài, chọn Chuyên ngành (**Công nghệ phần mềm** hoặc **Mạng máy tính**), Mục tiêu nghiên cứu, Mô tả nội dung yêu cầu, Yêu cầu đầu ra, Công nghệ sử dụng, Số lượng sinh viên tối đa (**1 đến 3 SV**).
      - GVHD có thể lưu ở trạng thái bản nháp (`DRAFT`), sau đó bấm **"Gửi duyệt"** để chuyển sang `PENDING_DEPARTMENT` (Chờ Bộ môn thẩm định).
   2. **Tổ trưởng Bộ môn (TTBM - Tổ CNPM hoặc Tổ MMT):**
-     - Truy cập mục **Thẩm định đề tài** (`/lecturer/topic-reviews`) trên giao diện Giảng viên.
+     - Truy cập mục **Duyệt đề tài** (`/lecturer/topic-reviews`) trên giao diện Giảng viên (hiển thị nổi bật trên sidebar và màn hình `/lecturer`).
      - Thẩm định chuyên môn các đề tài thuộc chuyên ngành mình phụ trách (kiểm tra độ khó, tính thực tiễn và cảnh báo trùng lặp tương đồng).
      - TTBM thực hiện 1 trong 3 hành động:
        - **Chấp thuận (`APPROVE`)**: Đề tài chuyển thẳng sang trạng thái **Đã duyệt** (`APPROVED`), sẵn sàng để Giáo vụ mở cổng đăng ký.
