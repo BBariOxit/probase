@@ -153,7 +153,14 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
     profile?.lecturer?.id !== undefined &&
     profile.lecturer.id === topic.lecturer.id;
   const isAdmin = profile?.role === 'ADMIN';
-  const canEditTopic = isOwner || isAdmin;
+  const isPendingReview =
+    topic.status === 'PENDING_DEPARTMENT' || topic.status === 'PENDING';
+  const canEditStatus =
+    !isPendingReview &&
+    topic.status !== 'REJECTED' &&
+    topic.status !== 'IN_PROGRESS' &&
+    topic.status !== 'COMPLETED';
+  const canEditTopic = (isOwner || isAdmin) && canEditStatus;
 
   if (isEditing && canEditTopic) {
     return (
@@ -238,8 +245,6 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
   }
 
   const isHeadOfDepartment = profile?.lecturer?.isHeadOfDepartment ?? false;
-  const isPendingReview =
-    topic.status === 'PENDING_DEPARTMENT' || topic.status === 'PENDING';
   const topicMajorId = topic.majorId ?? topic.major?.id;
   const lecturerMajorId = profile?.lecturer?.major?.id;
   const matchesMajor =

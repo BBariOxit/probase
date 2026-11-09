@@ -67,6 +67,7 @@ export function TopicDetailView({
   const canEdit =
     (isTopicOwner || isAdmin) &&
     !isPendingReview &&
+    topic.status !== 'REJECTED' &&
     topic.status !== 'IN_PROGRESS' &&
     topic.status !== 'COMPLETED';
 
