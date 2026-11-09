@@ -21,6 +21,7 @@ describe('TopicsService', () => {
         count: jest.fn().mockResolvedValue(0),
         findUnique: jest.fn(),
         update: jest.fn(),
+        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
       },
       lecturerProfile: {
         findUnique: jest.fn(),
@@ -308,6 +309,163 @@ describe('TopicsService', () => {
       );
       expect(notifications.notify).toHaveBeenCalled();
       expect(result.status).toBe(TopicStatus.APPROVED);
+    });
+  });
+
+  describe('submit & submitDrafts (TTBM auto-approval)', () => {
+    const presentedTopic = (id: number, status: TopicStatus) => ({
+      id,
+      title: `Topic ${id}`,
+      maxStudents: 3,
+      status,
+      majorId: 1,
+      major: { id: 1, name: 'Kỹ thuật phần mềm', code: 'CNPM' },
+      departmentFeedback: null,
+      departmentReviewer: { id: 3, fullName: 'An Bình', academicTitle: 'TS.' },
+      round: {
+        id: 8,
+        phase: RoundPhase.PREP,
+        registrationStart: new Date(),
+        registrationEnd: new Date(),
+        projectType: { id: 3, name: 'Khóa luận tốt nghiệp', code: 'DATN' },
+      },
+      lecturer: {
+        id: 3,
+        fullName: 'An Bình',
+        lecturerCode: 'GVAB',
+        academicTitle: 'TS.',
+      },
+      semester: { id: 5, name: 'HK1', code: 'HK1-2026-2027' },
+      registrationGroups: [],
+      sourceProposal: { studentId: 1, attachments: [] },
+    });
+
+    it('routes regular lecturer topic submit to PENDING_DEPARTMENT', async () => {
+      prisma.lecturerProfile.findUnique.mockResolvedValue({
+        id: 5,
+        isHeadOfDepartment: false,
+        majorId: 1,
+      });
+      prisma.topic.findUnique.mockResolvedValue({
+        id: 40,
+        status: TopicStatus.DRAFT,
+        lecturerId: 5,
+        majorId: 1,
+        semesterId: 5,
+        _count: { registrationGroups: 0 },
+      });
+      prisma.topic.update.mockResolvedValue(
+        presentedTopic(40, TopicStatus.PENDING_DEPARTMENT),
+      );
+
+      const res = await service.submit(40, 50);
+
+      expect(prisma.topic.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 40 },
+          data: { status: TopicStatus.PENDING_DEPARTMENT },
+        }),
+      );
+      expect(res.status).toBe(TopicStatus.PENDING_DEPARTMENT);
+    });
+
+    it('auto-approves TTBM own topic straight to APPROVED on submit', async () => {
+      prisma.lecturerProfile.findUnique.mockResolvedValue({
+        id: 3,
+        isHeadOfDepartment: true,
+        majorId: 1,
+      });
+      prisma.topic.findUnique.mockResolvedValue({
+        id: 41,
+        status: TopicStatus.DRAFT,
+        lecturerId: 3,
+        majorId: 1,
+        semesterId: 5,
+        _count: { registrationGroups: 0 },
+      });
+      prisma.topic.update.mockResolvedValue(
+        presentedTopic(41, TopicStatus.APPROVED),
+      );
+
+      const res = await service.submit(41, 30);
+
+      expect(prisma.topic.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 41 },
+          data: expect.objectContaining({
+            status: TopicStatus.APPROVED,
+            departmentReviewerId: 3,
+            departmentFeedback: null,
+          }),
+        }),
+      );
+      expect(prisma.auditLog.create).toHaveBeenCalled();
+      expect(notifications.notify).not.toHaveBeenCalled();
+      expect(res.status).toBe(TopicStatus.APPROVED);
+    });
+
+    it('routes TTBM own topic of another major to PENDING_DEPARTMENT instead of auto-approving', async () => {
+      prisma.lecturerProfile.findUnique.mockResolvedValue({
+        id: 3,
+        isHeadOfDepartment: true,
+        majorId: 1,
+      });
+      prisma.topic.findUnique.mockResolvedValue({
+        id: 42,
+        status: TopicStatus.DRAFT,
+        lecturerId: 3,
+        majorId: 2,
+        semesterId: 5,
+        _count: { registrationGroups: 0 },
+      });
+      prisma.topic.update.mockResolvedValue(
+        presentedTopic(42, TopicStatus.PENDING_DEPARTMENT),
+      );
+
+      const res = await service.submit(42, 30);
+
+      expect(prisma.topic.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 42 },
+          data: { status: TopicStatus.PENDING_DEPARTMENT },
+        }),
+      );
+      expect(res.status).toBe(TopicStatus.PENDING_DEPARTMENT);
+    });
+
+    it('auto-approves TTBM own-department drafts and routes other-major drafts on submitDrafts', async () => {
+      prisma.lecturerProfile.findUnique.mockResolvedValue({
+        id: 3,
+        isHeadOfDepartment: true,
+        majorId: 1,
+      });
+      prisma.topic.findMany.mockResolvedValue([
+        { id: 101, title: 'Same Major', majorId: 1 },
+        { id: 102, title: 'Null Major', majorId: null },
+        { id: 103, title: 'Other Major', majorId: 2 },
+      ]);
+
+      const res = await service.submitDrafts(30);
+
+      expect(prisma.topic.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: [101, 102] } },
+        data: {
+          status: TopicStatus.APPROVED,
+          departmentReviewerId: 3,
+          departmentFeedback: null,
+        },
+      });
+      expect(prisma.topic.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: [103] } },
+        data: { status: TopicStatus.PENDING_DEPARTMENT },
+      });
+      expect(res).toEqual(
+        expect.objectContaining({
+          count: 3,
+          approvedCount: 2,
+          pendingCount: 1,
+        }),
+      );
     });
   });
 });
