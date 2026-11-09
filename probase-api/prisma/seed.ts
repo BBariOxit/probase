@@ -45,19 +45,6 @@ const DEMO_STAFF = [
     majorCode: 'CNPM',
     researchInterests: 'Quản lý đào tạo, Cơ sở dữ liệu và Hệ thống thông tin',
     isAcademicAssistant: true, // Trợ lý Giáo vụ Khoa (TLGV)
-    isFacultyBoard: false,
-    isHeadOfDepartment: false,
-  },
-  {
-    email: 'gvcnk@dlu.edu.vn',
-    role: 'LECTURER' as const,
-    lecturerCode: 'GVCNK',
-    fullName: 'Trần Văn CNK',
-    academicTitle: 'TS.',
-    majorCode: 'CNPM',
-    researchInterests: 'Trí tuệ nhân tạo, Khai phá dữ liệu, Xử lý ngôn ngữ tự nhiên',
-    isAcademicAssistant: false,
-    isFacultyBoard: true, // Ban Chủ nhiệm Khoa (Trưởng/Phó khoa)
     isHeadOfDepartment: false,
   },
   {
@@ -69,7 +56,6 @@ const DEMO_STAFF = [
     majorCode: 'CNPM',
     researchInterests: 'Kỹ thuật phần mềm, Kiến trúc hệ thống phân tán, Microservices',
     isAcademicAssistant: false,
-    isFacultyBoard: false,
     isHeadOfDepartment: true, // Tổ trưởng Bộ môn Kỹ thuật phần mềm (TTBM)
   },
   {
@@ -81,7 +67,6 @@ const DEMO_STAFF = [
     majorCode: 'MMT',
     researchInterests: 'Mạng máy tính, An toàn và Bảo mật thông tin, Mạng cảm biến IoT',
     isAcademicAssistant: false,
-    isFacultyBoard: false,
     isHeadOfDepartment: true, // Tổ trưởng Bộ môn Mạng máy tính (TTBM)
   },
   {
@@ -93,7 +78,6 @@ const DEMO_STAFF = [
     majorCode: 'CNPM',
     researchInterests: 'Kỹ thuật phần mềm, Phát triển ứng dụng Web & Mobile hiện đại',
     isAcademicAssistant: false,
-    isFacultyBoard: false,
     isHeadOfDepartment: false,
   },
   {
@@ -105,7 +89,6 @@ const DEMO_STAFF = [
     majorCode: 'CNPM',
     researchInterests: 'Thị giác máy tính, Học sâu, Trí tuệ nhân tạo biên (Edge AI)',
     isAcademicAssistant: false,
-    isFacultyBoard: false,
     isHeadOfDepartment: false,
   },
 ];
@@ -374,7 +357,7 @@ async function main() {
   // 6. Seed Giảng viên & Cán bộ Khoa CNTT - DLU
   const staffProfileByEmail = new Map<string, any>();
   for (const staff of DEMO_STAFF) {
-    const { email, role, lecturerCode, fullName, academicTitle, majorCode, researchInterests, isAcademicAssistant, isFacultyBoard, isHeadOfDepartment } = staff;
+    const { email, role, lecturerCode, fullName, academicTitle, majorCode, researchInterests, isAcademicAssistant, isHeadOfDepartment } = staff;
     const majorId = majorCode ? majorIdByCode.get(majorCode) : null;
 
     const user = await prisma.user.upsert({
@@ -402,7 +385,6 @@ async function main() {
         majorId,
         researchInterests,
         isAcademicAssistant,
-        isFacultyBoard,
         isHeadOfDepartment,
         maxMentoringQuota: 5,
       },
@@ -413,7 +395,6 @@ async function main() {
         majorId,
         researchInterests,
         isAcademicAssistant,
-        isFacultyBoard,
         isHeadOfDepartment,
       },
     });
@@ -488,7 +469,7 @@ async function main() {
   const pbProfile = staffProfileByEmail.get('gvpb@dlu.edu.vn')?.profile;
   const abProfile = staffProfileByEmail.get('gvab@dlu.edu.vn')?.profile;
   const cdProfile = staffProfileByEmail.get('gvcd@dlu.edu.vn')?.profile;
-  const cnkProfile = staffProfileByEmail.get('gvcnk@dlu.edu.vn')?.profile;
+  const lnProfile = staffProfileByEmail.get('gvln@dlu.edu.vn')?.profile;
 
   const dacnRound = roundByCode.get('DACN');
   const dacsRound = roundByCode.get('DACS');
@@ -513,7 +494,7 @@ async function main() {
     {
       title: 'Hệ thống Quản lý Đồ án và Khóa luận Tốt nghiệp ProBase cho Khoa CNTT',
       titleEn: 'ProBase - Capstone Project and Thesis Management System for Faculty of Information Technology',
-      description: 'Khoa Công nghệ Thông tin - Trường Đại học Đà Lạt hàng năm quản lý hàng trăm sinh viên thuộc các hệ đào tạo tham gia làm Đồ án cơ sở (DACS), Đồ án chuyên ngành (DACN) và Khóa luận tốt nghiệp (DATN). Hiện tại, quy trình từ khâu công bố đề tài, ghép nhóm sinh viên, duyệt đề cương mẫu M03, theo dõi tiến độ hai giai đoạn (20% - 30%) đến phân công phản biện, tổ chức hội đồng chấm bảo vệ (50%) và lưu trữ số hóa 3 thư mục hồ sơ còn phân tán và tốn nhiều công sức tổng hợp báo cáo thủ công.\n\nĐề tài tập trung xây dựng nền tảng web ProBase toàn diện, chuẩn hóa toàn bộ vòng đời đồ án theo quy chế đào tạo tín chỉ của Trường Đại học Đà Lạt. Hệ thống hỗ trợ đa tác tử, phân quyền chặt chẽ giữa Trưởng khoa, Trợ lý giáo vụ, Trưởng bộ môn, Giảng viên hướng dẫn, Giảng viên phản biện, Thành viên hội đồng và Sinh viên.',
+      description: 'Khoa Công nghệ Thông tin - Trường Đại học Đà Lạt hàng năm quản lý hàng trăm sinh viên thuộc các hệ đào tạo tham gia làm Đồ án cơ sở (DACS), Đồ án chuyên ngành (DACN) và Khóa luận tốt nghiệp (DATN). Hiện tại, quy trình từ khâu công bố đề tài, ghép nhóm sinh viên, duyệt đề cương mẫu M03, theo dõi tiến độ hai giai đoạn (20% - 30%) đến phân công phản biện, tổ chức hội đồng chấm bảo vệ (50%) và lưu trữ số hóa 3 thư mục hồ sơ còn phân tán và tốn nhiều công sức tổng hợp báo cáo thủ công.\n\nĐề tài tập trung xây dựng nền tảng web ProBase toàn diện, chuẩn hóa toàn bộ vòng đời đồ án theo quy chế đào tạo tín chỉ của Trường Đại học Đà Lạt. Hệ thống hỗ trợ đa tác tử, phân quyền chặt chẽ giữa Trợ lý giáo vụ, Tổ trưởng bộ môn, Giảng viên hướng dẫn, Giảng viên phản biện, Thành viên hội đồng và Sinh viên.',
       objectives: '- Khảo sát, phân tích nghiệp vụ và chuẩn hóa quy trình quản lý đồ án tốt nghiệp tại Khoa CNTT - Đại học Đà Lạt theo đúng các biểu mẫu chuẩn (M01 đến M10).\n- Thiết kế kiến trúc phần mềm hướng module với độ bảo mật cao, kiểm soát truy cập dựa trên vai trò (RBAC) và vòng đời trạng thái đồ án nghiêm ngặt (State Machine).\n- Xây dựng các phân hệ cốt lõi: Quản lý đợt & hạn nộp, Đăng ký & ghép nhóm theo mã bảo mật (Join Code), Duyệt đề cương trực tuyến, Giám sát tiến độ & chấm điểm theo trọng số (20% - 30% - 50%), Phân công hội đồng bảo vệ và Lưu trữ số hóa hồ sơ tốt nghiệp.',
       expectedOutcomes: '- Mã nguồn hoàn chỉnh gồm Web Frontend (Next.js 14 App Router, TypeScript, TailwindCSS, Shadcn UI) và Backend API (NestJS, Prisma ORM, PostgreSQL).\n- Hệ thống cơ sở dữ liệu quan hệ được thiết kế chuẩn hóa 3NF với hơn 20 bảng thực thể, xử lý ràng buộc toàn vẹn và giao dịch an toàn (ACID Transactions).\n- Bộ tài liệu đặc tả kiến trúc hệ thống, API Documentation chuẩn OpenAPI/Swagger và tài liệu hướng dẫn triển khai bằng Docker Compose.\n- Quyển báo cáo toàn văn Khóa luận tốt nghiệp định dạng PDF đạt chuẩn quy cách trình bày của Trường Đại học Đà Lạt.',
       techStack: 'Next.js 14, TypeScript, NestJS, Prisma ORM, PostgreSQL, TailwindCSS, Shadcn UI, Docker, Redis',
@@ -569,7 +550,7 @@ async function main() {
       objectives: '- Xây dựng hệ thống thu thập dữ liệu tự động (Web Scraper) an toàn, tuân thủ robots.txt từ các nguồn thông tin du lịch công khai về Đà Lạt.\n- Tinh chỉnh mô hình học sâu PhoBERT để phân loại cảm xúc tích cực / tiêu cực / trung tính và nhận diện các thực thể có tên (NER) trong các bài đánh giá tiếng Việt.\n- Thiết kế thuật toán tối ưu hóa đa mục tiêu gợi ý lịch trình di chuyển tiết kiệm thời gian và chi phí cho du khách tại thành phố Đà Lạt.',
       expectedOutcomes: '- Cổng thông tin Web Portal dành cho khách du lịch và Trung tâm điều hành dữ liệu du lịch dành cho nhà quản lý.\n- Mô hình NLP phân loại cảm xúc đánh giá tiếng Việt đạt F1-score trên 89% và công cụ gợi ý lịch trình thông minh.\n- Bộ API RESTful mở cho phép tích hợp dữ liệu với các ứng dụng du lịch bên thứ ba.\n- Báo cáo thuyết minh đồ án và mã nguồn được đóng gói hoàn chỉnh trên Docker Container.',
       techStack: 'React, TypeScript, Python FastAPI, PhoBERT, PyTorch, MongoDB, Redis, Docker, TailwindCSS',
-      lecturerId: cnkProfile.id,
+      lecturerId: lnProfile.id,
       majorId: majorIdByCode.get('CNPM'),
       roundId: dacnRound?.id ?? datnRound.id,
       maxStudents: 3,
@@ -634,7 +615,7 @@ async function main() {
       objectives: '- Thiết kế và kiểm toán an ninh các Hợp đồng thông minh (Solidity Smart Contracts theo chuẩn ERC-721 / ERC-1155) cho việc quản lý mã định danh nông sản số.\n- Tối ưu hóa chi phí giao dịch (Gas fee) bằng cách triển khai giải pháp Layer-2 Rollup (Polygon) kết hợp lưu trữ phi tập trung IPFS cho các chứng chỉ kiểm nghiệm chất lượng.\n- Xây dựng giao diện ứng dụng phi tập trung (DApp) trực quan cho nông dân, thương nhân và người tiêu dùng quét mã QR xác thực nguồn gốc không thể giả mạo.',
       expectedOutcomes: '- Bộ Smart Contracts được kiểm thử toàn diện trên môi trường Testnet, đạt chuẩn an toàn không có lỗ hổng Reentrancy hay Overflow.\n- Ứng dụng Web DApp (Next.js, Ethers.js, Wagmi) kết nối ví tiền điện tử Web3 (MetaMask) phục vụ sàn đấu thầu nông sản.\n- Cổng thông tin quét mã QR công khai hiển thị chi tiết dòng thời gian chuỗi cung ứng từ nông trại đến bàn ăn.',
       techStack: 'Solidity, Hardhat, Polygon L2, IPFS, Next.js 14, Ethers.js, Wagmi, TailwindCSS, PostgreSQL',
-      lecturerId: cnkProfile.id,
+      lecturerId: lnProfile.id,
       majorId: majorIdByCode.get('CNPM'),
       roundId: datnRound.id,
       maxStudents: 3,
@@ -830,7 +811,7 @@ async function main() {
 
     await prisma.councilMember.createMany({
       data: [
-        { councilId: council.id, lecturerId: cnkProfile.id, councilRole: 'PRESIDENT' },
+        { councilId: council.id, lecturerId: lnProfile.id, councilRole: 'PRESIDENT' },
         { councilId: council.id, lecturerId: abProfile.id, councilRole: 'SECRETARY' },
         { councilId: council.id, lecturerId: pbProfile.id, councilRole: 'MEMBER' },
         { councilId: council.id, lecturerId: cdProfile.id, councilRole: 'MEMBER' },
@@ -1280,10 +1261,10 @@ async function main() {
   console.log(`MẬT KHẨU CHUNG CHO TẤT CẢ TÀI KHOẢN: ${DEFAULT_PASSWORD}\n`);
   console.log('Danh sách tài khoản test:');
   console.log('  1. Giáo vụ Khoa (Admin) : gvgvk@dlu.edu.vn');
-  console.log('  2. BCN Khoa (Trưởng khoa): gvcnk@dlu.edu.vn');
-  console.log('  3. TTBM Phần mềm        : gvab@dlu.edu.vn');
-  console.log('  4. TTBM Mạng máy tính   : gvcd@dlu.edu.vn');
-  console.log('  5. Giảng viên HD & PB   : gvpb@dlu.edu.vn');
+  console.log('  2. TTBM Phần mềm        : gvab@dlu.edu.vn');
+  console.log('  3. TTBM Mạng máy tính   : gvcd@dlu.edu.vn');
+  console.log('  4. Giảng viên HD & PB   : gvpb@dlu.edu.vn');
+  console.log('  5. Giảng viên (GVLN)    : gvln@dlu.edu.vn');
   console.log('  6. Sinh viên trưởng nhóm: 2266666@dlu.edu.vn (Nhóm 1 làm KLTN)');
   console.log('  7. Sinh viên thành viên : 2277777@dlu.edu.vn (Nhóm 1)');
   console.log('  8. Sinh viên Mạng MT    : 2288888@dlu.edu.vn (Nhóm 2)');

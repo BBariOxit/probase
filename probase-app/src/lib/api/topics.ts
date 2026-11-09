@@ -159,24 +159,6 @@ export function useDepartmentReviewTopic() {
   });
 }
 
-export function useFacultyReviewTopic() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: number;
-      data: import('@/lib/api/types').FacultyReviewInput;
-    }) => topicService.reviewFaculty(id, data),
-    onSuccess: (topic) => {
-      queryClient.setQueryData(topicKeys.detail(topic.id), topic);
-      return queryClient.invalidateQueries({ queryKey: topicKeys.all });
-    },
-  });
-}
-
 export function useTopicSimilarity(
   id: number,
   options?: { enabled?: boolean },

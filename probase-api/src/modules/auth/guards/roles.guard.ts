@@ -19,7 +19,6 @@ export interface RequestLecturerProfile {
   academicTitle?: string | null;
   majorId?: number | null;
   isHeadOfDepartment: boolean;
-  isFacultyBoard: boolean;
   isAcademicAssistant: boolean;
 }
 
@@ -83,12 +82,6 @@ export class RolesGuard implements CanActivate {
         return (
           user.role === Role.LECTURER &&
           !!user.lecturerProfile?.isHeadOfDepartment
-        );
-      }
-
-      if (reqRole === AppActor.BCN_KHOA || reqRole === 'BCN_KHOA') {
-        return (
-          user.role === Role.LECTURER && !!user.lecturerProfile?.isFacultyBoard
         );
       }
 

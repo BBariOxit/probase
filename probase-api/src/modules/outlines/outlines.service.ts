@@ -508,19 +508,17 @@ export class OutlinesService {
     user: { id: number; role: Role },
     query: QueryOutlinesDto,
   ) {
-    // Chỉ Admin hoặc GV có cờ kiêm nhiệm (TLGV, TTBM, BCN Khoa) mới được truy cập
+    // Chỉ Admin hoặc GV có cờ kiêm nhiệm (TLGV, TTBM) mới được truy cập
     if (user.role === Role.LECTURER) {
       const lecturer = await this.prisma.lecturerProfile.findUnique({
         where: { userId: user.id },
       });
       if (
         !lecturer ||
-        (!lecturer.isAcademicAssistant &&
-          !lecturer.isHeadOfDepartment &&
-          !lecturer.isFacultyBoard)
+        (!lecturer.isAcademicAssistant && !lecturer.isHeadOfDepartment)
       ) {
         throw new ForbiddenException(
-          'Chỉ Trợ lý Giáo vụ, Tổ trưởng Bộ môn hoặc Ban Chủ nhiệm Khoa mới có quyền xem báo cáo này.',
+          'Chỉ Trợ lý Giáo vụ hoặc Tổ trưởng Bộ môn mới có quyền xem báo cáo này.',
         );
       }
     }

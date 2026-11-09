@@ -122,7 +122,7 @@ function RowActions({ topic }: { topic: TopicListItem }) {
                 }}
               >
                 <Send className="size-4" />
-                Gửi duyệt Bộ môn
+                Gửi duyệt
               </DropdownMenuItem>
             )}
 
@@ -132,7 +132,7 @@ function RowActions({ topic }: { topic: TopicListItem }) {
                 className="text-amber-600 focus:text-amber-600 dark:text-amber-500 dark:focus:text-amber-500 cursor-pointer"
               >
                 <Undo2 className="size-4" />
-                Thu hồi gửi duyệt
+                Thu hồi
               </DropdownMenuItem>
             )}
 

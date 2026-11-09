@@ -57,7 +57,6 @@ const PAGE_SIZE = 15;
 const STATUS_OPTIONS: { value: TopicStatus | 'ALL'; label: string }[] = [
   { value: 'ALL', label: 'Mọi trạng thái' },
   { value: 'PENDING_DEPARTMENT', label: 'Chờ Bộ môn duyệt' },
-  { value: 'PENDING_FACULTY', label: 'Chờ Khoa duyệt' },
   { value: 'APPROVED', label: 'Đã duyệt — chờ mở' },
   { value: 'OPEN', label: 'Đang mở' },
   { value: 'IN_PROGRESS', label: 'Đang thực hiện' },
@@ -72,10 +71,6 @@ const STATUS_LABELS: Record<TopicStatus, { label: string; className: string }> =
     PENDING_DEPARTMENT: {
       label: 'Chờ Bộ môn',
       className: 'text-orange-600 dark:text-orange-400',
-    },
-    PENDING_FACULTY: {
-      label: 'Chờ Khoa',
-      className: 'text-blue-600 dark:text-blue-400',
     },
     APPROVED_OPEN: {
       label: 'Đã duyệt mở',

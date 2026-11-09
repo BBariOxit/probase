@@ -35,7 +35,6 @@ export class ReviewersService {
     const isHodOnly =
       user.role === Role.LECTURER &&
       user.lecturerProfile?.isHeadOfDepartment &&
-      !user.lecturerProfile?.isFacultyBoard &&
       !user.lecturerProfile?.isAcademicAssistant;
 
     // Giới hạn phạm vi theo Bộ môn của TTBM
@@ -226,7 +225,6 @@ export class ReviewersService {
     const isHodOnly =
       user.role === Role.LECTURER &&
       user.lecturerProfile?.isHeadOfDepartment &&
-      !user.lecturerProfile?.isFacultyBoard &&
       !user.lecturerProfile?.isAcademicAssistant;
 
     if (
@@ -335,7 +333,6 @@ export class ReviewersService {
     const isHodOnly =
       user.role === Role.LECTURER &&
       user.lecturerProfile?.isHeadOfDepartment &&
-      !user.lecturerProfile?.isFacultyBoard &&
       !user.lecturerProfile?.isAcademicAssistant;
 
     if (
@@ -369,7 +366,6 @@ export class ReviewersService {
     const isHodOnly =
       user.role === Role.LECTURER &&
       user.lecturerProfile?.isHeadOfDepartment &&
-      !user.lecturerProfile?.isFacultyBoard &&
       !user.lecturerProfile?.isAcademicAssistant;
 
     const targetMajorId = isHodOnly

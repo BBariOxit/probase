@@ -2,7 +2,6 @@ import { api } from '@/lib/api/client';
 import type {
   BulkOpenResult,
   DepartmentReviewInput,
-  FacultyReviewInput,
   Paginated,
   SimilarityMatch,
   TopicDetail,
@@ -16,7 +15,7 @@ export interface TopicQuery {
   lecturerId?: number;
   majorId?: number;
   status?: TopicStatus;
-  reviewStage?: 'DEPARTMENT' | 'FACULTY' | 'ALL';
+  reviewStage?: 'DEPARTMENT' | 'ALL';
   q?: string;
   mine?: boolean;
   forMyCohort?: boolean;
@@ -99,13 +98,6 @@ export const topicService = {
 
   reviewDepartment(id: number, input: DepartmentReviewInput) {
     return api<TopicDetail>(`/topics/${id}/department-review`, {
-      method: 'PATCH',
-      body: input,
-    });
-  },
-
-  reviewFaculty(id: number, input: FacultyReviewInput) {
-    return api<TopicDetail>(`/topics/${id}/faculty-review`, {
       method: 'PATCH',
       body: input,
     });

@@ -46,20 +46,3 @@ export const DepartmentReviewSchema = z
   );
 
 export type DepartmentReviewFormValues = z.infer<typeof DepartmentReviewSchema>;
-
-export const FacultyReviewSchema = z
-  .object({
-    action: z.enum(['APPROVE', 'REQUEST_REVISION', 'REJECT']),
-    feedback: z.string().trim().max(2000).optional(),
-  })
-  .refine(
-    (data) =>
-      data.action === 'APPROVE' ||
-      (typeof data.feedback === 'string' && data.feedback.length > 0),
-    {
-      message: 'Vui lòng nhập nhận xét/lý do khi yêu cầu xem xét lại hoặc từ chối đề tài',
-      path: ['feedback'],
-    },
-  );
-
-export type FacultyReviewFormValues = z.infer<typeof FacultyReviewSchema>;

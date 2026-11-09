@@ -10,7 +10,7 @@ export const QueryTopicsSchema = z.object({
   // Students never widen their own visibility with this — TopicsService
   // intersects whatever is asked for with the statuses their role may see.
   status: z.enum(TopicStatus).optional(),
-  reviewStage: z.enum(['DEPARTMENT', 'FACULTY', 'ALL']).optional(),
+  reviewStage: z.enum(['DEPARTMENT', 'ALL']).optional(),
   q: z.string().trim().min(1).max(255).optional(),
   // A query string has no booleans, and Boolean('false') is true, so the value
   // is matched literally rather than coerced.

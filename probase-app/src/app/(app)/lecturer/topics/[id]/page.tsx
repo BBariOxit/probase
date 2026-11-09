@@ -200,7 +200,7 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
                 ) : (
                   <Undo2 className="size-4" />
                 )}
-                <span>Thu hồi gửi duyệt</span>
+                <span>Thu hồi</span>
               </Button>
               <ConfirmDialog
                 open={confirmWithdraw}
@@ -244,7 +244,7 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
               ) : (
                 <Send className="size-4" />
               )}
-              <span>Gửi duyệt Bộ môn</span>
+              <span>Gửi duyệt</span>
             </Button>
           ) : null
         }

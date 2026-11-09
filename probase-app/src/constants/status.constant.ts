@@ -4,7 +4,6 @@ export const TOPIC_STATUS_FILTERS = [
   { value: 'ALL', label: 'Mọi trạng thái' },
   { value: 'DRAFT', label: 'Bản nháp (Chưa gửi duyệt)' },
   { value: 'PENDING_DEPARTMENT', label: 'Chờ Bộ môn duyệt' },
-  { value: 'PENDING_FACULTY', label: 'Chờ Khoa duyệt' },
   { value: 'APPROVED', label: 'Đã duyệt' },
   { value: 'OPEN', label: 'Đang mở đăng ký' },
   { value: 'IN_PROGRESS', label: 'Đang thực hiện' },
@@ -22,16 +21,12 @@ export const TOPIC_STATUS_LABELS: Record<
     label: 'Chờ Bộ môn duyệt',
     className: 'text-orange-600 dark:text-orange-400',
   },
-  PENDING_FACULTY: {
-    label: 'Chờ Khoa duyệt',
-    className: 'text-blue-600 dark:text-blue-400',
-  },
   APPROVED_OPEN: {
     label: 'Đã duyệt mở',
     className: 'text-emerald-600 dark:text-emerald-400',
   },
   APPROVED: {
-    label: 'Khoa đã duyệt',
+    label: 'Đã duyệt',
     className: 'text-emerald-600 dark:text-emerald-400',
   },
   OPEN: {
