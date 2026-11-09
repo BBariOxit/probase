@@ -340,10 +340,10 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
               {canDepartmentReview && (
                 <>
                   <Button
-                    variant="outline"
+                    variant="default"
                     disabled={departmentReview.isPending}
                     onClick={() => handleDepartmentAction('REJECT')}
-                    className="gap-1.5 font-semibold border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer shadow-xs"
+                    className="gap-1.5 font-semibold bg-rose-600 text-white hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-700 dark:text-white cursor-pointer shadow-xs"
                   >
                     {actionInProgress === 'REJECT' ? (
                       <Loader2 className="size-4 animate-spin" />

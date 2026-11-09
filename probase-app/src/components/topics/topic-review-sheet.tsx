@@ -123,11 +123,10 @@ export function TopicReviewSheet({
     canReview ? (
       <>
         <Button
-          variant="outline"
           size="sm"
           disabled={isMutating}
           onClick={() => handleDepartmentAction('REJECT')}
-          className="cursor-pointer border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          className="cursor-pointer font-semibold shadow-xs bg-rose-600 text-white hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-700 dark:text-white"
         >
           {actionInProgress === 'REJECT' ? (
             <Loader2 className="animate-spin" />
