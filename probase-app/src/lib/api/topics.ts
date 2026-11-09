@@ -71,10 +71,11 @@ export function useTopicLecturers(semesterId: number | undefined) {
   });
 }
 
-export function useTopic(id: number) {
+export function useTopic(id: number, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: topicKeys.detail(id),
     queryFn: () => topicService.getById(id),
+    enabled: (options?.enabled ?? true) && id > 0,
   });
 }
 

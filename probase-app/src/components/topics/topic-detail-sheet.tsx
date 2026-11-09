@@ -37,7 +37,9 @@ export function TopicDetailSheet({
   onClose,
   hideRegisterButton,
 }: TopicDetailSheetProps) {
-  const { data: topic, isPending } = useTopic(topicId ?? 0);
+  const { data: topic, isPending } = useTopic(topicId ?? 0, {
+    enabled: !!topicId,
+  });
 
   const meta = topic ? (
     <>

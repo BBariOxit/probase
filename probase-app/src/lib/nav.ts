@@ -142,7 +142,7 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
       items: [
         {
           href: '/lecturer/topic-reviews',
-          label: 'Thẩm định đề tài',
+          label: 'Duyệt đề tài',
           icon: ClipboardCheck,
           ready: true,
         },

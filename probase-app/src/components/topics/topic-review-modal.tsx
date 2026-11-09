@@ -140,7 +140,7 @@ function TopicReviewModalContent({
 
   return (
     <Dialog open={!!topicId} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden sm:rounded-xl">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden sm:rounded-xl">
         {/* Header */}
         <DialogHeader className="p-6 pb-4 border-b bg-card">
           <div className="flex items-start justify-between gap-4">

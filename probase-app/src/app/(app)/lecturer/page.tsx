@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import {
+  ArrowRight,
   BookOpen,
-  DoorClosed,
-  DoorOpen,
+  ClipboardCheck,
   Loader2,
   MoreHorizontal,
   Pencil,
@@ -16,6 +16,7 @@ import {
   Undo2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useMyProfile } from '@/lib/api/me';
 import type { TopicListItem, TopicStatus } from '@/lib/api/types';
 import {
   useDeleteTopic,
@@ -24,7 +25,6 @@ import {
   useTopics,
 } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
-import { useDebouncedValue } from '@/lib/use-debounced-value';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
@@ -168,7 +168,7 @@ function RowActions({ topic }: { topic: TopicListItem }) {
           try {
             await transition.mutateAsync({ id: topic.id, to: 'withdraw' });
             toast.success('Đã thu hồi đề tài về bản nháp thành công.');
-          } catch (err: any) {
+          } catch (err: unknown) {
             toast.error(
               err instanceof Error ? err.message : 'Không thể thu hồi đề tài.',
             );
@@ -198,6 +198,22 @@ export default function LecturerTopicsPage() {
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const debouncedSearch = useDebounce(search);
 
+  const { data: profile } = useMyProfile({ enabled: allowed });
+  const isHeadOfDepartment = profile?.lecturer?.isHeadOfDepartment ?? false;
+  const lecturerMajorId = profile?.lecturer?.major?.id;
+  const { data: pendingDeptData } = useTopics(
+    {
+      reviewStage: 'DEPARTMENT',
+      ...(lecturerMajorId ? { majorId: lecturerMajorId } : {}),
+      page: 1,
+      limit: 1,
+    },
+    { enabled: allowed && isHeadOfDepartment },
+  );
+  const pendingDeptCount = isHeadOfDepartment
+    ? (pendingDeptData?.total ?? 0)
+    : 0;
+
   const { data, isPending, error } = useTopics({
     mine: true,
     page,
@@ -221,6 +237,35 @@ export default function LecturerTopicsPage() {
 
   return (
     <div className="space-y-4">
+      {isHeadOfDepartment && pendingDeptCount > 0 && (
+        <div className="flex flex-col gap-3 rounded-xl border border-orange-300/80 bg-orange-50/90 px-4 py-3.5 shadow-2xs sm:flex-row sm:items-center sm:justify-between dark:border-orange-800/70 dark:bg-orange-950/30">
+          <div className="flex items-start gap-3 sm:items-center">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-orange-600 text-white shadow-xs">
+              <ClipboardCheck className="size-4.5" />
+            </div>
+            <div className="space-y-0.5">
+              <p className="text-sm font-semibold text-orange-950 dark:text-orange-100">
+                Có {pendingDeptCount} đề tài đang chờ Tổ trưởng Bộ môn duyệt
+              </p>
+              <p className="text-xs text-orange-800/90 dark:text-orange-300">
+                {profile?.lecturer?.major
+                  ? `Bộ môn ${profile.lecturer.major.name} — `
+                  : ''}
+                Rà soát nội dung chuyên môn và duyệt để chuyển sang Giáo vụ mở đăng ký.
+              </p>
+            </div>
+          </div>
+
+          <Button
+            render={<Link href="/lecturer/topic-reviews" />}
+            className="shrink-0 gap-1.5 bg-orange-600 text-white hover:bg-orange-700 shadow-xs"
+          >
+            <span>Duyệt đề tài ({pendingDeptCount})</span>
+            <ArrowRight className="size-4" />
+          </Button>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-56 flex-1 sm:max-w-xs">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -260,11 +305,21 @@ export default function LecturerTopicsPage() {
           </SelectContent>
         </Select>
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex flex-wrap items-center gap-3">
           {data && (
             <span className="text-sm text-muted-foreground">
               {data.total} đề tài
             </span>
+          )}
+          {isHeadOfDepartment && pendingDeptCount === 0 && (
+            <Button
+              variant="outline"
+              render={<Link href="/lecturer/topic-reviews" />}
+              className="gap-1.5"
+            >
+              <ClipboardCheck className="size-4" />
+              Duyệt đề tài Bộ môn
+            </Button>
           )}
           {draftCount > 0 && (
             <Button

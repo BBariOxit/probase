@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   BookMarked,
   Building2,
@@ -62,27 +62,15 @@ export default function LecturerTopicReviewsPage() {
     initialPageSize: TOPIC_PAGE_SIZE,
     storageKey: 'probase_ttbm_topic_reviews_page_size',
   });
-  const [semesterFilter, setSemesterFilter] = useState<string>('AUTO');
+  const [semesterFilter, setSemesterFilter] = useState<string>('ALL');
   const [searchInput, setSearchInput] = useState('');
   const debouncedSearch = useDebounce(searchInput, 300);
   const [reviewingTopicId, setReviewingTopicId] = useState<number | null>(null);
 
   const { data: semesters = [] } = useSemesters();
 
-  const activeSemester = useMemo(
-    () => semesters.find((s) => s.isActive) ?? semesters[0],
-    [semesters],
-  );
-
-  const resolvedSemesterValue =
-    semesterFilter === 'AUTO'
-      ? activeSemester
-        ? String(activeSemester.id)
-        : 'ALL'
-      : semesterFilter;
-
   const currentSemesterId =
-    resolvedSemesterValue === 'ALL' ? undefined : Number(resolvedSemesterValue);
+    semesterFilter === 'ALL' ? undefined : Number(semesterFilter);
 
   const { data, isPending, error } = useTopics(
     {
@@ -96,13 +84,25 @@ export default function LecturerTopicReviewsPage() {
     { enabled: allowed && !isProfileLoading && isHeadOfDepartment },
   );
 
+  const { data: pendingCountData } = useTopics(
+    {
+      semesterId: currentSemesterId,
+      reviewStage: 'DEPARTMENT',
+      ...(lecturer?.major?.id ? { majorId: lecturer.major.id } : {}),
+      page: 1,
+      limit: 1,
+    },
+    { enabled: allowed && !isProfileLoading && isHeadOfDepartment },
+  );
+  const pendingDeptCount = pendingCountData?.total ?? 0;
+
   if (!allowed) return null;
 
   if (isProfileLoading) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-24 text-muted-foreground">
         <Loader2 className="size-8 animate-spin text-primary" />
-        <p className="text-sm">Đang xác thực quyền thẩm định chuyên môn...</p>
+        <p className="text-sm">Đang xác thực quyền duyệt đề tài Bộ môn...</p>
       </div>
     );
   }
@@ -114,7 +114,7 @@ export default function LecturerTopicReviewsPage() {
           <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
             <Building2 className="size-6" />
           </div>
-          <h2 className="text-lg font-semibold">Khu vực Thẩm định Đề tài Bộ môn</h2>
+          <h2 className="text-lg font-semibold">Khu vực Duyệt Đề tài Bộ môn</h2>
           <p className="mx-auto max-w-md text-sm text-muted-foreground">
             Chức năng này dành cho <strong>Tổ trưởng Bộ môn (TTBM)</strong> rà soát
             chuyên môn, kiểm tra trùng lặp và duyệt đề tài trước khi chuyển sang Giáo vụ
@@ -137,11 +137,11 @@ export default function LecturerTopicReviewsPage() {
             <Building2 className="size-4" />
             Khoa Công nghệ Thông tin — DLU
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Thẩm định Đề tài Bộ môn</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Duyệt Đề tài Bộ môn</h1>
           <p className="text-sm text-muted-foreground">
             Rà soát nội dung chuyên môn và kiểm tra trùng lặp đề tài do giảng viên gửi
-            duyệt (BR-04 &amp; BR-05). Sau khi duyệt, đề tài sẽ sẵn sàng để Giáo vụ tổng
-            hợp và mở đăng ký.
+            duyệt (BR-04 &amp; BR-05). Sau khi duyệt, đề tài sẽ chuyển sang Giáo vụ ở
+            trạng thái Đã duyệt — chờ mở đăng ký.
           </p>
         </div>
 
@@ -178,6 +178,18 @@ export default function LecturerTopicReviewsPage() {
           {lecturer?.major && (
             <span className="text-xs opacity-80">({lecturer.major.code})</span>
           )}
+          {pendingDeptCount > 0 && (
+            <span
+              className={cn(
+                'rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums',
+                tab === 'DEPARTMENT'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-orange-600 text-white',
+              )}
+            >
+              {pendingDeptCount}
+            </span>
+          )}
         </button>
 
         <button
@@ -210,13 +222,13 @@ export default function LecturerTopicReviewsPage() {
             }}
             placeholder="Tìm theo tên đề tài, mô tả..."
             className="pl-9 text-sm"
-            aria-label="Tìm đề tài thẩm định"
+            aria-label="Tìm đề tài duyệt"
           />
         </div>
 
         <div className="flex items-center gap-3">
           <Select
-            value={resolvedSemesterValue}
+            value={semesterFilter}
             onValueChange={(val) => {
               setSemesterFilter(val ?? 'ALL');
               resetPage();
@@ -270,7 +282,7 @@ export default function LecturerTopicReviewsPage() {
             icon={CheckCircle2}
             title={
               tab === 'DEPARTMENT'
-                ? 'Không còn đề tài nào đang chờ Bộ môn thẩm định.'
+                ? 'Không còn đề tài nào đang chờ Bộ môn duyệt.'
                 : 'Không tìm thấy đề tài nào.'
             }
           />
@@ -279,13 +291,13 @@ export default function LecturerTopicReviewsPage() {
             <Table className="w-full min-w-[820px] table-fixed text-left text-sm">
               <TableHeader>
                 <TableRow className="bg-muted/40 hover:bg-muted/40">
-                  <TableHead className="w-[42%] px-5 py-3.5">
+                  <TableHead className="w-[38%] px-5 py-3.5">
                     Tên đề tài &amp; Chuyên ngành
                   </TableHead>
-                  <TableHead className="w-[22%] px-3 py-3.5">Giảng viên ra đề</TableHead>
+                  <TableHead className="w-[21%] px-3 py-3.5">Giảng viên ra đề</TableHead>
                   <TableHead className="w-[14%] px-3 py-3.5">Loại đồ án</TableHead>
                   <TableHead className="w-[12%] px-3 py-3.5">Trạng thái</TableHead>
-                  <TableHead className="w-[14%] px-5 py-3.5 text-right">Thao tác</TableHead>
+                  <TableHead className="w-[15%] px-5 py-3.5 text-right">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -358,8 +370,12 @@ export default function LecturerTopicReviewsPage() {
                               'bg-orange-600 text-white shadow-xs hover:bg-orange-700',
                           )}
                         >
-                          <Eye className="size-3.5" />
-                          {isPendingDepartment ? 'Thẩm định' : 'Xem chi tiết'}
+                          {isPendingDepartment ? (
+                            <ClipboardCheck className="size-3.5" />
+                          ) : (
+                            <Eye className="size-3.5" />
+                          )}
+                          {isPendingDepartment ? 'Duyệt đề tài' : 'Xem chi tiết'}
                         </Button>
                       </TableCell>
                     </TableRow>

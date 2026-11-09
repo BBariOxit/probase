@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useActiveSemester, useMyEligibleProjectTypes } from '@/lib/api/master-data';
 import { useMyProfile } from '@/lib/api/me';
 import { useMyGroup } from '@/lib/api/registration';
+import { useTopics } from '@/lib/api/topics';
 import type { SessionUser } from '@/lib/api/types';
 import { NAV_BY_ROLE, type NavItem } from '@/lib/nav';
 import { Brand, Logo } from '@/components/layout/brand';
@@ -17,12 +18,13 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
 
-function NavEntry({ item }: { item: NavItem }) {
+function NavEntry({ item, badge }: { item: NavItem; badge?: number }) {
   const pathname = usePathname();
   const isRootRole = ['/', '/admin', '/lecturer', '/student'].includes(item.href);
   const active = isRootRole
@@ -30,6 +32,8 @@ function NavEntry({ item }: { item: NavItem }) {
     : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
   const Icon = item.icon;
+  const hasBadge = badge !== undefined && badge > 0;
+  const tooltipText = hasBadge ? `${item.label} (${badge})` : item.label;
 
   if (!item.ready) {
     return (
@@ -50,12 +54,18 @@ function NavEntry({ item }: { item: NavItem }) {
     <SidebarMenuItem>
       <SidebarMenuButton
         isActive={active}
-        tooltip={item.label}
+        tooltip={tooltipText}
+        className={hasBadge ? 'pr-9' : undefined}
         render={<Link href={item.href} />}
       >
         <Icon className="size-4 shrink-0" />
         <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
       </SidebarMenuButton>
+      {hasBadge && (
+        <SidebarMenuBadge className="top-2 right-2 h-5 min-w-5 rounded-full bg-orange-600 px-1.5 text-[11px] font-semibold text-white peer-hover/menu-button:text-white peer-data-active/menu-button:text-white">
+          {badge > 99 ? '99+' : badge}
+        </SidebarMenuBadge>
+      )}
     </SidebarMenuItem>
   );
 }
@@ -65,6 +75,19 @@ export function AppSidebar({ user }: { user: SessionUser }) {
   const isLecturer = user.role === 'LECTURER';
   const { data: myProfile } = useMyProfile({ enabled: isLecturer });
   const isHeadOfDepartment = myProfile?.lecturer?.isHeadOfDepartment ?? false;
+  const lecturerMajorId = myProfile?.lecturer?.major?.id;
+  const { data: pendingDepartmentTopics } = useTopics(
+    {
+      reviewStage: 'DEPARTMENT',
+      ...(lecturerMajorId ? { majorId: lecturerMajorId } : {}),
+      page: 1,
+      limit: 1,
+    },
+    { enabled: isLecturer && isHeadOfDepartment },
+  );
+  const pendingDepartmentCount = isHeadOfDepartment
+    ? (pendingDepartmentTopics?.total ?? 0)
+    : 0;
   const { data: myGroup } = useMyGroup({ enabled: isStudent });
   const activeSemester = useActiveSemester();
   const { data: eligibleTypes } = useMyEligibleProjectTypes(
@@ -101,7 +124,7 @@ export function AppSidebar({ user }: { user: SessionUser }) {
     const rawGroups = NAV_BY_ROLE[user.role];
 
     if (isLecturer) {
-      return rawGroups
+      const filtered = rawGroups
         .map((group) => ({
           ...group,
           items: group.items.filter((item) => {
@@ -112,6 +135,15 @@ export function AppSidebar({ user }: { user: SessionUser }) {
           }),
         }))
         .filter((group) => group.items.length > 0);
+
+      // Surface Tổ chuyên môn first for TTBM so topic approval is immediately visible.
+      if (isHeadOfDepartment) {
+        const deptGroup = filtered.find((g) => g.label === 'Tổ chuyên môn');
+        const others = filtered.filter((g) => g.label !== 'Tổ chuyên môn');
+        return deptGroup ? [deptGroup, ...others] : filtered;
+      }
+
+      return filtered;
     }
 
     if (!isStudent) return rawGroups;
@@ -157,7 +189,15 @@ export function AppSidebar({ user }: { user: SessionUser }) {
             <SidebarGroupContent className="group-data-[collapsible=icon]:w-full">
               <SidebarMenu className="gap-1 group-data-[collapsible=icon]:gap-1 group-data-[collapsible=icon]:items-center">
                 {group.items.map((item) => (
-                  <NavEntry key={item.href} item={item} />
+                  <NavEntry
+                    key={item.href}
+                    item={item}
+                    badge={
+                      item.href === '/lecturer/topic-reviews'
+                        ? pendingDepartmentCount
+                        : undefined
+                    }
+                  />
                 ))}
               </SidebarMenu>
             </SidebarGroupContent>
