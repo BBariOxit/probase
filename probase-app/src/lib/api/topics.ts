@@ -136,9 +136,9 @@ export function useBulkOpenTopics() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (semesterId: number) => topicService.bulkOpen(semesterId),
+    mutationFn: (semesterId?: number) => topicService.bulkOpen(semesterId),
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: topicKeys.lists() }),
+      queryClient.invalidateQueries({ queryKey: topicKeys.all }),
   });
 }
 

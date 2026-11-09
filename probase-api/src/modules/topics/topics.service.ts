@@ -588,13 +588,18 @@ export class TopicsService {
     return { message: 'Đã xóa đề tài thành công.' };
   }
 
-  async bulkOpen(semesterId: number) {
-    // Guard: the semester must exist — a caller that passes a non-existent id
-    // would silently update zero rows, which is hard to debug.
-    await this.requireSemester(semesterId);
+  async bulkOpen(semesterId?: number) {
+    // Guard: if a specific semester is provided, it must exist — an invalid id
+    // would otherwise silently update zero rows, which is hard to debug.
+    if (semesterId !== undefined) {
+      await this.requireSemester(semesterId);
+    }
 
     const result = await this.prisma.topic.updateMany({
-      where: { semesterId, status: TopicStatus.APPROVED },
+      where: {
+        ...(semesterId !== undefined && { semesterId }),
+        status: TopicStatus.APPROVED,
+      },
       data: { status: TopicStatus.OPEN },
     });
 

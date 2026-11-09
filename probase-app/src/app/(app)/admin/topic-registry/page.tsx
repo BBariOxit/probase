@@ -475,7 +475,7 @@ export default function AdminTopicRegistryPage() {
           open={bulkOpen}
           onOpenChange={setBulkOpen}
           approvedCount={approvedCount}
-          semesterId={semesterId ?? 0}
+          semesterId={semesterId}
           semesterName={selectedSemester?.name ?? 'Tất cả học kỳ'}
         />
       </div>

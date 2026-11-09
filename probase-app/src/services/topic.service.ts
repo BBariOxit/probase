@@ -113,10 +113,10 @@ export const topicService = {
     });
   },
 
-  bulkOpen(semesterId: number) {
+  bulkOpen(semesterId?: number) {
     return api<BulkOpenResult>('/topics/bulk-open', {
       method: 'PATCH',
-      body: { semesterId },
+      body: semesterId !== undefined ? { semesterId } : {},
     });
   },
 
