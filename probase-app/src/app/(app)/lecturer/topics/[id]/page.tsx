@@ -17,7 +17,7 @@ import {
 } from '@/components/shared/attachment-uploader';
 import { TopicDetailView } from '@/components/topics/topic-detail-view';
 import { TopicForm } from '@/components/topics/topic-form';
-import { TopicReviewModal } from '@/components/topics/topic-review-modal';
+import { TopicReviewSheet } from '@/components/topics/topic-review-sheet';
 import { TopicStatusBadge } from '@/components/topics/topic-status-badge';
 import { Button } from '@/components/ui/button';
 
@@ -256,7 +256,9 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
                           id: topic.id,
                           to: 'withdraw',
                         });
-                        toast.success('Đã thu hồi đề tài về bản nháp thành công.');
+                        toast.success(
+                          'Đã thu hồi đề tài về bản nháp thành công.',
+                        );
                       } catch (err: unknown) {
                         toast.error(
                           err instanceof Error
@@ -296,7 +298,7 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
         }
       />
 
-      <TopicReviewModal
+      <TopicReviewSheet
         topicId={reviewOpen ? topic.id : null}
         onClose={() => setReviewOpen(false)}
         stage="DEPARTMENT"

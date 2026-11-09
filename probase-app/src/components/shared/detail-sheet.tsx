@@ -67,7 +67,7 @@ export function DetailSheet({
             </div>
 
             {footer && (
-              <SheetFooter className="flex flex-row justify-end gap-2 border-t px-4 py-4 sm:px-5">
+              <SheetFooter className="flex flex-row flex-wrap justify-end gap-2 border-t px-4 py-4 sm:px-5">
                 {footer}
               </SheetFooter>
             )}

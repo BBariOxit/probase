@@ -8,7 +8,7 @@ import { useTopics } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
-import { TopicReviewModal } from '@/components/topics/topic-review-modal';
+import { TopicReviewSheet } from '@/components/topics/topic-review-sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -197,7 +197,7 @@ export default function LecturerTopicReviewsPage() {
         />
       )}
 
-      <TopicReviewModal
+      <TopicReviewSheet
         topicId={selectedTopicId}
         onClose={() => setSelectedTopicId(null)}
         stage="DEPARTMENT"
