@@ -62,11 +62,14 @@ export function useInfiniteTopics(
   });
 }
 
-export function useTopicLecturers(semesterId: number | undefined) {
+export function useTopicLecturers(
+  semesterId: number | undefined,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: [...topicKeys.all, 'lecturers', semesterId],
     queryFn: () => topicService.getLecturers(semesterId),
-    enabled: semesterId !== undefined,
+    enabled: options?.enabled ?? semesterId !== undefined,
     staleTime: 60_000,
   });
 }

@@ -23,6 +23,8 @@ export interface LecturerComboboxProps {
   triggerClassName?: string;
   listClassName?: string;
   disabled?: boolean;
+  size?: 'sm' | 'default';
+  'aria-label'?: string;
 }
 
 export function LecturerCombobox({
@@ -37,6 +39,8 @@ export function LecturerCombobox({
   triggerClassName,
   listClassName,
   disabled,
+  size = 'sm',
+  'aria-label': ariaLabel,
 }: LecturerComboboxProps) {
   const options: ComboboxOption[] = useMemo(() => {
     return lecturers.map((l) => {
@@ -63,7 +67,8 @@ export function LecturerCombobox({
       triggerClassName={triggerClassName}
       listClassName={listClassName}
       disabled={disabled}
-      size="sm"
+      size={size}
+      aria-label={ariaLabel}
     />
   );
 }

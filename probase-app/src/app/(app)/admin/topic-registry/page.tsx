@@ -19,13 +19,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { useTopicTransition, useTopics } from '@/lib/api/topics';
+import {
+  useTopicLecturers,
+  useTopicTransition,
+  useTopics,
+} from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
 import type { Semester, TopicListItem, TopicStatus } from '@/lib/api/types';
 import { useSemesters } from '@/lib/api/master-data';
 import { BulkOpenDialog } from '@/components/admin/bulk-open-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
+import { LecturerCombobox } from '@/components/shared/lecturer-combobox';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -201,15 +206,20 @@ export default function AdminTopicRegistryPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<TopicStatus | 'ALL'>('ALL');
   const [semesterId, setSemesterId] = useState<number | undefined>(undefined);
+  const [lecturerId, setLecturerId] = useState(0);
   const [bulkOpen, setBulkOpen] = useState(false);
 
   const debouncedSearch = useDebouncedValue(search);
   const { data: semestersData } = useSemesters();
   const semesters: Semester[] = semestersData ?? [];
+  const { data: lecturers } = useTopicLecturers(semesterId, {
+    enabled: allowed,
+  });
 
   const { data, isPending, error } = useTopics({
     status: statusFilter === 'ALL' ? undefined : statusFilter,
     semesterId,
+    lecturerId: lecturerId || undefined,
     q: debouncedSearch || undefined,
     page,
     limit: PAGE_SIZE,
@@ -224,6 +234,9 @@ export default function AdminTopicRegistryPage() {
   const approvedCount = approvedData?.total ?? 0;
 
   const selectedSemester = semesters.find((s) => s.id === semesterId);
+  const hasFilters = Boolean(
+    debouncedSearch || semesterId || statusFilter !== 'ALL' || lecturerId !== 0,
+  );
 
   if (!allowed) return null;
 
@@ -271,6 +284,7 @@ export default function AdminTopicRegistryPage() {
             value={semesterId ? semesterId.toString() : 'ALL'}
             onValueChange={(v) => {
               setSemesterId(v === 'ALL' ? undefined : Number(v));
+              setLecturerId(0);
               setPage(1);
             }}
           >
@@ -315,6 +329,19 @@ export default function AdminTopicRegistryPage() {
               ))}
             </SelectContent>
           </Select>
+
+          <LecturerCombobox
+            lecturers={lecturers ?? []}
+            value={lecturerId}
+            onChange={(val) => {
+              setLecturerId(val);
+              setPage(1);
+            }}
+            size="default"
+            className="w-48 sm:w-52 shrink-0"
+            triggerClassName="dark:bg-[#141416] dark:hover:bg-[#1a1a1d] dark:focus:bg-[#0f0f11]"
+            aria-label="Lọc theo giảng viên"
+          />
 
           {data && (
             <span className="ml-auto text-sm font-medium text-slate-600 dark:text-neutral-400 select-none">
@@ -442,7 +469,9 @@ export default function AdminTopicRegistryPage() {
               title={
                 debouncedSearch
                   ? 'Không có đề tài nào khớp từ khoá.'
-                  : 'Không có đề tài nào.'
+                  : hasFilters
+                    ? 'Không có đề tài nào khớp bộ lọc.'
+                    : 'Không có đề tài nào.'
               }
             />
           )}
