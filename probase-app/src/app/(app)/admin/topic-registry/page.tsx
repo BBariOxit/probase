@@ -281,15 +281,7 @@ export default function AdminTopicRegistryPage() {
       <div className="w-full min-w-0 space-y-4">
         {/* ── Header ── */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-lg font-semibold">Quản lý đề tài</h1>
-            {activeSemester && (
-              <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 dark:border-neutral-700 bg-slate-100/80 dark:bg-neutral-800/80 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:text-neutral-300">
-                <CalendarRange className="size-3.5 text-primary shrink-0" />
-                {activeSemester.name}
-              </span>
-            )}
-          </div>
+          <h1 className="text-lg font-semibold">Quản lý đề tài</h1>
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
             <TopicExportMenu
