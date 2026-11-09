@@ -18,7 +18,7 @@ import { QueryTopicsDto } from './dto/query-topics.dto';
 import { UpdateTopicDto } from './dto/update-topic.dto';
 import { BulkOpenTopicsDto } from './dto/bulk-open-topics.dto';
 import { SubmitTopicsDto } from './dto/submit-topics.dto';
-import { DepartmentReviewDto, FacultyReviewDto } from './dto/review-topic.dto';
+import { DepartmentReviewDto } from './dto/review-topic.dto';
 import { TopicSimilarityService } from './topic-similarity.service';
 import { TopicsService } from './topics.service';
 
@@ -97,12 +97,6 @@ export class TopicsController {
   }
 
   @Roles('ADMIN')
-  @Patch(':id/approve')
-  approve(@Param('id', ParseIntPipe) id: number) {
-    return this.topicsService.approve(id);
-  }
-
-  @Roles('ADMIN')
   @Patch(':id/open')
   open(
     @Param('id', ParseIntPipe) id: number,
@@ -138,7 +132,7 @@ export class TopicsController {
     return this.topicsService.close(id, userId, role);
   }
 
-  @Roles('LECTURER', 'ADMIN')
+  @Roles('LECTURER')
   @Patch(':id/department-review')
   reviewDepartment(
     @Param('id', ParseIntPipe) id: number,
@@ -146,16 +140,6 @@ export class TopicsController {
     @GetUser() user: any,
   ) {
     return this.topicsService.reviewDepartment(id, dto, user);
-  }
-
-  @Roles('LECTURER', 'ADMIN')
-  @Patch(':id/faculty-review')
-  reviewFaculty(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: FacultyReviewDto,
-    @GetUser() user: any,
-  ) {
-    return this.topicsService.reviewFaculty(id, dto, user);
   }
 
   @Roles('LECTURER', 'ADMIN')

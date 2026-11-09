@@ -321,13 +321,14 @@ function Outcome({ proposal }: { proposal: TopicProposal }) {
       >
         Mở đề tài
       </Link>
-      {/* Which of the two is holding it up: a PENDING topic is waiting on the
-          faculty office, an APPROVED one is waiting on them to open registration. */}
-      {proposal.convertedTopic.status === 'PENDING'
-        ? ' — đang chờ khoa duyệt.'
-        : proposal.convertedTopic.status === 'APPROVED'
-          ? ' — khoa đã duyệt, chờ khoa mở đăng ký.'
-          : '.'}
+      {proposal.convertedTopic.status === 'DRAFT'
+        ? ' — đang ở bản nháp, hãy gửi Bộ môn thẩm định.'
+        : proposal.convertedTopic.status === 'PENDING_DEPARTMENT' ||
+            proposal.convertedTopic.status === 'PENDING'
+          ? ' — đang chờ Bộ môn duyệt.'
+          : proposal.convertedTopic.status === 'APPROVED'
+            ? ' — Bộ môn đã duyệt, chờ Giáo vụ mở đăng ký.'
+            : '.'}
     </p>
   );
 }

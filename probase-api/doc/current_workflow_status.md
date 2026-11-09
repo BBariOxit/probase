@@ -1,7 +1,7 @@
 # Luồng Hoạt Động Vận Hành Thực Tế Hiện Tại Của ProBase
 ## Khoa Công nghệ Thông tin – Trường Đại học Đà Lạt (DLU)
 
-> **Mục đích tài liệu:** Ghi chép đầy đủ, chi tiết và trực quan **toàn bộ luồng hoạt động thực tế của ứng dụng hiện tại từ đầu đến cuối chu trình**: Bắt đầu từ khâu khởi tạo của Khoa, đi qua từng tác nhân (Giáo vụ, Giảng viên, Bộ môn, Ban Chủ nhiệm, Sinh viên), ở mỗi bước từng tác nhân **làm gì, được làm những gì trên màn hình giao diện**, hệ thống kiểm soát ràng buộc gì và tự động xử lý những gì ở hậu trường.
+> **Mục đích tài liệu:** Ghi chép đầy đủ, chi tiết và trực quan **toàn bộ luồng hoạt động thực tế của ứng dụng hiện tại từ đầu đến cuối chu trình**: Bắt đầu từ khâu khởi tạo của Khoa, đi qua từng tác nhân (Giáo vụ, Giảng viên, Tổ trưởng Bộ môn, Sinh viên), ở mỗi bước từng tác nhân **làm gì, được làm những gì trên màn hình giao diện**, hệ thống kiểm soát ràng buộc gì và tự động xử lý những gì ở hậu trường. Ban Chủ nhiệm Khoa không sử dụng tài khoản riêng trên hệ thống mà thực hiện ký duyệt văn bản giấy (ngoài hệ thống) dựa trên danh sách/tờ trình do Giáo vụ xuất từ hệ thống.
 >
 > ⚠️ **Nguyên tắc bất biến:** Tài liệu này **CHỈ GHI NHẬN NHỮNG TÍNH NĂNG ĐÃ LÀM XONG 100%, ĐÃ CÓ CODE, ĐÃ TEST VÀ ĐANG CHẠY ỔN ĐỊNH TRÊN HỆ THỐNG**. Các phân hệ tiếp theo (Nhật ký tuần, Chấm điểm tiến độ 1 & 2, Hội đồng bảo vệ...) chưa xong nên tuyệt đối chưa ghi vào đây.
 
@@ -48,14 +48,14 @@
 [BƯỚC 2: Toàn bộ GV & Sinh viên]
    │ Đăng nhập Google SSO DLU (@dlu.edu.vn) ➔ Hệ thống phân luồng & cấp cờ Đủ ĐK
    ▼
-[BƯỚC 3: GVHD ➔ TTBM ➔ Ban Chủ nhiệm Khoa]
-   │ GVHD soạn đề tài ➔ TTBM duyệt cấp 1 ➔ BCN Khoa phê duyệt cấp 2 (Mở cổng)
+[BƯỚC 3: GVHD ➔ TTBM ➔ Giáo vụ Khoa]
+   │ GVHD soạn đề tài ➔ TTBM duyệt chuyên môn (`APPROVED`) ➔ Giáo vụ tổng hợp in trình ký giấy (Lần 1) & mở cổng đăng ký (`OPEN`)
    ▼
 [BƯỚC 4: Sinh viên đủ điều kiện]
    │ Tra cứu đề tài theo ngành ➔ Đăng ký đề tài ➔ Lập nhóm 1–3 bạn qua Join Code
    ▼
-[BƯỚC 5: Nhóm SV ➔ GVHD ➔ Giáo vụ & BCN Khoa]
-   │ Tải mẫu M03 ➔ Xin chữ ký sống GVHD ➔ Nộp PDF scan ➔ GVHD duyệt ➔ Khoa ra Tờ trình
+[BƯỚC 5: Nhóm SV ➔ GVHD ➔ Giáo vụ Khoa]
+   │ Tải mẫu M03 ➔ Xin chữ ký sống GVHD ➔ Nộp PDF scan ➔ GVHD duyệt ➔ Giáo vụ xuất Tờ trình trình ký Quyết định giao đề tài (Lần 2 - văn bản giấy)
    ▼
 [BƯỚC 6: Giai đoạn Thực hiện đồ án & Đánh giá tiến độ (DLU Real-world)]
    │ • Phân hệ 1 (Nội bộ): Sổ tay tiến độ tuần/sprint (SV log ➔ GVHD xác nhận & góp ý)
@@ -105,7 +105,7 @@
      - Chuyển trạng thái đợt: `PREP` (Chuẩn bị) $\rightarrow$ `OPEN` (Mở cổng).
   3. **Quản lý Giảng viên & Bộ môn:**
      - Khai báo danh sách Giảng viên cơ hữu trong Khoa, phân bổ về 2 Chuyên ngành / Bộ môn: **Bộ môn Công nghệ phần mềm (CNPM)** hoặc **Bộ môn Mạng máy tính (MMT)**.
-     - Gán vai trò chức vụ kiêm nhiệm cho giảng viên: Giảng viên hướng dẫn (`GVHD`), Tổ trưởng bộ môn (`TTBM`), Ban Chủ nhiệm Khoa (`BCN Khoa` / Dean / Vice-Dean), Trợ lý Giáo vụ (`TLGV`).
+     - Gán vai trò chức vụ kiêm nhiệm cho giảng viên: Giảng viên hướng dẫn (`GVHD`), Tổ trưởng bộ môn (`TTBM`), Trợ lý Giáo vụ (`TLGV`). (Ban Chủ nhiệm Khoa chỉ ký duyệt văn bản giấy ngoài hệ thống ở 2 mốc hành chính, không có vai trò đăng nhập duyệt trực tuyến trên app).
 * **Hệ thống kiểm soát:**
   - Mỗi thời điểm chỉ cho phép duy nhất **1 Học kỳ đang Active**.
   - Không cho phép xóa Học kỳ hoặc Đợt đồ án nếu đã có đề tài hoặc sinh viên đăng ký gắn liền.
@@ -141,7 +141,7 @@
 
 ### BƯỚC 2: TOÀN BỘ GIẢNG VIÊN & SINH VIÊN ĐĂNG NHẬP (GOOGLE SSO DLU)
 
-* **Ai thực hiện:** Tất cả người dùng trong Khoa (Sinh viên, Giảng viên, TTBM, BCN Khoa).
+* **Ai thực hiện:** Tất cả người dùng trong Khoa (Sinh viên, Giảng viên, TTBM, TLGV / Giáo vụ).
 * **Màn hình giao diện trên Web:** Trang **Đăng nhập** (`/login`).
 * **Người dùng được làm những gì:**
   - Bấm duy nhất nút: **"Đăng nhập bằng tài khoản Google DLU"**.
@@ -152,33 +152,31 @@
      - Nếu email chưa từng được Giáo vụ nạp vào CSDL: Hệ thống từ chối đăng nhập với thông báo *"Email chưa được cập nhật vào danh sách của Khoa CNTT"*.
      - Nếu email đã có: Tự động cấp Token JWT, cập nhật avatar Google.
   3. **Phân luồng màn hình tự động:**
-     - **Giảng viên / Ban Chủ nhiệm:** Điều hướng sang Dashboard Giảng viên (`/lecturer`) hoặc Quản trị (`/admin`).
+     - **Giảng viên / Giáo vụ (Admin):** Điều hướng sang Dashboard Giảng viên (`/lecturer`) hoặc Quản lý đề tài (`/admin/topic-registry`).
      - **Sinh viên:** Điều hướng sang Dashboard Sinh viên (`/student`) với giao diện phân hóa:
        - *Sinh viên ĐỦ ĐIỀU KIỆN:* Hiển thị **Banner màu xanh ngọc**: *"🎉 Bạn đủ điều kiện đăng ký đồ án học kỳ này. Hạn nộp Đề cương M03: [Ngày/Tháng]"* kèm nút tắt chuyển nhanh vào Nhóm, đồng thời mở toàn quyền đăng ký đề tài.
        - *Sinh viên CHƯA ĐỦ ĐIỀU KIỆN:* Hiển thị **Banner màu cam cảnh báo**: *"⚠️ Tài khoản của bạn chưa nằm trong danh sách đủ điều kiện làm đồ án đợt này. Vui lòng liên hệ Giáo vụ Khoa nếu có thắc mắc."* và **bị khóa cứng nút đăng ký đề tài/tạo nhóm**.
 
 ---
 
-### BƯỚC 3: XÂY DỰNG & PHÊ DUYỆT NGÂN HÀNG ĐỀ TÀI (QUY TRÌNH 2 CẤP)
+### BƯỚC 3: XÂY DỰNG & PHÊ DUYỆT NGÂN HÀNG ĐỀ TÀI (DUYỆT CHUYÊN MÔN CẤP BỘ MÔN)
 
-* **Ai thực hiện:** Giảng viên hướng dẫn (GVHD) $\rightarrow$ Tổ trưởng Bộ môn (TTBM) $\rightarrow$ Ban Chủ nhiệm Khoa (BCN Khoa).
+* **Ai thực hiện:** Giảng viên hướng dẫn (GVHD) $\rightarrow$ Tổ trưởng Bộ môn (TTBM) $\rightarrow$ Trợ lý Giáo vụ Khoa (TLGV / Admin).
 * **Quy trình đi qua từng tác nhân:**
   1. **Giảng viên hướng dẫn (GVHD):**
-     - Vào trang **Đề tài của tôi** $\rightarrow$ Bấm **"Thêm đề tài mới"** (`/lecturer/topics/new`).
-     - Soạn thảo đề tài: Tên đề tài (Tiếng Việt & Tiếng Anh), chọn Chuyên ngành (**Công nghệ phần mềm** hoặc **Mạng máy tính**), Mục tiêu nghiên cứu, Nội dung yêu cầu kỹ thuật, Công nghệ sử dụng, Số lượng sinh viên tối đa (**1 đến 3 SV**).
-     - GVHD có thể nhân bản từ đề tài các học kỳ trước để cập nhật nhanh.
-     - Bấm nộp: Đề tài mang trạng thái `PENDING_DEPARTMENT` (Chờ Bộ môn thẩm định).
+     - Vào trang **Đề tài của tôi** (`/lecturer`) $\rightarrow$ Bấm **"Thêm đề tài mới"** (`/lecturer/topics/new`).
+     - Soạn thảo đề tài: Tên đề tài, chọn Chuyên ngành (**Công nghệ phần mềm** hoặc **Mạng máy tính**), Mục tiêu nghiên cứu, Mô tả nội dung yêu cầu, Yêu cầu đầu ra, Công nghệ sử dụng, Số lượng sinh viên tối đa (**1 đến 3 SV**).
+     - GVHD có thể lưu ở trạng thái bản nháp (`DRAFT`), sau đó bấm **"Gửi duyệt"** để chuyển sang `PENDING_DEPARTMENT` (Chờ Bộ môn thẩm định).
   2. **Tổ trưởng Bộ môn (TTBM - Tổ CNPM hoặc Tổ MMT):**
-     - Đăng nhập với quyền TTBM vào màn hình Duyệt đề tài (`/admin/topics`).
-     - Hệ thống chỉ lọc hiển thị các đề tài thuộc Chuyên ngành/Chuyên ngành / Bộ môn mà TTBM đó phụ trách.
-     - Thẩm định độ khó, tính thực tiễn và tính trùng lặp.
-     - TTBM được làm 3 hành động:
-       - **Chấp thuận**: Đề tài được chuyển lên cấp Khoa (`PENDING_FACULTY`).
-       - **Yêu cầu chỉnh sửa**: Trả về cho GVHD kèm lời nhắn nhận xét.
-       - **Từ chối**: Hủy đề tài không đạt yêu cầu.
-  3. **Ban Chủ nhiệm Khoa (BCN Khoa):**
-     - Rà soát toàn bộ đề tài đã được 2 Bộ môn thông qua.
-     - Bấm **"Phê duyệt chính thức"** (`APPROVED_OPEN`): Đề tài chính thức mở cổng trên hệ thống để sinh viên toàn khoa tra cứu và đăng ký.
+     - Truy cập mục **Duyệt đề tài** (`/lecturer/topic-reviews`) ở đầu thanh điều hướng bên trái trên giao diện Giảng viên.
+     - Thẩm định chuyên môn các đề tài thuộc chuyên ngành mình phụ trách (kiểm tra độ khó, tính thực tiễn và cảnh báo trùng lặp tương đồng).
+     - TTBM thực hiện 1 trong 3 hành động:
+       - **Chấp thuận (`APPROVE`)**: Đề tài chuyển thẳng sang trạng thái **Đã duyệt** (`APPROVED`), sẵn sàng để Giáo vụ mở cổng đăng ký.
+       - **Yêu cầu chỉnh sửa (`REQUEST_REVISION`)**: Trả về trạng thái `DRAFT` kèm lời nhắn nhận xét để GVHD chỉnh sửa.
+       - **Từ chối (`REJECT`)**: Chuyển đề tài sang `REJECTED`.
+  3. **Trợ lý Giáo vụ Khoa (TLGV / Admin) & Ký duyệt Lần 1 (ngoài hệ thống):**
+     - Giáo vụ Khoa theo dõi toàn bộ danh mục đề tài đã được TTBM duyệt ở trạng thái `APPROVED` (**Đã duyệt — chờ mở**) tại `/admin/topic-registry` (Giáo vụ không có chức năng duyệt chuyên môn đề tài).
+     - Giáo vụ tổng hợp/in danh mục đề tài gửi BCN Khoa xem và ký thông qua bản giấy **Lần 1 (Duyệt danh mục đề tài nội bộ)** ngoài hệ thống, sau đó bấm **"Mở đăng ký"** / **"Mở đăng ký đồng loạt"** (`APPROVED` $\rightarrow$ `OPEN`) để sinh viên tra cứu và chọn đề tài.
 
 ---
 
@@ -212,7 +210,7 @@
 
 ### BƯỚC 5: LẬP, XIN CHỮ KÝ SỐNG & PHÊ DUYỆT ĐỀ CƯƠNG M03 (VÀO GIAI ĐOẠN THỰC HIỆN)
 
-* **Ai thực hiện:** Nhóm Sinh viên $\rightarrow$ Giảng viên hướng dẫn (GVHD) $\rightarrow$ Giáo vụ & Ban Chủ nhiệm Khoa.
+* **Ai thực hiện:** Nhóm Sinh viên $\rightarrow$ Giảng viên hướng dẫn (GVHD) $\rightarrow$ Giáo vụ Khoa (TLGV).
 * **Quy trình thực tế tại Khoa CNTT - DLU được số hóa trên Web:**
   1. **Sinh viên chuẩn bị đề cương:**
      - Nhóm vào trang **Nhóm của tôi** (`/student/groups`).
@@ -228,10 +226,10 @@
      - GVHD bấm chọn 1 trong 2 hành động:
        - **"Phê duyệt đề cương"**: Đề cương đạt yêu cầu, đề tài chuyển trạng thái sang `IN_PROGRESS` (Chính thức bước vào giai đoạn thực hiện). Hệ thống khóa quyền nộp lại của nhóm.
        - **"Yêu cầu chỉnh sửa"**: Đề cương chuyển sang `REVISION_REQUESTED`. Hệ thống mở lại quyền nộp file mới cho nhóm SV và gửi thông báo kèm nhận xét của GVHD.
-  4. **Giáo vụ & Ban Chủ nhiệm Khoa theo dõi & Ra Quyết định:**
-     - Giáo vụ và BCN Khoa vào trang **Đề cương M03 toàn khoa** (`/admin/outlines`).
+  4. **Giáo vụ Khoa theo dõi & Xuất Tờ trình ký Quyết định Lần 2 (ngoài hệ thống):**
+     - Giáo vụ (TLGV / Admin) vào trang **Đề cương M03 toàn khoa** (`/admin/outlines`).
      - Xem Dashboard tiến độ: Tổng số nhóm, số nhóm đã duyệt, chờ duyệt, yêu cầu sửa, chưa nộp.
-     - Bấm nút **"Xuất Tờ trình CSV"**: Tự động kết xuất file CSV danh sách đề tài và đề cương đã được GVHD phê duyệt để Giáo vụ lập Tờ trình trình Ban Chủ nhiệm Khoa ký Quyết định giao đề tài chính thức.
+     - Bấm nút **"Xuất Tờ trình danh sách chính thức (CSV)"**: Tự động kết xuất danh sách đầy đủ (Tên đề tài – GVHD – Tên SV – MSSV) đã được GVHD duyệt đề cương để Giáo vụ in Tờ trình, trình BCN Khoa / Lãnh đạo ký Quyết định giao đề tài chính thức bằng văn bản giấy ngoài hệ thống (**Lần 2 – Ký hành chính**).
 
 ---
 
@@ -275,7 +273,7 @@
 
 ### BƯỚC 7: PHÂN CÔNG GIẢNG VIÊN PHẢN BIỆN (GVPB - BR-13)
 
-* **Ai thực hiện:** Tổ trưởng Bộ môn (TTBM Tổ CNPM & Tổ MMT), Ban Chủ nhiệm Khoa, Trợ lý Giáo vụ Khoa (TLGV).
+* **Ai thực hiện:** Tổ trưởng Bộ môn (TTBM Tổ CNPM & Tổ MMT), Trợ lý Giáo vụ Khoa (TLGV / Admin).
 * **Màn hình giao diện trên Web:**
   - TTBM & Ban quản lý: `/admin/reviewers` (**Phân công Giảng viên phản biện**)
   - Giảng viên được phân công: `/lecturer/reviews` (**Đề tài phản biện của tôi**)
@@ -306,7 +304,7 @@
 
 ### BƯỚC 8: NỘP BÁO CÁO CUỐI KỲ, LẬP PHIẾU NHẬN XÉT M02/M04 & M05 VÀ CỔNG THẨM ĐỊNH BẢO VỆ (BR-16, BR-17)
 
-* **Ai thực hiện:** Nhóm Sinh viên $\longrightarrow$ Giảng viên hướng dẫn (GVHD) & Giảng viên phản biện (GVPB) $\longrightarrow$ Trợ lý Giáo vụ (TLGV) & Ban Chủ nhiệm Khoa.
+* **Ai thực hiện:** Nhóm Sinh viên $\longrightarrow$ Giảng viên hướng dẫn (GVHD) & Giảng viên phản biện (GVPB) $\longrightarrow$ Trợ lý Giáo vụ (TLGV) & Tổ trưởng Bộ môn (TTBM).
 * **Màn hình giao diện trên Web:**
   - Nhóm sinh viên: `/student/groups` (Mục **Hồ sơ Cuối kỳ & Thẩm định ra Hội đồng**) & `/student/submissions`
   - Giảng viên hướng dẫn: `/lecturer/groups/[id]` (Mục **Phiếu nhận xét GVHD & Thẩm định Bảo vệ**)
@@ -333,7 +331,7 @@
        + GVHD tích chọn: `isDefenseAllowed = true`.
        + GVPB tích chọn: `isDefenseAllowed = true`.
      - Nếu 1 trong 2 giảng viên từ chối: Nhóm chuyển sang trạng thái **"TỪ CHỐI / ĐÌNH CHỈ BẢO VỆ"**.
-  5. **Giáo vụ Khoa & BCN rà soát và xuất danh sách đối soát:**
+  5. **Giáo vụ Khoa & TTBM rà soát và xuất danh sách đối soát:**
      - Tại `/admin/defense-eligibility` hoặc tab Thẩm định trên `/admin/reviewers`, Giáo vụ theo dõi Dashboard thống kê: Tổng số nhóm, Đủ điều kiện, Chờ duyệt, Đình chỉ.
      - Bấm nút **"Xuất danh sách đối soát (CSV)"** để kết xuất danh sách chính thức phục vụ thành lập Hội đồng (BR-18).
 
@@ -370,12 +368,11 @@
 
 | Vai trò | Màn hình truy cập | Những việc ĐƯỢC LÀM trên giao diện hiện tại | Ràng buộc hệ thống |
 | :--- | :--- | :--- | :--- |
-| **Trợ lý Giáo vụ Khoa (TLGV) / Admin** | `/admin/semesters`<br>`/admin/students`<br>`/admin/outlines`<br>`/admin/reviewers`<br>`/admin/defense-eligibility`<br>`/admin/councils` | • Tạo & kích hoạt Học kỳ, thiết lập Đợt đồ án (ĐACS/ĐACN/KLTN)<br>• Tải mẫu Excel & Import danh sách SV đủ điều kiện từ PĐT<br>• Lọc sinh viên theo mã lớp (`CTK48`, `CTK46PM`...), theo đợt, theo tình trạng nhóm<br>• Xuất Excel sinh viên đối soát với PĐT<br>• Xuất file CSV Tờ trình giao đề tài chính thức<br>• Phân công GVPB thủ công hoặc chạy phân công tự động toàn khoa<br>• Thẩm định điều kiện ra bảo vệ và xuất danh sách đối soát<br>• **Thành lập Hội đồng bảo vệ, gán thành viên và xếp lịch bảo vệ cho nhóm đủ ĐK** | • Không xóa học kỳ đã có dữ liệu<br>• Không thể xóa sinh viên đủ điều kiện nếu sinh viên đó đã lập nhóm đồ án<br>• Không chọn GVPB trùng GVHD<br>• Chỉ xếp lịch cho nhóm đã đủ điều kiện bảo vệ |
-| **Giảng viên hướng dẫn (GVHD)** | `/lecturer/topics`<br>`/lecturer/outlines`<br>`/lecturer/groups`<br>`/lecturer/groups/[id]` | • Tạo đề tài mới, nhân bản đề tài cũ, chọn tổ CNPM/MMT, chọn số lượng 1–3 SV<br>• Xem file PDF scan Đề cương M03 có chữ ký sống của SV, bấm Phê duyệt/Yêu cầu sửa<br>• Duyệt đề tài SV đề xuất<br>• **Tiến độ:** Xem dòng thời gian nhật ký tuần của nhóm, bấm xác nhận & nhận xét<br>• **Đợt 1:** Chấm điểm tiến độ 1 (thang 10, trọng số 20%)<br>• **Đợt 2:** Chấm điểm tiến độ 2 (thang 10, trọng số 30%) và đánh giá khối lượng hoàn thành (≥ 50% đạt, < 50% cảnh báo đình chỉ)<br>• **Lập phiếu nhận xét GVHD M02/M04**, kết luận cho phép bảo vệ | • Chỉ thao tác trên các nhóm do chính mình hướng dẫn |
+| **Trợ lý Giáo vụ Khoa (TLGV) / Admin** | `/admin/topic-registry`<br>`/admin/allocations`<br>`/admin/semesters`<br>`/admin/students`<br>`/admin/outlines`<br>`/admin/reviewers`<br>`/admin/defense-eligibility`<br>`/admin/councils` | • Tạo & kích hoạt Học kỳ, thiết lập Đợt đồ án (ĐACS/ĐACN/KLTN)<br>• Tải mẫu Excel & Import danh sách SV đủ điều kiện từ PĐT<br>• Lọc sinh viên theo mã lớp (`CTK48`, `CTK46PM`...), theo đợt, theo tình trạng nhóm<br>• Xuất Excel sinh viên đối soát với PĐT<br>• Quản lý danh mục đề tài đã được TTBM duyệt (`Đã duyệt — chờ mở`), mở/đóng đăng ký từng đề tài hoặc đồng loạt (`APPROVED` $\rightarrow$ `OPEN`)<br>• Xuất file CSV Tờ trình giao đề tài chính thức để trình BCN Khoa ký văn bản giấy ngoài hệ thống<br>• Phân công GVPB thủ công hoặc chạy phân công tự động toàn khoa<br>• Thẩm định điều kiện ra bảo vệ và xuất danh sách đối soát<br>• **Thành lập Hội đồng bảo vệ, gán thành viên và xếp lịch bảo vệ cho nhóm đủ ĐK** | • Không xóa học kỳ đã có dữ liệu<br>• Không duyệt chuyên môn đề tài (thuộc quyền TTBM)<br>• Không thể xóa sinh viên đủ điều kiện nếu sinh viên đó đã lập nhóm đồ án<br>• Không chọn GVPB trùng GVHD<br>• Chỉ xếp lịch cho nhóm đã đủ điều kiện bảo vệ |
+| **Giảng viên hướng dẫn (GVHD)** | `/lecturer`<br>`/lecturer/outlines`<br>`/lecturer/groups`<br>`/lecturer/groups/[id]` | • Tạo đề tài mới, chọn tổ CNPM/MMT, chọn số lượng 1–3 SV, gửi Bộ môn thẩm định<br>• Xem file PDF scan Đề cương M03 có chữ ký sống của SV, bấm Phê duyệt/Yêu cầu sửa<br>• Duyệt đề tài SV đề xuất<br>• **Tiến độ:** Xem dòng thời gian nhật ký tuần của nhóm, bấm xác nhận & nhận xét<br>• **Đợt 1:** Chấm điểm tiến độ 1 (thang 10, trọng số 20%)<br>• **Đợt 2:** Chấm điểm tiến độ 2 (thang 10, trọng số 30%) và đánh giá khối lượng hoàn thành (≥ 50% đạt, < 50% cảnh báo đình chỉ)<br>• **Lập phiếu nhận xét GVHD M02/M04**, kết luận cho phép bảo vệ | • Chỉ thao tác trên các nhóm do chính mình hướng dẫn |
 | **Giảng viên phản biện (GVPB)** | `/lecturer/reviews` | • Nhận thông báo khi được phân công phản biện<br>• Xem danh sách nhóm được phân công phản biện<br>• Xem đề cương M03, tải báo cáo Đợt 1 & Đợt 2, xem repo source code/demo của nhóm SV<br>• **Lập phiếu nhận xét GVPB M05**, đặt câu hỏi chất vấn, kết luận cho phép bảo vệ | • Chỉ xem các đề tài do Bộ môn phân công mình phản biện |
 | **Thành viên Hội đồng bảo vệ** | `/lecturer/councils` | • Xem danh sách các Hội đồng bảo vệ mình tham gia (Chủ tịch / Thư ký / Ủy viên)<br>• Xem hồ sơ, báo cáo cuối kỳ, link demo của nhóm trong buổi bảo vệ<br>• **Nhập điểm đánh giá bảo vệ độc lập (thang 10)** cho từng nhóm | • Không thấy điểm của giảng viên khác trước khi công bố |
-| **Tổ trưởng Bộ môn (TTBM)** | `/admin/topics`<br>`/admin/reviewers`<br>`/admin/councils` | • Thẩm định và Chấp thuận / Yêu cầu sửa đề tài trong tổ<br>• **Phân công GVPB:** Phân công thủ công hoặc chạy phân công tự động min-load balancer cho toàn bộ đề tài trong tổ bộ môn mình phụ trách<br>• Rà soát danh sách Hội đồng bảo vệ theo Chuyên ngành | • Chỉ thấy và phân công đề tài thuộc đúng chuyên ngành/tổ mình quản lý (CNPM hoặc MMT)<br>• Ràng buộc không trùng GVHD |
-| **Ban Chủ nhiệm Khoa (BCN Khoa)** | `/admin/topics`<br>`/admin/outlines`<br>`/admin/reviewers`<br>`/admin/councils` | • Phê duyệt chính thức đề tài cấp Khoa để mở cổng đăng ký cho sinh viên<br>• Xem báo cáo tổng quan tiến độ duyệt Đề cương M03 toàn khoa<br>• Rà soát phân công GVPB & Phê duyệt Quyết định thành lập Hội đồng bảo vệ | • Thẩm định sau khi TTBM đã chấp thuận |
+| **Tổ trưởng Bộ môn (TTBM)** | `/lecturer/topic-reviews`<br>`/admin/reviewers`<br>`/admin/defense-eligibility`<br>`/admin/councils` | • Thẩm định chuyên môn đề tài thuộc tổ bộ môn: Chấp thuận (chuyển thẳng sang `APPROVED`), Yêu cầu sửa, hoặc Từ chối<br>• **Phân công GVPB:** Phân công thủ công hoặc chạy phân công tự động min-load balancer cho toàn bộ đề tài trong tổ bộ môn mình phụ trách<br>• Rà soát điều kiện bảo vệ và danh sách Hội đồng bảo vệ theo Chuyên ngành | • Chỉ thấy và thao tác trên đề tài thuộc đúng chuyên ngành/tổ mình quản lý (CNPM hoặc MMT)<br>• Ràng buộc không trùng GVHD |
 | **Sinh viên (Đủ điều kiện)** | `/student`<br>`/student/topics`<br>`/student/groups`<br>`/join/[code]` | • Thấy Banner xanh báo đủ điều kiện kèm mốc hạn M03<br>• Tra cứu đề tài theo đúng chuyên ngành của mình<br>• Đăng ký đề tài (làm Trưởng nhóm), nhận Join Code mời bạn<br>• Nhập Join Code gia nhập nhóm (1–3 bạn)<br>• Tải mẫu M03 PDF chuẩn, nộp file PDF scan có chữ ký sống của GVHD<br>• **Tiến độ tuần:** Tạo/sửa/xóa nhật ký tuần (tiến độ %, git commit, blockers)<br>• **Báo cáo Đợt 1 & 2:** Nộp file báo cáo + link mã nguồn/demo, theo dõi điểm và phản hồi của GVHD/Hội đồng<br>• **Cuối kỳ:** Nộp báo cáo toàn văn, slide thuyết trình, link source demo<br>• **Lịch bảo vệ & Điểm tổng kết:** Xem ca thi, phòng bảo vệ và bảng điểm tổng kết chính thức | • Chỉ được tham gia tối đa 1 nhóm/đợt<br>• Nhóm tối đa 3 thành viên<br>• Bị khóa nộp lại M03 khi GVHD đã duyệt<br>• Không thể xóa nhật ký tuần khi GVHD đã xác nhận |
 | **Sinh viên (Chưa đủ điều kiện)** | `/student` | • Đăng nhập xem thông tin tài khoản<br>• Thấy Banner màu cam cảnh báo chưa đủ điều kiện | • **Bị chặn toàn bộ**: Không thể tạo nhóm, không thể đăng ký đề tài, không thể nộp đề cương |
 

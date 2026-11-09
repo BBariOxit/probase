@@ -1,10 +1,11 @@
 'use client';
 
-import { Suspense, use, useEffect, useState } from 'react';
+import { Suspense, use, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Loader2, Send, Undo2 } from 'lucide-react';
+import { ArrowLeft, ClipboardCheck, Loader2, Send, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useMyProfile } from '@/lib/api/me';
 import { useTopic, useTopicTransition, useUpdateTopic } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useBreadcrumbLabel } from '@/lib/breadcrumb-context';
@@ -16,46 +17,41 @@ import {
 } from '@/components/shared/attachment-uploader';
 import { TopicDetailView } from '@/components/topics/topic-detail-view';
 import { TopicForm } from '@/components/topics/topic-form';
+import { TopicReviewSheet } from '@/components/topics/topic-review-sheet';
 import { TopicStatusBadge } from '@/components/topics/topic-status-badge';
 import { Button } from '@/components/ui/button';
 
+type RawTopicAttachment = {
+  id: number | string;
+  fileName?: string;
+  name?: string;
+  fileUrl?: string;
+  url?: string;
+  fileSize?: number;
+  size?: number;
+  fileType?: string;
+  type?: string;
+};
+
+type TopicWithAttachments = {
+  attachments?: RawTopicAttachment[];
+  sourceProposal?: { attachments?: RawTopicAttachment[] };
+};
+
 function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
   const searchParams = useSearchParams();
-  const [isEditing, setIsEditing] = useState(
-    searchParams.get('edit') === 'true',
-  );
+  const isEditing = searchParams.get('edit') === 'true';
   const router = useRouter();
+  const { data: profile } = useMyProfile();
   const { data: topic, isPending, error } = useTopic(topicId);
   const update = useUpdateTopic(topicId);
   const transition = useTopicTransition();
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
-  const [existingFiles, setExistingFiles] = useState<ExistingAttachment[]>([]);
-
-  // Sync existing files when topic loads
-  useEffect(() => {
-    if (topic) {
-      const topicAttachments: ExistingAttachment[] = (
-        (topic as any).attachments ||
-        (topic as any).sourceProposal?.attachments ||
-        []
-      ).map((att: any) => ({
-        id: att.id,
-        name: att.fileName || att.name,
-        url: att.fileUrl || att.url,
-        size: att.fileSize || att.size,
-        type: att.fileType || att.type,
-      }));
-      setExistingFiles(topicAttachments);
-    }
-  }, [topic]);
-
-  // Sync edit mode if query param changes
-  useEffect(() => {
-    if (searchParams.get('edit') === 'true') {
-      setIsEditing(true);
-    }
-  }, [searchParams]);
+  const [deletedFileIds, setDeletedFileIds] = useState<Array<number | string>>(
+    [],
+  );
 
   // Swap the raw ID in the breadcrumb for the topic title once it loads.
   useBreadcrumbLabel(String(topicId), topic?.title);
@@ -101,7 +97,28 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
     );
   }
 
-  if (isEditing) {
+  const topicWithAttachments = topic as unknown as TopicWithAttachments;
+  const rawAttachments =
+    topicWithAttachments.attachments ??
+    topicWithAttachments.sourceProposal?.attachments ??
+    [];
+  const existingFiles: ExistingAttachment[] = rawAttachments
+    .filter((att) => !deletedFileIds.includes(att.id))
+    .map((att) => ({
+      id: att.id,
+      name: att.fileName ?? att.name ?? 'Tệp đính kèm',
+      url: att.fileUrl ?? att.url,
+      size: att.fileSize ?? att.size,
+      type: att.fileType ?? att.type,
+    }));
+
+  const isOwner =
+    profile?.lecturer?.id !== undefined &&
+    profile.lecturer.id === topic.lecturer.id;
+  const isAdmin = profile?.role === 'ADMIN';
+  const canEditTopic = isOwner || isAdmin;
+
+  if (isEditing && canEditTopic) {
     return (
       <div className="mx-auto max-w-2xl space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -142,11 +159,9 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
             } else {
               toast.success('Đã cập nhật đề tài thành công!');
             }
-            setIsEditing(false);
             router.replace(`/lecturer/topics/${topicId}`);
           }}
           onCancel={() => {
-            setIsEditing(false);
             router.replace(`/lecturer/topics/${topicId}`);
           }}
         >
@@ -155,7 +170,7 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
             onChange={setFiles}
             existingFiles={existingFiles}
             onDeleteExisting={(fileId) => {
-              setExistingFiles((prev) => prev.filter((f) => f.id !== fileId));
+              setDeletedFileIds((prev) => [...prev, fileId]);
               toast.success('Đã xoá tệp đính kèm.');
             }}
           />
@@ -164,8 +179,18 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
     );
   }
 
+  const isHeadOfDepartment = profile?.lecturer?.isHeadOfDepartment ?? false;
   const isPendingReview =
     topic.status === 'PENDING_DEPARTMENT' || topic.status === 'PENDING';
+  const topicMajorId = topic.majorId ?? topic.major?.id;
+  const lecturerMajorId = profile?.lecturer?.major?.id;
+  const matchesMajor =
+    !lecturerMajorId || !topicMajorId || topicMajorId === lecturerMajorId;
+  const canDepartmentReview =
+    isHeadOfDepartment && isPendingReview && matchesMajor;
+  const hasActions =
+    canDepartmentReview ||
+    (isOwner && (isPendingReview || topic.status === 'DRAFT'));
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
@@ -185,69 +210,99 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
       {/* Chi tiết nội dung đề tài */}
       <TopicDetailView
         topic={topic}
-        onEdit={() => setIsEditing(true)}
+        onEdit={
+          canEditTopic
+            ? () => router.replace(`/lecturer/topics/${topicId}?edit=true`)
+            : undefined
+        }
         actions={
-          isPendingReview ? (
+          hasActions ? (
             <>
-              <Button
-                variant="outline"
-                onClick={() => setConfirmWithdraw(true)}
-                disabled={transition.isPending}
-                className="gap-2 font-semibold text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-500 dark:hover:bg-amber-950/30 border-amber-300 dark:border-amber-700 cursor-pointer shadow-xs"
-              >
-                {transition.isPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Undo2 className="size-4" />
-                )}
-                <span>Thu hồi gửi duyệt</span>
-              </Button>
-              <ConfirmDialog
-                open={confirmWithdraw}
-                onOpenChange={setConfirmWithdraw}
-                title="Thu hồi gửi duyệt đề tài?"
-                description={`Đề tài "${topic.title}" sẽ được chuyển về trạng thái Bản nháp để bạn có thể chỉnh sửa và gửi duyệt lại sau.`}
-                confirmLabel="Thu hồi về bản nháp"
-                onConfirm={async () => {
-                  try {
-                    await transition.mutateAsync({
-                      id: topic.id,
-                      to: 'withdraw',
-                    });
-                    toast.success('Đã thu hồi đề tài về bản nháp thành công.');
-                  } catch (err: any) {
-                    toast.error(
-                      err instanceof Error
-                        ? err.message
-                        : 'Không thể thu hồi đề tài.',
-                    );
-                  }
-                }}
-              />
-            </>
-          ) : topic.status === 'DRAFT' ? (
-            <Button
-              variant="default"
-              onClick={() => {
-                transition
-                  .mutateAsync({ id: topic.id, to: 'submit' })
-                  .then(() =>
-                    toast.success('Đã gửi đề tài lên Bộ môn thẩm định.'),
-                  )
-                  .catch(() => toast.error('Không thể gửi duyệt đề tài.'));
-              }}
-              disabled={transition.isPending}
-              className="gap-2 font-semibold bg-primary text-white hover:bg-primary/90 cursor-pointer shadow-xs"
-            >
-              {transition.isPending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Send className="size-4" />
+              {canDepartmentReview && (
+                <Button
+                  variant="default"
+                  onClick={() => setReviewOpen(true)}
+                  className="gap-2 font-semibold bg-primary text-white hover:bg-primary/90 cursor-pointer shadow-xs"
+                >
+                  <ClipboardCheck className="size-4" />
+                  <span>Duyệt đề tài</span>
+                </Button>
               )}
-              <span>Gửi duyệt Bộ môn</span>
-            </Button>
+
+              {isOwner && isPendingReview && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setConfirmWithdraw(true)}
+                    disabled={transition.isPending}
+                    className="gap-2 font-semibold text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-500 dark:hover:bg-amber-950/30 border-amber-300 dark:border-amber-700 cursor-pointer shadow-xs"
+                  >
+                    {transition.isPending ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Undo2 className="size-4" />
+                    )}
+                    <span>Thu hồi</span>
+                  </Button>
+                  <ConfirmDialog
+                    open={confirmWithdraw}
+                    onOpenChange={setConfirmWithdraw}
+                    title="Thu hồi gửi duyệt đề tài?"
+                    description={`Đề tài "${topic.title}" sẽ được chuyển về trạng thái Bản nháp để bạn có thể chỉnh sửa và gửi duyệt lại sau.`}
+                    confirmLabel="Thu hồi về bản nháp"
+                    onConfirm={async () => {
+                      try {
+                        await transition.mutateAsync({
+                          id: topic.id,
+                          to: 'withdraw',
+                        });
+                        toast.success(
+                          'Đã thu hồi đề tài về bản nháp thành công.',
+                        );
+                      } catch (err: unknown) {
+                        toast.error(
+                          err instanceof Error
+                            ? err.message
+                            : 'Không thể thu hồi đề tài.',
+                        );
+                      }
+                    }}
+                  />
+                </>
+              )}
+
+              {isOwner && topic.status === 'DRAFT' && (
+                <Button
+                  variant="default"
+                  onClick={() => {
+                    transition
+                      .mutateAsync({ id: topic.id, to: 'submit' })
+                      .then(() =>
+                        toast.success('Đã gửi đề tài lên Bộ môn thẩm định.'),
+                      )
+                      .catch(() => toast.error('Không thể gửi duyệt đề tài.'));
+                  }}
+                  disabled={transition.isPending}
+                  className="gap-2 font-semibold bg-primary text-white hover:bg-primary/90 cursor-pointer shadow-xs"
+                >
+                  {transition.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Send className="size-4" />
+                  )}
+                  <span>Gửi duyệt</span>
+                </Button>
+              )}
+            </>
           ) : null
         }
+      />
+
+      <TopicReviewSheet
+        topicId={reviewOpen ? topic.id : null}
+        onClose={() => setReviewOpen(false)}
+        stage="DEPARTMENT"
+        isHeadOfDepartment={isHeadOfDepartment}
       />
     </div>
   );

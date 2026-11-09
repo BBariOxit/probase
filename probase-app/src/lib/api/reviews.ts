@@ -40,7 +40,7 @@ export function useMyReviews() {
 }
 
 /**
- * Bảng tổng hợp đối soát điều kiện bảo vệ toàn khoa (dành cho Giáo vụ, TTBM, BCN Khoa).
+ * Bảng tổng hợp đối soát điều kiện bảo vệ toàn khoa (dành cho Giáo vụ, TTBM).
  */
 export function useDefenseEligibility(params?: QueryDefenseEligibilityParams) {
   const searchParams = new URLSearchParams();

@@ -56,7 +56,7 @@ export const outlineService = {
       body: data,
     }),
 
-  // TLGV & BCN Khoa: Tổng hợp toàn Khoa
+  // TLGV & TTBM: Tổng hợp toàn Khoa
   getFacultyOutlines: (query: OutlineQuery = {}) =>
     api<FacultyOutlineOverview>(`/outlines/faculty${toSearchParams(query)}`),
 };

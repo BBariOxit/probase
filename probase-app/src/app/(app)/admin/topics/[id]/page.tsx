@@ -2,8 +2,8 @@
 
 import { use } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Lock, LockOpen } from 'lucide-react';
+import { toast } from 'sonner';
 import { useTopic, useTopicTransition } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useBreadcrumbLabel } from '@/lib/breadcrumb-context';
@@ -17,7 +17,6 @@ export default function AdminTopicDetailPage({
 }) {
   const { id } = use(params);
   const allowed = useRequireRole('ADMIN');
-  const router = useRouter();
   const { data: topic, isPending, error } = useTopic(Number(id));
   const transition = useTopicTransition();
 
@@ -67,12 +66,6 @@ export default function AdminTopicDetailPage({
     );
   }
 
-  async function approve() {
-    if (!topic) return;
-    await transition.mutateAsync({ id: topic.id, to: 'approve' });
-    router.push('/admin/topic-registry');
-  }
-
   return (
     <div className="mx-auto max-w-4xl space-y-4">
       {/* Top Navigation */}
@@ -91,18 +84,42 @@ export default function AdminTopicDetailPage({
       <TopicDetailView
         topic={topic}
         actions={
-          topic.status === 'PENDING' ? (
+          topic.status === 'APPROVED' ? (
             <Button
               disabled={transition.isPending}
-              onClick={approve}
+              onClick={() =>
+                transition
+                  .mutateAsync({ id: topic.id, to: 'open' })
+                  .then(() => toast.success('Đã mở đăng ký đề tài.'))
+                  .catch(() => toast.error('Không thực hiện được.'))
+              }
               className="gap-1.5 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
             >
               {transition.isPending ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
-                <Check className="size-4" />
+                <LockOpen className="size-4" />
               )}
-              <span>Duyệt đề tài</span>
+              <span>Mở đăng ký</span>
+            </Button>
+          ) : topic.status === 'OPEN' ? (
+            <Button
+              variant="outline"
+              disabled={transition.isPending}
+              onClick={() =>
+                transition
+                  .mutateAsync({ id: topic.id, to: 'close' })
+                  .then(() => toast.success('Đã đóng đăng ký đề tài.'))
+                  .catch(() => toast.error('Không thực hiện được.'))
+              }
+              className="gap-1.5 font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30 shadow-xs cursor-pointer"
+            >
+              {transition.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Lock className="size-4" />
+              )}
+              <span>Đóng đăng ký</span>
             </Button>
           ) : undefined
         }

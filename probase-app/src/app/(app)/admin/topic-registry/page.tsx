@@ -5,14 +5,12 @@ import { useState } from 'react';
 import {
   BookMarked,
   Check,
-  ChevronDown,
   Eye,
   Loader2,
   Lock,
   LockOpen,
   MoreHorizontal,
   Search,
-  X,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -21,11 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import {
-  useBulkOpenTopics,
-  useTopicTransition,
-  useTopics,
-} from '@/lib/api/topics';
+import { useTopicTransition, useTopics } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
 import type { Semester, TopicListItem, TopicStatus } from '@/lib/api/types';
@@ -57,7 +51,6 @@ const PAGE_SIZE = 15;
 const STATUS_OPTIONS: { value: TopicStatus | 'ALL'; label: string }[] = [
   { value: 'ALL', label: 'Mọi trạng thái' },
   { value: 'PENDING_DEPARTMENT', label: 'Chờ Bộ môn duyệt' },
-  { value: 'PENDING_FACULTY', label: 'Chờ Khoa duyệt' },
   { value: 'APPROVED', label: 'Đã duyệt — chờ mở' },
   { value: 'OPEN', label: 'Đang mở' },
   { value: 'IN_PROGRESS', label: 'Đang thực hiện' },
@@ -73,16 +66,12 @@ const STATUS_LABELS: Record<TopicStatus, { label: string; className: string }> =
       label: 'Chờ Bộ môn',
       className: 'text-orange-600 dark:text-orange-400',
     },
-    PENDING_FACULTY: {
-      label: 'Chờ Khoa',
-      className: 'text-blue-600 dark:text-blue-400',
-    },
     APPROVED_OPEN: {
       label: 'Đã duyệt mở',
       className: 'text-emerald-600 dark:text-emerald-400',
     },
     APPROVED: {
-      label: 'Đã duyệt',
+      label: 'Đã duyệt — chờ mở',
       className: 'text-amber-600 dark:text-amber-400',
     },
     OPEN: { label: 'Đang mở', className: 'text-green-600 dark:text-green-400' },
@@ -118,23 +107,18 @@ function OccupancyBadge({ topic }: { topic: TopicListItem }) {
 
 /** Badge showing whether this topic originated from a student proposal. */
 function OriginBadge({ fromProposal }: { fromProposal: boolean }) {
-  if (!fromProposal) return null;
+  if (!fromProposal) {
+    return <span className="text-muted-foreground">—</span>;
+  }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-purple-300 bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700 dark:border-purple-800 dark:bg-purple-950 dark:text-purple-300">
-      <BookMarked className="size-3" />
+    <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:border-neutral-700 dark:bg-[#262626] dark:text-neutral-300">
       Từ đề xuất SV
     </span>
   );
 }
 
 /** Quick actions dropdown for a single topic row. */
-function TopicActionsDropdown({
-  topic,
-  onViewDetail,
-}: {
-  topic: TopicListItem;
-  onViewDetail: () => void;
-}) {
+function TopicActionsDropdown({ topic }: { topic: TopicListItem }) {
   const transition = useTopicTransition();
   const mine = transition.variables?.id === topic.id && transition.isPending;
 
@@ -159,11 +143,9 @@ function TopicActionsDropdown({
       />
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem
+          render={<Link href={`/admin/topics/${topic.id}`} />}
           className="cursor-pointer gap-2"
-          onClick={(e) => {
-            e.stopPropagation();
-            onViewDetail();
-          }}
+          onClick={(e) => e.stopPropagation()}
         >
           <Eye className="size-4 text-slate-500 dark:text-neutral-400" />
           <span>Xem chi tiết</span>
@@ -246,7 +228,7 @@ export default function AdminTopicRegistryPage() {
   const topics = data?.items ?? [];
 
   return (
-    <div className="space-y-4">
+    <div className="w-full min-w-0 space-y-4">
       {/* ── Header ── */}
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-lg font-semibold">Quản lý đề tài</h1>
@@ -333,7 +315,10 @@ export default function AdminTopicRegistryPage() {
 
         {data && (
           <span className="ml-auto text-sm font-medium text-slate-600 dark:text-neutral-400 select-none">
-            <strong className="text-primary font-bold text-sm">{data.total}</strong> đề tài
+            <strong className="text-primary font-bold text-sm">
+              {data.total}
+            </strong>{' '}
+            đề tài
           </span>
         )}
       </div>
@@ -343,18 +328,37 @@ export default function AdminTopicRegistryPage() {
       )}
 
       {/* ── Table ── */}
-      <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
-        <Table className="w-full min-w-[1020px] table-fixed text-left text-sm">
+      <div className="isolate w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
+        <Table
+          containerClassName="w-full overflow-x-auto"
+          className="w-full min-w-[1040px] table-fixed text-left text-sm"
+        >
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[340px] max-w-[380px] min-w-[280px]">Tiêu đề</TableHead>
-              <TableHead className="w-44 whitespace-nowrap">Giảng viên</TableHead>
-              <TableHead className="w-36 whitespace-nowrap">Loại đồ án</TableHead>
-              <TableHead className="w-20 text-center whitespace-nowrap">Chỗ</TableHead>
-              <TableHead className="w-32 whitespace-nowrap">Nguồn gốc</TableHead>
-              <TableHead className="w-32 whitespace-nowrap">Trạng thái</TableHead>
-              <TableHead className="w-28 text-right whitespace-nowrap">Tạo lúc</TableHead>
-              <TableHead className="w-16 text-center whitespace-nowrap">Thao tác</TableHead>
+              <TableHead className="w-[236px] min-w-[220px] px-4">
+                Tiêu đề
+              </TableHead>
+              <TableHead className="w-[124px] px-2.5 whitespace-nowrap">
+                Giảng viên
+              </TableHead>
+              <TableHead className="w-[170px] px-2.5 whitespace-nowrap">
+                Loại đồ án
+              </TableHead>
+              <TableHead className="w-14 px-2 text-center whitespace-nowrap">
+                Chỗ
+              </TableHead>
+              <TableHead className="w-[122px] px-2.5 whitespace-nowrap">
+                Nguồn gốc
+              </TableHead>
+              <TableHead className="w-[152px] px-3 whitespace-nowrap">
+                Trạng thái
+              </TableHead>
+              <TableHead className="w-[100px] px-2.5 whitespace-nowrap">
+                Tạo lúc
+              </TableHead>
+              <TableHead className="w-20 px-2 text-center whitespace-nowrap">
+                Thao tác
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -364,50 +368,47 @@ export default function AdminTopicRegistryPage() {
                 className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                 onClick={() => setSelectedTopicId(topic.id)}
               >
-                <TableCell className="w-[340px] max-w-[380px] min-w-[280px] font-medium whitespace-normal">
-                  <div className="w-full max-w-[380px] whitespace-normal">
+                <TableCell className="w-[236px] min-w-[220px] px-4 font-medium whitespace-normal">
+                  <div className="w-full whitespace-normal">
                     <Link
                       href={`/admin/topics/${topic.id}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words whitespace-normal line-clamp-2 cursor-pointer"
+                      className="line-clamp-2 font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal cursor-pointer"
                       title={topic.title}
                     >
                       {topic.title}
                     </Link>
                   </div>
                 </TableCell>
-                <TableCell className="w-44 whitespace-nowrap text-slate-800 dark:text-neutral-200 font-medium">
+                <TableCell className="w-[124px] px-2.5 truncate whitespace-nowrap text-slate-800 dark:text-neutral-200 font-medium">
                   {topic.lecturer.academicTitle
                     ? `${topic.lecturer.academicTitle} ${topic.lecturer.fullName}`
                     : topic.lecturer.fullName}
                 </TableCell>
-                <TableCell className="w-36 whitespace-nowrap text-slate-700 dark:text-neutral-300 font-medium">
+                <TableCell className="w-[170px] px-2.5 truncate whitespace-nowrap text-slate-700 dark:text-neutral-300 font-medium">
                   {topic.projectType.name}
                 </TableCell>
-                <TableCell className="w-20 text-center whitespace-nowrap">
+                <TableCell className="w-14 px-2 text-center whitespace-nowrap">
                   <OccupancyBadge topic={topic} />
                 </TableCell>
-                <TableCell className="w-32 whitespace-nowrap">
+                <TableCell className="w-[122px] px-2.5 whitespace-nowrap">
                   <OriginBadge fromProposal={topic.fromProposal} />
                 </TableCell>
-                <TableCell className="w-32 whitespace-nowrap">
+                <TableCell className="w-[152px] px-3 whitespace-nowrap">
                   <span
                     className={`text-sm font-medium ${STATUS_LABELS[topic.status]?.className ?? ''}`}
                   >
                     {STATUS_LABELS[topic.status]?.label ?? topic.status}
                   </span>
                 </TableCell>
-                <TableCell className="w-28 whitespace-nowrap tabular-nums text-right text-muted-foreground">
+                <TableCell className="w-[100px] px-2.5 whitespace-nowrap tabular-nums text-muted-foreground">
                   {dateFormat.format(new Date(topic.createdAt))}
                 </TableCell>
                 <TableCell
-                  className="w-16 text-center whitespace-nowrap"
+                  className="w-20 px-2 text-center whitespace-nowrap"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <TopicActionsDropdown
-                    topic={topic}
-                    onViewDetail={() => setSelectedTopicId(topic.id)}
-                  />
+                  <TopicActionsDropdown topic={topic} />
                 </TableCell>
               </TableRow>
             ))}

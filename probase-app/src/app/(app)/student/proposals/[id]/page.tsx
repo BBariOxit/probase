@@ -143,18 +143,25 @@ export default function StudentProposalDetailPage({
             Đề xuất đã được Giảng viên nhận hướng dẫn
           </h3>
           <p className="text-sm text-foreground">
-            Đề tài đã được tạo từ đề xuất này. Sau khi khoa phê duyệt, bạn có thể đăng ký giữ chỗ.
+            {proposal.convertedTopic?.status === 'OPEN'
+              ? 'Đề tài đã mở đăng ký và đang được giữ cho bạn.'
+              : proposal.convertedTopic?.status === 'APPROVED'
+                ? 'Tổ trưởng Bộ môn đã duyệt đề tài. Sau khi Giáo vụ mở đăng ký, bạn có thể đăng ký giữ chỗ.'
+                : 'Đề tài đã được tạo từ đề xuất này. Sau khi Tổ trưởng Bộ môn duyệt và Giáo vụ mở đăng ký, bạn có thể đăng ký giữ chỗ.'}
           </p>
-          {proposal.convertedTopic && (
-            <Button
-              size="sm"
-              className="gap-1.5 mt-1"
-              render={<Link href={`/student/topics/${proposal.convertedTopic.id}`} />}
-            >
-              Xem đề tài & Đăng ký
-              <ArrowRight className="size-3.5" />
-            </Button>
-          )}
+          {proposal.convertedTopic &&
+            ['OPEN', 'IN_PROGRESS', 'COMPLETED'].includes(
+              proposal.convertedTopic.status,
+            ) && (
+              <Button
+                size="sm"
+                className="gap-1.5 mt-1"
+                render={<Link href={`/student/topics/${proposal.convertedTopic.id}`} />}
+              >
+                Xem đề tài &amp; Đăng ký
+                <ArrowRight className="size-3.5" />
+              </Button>
+            )}
         </div>
       )}
 

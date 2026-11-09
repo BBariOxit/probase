@@ -25,6 +25,10 @@ const ACTION_LABEL: Record<string, string> = {
   FINALIZE_REGISTRATION_ROUND: 'Chốt phân bổ đợt',
   EXTEND_REGISTRATION_ROUND: 'Gia hạn đợt đăng ký',
   REMOVE_GROUP_MEMBER: 'Trưởng nhóm xoá thành viên',
+  TOPIC_WITHDRAW: 'Giảng viên thu hồi đề tài về bản nháp',
+  TOPIC_DEPARTMENT_APPROVED: 'Tổ trưởng Bộ môn duyệt đề tài',
+  TOPIC_DEPARTMENT_REVISION_REQUESTED: 'Tổ trưởng Bộ môn yêu cầu sửa đề tài',
+  TOPIC_DEPARTMENT_REJECTED: 'Tổ trưởng Bộ môn từ chối đề tài',
 };
 
 const dateTimeFormat = new Intl.DateTimeFormat('vi-VN', {

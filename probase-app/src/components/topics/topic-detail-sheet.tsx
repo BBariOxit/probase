@@ -37,7 +37,9 @@ export function TopicDetailSheet({
   onClose,
   hideRegisterButton,
 }: TopicDetailSheetProps) {
-  const { data: topic, isPending } = useTopic(topicId ?? 0);
+  const { data: topic, isPending } = useTopic(topicId ?? 0, {
+    enabled: !!topicId,
+  });
 
   const meta = topic ? (
     <>
@@ -60,9 +62,7 @@ export function TopicDetailSheet({
     (profile?.lecturer?.id === topic?.lecturer.id ||
       user?.fullName === topic?.lecturer.fullName);
   const isPendingReview =
-    topic?.status === 'PENDING_DEPARTMENT' ||
-    topic?.status === 'PENDING' ||
-    topic?.status === 'PENDING_FACULTY';
+    topic?.status === 'PENDING_DEPARTMENT' || topic?.status === 'PENDING';
   const canEdit =
     (isOwner || isAdmin) &&
     !isPendingReview &&

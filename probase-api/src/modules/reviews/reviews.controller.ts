@@ -41,9 +41,9 @@ export class ReviewsController {
   }
 
   /**
-   * Bảng tổng hợp đối soát điều kiện bảo vệ toàn khoa (dành cho Giáo vụ, TTBM, BCN Khoa).
+   * Bảng tổng hợp đối soát điều kiện bảo vệ toàn khoa (dành cho Giáo vụ, TTBM).
    */
-  @Roles(Role.ADMIN, AppActor.TTBM, AppActor.BCN_KHOA, AppActor.TLGV)
+  @Roles(Role.ADMIN, AppActor.TTBM, AppActor.TLGV)
   @Get('eligibility')
   getDefenseEligibilityOverview(
     @GetUser() user: RequestUser,
@@ -60,7 +60,6 @@ export class ReviewsController {
     Role.STUDENT,
     Role.ADMIN,
     AppActor.TTBM,
-    AppActor.BCN_KHOA,
     AppActor.TLGV,
   )
   @Get('groups/:groupId')
@@ -79,7 +78,6 @@ export class ReviewsController {
     Role.ADMIN,
     Role.STUDENT,
     AppActor.TTBM,
-    AppActor.BCN_KHOA,
     AppActor.TLGV,
   )
   @Get(':id')

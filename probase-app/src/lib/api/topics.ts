@@ -71,10 +71,11 @@ export function useTopicLecturers(semesterId: number | undefined) {
   });
 }
 
-export function useTopic(id: number) {
+export function useTopic(id: number, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: topicKeys.detail(id),
     queryFn: () => topicService.getById(id),
+    enabled: (options?.enabled ?? true) && id > 0,
   });
 }
 
@@ -152,24 +153,6 @@ export function useDepartmentReviewTopic() {
       id: number;
       data: import('@/lib/api/types').DepartmentReviewInput;
     }) => topicService.reviewDepartment(id, data),
-    onSuccess: (topic) => {
-      queryClient.setQueryData(topicKeys.detail(topic.id), topic);
-      return queryClient.invalidateQueries({ queryKey: topicKeys.all });
-    },
-  });
-}
-
-export function useFacultyReviewTopic() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: number;
-      data: import('@/lib/api/types').FacultyReviewInput;
-    }) => topicService.reviewFaculty(id, data),
     onSuccess: (topic) => {
       queryClient.setQueryData(topicKeys.detail(topic.id), topic);
       return queryClient.invalidateQueries({ queryKey: topicKeys.all });

@@ -37,7 +37,7 @@ export const useSession = create<SessionState>((set) => ({
 }));
 
 export function homePathFor(role: Role): string {
-  if (role === 'ADMIN') return '/admin';
+  if (role === 'ADMIN') return '/admin/topic-registry';
   if (role === 'LECTURER') return '/lecturer';
   return '/student';
 }

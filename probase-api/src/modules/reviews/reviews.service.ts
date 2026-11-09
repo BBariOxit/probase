@@ -278,7 +278,6 @@ export class ReviewsService {
     } else if (
       user.role === Role.LECTURER &&
       !user.lecturerProfile?.isHeadOfDepartment &&
-      !user.lecturerProfile?.isFacultyBoard &&
       !user.lecturerProfile?.isAcademicAssistant
     ) {
       const lecturerId = user.lecturerProfile?.id;
@@ -553,7 +552,7 @@ export class ReviewsService {
   }
 
   /**
-   * Bảng tổng hợp đối soát điều kiện bảo vệ toàn khoa (dành cho Giáo vụ, TTBM, BCN Khoa).
+   * Bảng tổng hợp đối soát điều kiện bảo vệ toàn khoa (dành cho Giáo vụ, TTBM).
    */
   async getDefenseEligibilityOverview(
     user: RequestUser,
@@ -575,7 +574,6 @@ export class ReviewsService {
     if (
       user.role === Role.LECTURER &&
       user.lecturerProfile?.isHeadOfDepartment &&
-      !user.lecturerProfile?.isFacultyBoard &&
       !user.lecturerProfile?.isAcademicAssistant
     ) {
       if (user.lecturerProfile.majorId) {

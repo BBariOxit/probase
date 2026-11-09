@@ -97,7 +97,6 @@ enum TopicStatus {
   DRAFT              // Bản nháp của Giảng viên, chưa gửi duyệt
   PENDING
   PENDING_DEPARTMENT // Chờ Tổ trưởng Bộ môn (TTBM) thẩm định chuyên môn
-  PENDING_FACULTY    // TTBM đã duyệt, chờ Ban Chủ nhiệm Khoa phê duyệt
   APPROVED_OPEN      // Đã phê duyệt, mở cổng cho SV đăng ký
   APPROVED
   OPEN
@@ -312,7 +311,6 @@ model LecturerProfile {
 
   // Các cờ chức vụ kiêm nhiệm theo đúng cơ cấu Khoa CNTT - DLU
   isHeadOfDepartment  Boolean @default(false) // Tổ trưởng Bộ môn (TTBM)
-  isFacultyBoard      Boolean @default(false) // Ban Chủ nhiệm Khoa (BCN Khoa)
   isAcademicAssistant Boolean @default(false) // Trợ lý Giáo vụ Khoa (TLGV)
 
   // Relations
@@ -323,7 +321,6 @@ model LecturerProfile {
   acceptedProposals        TopicProposal[]   @relation("ProposalAcceptedLecturer")
   topics                   Topic[]
   departmentReviewedTopics Topic[]           @relation("TopicDepartmentReviewer")
-  facultyApprovedTopics    Topic[]           @relation("TopicFacultyApprover")
   supervisorAssignments    TopicAssignment[] @relation("TopicAssignmentSupervisor")
   reviewerAssignments      TopicAssignment[] @relation("TopicAssignmentReviewer")
   councilMembers           CouncilMember[]
@@ -631,11 +628,9 @@ model Topic {
   maxStudents      Int         @default(3) // Tối đa 1 đến 3 SV
   status           TopicStatus @default(DRAFT)
 
-  // Quy trình xét duyệt 2 cấp: Cấp Bộ môn (TTBM) & Cấp Khoa (BCN Khoa) (BR-05)
+  // Quy trình xét duyệt chuyên môn: Cấp Bộ môn (TTBM) (BR-05)
   departmentReviewerId Int?    // TTBM thẩm định chuyên môn
   departmentFeedback   String? @db.Text
-  facultyApproverId    Int?    // Đại diện BCN Khoa ký duyệt
-  facultyFeedback      String? @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -645,7 +640,6 @@ model Topic {
   lecturer           LecturerProfile @relation(fields: [lecturerId], references: [id], onDelete: Restrict)
   major              Major?          @relation(fields: [majorId], references: [id], onDelete: SetNull)
   departmentReviewer LecturerProfile? @relation("TopicDepartmentReviewer", fields: [departmentReviewerId], references: [id], onDelete: SetNull)
-  facultyApprover    LecturerProfile? @relation("TopicFacultyApprover", fields: [facultyApproverId], references: [id], onDelete: SetNull)
 
   // Composite, so a topic cannot end up in a round that belongs to a different
   // semester than the one it claims.
@@ -1247,7 +1241,7 @@ model TopicAssignment {
   topicId      Int
   supervisorId Int
   reviewerId   Int      // GVPB (cùng chuyên ngành CNPM/MMT, khác GVHD)
-  assignedById Int      // TTBM / BCN Khoa phân công
+  assignedById Int      // TTBM / Giáo vụ phân công
   assignedAt   DateTime @default(now())
 
   group      RegistrationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)

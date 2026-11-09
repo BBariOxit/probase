@@ -320,8 +320,13 @@ function Answer({
         </p>
       ) : (
         <p className="text-sm">
-          Đang chờ khoa phê duyệt. Bạn sẽ nhận được thông báo khi đề tài mở đăng
-          ký.
+          {topic.status === 'APPROVED'
+            ? 'Tổ trưởng Bộ môn đã duyệt đề tài. Đang chờ Giáo vụ mở đăng ký.'
+            : topic.status === 'DRAFT'
+              ? 'Đề tài đã được tạo ở dạng bản nháp, đang chờ giảng viên gửi Tổ trưởng Bộ môn thẩm định.'
+              : topic.status === 'REJECTED'
+                ? 'Đề tài không được Tổ trưởng Bộ môn thông qua.'
+                : 'Đang chờ Tổ trưởng Bộ môn thẩm định. Bạn sẽ nhận được thông báo khi đề tài mở đăng ký.'}
         </p>
       )}
     </section>

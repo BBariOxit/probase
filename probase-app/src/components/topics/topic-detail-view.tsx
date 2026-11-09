@@ -59,9 +59,7 @@ export function TopicDetailView({
       user?.fullName === topic.lecturer.fullName);
 
   const isPendingReview =
-    topic.status === 'PENDING_DEPARTMENT' ||
-    topic.status === 'PENDING' ||
-    topic.status === 'PENDING_FACULTY';
+    topic.status === 'PENDING_DEPARTMENT' || topic.status === 'PENDING';
 
   const canEdit =
     (isTopicOwner || isAdmin) &&

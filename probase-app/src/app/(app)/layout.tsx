@@ -39,9 +39,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (status !== 'authenticated' || !user) {
     return (
-      <div className="flex min-h-svh flex-1 bg-sidebar">
+      <div className="flex min-h-svh min-w-0 flex-1 overflow-x-clip bg-sidebar">
         <div className="hidden w-64 shrink-0 md:block" />
-        <div className="flex flex-1 flex-col bg-background">
+        <div className="flex min-w-0 flex-1 flex-col bg-background">
           <div className="h-14 border-b border-border bg-card" />
           <div className="flex flex-1 items-center justify-center">
             <div className="size-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
@@ -53,11 +53,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <BreadcrumbProvider>
-      <SidebarProvider defaultOpen={defaultOpen}>
+      <SidebarProvider
+        defaultOpen={defaultOpen}
+        className="min-w-0 overflow-x-clip"
+      >
         <AppSidebar user={user} />
-        <SidebarInset>
+        <SidebarInset className="min-w-0 overflow-x-clip">
           <AppHeader user={user} onSignOut={handleSignOut} />
-          <div className="min-w-0 flex-1 p-4 md:p-6">{children}</div>
+          <div className="w-full min-w-0 flex-1 overflow-x-clip p-4 md:p-6">
+            {children}
+          </div>
         </SidebarInset>
       </SidebarProvider>
     </BreadcrumbProvider>

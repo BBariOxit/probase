@@ -42,7 +42,6 @@ export interface MeResponse {
     lecturerCode: string;
     academicTitle?: string | null;
     isHeadOfDepartment?: boolean;
-    isFacultyBoard?: boolean;
     isAcademicAssistant?: boolean;
     major?: { id: number; name: string; code: string } | null;
   } | null;
@@ -121,7 +120,6 @@ export type TopicStatus =
   | 'DRAFT'
   | 'PENDING'
   | 'PENDING_DEPARTMENT'
-  | 'PENDING_FACULTY'
   | 'APPROVED_OPEN'
   | 'APPROVED'
   | 'OPEN'
@@ -210,13 +208,7 @@ export interface TopicListItem extends TopicAvailability {
   majorId?: number | null;
   major?: { id: number; name: string; code: string } | null;
   departmentFeedback?: string | null;
-  facultyFeedback?: string | null;
   departmentReviewer?: {
-    id: number;
-    fullName: string;
-    academicTitle: string | null;
-  } | null;
-  facultyApprover?: {
     id: number;
     fullName: string;
     academicTitle: string | null;
@@ -243,13 +235,7 @@ export interface TopicDetail extends TopicAvailability {
   majorId?: number | null;
   major?: { id: number; name: string; code: string } | null;
   departmentFeedback?: string | null;
-  facultyFeedback?: string | null;
   departmentReviewer?: {
-    id: number;
-    fullName: string;
-    academicTitle: string | null;
-  } | null;
-  facultyApprover?: {
     id: number;
     fullName: string;
     academicTitle: string | null;
@@ -275,11 +261,6 @@ export interface TopicDetail extends TopicAvailability {
 }
 
 export interface DepartmentReviewInput {
-  action: 'APPROVE' | 'REQUEST_REVISION' | 'REJECT';
-  feedback?: string;
-}
-
-export interface FacultyReviewInput {
   action: 'APPROVE' | 'REQUEST_REVISION' | 'REJECT';
   feedback?: string;
 }
@@ -400,7 +381,6 @@ export interface MyProfile {
     bio: string | null;
     researchInterests: string | null;
     isHeadOfDepartment?: boolean;
-    isFacultyBoard?: boolean;
     isAcademicAssistant?: boolean;
     major?: { id: number; name: string; code: string } | null;
     mentoring: MentoringLoad;

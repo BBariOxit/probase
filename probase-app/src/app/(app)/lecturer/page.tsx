@@ -4,8 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import {
   BookOpen,
-  DoorClosed,
-  DoorOpen,
   Loader2,
   MoreHorizontal,
   Pencil,
@@ -24,7 +22,6 @@ import {
   useTopics,
 } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
-import { useDebouncedValue } from '@/lib/use-debounced-value';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
@@ -122,7 +119,7 @@ function RowActions({ topic }: { topic: TopicListItem }) {
                 }}
               >
                 <Send className="size-4" />
-                Gửi duyệt Bộ môn
+                Gửi duyệt
               </DropdownMenuItem>
             )}
 
@@ -132,7 +129,7 @@ function RowActions({ topic }: { topic: TopicListItem }) {
                 className="text-amber-600 focus:text-amber-600 dark:text-amber-500 dark:focus:text-amber-500 cursor-pointer"
               >
                 <Undo2 className="size-4" />
-                Thu hồi gửi duyệt
+                Thu hồi
               </DropdownMenuItem>
             )}
 
@@ -168,7 +165,7 @@ function RowActions({ topic }: { topic: TopicListItem }) {
           try {
             await transition.mutateAsync({ id: topic.id, to: 'withdraw' });
             toast.success('Đã thu hồi đề tài về bản nháp thành công.');
-          } catch (err: any) {
+          } catch (err: unknown) {
             toast.error(
               err instanceof Error ? err.message : 'Không thể thu hồi đề tài.',
             );

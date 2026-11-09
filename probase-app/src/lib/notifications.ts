@@ -63,10 +63,12 @@ export function notificationHref(
 
       A rejection's `targetId` is the proposal, and the proposal screen is where
       the lecturer's reason is — there is nowhere better to go. An acceptance's
-      `targetId` is the *topic* that was just written, and that topic is PENDING
-      until the faculty office signs it off: `/student/topics/:id` answers 404 for
-      a student until then, so following it would take the good news to an error
-      page. The outbox names the topic and says which of the two it is waiting on.
+      `targetId` is the *topic* that was just written, and that topic stays
+      unlisted (`DRAFT` / `PENDING_DEPARTMENT` / `APPROVED`) until the head of
+      department approves it and the faculty office opens registration:
+      `/student/topics/:id` answers 404 for a student until then, so following
+      it would take the good news to an error page. The outbox names the topic
+      and says which stage it is waiting on.
     */
     case 'PROPOSAL_ACCEPTED':
     case 'PROPOSAL_REJECTED':
