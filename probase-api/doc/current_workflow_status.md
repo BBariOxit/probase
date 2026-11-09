@@ -152,7 +152,7 @@
      - Nếu email chưa từng được Giáo vụ nạp vào CSDL: Hệ thống từ chối đăng nhập với thông báo *"Email chưa được cập nhật vào danh sách của Khoa CNTT"*.
      - Nếu email đã có: Tự động cấp Token JWT, cập nhật avatar Google.
   3. **Phân luồng màn hình tự động:**
-     - **Giảng viên / Giáo vụ (Admin):** Điều hướng sang Dashboard Giảng viên (`/lecturer`) hoặc Quản trị (`/admin`).
+     - **Giảng viên / Giáo vụ (Admin):** Điều hướng sang Dashboard Giảng viên (`/lecturer`) hoặc Quản lý đề tài (`/admin/topic-registry`).
      - **Sinh viên:** Điều hướng sang Dashboard Sinh viên (`/student`) với giao diện phân hóa:
        - *Sinh viên ĐỦ ĐIỀU KIỆN:* Hiển thị **Banner màu xanh ngọc**: *"🎉 Bạn đủ điều kiện đăng ký đồ án học kỳ này. Hạn nộp Đề cương M03: [Ngày/Tháng]"* kèm nút tắt chuyển nhanh vào Nhóm, đồng thời mở toàn quyền đăng ký đề tài.
        - *Sinh viên CHƯA ĐỦ ĐIỀU KIỆN:* Hiển thị **Banner màu cam cảnh báo**: *"⚠️ Tài khoản của bạn chưa nằm trong danh sách đủ điều kiện làm đồ án đợt này. Vui lòng liên hệ Giáo vụ Khoa nếu có thắc mắc."* và **bị khóa cứng nút đăng ký đề tài/tạo nhóm**.
@@ -170,12 +170,12 @@
   2. **Tổ trưởng Bộ môn (TTBM - Tổ CNPM hoặc Tổ MMT):**
      - Truy cập mục **Thẩm định đề tài** (`/lecturer/topic-reviews`) trên giao diện Giảng viên.
      - Thẩm định chuyên môn các đề tài thuộc chuyên ngành mình phụ trách (kiểm tra độ khó, tính thực tiễn và cảnh báo trùng lặp tương đồng).
-     - TTBM (hoặc Admin) thực hiện 1 trong 3 hành động:
+     - TTBM thực hiện 1 trong 3 hành động:
        - **Chấp thuận (`APPROVE`)**: Đề tài chuyển thẳng sang trạng thái **Đã duyệt** (`APPROVED`), sẵn sàng để Giáo vụ mở cổng đăng ký.
        - **Yêu cầu chỉnh sửa (`REQUEST_REVISION`)**: Trả về trạng thái `DRAFT` kèm lời nhắn nhận xét để GVHD chỉnh sửa.
        - **Từ chối (`REJECT`)**: Chuyển đề tài sang `REJECTED`.
   3. **Trợ lý Giáo vụ Khoa (TLGV / Admin) & Ký duyệt Lần 1 (ngoài hệ thống):**
-     - Giáo vụ Khoa theo dõi toàn bộ danh mục đề tài ở trạng thái `APPROVED` tại `/admin/topic-registry`.
+     - Giáo vụ Khoa theo dõi toàn bộ danh mục đề tài đã được TTBM duyệt ở trạng thái `APPROVED` (**Đã duyệt — chờ mở**) tại `/admin/topic-registry` (Giáo vụ không có chức năng duyệt chuyên môn đề tài).
      - Giáo vụ tổng hợp/in danh mục đề tài gửi BCN Khoa xem và ký thông qua bản giấy **Lần 1 (Duyệt danh mục đề tài nội bộ)** ngoài hệ thống, sau đó bấm **"Mở đăng ký"** / **"Mở đăng ký đồng loạt"** (`APPROVED` $\rightarrow$ `OPEN`) để sinh viên tra cứu và chọn đề tài.
 
 ---
@@ -368,7 +368,7 @@
 
 | Vai trò | Màn hình truy cập | Những việc ĐƯỢC LÀM trên giao diện hiện tại | Ràng buộc hệ thống |
 | :--- | :--- | :--- | :--- |
-| **Trợ lý Giáo vụ Khoa (TLGV) / Admin** | `/admin`<br>`/admin/topic-registry`<br>`/admin/allocations`<br>`/admin/semesters`<br>`/admin/students`<br>`/admin/outlines`<br>`/admin/reviewers`<br>`/admin/defense-eligibility`<br>`/admin/councils` | • Tạo & kích hoạt Học kỳ, thiết lập Đợt đồ án (ĐACS/ĐACN/KLTN)<br>• Tải mẫu Excel & Import danh sách SV đủ điều kiện từ PĐT<br>• Lọc sinh viên theo mã lớp (`CTK48`, `CTK46PM`...), theo đợt, theo tình trạng nhóm<br>• Xuất Excel sinh viên đối soát với PĐT<br>• Quản lý danh mục đề tài, mở đăng ký từng đề tài hoặc đồng loạt (`APPROVED` $\rightarrow$ `OPEN`)<br>• Xuất file CSV Tờ trình giao đề tài chính thức để trình BCN Khoa ký văn bản giấy ngoài hệ thống<br>• Phân công GVPB thủ công hoặc chạy phân công tự động toàn khoa<br>• Thẩm định điều kiện ra bảo vệ và xuất danh sách đối soát<br>• **Thành lập Hội đồng bảo vệ, gán thành viên và xếp lịch bảo vệ cho nhóm đủ ĐK** | • Không xóa học kỳ đã có dữ liệu<br>• Không thể xóa sinh viên đủ điều kiện nếu sinh viên đó đã lập nhóm đồ án<br>• Không chọn GVPB trùng GVHD<br>• Chỉ xếp lịch cho nhóm đã đủ điều kiện bảo vệ |
+| **Trợ lý Giáo vụ Khoa (TLGV) / Admin** | `/admin/topic-registry`<br>`/admin/allocations`<br>`/admin/semesters`<br>`/admin/students`<br>`/admin/outlines`<br>`/admin/reviewers`<br>`/admin/defense-eligibility`<br>`/admin/councils` | • Tạo & kích hoạt Học kỳ, thiết lập Đợt đồ án (ĐACS/ĐACN/KLTN)<br>• Tải mẫu Excel & Import danh sách SV đủ điều kiện từ PĐT<br>• Lọc sinh viên theo mã lớp (`CTK48`, `CTK46PM`...), theo đợt, theo tình trạng nhóm<br>• Xuất Excel sinh viên đối soát với PĐT<br>• Quản lý danh mục đề tài đã được TTBM duyệt (`Đã duyệt — chờ mở`), mở/đóng đăng ký từng đề tài hoặc đồng loạt (`APPROVED` $\rightarrow$ `OPEN`)<br>• Xuất file CSV Tờ trình giao đề tài chính thức để trình BCN Khoa ký văn bản giấy ngoài hệ thống<br>• Phân công GVPB thủ công hoặc chạy phân công tự động toàn khoa<br>• Thẩm định điều kiện ra bảo vệ và xuất danh sách đối soát<br>• **Thành lập Hội đồng bảo vệ, gán thành viên và xếp lịch bảo vệ cho nhóm đủ ĐK** | • Không xóa học kỳ đã có dữ liệu<br>• Không duyệt chuyên môn đề tài (thuộc quyền TTBM)<br>• Không thể xóa sinh viên đủ điều kiện nếu sinh viên đó đã lập nhóm đồ án<br>• Không chọn GVPB trùng GVHD<br>• Chỉ xếp lịch cho nhóm đã đủ điều kiện bảo vệ |
 | **Giảng viên hướng dẫn (GVHD)** | `/lecturer`<br>`/lecturer/outlines`<br>`/lecturer/groups`<br>`/lecturer/groups/[id]` | • Tạo đề tài mới, chọn tổ CNPM/MMT, chọn số lượng 1–3 SV, gửi Bộ môn thẩm định<br>• Xem file PDF scan Đề cương M03 có chữ ký sống của SV, bấm Phê duyệt/Yêu cầu sửa<br>• Duyệt đề tài SV đề xuất<br>• **Tiến độ:** Xem dòng thời gian nhật ký tuần của nhóm, bấm xác nhận & nhận xét<br>• **Đợt 1:** Chấm điểm tiến độ 1 (thang 10, trọng số 20%)<br>• **Đợt 2:** Chấm điểm tiến độ 2 (thang 10, trọng số 30%) và đánh giá khối lượng hoàn thành (≥ 50% đạt, < 50% cảnh báo đình chỉ)<br>• **Lập phiếu nhận xét GVHD M02/M04**, kết luận cho phép bảo vệ | • Chỉ thao tác trên các nhóm do chính mình hướng dẫn |
 | **Giảng viên phản biện (GVPB)** | `/lecturer/reviews` | • Nhận thông báo khi được phân công phản biện<br>• Xem danh sách nhóm được phân công phản biện<br>• Xem đề cương M03, tải báo cáo Đợt 1 & Đợt 2, xem repo source code/demo của nhóm SV<br>• **Lập phiếu nhận xét GVPB M05**, đặt câu hỏi chất vấn, kết luận cho phép bảo vệ | • Chỉ xem các đề tài do Bộ môn phân công mình phản biện |
 | **Thành viên Hội đồng bảo vệ** | `/lecturer/councils` | • Xem danh sách các Hội đồng bảo vệ mình tham gia (Chủ tịch / Thư ký / Ủy viên)<br>• Xem hồ sơ, báo cáo cuối kỳ, link demo của nhóm trong buổi bảo vệ<br>• **Nhập điểm đánh giá bảo vệ độc lập (thang 10)** cho từng nhóm | • Không thấy điểm của giảng viên khác trước khi công bố |
