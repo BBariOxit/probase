@@ -200,9 +200,7 @@ export default function AdminTopicRegistryPage() {
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<TopicStatus | 'ALL'>(
-    'APPROVED',
-  );
+  const [statusFilter, setStatusFilter] = useState<TopicStatus | 'ALL'>('ALL');
   const [semesterId, setSemesterId] = useState<number | undefined>(undefined);
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
