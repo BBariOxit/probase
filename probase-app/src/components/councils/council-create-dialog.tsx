@@ -1,11 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Gavel, Loader2, MapPin } from 'lucide-react';
+import { Calendar, Loader2, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCreateCouncil } from '@/lib/api/councils';
+import {
+  type CouncilListItem,
+  type CouncilStatus,
+  useCreateCouncil,
+  useUpdateCouncil,
+} from '@/lib/api/councils';
 import { useMajors } from '@/lib/api/majors';
 import { useSemesters } from '@/lib/api/master-data';
+import type { Major, Semester } from '@/lib/api/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -17,168 +23,283 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+const COUNCIL_STATUS_OPTIONS: Array<{ value: CouncilStatus; label: string }> = [
+  { value: 'PREP', label: 'Chuẩn bị' },
+  { value: 'IN_PROGRESS', label: 'Đang diễn ra' },
+  { value: 'COMPLETED', label: 'Đã hoàn thành' },
+];
+
+function toLocalDateTimeInput(iso?: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours(),
+  )}:${pad(d.getMinutes())}`;
+}
 
 interface CouncilCreateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultSemesterId?: number;
+  council?: CouncilListItem | null;
 }
 
 export function CouncilCreateDialog({
   open,
   onOpenChange,
   defaultSemesterId,
+  council,
 }: CouncilCreateDialogProps) {
   const { data: semesters } = useSemesters();
   const { data: majors } = useMajors();
-  const createMutation = useCreateCouncil();
 
-  const [name, setName] = useState('');
-  const [semesterId, setSemesterId] = useState<number | undefined>(
-    defaultSemesterId,
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        {open && (
+          <CouncilFormBody
+            key={
+              council
+                ? `edit-${council.id}`
+                : `create-${defaultSemesterId ?? 'new'}`
+            }
+            council={council}
+            defaultSemesterId={defaultSemesterId}
+            semesters={semesters}
+            majors={majors}
+            onOpenChange={onOpenChange}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
   );
-  const [majorId, setMajorId] = useState<number | null>(null);
-  const [location, setLocation] = useState('');
-  const [defenseDate, setDefenseDate] = useState('');
+}
 
-  const handleSubmit = async (e: React.FormEvent) => {
+function CouncilFormBody({
+  council,
+  defaultSemesterId,
+  semesters,
+  majors,
+  onOpenChange,
+}: {
+  council?: CouncilListItem | null;
+  defaultSemesterId?: number;
+  semesters?: Semester[];
+  majors?: Major[];
+  onOpenChange: (open: boolean) => void;
+}) {
+  const isEdit = Boolean(council);
+  const createMutation = useCreateCouncil();
+  const updateMutation = useUpdateCouncil(council?.id ?? 0);
+
+  const [name, setName] = useState(() => council?.name ?? '');
+  const [semesterId, setSemesterId] = useState<string>(() =>
+    council ? String(council.semester.id) : '',
+  );
+  const [majorId, setMajorId] = useState<string>(() =>
+    council?.major ? String(council.major.id) : 'ALL',
+  );
+  const [location, setLocation] = useState(() => council?.location ?? '');
+  const [defenseDate, setDefenseDate] = useState(() =>
+    council ? toLocalDateTimeInput(council.defenseDate) : '',
+  );
+  const [status, setStatus] = useState<CouncilStatus>(
+    () => council?.status ?? 'PREP',
+  );
+
+  const effectiveSemesterId =
+    semesterId ||
+    String(
+      defaultSemesterId ??
+        semesters?.find((s) => s.isActive)?.id ??
+        semesters?.[0]?.id ??
+        '',
+    );
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    const semId =
-      semesterId ||
-      semesters?.find((s) => s.isActive)?.id ||
-      semesters?.[0]?.id;
-
-    if (!semId) {
-      toast.error('Vui lòng chọn học kỳ');
-      return;
-    }
-
-    if (!name.trim()) {
-      toast.error('Vui lòng nhập tên hội đồng');
+    if (!name.trim() || name.trim().length < 3) {
+      toast.error('Tên hội đồng cần ít nhất 3 ký tự.');
       return;
     }
 
     if (!location.trim()) {
-      toast.error('Vui lòng nhập phòng / địa điểm bảo vệ');
+      toast.error('Vui lòng nhập phòng hoặc địa điểm bảo vệ.');
       return;
     }
 
-    if (!defenseDate) {
-      toast.error('Vui lòng chọn ngày giờ bảo vệ');
+    if (!defenseDate || isNaN(Date.parse(defenseDate))) {
+      toast.error('Vui lòng chọn ngày giờ bảo vệ hợp lệ.');
       return;
     }
+
+    const parsedMajorId = majorId === 'ALL' ? null : Number(majorId);
+    const isoDate = new Date(defenseDate).toISOString();
 
     try {
-      await createMutation.mutateAsync({
-        name: name.trim(),
-        semesterId: semId,
-        majorId: majorId || null,
-        location: location.trim(),
-        defenseDate: new Date(defenseDate).toISOString(),
-      });
-
-      toast.success('Khởi tạo Hội đồng bảo vệ thành công');
+      if (isEdit && council) {
+        await updateMutation.mutateAsync({
+          name: name.trim(),
+          majorId: parsedMajorId,
+          location: location.trim(),
+          defenseDate: isoDate,
+          status,
+        });
+        toast.success('Đã cập nhật thông tin hội đồng.');
+      } else {
+        const semId = Number(effectiveSemesterId);
+        if (!semId) {
+          toast.error('Vui lòng chọn học kỳ.');
+          return;
+        }
+        await createMutation.mutateAsync({
+          name: name.trim(),
+          semesterId: semId,
+          majorId: parsedMajorId,
+          location: location.trim(),
+          defenseDate: isoDate,
+        });
+        toast.success('Đã tạo hội đồng bảo vệ mới.');
+      }
       onOpenChange(false);
-      setName('');
-      setLocation('');
-      setDefenseDate('');
-    } catch (err: any) {
-      toast.error(err?.message || 'Có lỗi xảy ra khi tạo hội đồng');
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : 'Không thể lưu thông tin hội đồng.',
+      );
     }
-  };
+  }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <div className="flex items-center gap-2 text-primary">
-            <Gavel className="size-5" />
-            <DialogTitle>Thành lập Hội đồng Bảo vệ</DialogTitle>
-          </div>
-          <DialogDescription>
-            Tạo hội đồng chấm bảo vệ Khóa luận tốt nghiệp theo quy định Khoa CNTT.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <DialogHeader>
+        <DialogTitle>
+          {isEdit ? 'Cập nhật hội đồng bảo vệ' : 'Tạo hội đồng bảo vệ'}
+        </DialogTitle>
+        <DialogDescription>
+          {isEdit
+            ? 'Chỉnh sửa thông tin tổ chức và trạng thái của hội đồng.'
+            : 'Nhập thông tin chung trước khi gán thành viên và xếp lịch bảo vệ.'}
+        </DialogDescription>
+      </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+      <form onSubmit={handleSubmit} className="space-y-4 py-1">
+        <div className="space-y-1.5">
+          <Label htmlFor="council-name" className="text-xs font-medium">
+            Tên hội đồng <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="council-name"
+            placeholder="VD: Hội đồng KLTN 01 - KTPM"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor="council-name" className="text-xs font-semibold">
-              Tên Hội đồng <span className="text-destructive">*</span>
+            <Label className="text-xs font-medium">
+              Học kỳ <span className="text-destructive">*</span>
             </Label>
+            {isEdit && council ? (
+              <div className="flex h-9 items-center rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900/50 px-3 text-sm text-muted-foreground">
+                <span className="truncate">{council.semester.name}</span>
+              </div>
+            ) : (
+              <Select
+                value={effectiveSemesterId}
+                onValueChange={(val) => setSemesterId(val ?? '')}
+              >
+                <SelectTrigger className="w-full" aria-label="Chọn học kỳ">
+                  <SelectValue>
+                    {(val) => {
+                      const s = semesters?.find(
+                        (item) => String(item.id) === String(val),
+                      );
+                      return s ? s.name : 'Chọn học kỳ';
+                    }}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {semesters?.map((s) => (
+                    <SelectItem key={s.id} value={String(s.id)}>
+                      {s.name}
+                      {s.isActive ? ' (Hiện tại)' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium">Chuyên ngành</Label>
+            <Select
+              value={majorId}
+              onValueChange={(val) => setMajorId(val ?? 'ALL')}
+            >
+              <SelectTrigger className="w-full" aria-label="Chọn chuyên ngành">
+                <SelectValue>
+                  {(val) => {
+                    if (val === 'ALL') return 'Toàn khoa';
+                    return (
+                      majors?.find((m) => String(m.id) === String(val))?.name ??
+                      'Toàn khoa'
+                    );
+                  }}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Toàn khoa</SelectItem>
+                {majors?.map((m) => (
+                  <SelectItem key={m.id} value={String(m.id)}>
+                    {m.name} ({m.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="council-location" className="text-xs font-medium">
+            Địa điểm / Phòng bảo vệ <span className="text-destructive">*</span>
+          </Label>
+          <div className="relative">
+            <MapPin className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              id="council-name"
-              placeholder="Ví dụ: Hội đồng KLTN 01 - Chuyên ngành Phần mềm"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              id="council-location"
+              className="pl-8"
+              placeholder="VD: Phòng A11.204"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
               required
             />
           </div>
+        </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="council-sem" className="text-xs font-semibold">
-                Học kỳ <span className="text-destructive">*</span>
-              </Label>
-              <select
-                id="council-sem"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                value={semesterId ?? ''}
-                onChange={(e) => setSemesterId(Number(e.target.value))}
-              >
-                {semesters?.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} {s.isActive ? '(Hiện tại)' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="council-major" className="text-xs font-semibold">
-                Chuyên ngành
-              </Label>
-              <select
-                id="council-major"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                value={majorId ?? ''}
-                onChange={(e) =>
-                  setMajorId(e.target.value ? Number(e.target.value) : null)
-                }
-              >
-                <option value="">Toàn khoa / Chung</option>
-                {majors?.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name} ({m.code})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor="council-location" className="text-xs font-semibold">
-              Địa điểm / Phòng bảo vệ <span className="text-destructive">*</span>
-            </Label>
-            <div className="relative">
-              <MapPin className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-              <Input
-                id="council-location"
-                className="pl-8"
-                placeholder="Ví dụ: Phòng A11.204"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="council-date" className="text-xs font-semibold">
+            <Label htmlFor="council-date" className="text-xs font-medium">
               Ngày giờ bảo vệ <span className="text-destructive">*</span>
             </Label>
             <div className="relative">
-              <Calendar className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+              <Calendar className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="council-date"
                 type="datetime-local"
@@ -190,23 +311,50 @@ export function CouncilCreateDialog({
             </div>
           </div>
 
-          <DialogFooter className="pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Hủy
-            </Button>
-            <Button type="submit" disabled={createMutation.isPending}>
-              {createMutation.isPending && (
-                <Loader2 className="mr-1.5 size-4 animate-spin" />
-              )}
-              Tạo Hội đồng
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          {isEdit && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Trạng thái</Label>
+              <Select
+                value={status}
+                onValueChange={(val) =>
+                  setStatus((val ?? 'PREP') as CouncilStatus)
+                }
+              >
+                <SelectTrigger className="w-full" aria-label="Chọn trạng thái">
+                  <SelectValue>
+                    {(val) =>
+                      COUNCIL_STATUS_OPTIONS.find((opt) => opt.value === val)
+                        ?.label ?? 'Chuẩn bị'
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {COUNCIL_STATUS_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isPending}
+          >
+            Huỷ
+          </Button>
+          <Button type="submit" disabled={isPending}>
+            {isPending && <Loader2 className="mr-1.5 size-4 animate-spin" />}
+            {isEdit ? 'Lưu thay đổi' : 'Tạo hội đồng'}
+          </Button>
+        </DialogFooter>
+      </form>
+    </>
   );
 }

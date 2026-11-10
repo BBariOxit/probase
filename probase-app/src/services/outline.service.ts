@@ -9,6 +9,8 @@ import type {
 
 export interface OutlineQuery {
   semesterId?: number;
+  roundId?: number;
+  majorId?: number;
   status?: string;
   search?: string;
   page?: number;

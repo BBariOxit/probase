@@ -7,6 +7,7 @@ import type {
 } from '@/lib/api/types';
 
 export interface QueryReviewAssignmentsParams {
+  semesterId?: number;
   roundId?: number;
   majorId?: number;
   status?: 'ALL' | 'ASSIGNED' | 'UNASSIGNED';
@@ -15,8 +16,11 @@ export interface QueryReviewAssignmentsParams {
 
 export function useReviewAssignmentsOverview(
   params?: QueryReviewAssignmentsParams,
+  options?: { enabled?: boolean },
 ) {
   const searchParams = new URLSearchParams();
+  if (params?.semesterId)
+    searchParams.set('semesterId', String(params.semesterId));
   if (params?.roundId) searchParams.set('roundId', String(params.roundId));
   if (params?.majorId) searchParams.set('majorId', String(params.majorId));
   if (params?.status && params.status !== 'ALL')
@@ -29,6 +33,8 @@ export function useReviewAssignmentsOverview(
   return useQuery({
     queryKey: ['reviewers', 'assignments', params],
     queryFn: () => api<ReviewAssignmentsOverviewResponse>(url),
+    enabled: options?.enabled ?? true,
+    placeholderData: (previous) => previous,
   });
 }
 
@@ -39,11 +45,12 @@ export function useAssignReviewer() {
     mutationFn: (body: { groupId: number; reviewerId: number }) =>
       api('/reviewers/assignments', {
         method: 'POST',
-        body: JSON.stringify(body),
+        body,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reviewers', 'assignments'] });
       queryClient.invalidateQueries({ queryKey: ['reviewers', 'mine'] });
+      queryClient.invalidateQueries({ queryKey: ['reviews', 'eligibility'] });
     },
   });
 }
@@ -59,6 +66,7 @@ export function useUnassignReviewer() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reviewers', 'assignments'] });
       queryClient.invalidateQueries({ queryKey: ['reviewers', 'mine'] });
+      queryClient.invalidateQueries({ queryKey: ['reviews', 'eligibility'] });
     },
   });
 }
@@ -68,17 +76,19 @@ export function useAutoAssignReviewers() {
 
   return useMutation({
     mutationFn: (body: {
+      semesterId?: number;
       roundId?: number;
       majorId?: number;
       maxReviewsPerLecturer?: number;
     }) =>
       api<AutoAssignResult>('/reviewers/assignments/auto', {
         method: 'POST',
-        body: JSON.stringify(body),
+        body,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reviewers', 'assignments'] });
       queryClient.invalidateQueries({ queryKey: ['reviewers', 'mine'] });
+      queryClient.invalidateQueries({ queryKey: ['reviews', 'eligibility'] });
     },
   });
 }

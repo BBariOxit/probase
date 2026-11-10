@@ -39,26 +39,45 @@ export function useMyReviews() {
   });
 }
 
-/**
- * Bảng tổng hợp đối soát điều kiện bảo vệ toàn khoa (dành cho Giáo vụ, TTBM).
- */
-export function useDefenseEligibility(params?: QueryDefenseEligibilityParams) {
+function buildDefenseEligibilityUrl(
+  params?: QueryDefenseEligibilityParams,
+): string {
   const searchParams = new URLSearchParams();
   if (params?.roundId) searchParams.set('roundId', String(params.roundId));
-  if (params?.semesterId) searchParams.set('semesterId', String(params.semesterId));
+  if (params?.semesterId)
+    searchParams.set('semesterId', String(params.semesterId));
   if (params?.majorId) searchParams.set('majorId', String(params.majorId));
   if (params?.search) searchParams.set('search', params.search);
-  if (params?.status && params.status !== 'ALL')
+  if (params?.status && params.status !== 'ALL') {
     searchParams.set('status', params.status);
+  }
   if (params?.page) searchParams.set('page', String(params.page));
   if (params?.limit) searchParams.set('limit', String(params.limit));
 
   const qs = searchParams.toString();
-  const url = `/reviews/eligibility${qs ? `?${qs}` : ''}`;
+  return `/reviews/eligibility${qs ? `?${qs}` : ''}`;
+}
 
+export function fetchDefenseEligibility(
+  params?: QueryDefenseEligibilityParams,
+) {
+  return api<DefenseEligibilityOverviewResponse>(
+    buildDefenseEligibilityUrl(params),
+  );
+}
+
+/**
+ * Bảng tổng hợp đối soát điều kiện bảo vệ toàn khoa (dành cho Giáo vụ, TTBM).
+ */
+export function useDefenseEligibility(
+  params?: QueryDefenseEligibilityParams,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: ['reviews', 'eligibility', params],
-    queryFn: () => api<DefenseEligibilityOverviewResponse>(url),
+    queryFn: () => fetchDefenseEligibility(params),
+    enabled: options?.enabled ?? true,
+    placeholderData: (previous) => previous,
   });
 }
 
@@ -83,7 +102,7 @@ export function useSubmitTopicReview() {
     mutationFn: (body: SubmitTopicReviewInput) =>
       api<TopicReviewItem>('/reviews', {
         method: 'POST',
-        body: JSON.stringify(body),
+        body,
       }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['reviews'] });
@@ -96,4 +115,3 @@ export function useSubmitTopicReview() {
     },
   });
 }
-

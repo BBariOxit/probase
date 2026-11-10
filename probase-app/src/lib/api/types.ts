@@ -88,6 +88,7 @@ export interface TopicRound {
   phase: RoundPhase;
   registrationStart: string;
   registrationEnd: string;
+  projectType?: ProjectType;
 }
 
 export interface ProjectType {
@@ -755,11 +756,7 @@ export interface Submission {
 }
 
 export type ProposalStatus =
-  | 'DRAFT'
-  | 'PENDING'
-  | 'ACCEPTED'
-  | 'REJECTED'
-  | 'NEEDS_REVISION';
+  'DRAFT' | 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'NEEDS_REVISION';
 
 export interface ProposalCommentReaction {
   id: number;
@@ -898,10 +895,7 @@ export interface ProgressRow {
 }
 
 export type OutlineStatus =
-  | 'NOT_SUBMITTED'
-  | 'SUBMITTED'
-  | 'NEEDS_REVISION'
-  | 'APPROVED_BY_LECTURER';
+  'NOT_SUBMITTED' | 'SUBMITTED' | 'NEEDS_REVISION' | 'APPROVED_BY_LECTURER';
 
 export interface TopicOutline {
   id?: number;
@@ -1404,9 +1398,16 @@ export interface MyReviewItem {
   };
 }
 
-
-
-
+export interface EvaluationCriteria {
+  attitude?: string;
+  workload?: string;
+  productQuality?: string;
+  reportQuality?: string;
+  scientificValue?: string;
+  methodology?: string;
+  defenseQuestions?: string[];
+  [key: string]: unknown;
+}
 
 export interface TopicReviewItem {
   id: number;
@@ -1414,7 +1415,7 @@ export interface TopicReviewItem {
   lecturerId: number;
   reviewerType: 'SUPERVISOR' | 'REVIEWER';
   templateCode: 'M02' | 'M04' | 'M05';
-  evaluationCriteria?: Record<string, any> | null;
+  evaluationCriteria?: EvaluationCriteria | null;
   generalComment: string;
   isDefenseAllowed: boolean;
   pdfExportUrl?: string | null;
@@ -1620,7 +1621,7 @@ export interface DefenseEligibilityOverviewResponse {
 export interface SubmitTopicReviewInput {
   groupId: number;
   templateCode: 'M02' | 'M04' | 'M05';
-  evaluationCriteria?: Record<string, any>;
+  evaluationCriteria?: EvaluationCriteria;
   generalComment: string;
   isDefenseAllowed: boolean;
 }

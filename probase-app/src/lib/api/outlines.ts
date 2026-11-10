@@ -55,10 +55,14 @@ export function useReviewOutline() {
   });
 }
 
-export function useFacultyOutlines(query: OutlineQuery = {}) {
+export function useFacultyOutlines(
+  query: OutlineQuery = {},
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: outlineKeys.faculty(query),
     queryFn: () => outlineService.getFacultyOutlines(query),
+    enabled: options?.enabled ?? true,
     placeholderData: (previous) => previous,
   });
 }

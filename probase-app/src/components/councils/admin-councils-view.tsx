@@ -4,18 +4,15 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Calendar,
-  CheckCircle2,
-  Clock,
-  ExternalLink,
   Gavel,
-  Layers,
   Loader2,
   MapPin,
+  Pencil,
   Plus,
   Search,
   ShieldCheck,
   Trash2,
-  Users,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -26,356 +23,409 @@ import {
 } from '@/lib/api/councils';
 import { useMajors } from '@/lib/api/majors';
 import { useSemesters } from '@/lib/api/master-data';
-import { Badge } from '@/components/ui/badge';
+import { useDebouncedValue } from '@/lib/use-debounced-value';
+import { formatDate, sanitizeLecturerName } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
+import { EmptyState } from '@/components/shared/empty-state';
+import { StatusPill, type StatusLabel } from '@/components/shared/status-pill';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { CouncilCreateDialog } from './council-create-dialog';
 import { CouncilManagementDialog } from './council-management-dialog';
+
+const STATUS_FILTER_OPTIONS: Array<{
+  value: 'ALL' | CouncilStatus;
+  label: string;
+}> = [
+  { value: 'ALL', label: 'Mọi trạng thái' },
+  { value: 'PREP', label: 'Chuẩn bị' },
+  { value: 'IN_PROGRESS', label: 'Đang diễn ra' },
+  { value: 'COMPLETED', label: 'Đã hoàn thành' },
+];
+
+function getCouncilStatusLabel(status: CouncilStatus): StatusLabel {
+  switch (status) {
+    case 'COMPLETED':
+      return { label: 'Đã hoàn thành', tone: 'success' };
+    case 'IN_PROGRESS':
+      return { label: 'Đang diễn ra', tone: 'active' };
+    default:
+      return { label: 'Chuẩn bị', tone: 'waiting' };
+  }
+}
 
 export function AdminCouncilsView() {
   const { data: semesters } = useSemesters();
   const { data: majors } = useMajors();
 
-  const activeSemester = useMemo(
-    () => semesters?.find((s) => s.isActive) || semesters?.[0],
+  const defaultSemesterId = useMemo(
+    () => semesters?.find((s) => s.isActive)?.id ?? semesters?.[0]?.id,
     [semesters],
   );
 
-  const [semesterId, setSemesterId] = useState<number | undefined>(
-    activeSemester?.id,
-  );
-  const [majorId, setMajorId] = useState<number | undefined>(undefined);
+  const [semesterId, setSemesterId] = useState<number | undefined>(undefined);
+  const [majorId, setMajorId] = useState<string>('ALL');
   const [status, setStatus] = useState<'ALL' | CouncilStatus>('ALL');
   const [search, setSearch] = useState('');
 
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [managingCouncilId, setManagingCouncilId] = useState<number | null>(null);
+  const [formDialogOpen, setFormDialogOpen] = useState(false);
+  const [editingCouncil, setEditingCouncil] = useState<CouncilListItem | null>(
+    null,
+  );
+  const [managingCouncilId, setManagingCouncilId] = useState<number | null>(
+    null,
+  );
+  const [deleteTarget, setDeleteTarget] = useState<CouncilListItem | null>(
+    null,
+  );
 
-  const currentSemesterId = semesterId || activeSemester?.id;
+  const currentSemesterId = semesterId ?? defaultSemesterId;
+  const parsedMajorId = majorId === 'ALL' ? undefined : Number(majorId);
+  const debouncedSearch = useDebouncedValue(search);
 
-  const { data: councils, isLoading, refetch } = useCouncils({
-    semesterId: currentSemesterId,
-    majorId,
-    status,
-    search: search.trim() || undefined,
-  });
+  const {
+    data: councils,
+    isPending,
+    error,
+  } = useCouncils(
+    {
+      semesterId: currentSemesterId,
+      majorId: parsedMajorId,
+      status,
+      search: debouncedSearch.trim() || undefined,
+    },
+    { enabled: currentSemesterId !== undefined },
+  );
 
   const deleteMutation = useDeleteCouncil();
 
-  const handleDeleteCouncil = async (c: CouncilListItem) => {
-    if (c.stats.totalTopics > 0) {
-      toast.error('Không thể xóa Hội đồng đã có nhóm sinh viên được xếp lịch');
-      return;
-    }
-    if (!confirm(`Bạn có chắc muốn xóa hội đồng "${c.name}"?`)) return;
-
-    try {
-      await deleteMutation.mutateAsync(c.id);
-      toast.success('Đã xóa hội đồng thành công');
-      refetch();
-    } catch (err: any) {
-      toast.error(err?.message || 'Không thể xóa hội đồng');
-    }
-  };
-
-  // Stats calculation
-  const totalCouncils = councils?.length || 0;
+  const totalCouncils = councils?.length ?? 0;
   const totalScheduled =
-    councils?.reduce((sum, c) => sum + c.stats.totalTopics, 0) || 0;
+    councils?.reduce((sum, c) => sum + c.stats.totalTopics, 0) ?? 0;
   const totalCompleted =
-    councils?.reduce((sum, c) => sum + c.stats.completedTopics, 0) || 0;
+    councils?.reduce((sum, c) => sum + c.stats.completedTopics, 0) ?? 0;
+
+  function openCreateDialog() {
+    setEditingCouncil(null);
+    setFormDialogOpen(true);
+  }
+
+  function openEditDialog(council: CouncilListItem) {
+    setEditingCouncil(council);
+    setFormDialogOpen(true);
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Action Header */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-               • Đánh giá cuối kỳ
-            </span>
-          </div>
-          <h1 className="font-heading text-2xl font-bold tracking-tight">
-            Hội đồng Bảo vệ & Điểm cuối kỳ
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Thành lập Hội đồng, xếp lịch bảo vệ Khóa luận tốt nghiệp và tổng hợp điểm 50% theo quy chế Khoa CNTT - DLU.
-          </p>
-        </div>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="text-lg font-semibold">Hội đồng bảo vệ</h1>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
-            className="gap-1.5 text-xs"
+            size="sm"
+            className="gap-1.5 cursor-pointer"
             render={<Link href="/admin/defense-eligibility" />}
           >
-            <ShieldCheck className="size-3.5 text-primary" />
-            Thẩm định điều kiện
+            <ShieldCheck className="size-3.5" />
+            Điều kiện bảo vệ
           </Button>
 
-          <Button
-            className="gap-1.5 text-xs font-semibold"
-            onClick={() => setCreateDialogOpen(true)}
-          >
-            <Plus className="size-3.5" />
-            Tạo Hội đồng mới
-          </Button>
-        </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-primary/10 p-2 text-primary">
-              <Gavel className="size-5" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">
-                Tổng số Hội đồng
-              </p>
-              <p className="text-2xl font-bold">{totalCouncils}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-blue-500/10 p-2 text-blue-600 dark:text-blue-400">
-              <Users className="size-5" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">
-                Nhóm đã xếp lịch
-              </p>
-              <p className="text-2xl font-bold">{totalScheduled}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="size-5" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">
-                Đã chốt điểm bảo vệ
-              </p>
-              <p className="text-2xl font-bold">{totalCompleted}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-card p-3 shadow-sm">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Tìm theo tên hội đồng, phòng bảo vệ..."
-            className="pl-8 text-sm"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-
-        <select
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-          value={currentSemesterId ?? ''}
-          onChange={(e) => setSemesterId(Number(e.target.value))}
-        >
-          {semesters?.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name} {s.isActive ? '(Hiện tại)' : ''}
-            </option>
-          ))}
-        </select>
-
-        <select
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-          value={majorId ?? ''}
-          onChange={(e) =>
-            setMajorId(e.target.value ? Number(e.target.value) : undefined)
-          }
-        >
-          <option value="">Tất cả chuyên ngành</option>
-          {majors?.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name} ({m.code})
-            </option>
-          ))}
-        </select>
-
-        <select
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-          value={status}
-          onChange={(e) => setStatus(e.target.value as any)}
-        >
-          <option value="ALL">Tất cả trạng thái</option>
-          <option value="PREP">Chuẩn bị</option>
-          <option value="IN_PROGRESS">Đang diễn ra</option>
-          <option value="COMPLETED">Đã hoàn thành</option>
-        </select>
-      </div>
-
-      {/* Councils List */}
-      {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <Loader2 className="size-8 animate-spin text-primary" />
-        </div>
-      ) : councils?.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-12 text-center">
-          <Gavel className="mx-auto size-10 text-muted-foreground/50" />
-          <h3 className="mt-4 font-semibold text-foreground">
-            Chưa có Hội đồng bảo vệ nào
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Bấm nút &quot;Tạo Hội đồng mới&quot; phía trên để thành lập hội đồng chấm bảo vệ Khóa luận tốt nghiệp.
-          </p>
           <Button
             size="sm"
-            className="mt-4 gap-1.5"
-            onClick={() => setCreateDialogOpen(true)}
+            className="gap-1.5 cursor-pointer"
+            onClick={openCreateDialog}
           >
-            <Plus className="size-3.5" />
-            Tạo Hội đồng đầu tiên
+            <Plus className="size-4" />
+            Tạo hội đồng
           </Button>
+        </div>
+      </div>
+
+      {/* Summary Strip */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] px-5 py-3 shadow-2xs text-sm">
+        <SummaryFigure value={totalCouncils} label="hội đồng" />
+        <div className="h-4 w-px bg-slate-200 dark:bg-neutral-700 hidden sm:block" />
+        <SummaryFigure value={totalScheduled} label="nhóm đã xếp lịch" />
+        <div className="h-4 w-px bg-slate-200 dark:bg-neutral-700 hidden sm:block" />
+        <SummaryFigure
+          value={totalCompleted}
+          label="đã khóa điểm"
+          valueClass="text-emerald-600 dark:text-emerald-400"
+        />
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-56 flex-1 sm:max-w-xs">
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Tìm tên hội đồng, phòng bảo vệ…"
+            className="pl-8 pr-8"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Tìm kiếm hội đồng"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground cursor-pointer"
+              aria-label="Xóa từ khóa"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+
+        {semesters && semesters.length > 0 && (
+          <Select
+            value={currentSemesterId ? String(currentSemesterId) : ''}
+            onValueChange={(val) =>
+              setSemesterId(val ? Number(val) : undefined)
+            }
+          >
+            <SelectTrigger className="w-52" aria-label="Chọn học kỳ">
+              <SelectValue>
+                {(val) => {
+                  const sem = semesters.find(
+                    (s) => String(s.id) === String(val),
+                  );
+                  return sem
+                    ? `${sem.name}${sem.isActive ? ' (Hiện tại)' : ''}`
+                    : 'Chọn học kỳ';
+                }}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {semesters.map((s) => (
+                <SelectItem key={s.id} value={String(s.id)}>
+                  {s.name}
+                  {s.isActive ? ' (Hiện tại)' : ''}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        <Select
+          value={majorId}
+          onValueChange={(val) => setMajorId(val ?? 'ALL')}
+        >
+          <SelectTrigger className="w-48" aria-label="Lọc theo chuyên ngành">
+            <SelectValue>
+              {(val) => {
+                if (val === 'ALL') return 'Mọi chuyên ngành';
+                return (
+                  majors?.find((m) => String(m.id) === String(val))?.name ??
+                  'Mọi chuyên ngành'
+                );
+              }}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">Mọi chuyên ngành</SelectItem>
+            {majors?.map((m) => (
+              <SelectItem key={m.id} value={String(m.id)}>
+                {m.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={status}
+          onValueChange={(val) =>
+            setStatus((val ?? 'ALL') as 'ALL' | CouncilStatus)
+          }
+        >
+          <SelectTrigger className="w-44" aria-label="Lọc theo trạng thái">
+            <SelectValue>
+              {(val) =>
+                STATUS_FILTER_OPTIONS.find((opt) => opt.value === val)?.label ??
+                'Mọi trạng thái'
+              }
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_FILTER_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {error && (
+        <p className="text-sm text-destructive">
+          Không tải được danh sách hội đồng bảo vệ.
+        </p>
+      )}
+
+      {/* Councils List */}
+      {isPending ? (
+        <div className="flex justify-center py-16">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : !councils || councils.length === 0 ? (
+        <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
+          <EmptyState icon={Gavel} title="Chưa có hội đồng bảo vệ nào." />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {councils?.map((c) => {
-            const president = c.members.find((m) => m.councilRole === 'PRESIDENT');
-            const secretary = c.members.find((m) => m.councilRole === 'SECRETARY');
+          {councils.map((c) => {
+            const president = c.members.find(
+              (m) => m.councilRole === 'PRESIDENT',
+            );
+            const secretary = c.members.find(
+              (m) => m.councilRole === 'SECRETARY',
+            );
             const otherMembers = c.members.filter(
               (m) => m.councilRole === 'MEMBER',
             );
+            const statusLabel = getCouncilStatusLabel(c.status);
 
             return (
               <div
                 key={c.id}
-                className="flex flex-col justify-between rounded-xl border bg-card p-4 shadow-sm hover:border-primary/40 transition-all space-y-4"
+                className="flex flex-col justify-between rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] p-4 shadow-2xs space-y-4"
               >
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        {c.major ? (
-                          <Badge variant="outline" className="text-[11px]">
-                            {c.major.name}
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-[11px]">
-                            Toàn khoa
-                          </Badge>
-                        )}
-                        <Badge
-                          variant={
-                            c.status === 'COMPLETED'
-                              ? 'default'
-                              : c.status === 'IN_PROGRESS'
-                                ? 'secondary'
-                                : 'outline'
-                          }
-                          className="text-[11px]"
-                        >
-                          {c.status === 'COMPLETED'
-                            ? 'Đã hoàn thành'
-                            : c.status === 'IN_PROGRESS'
-                              ? 'Đang diễn ra'
-                              : 'Chuẩn bị'}
-                        </Badge>
-                      </div>
-                      <h3 className="mt-1 font-bold text-base text-foreground leading-snug">
-                        {c.name}
-                      </h3>
-                    </div>
-
-                    {c.stats.totalTopics === 0 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                        onClick={() => handleDeleteCouncil(c)}
-                        title="Xóa hội đồng"
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground pt-1">
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="size-3.5 text-primary shrink-0" />
-                      <span className="truncate">{c.location || 'Chưa định phòng'}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="size-3.5 text-primary shrink-0" />
-                      <span>
-                        {new Date(c.defenseDate).toLocaleDateString('vi-VN')}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Thành phần Hội đồng */}
-                  <div className="rounded-lg border bg-muted/30 p-2.5 text-xs space-y-1">
-                    <div className="font-semibold text-muted-foreground text-[11px]">
-                      Thành phần Hội đồng ({c.members.length} GV):
-                    </div>
-                    <div className="space-y-0.5 text-[11px]">
-                      {president && (
-                        <div>
-                          <span className="text-amber-600 font-medium">Chủ tịch: </span>
-                          <span>
-                            {president.lecturer.academicTitle ? `${president.lecturer.academicTitle} ` : ''}
-                            {president.lecturer.fullName}
-                          </span>
-                        </div>
-                      )}
-                      {secretary && (
-                        <div>
-                          <span className="text-blue-600 font-medium">Thư ký: </span>
-                          <span>
-                            {secretary.lecturer.academicTitle ? `${secretary.lecturer.academicTitle} ` : ''}
-                            {secretary.lecturer.fullName}
-                          </span>
-                        </div>
-                      )}
-                      {otherMembers.length > 0 && (
-                        <div>
-                          <span className="text-muted-foreground font-medium">Ủy viên: </span>
-                          <span>
-                            {otherMembers
-                              .map((m) => m.lecturer.fullName)
-                              .join(', ')}
-                          </span>
-                        </div>
-                      )}
-                      {c.members.length === 0 && (
-                        <span className="text-amber-600 italic">
-                          Chưa phân công thành viên
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <StatusPill
+                          variant="tag"
+                          label={statusLabel.label}
+                          tone={statusLabel.tone}
+                        />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {c.major?.name ?? 'Toàn khoa'}
                         </span>
+                      </div>
+                      <h2 className="font-semibold text-base text-slate-900 dark:text-neutral-100 leading-snug">
+                        {c.name}
+                      </h2>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-xs"
+                        className="size-7.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                        onClick={() => openEditDialog(c)}
+                        title="Sửa thông tin hội đồng"
+                        aria-label="Sửa thông tin hội đồng"
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+
+                      {c.stats.totalTopics === 0 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          className="size-7.5 text-muted-foreground hover:text-destructive cursor-pointer"
+                          onClick={() => setDeleteTarget(c)}
+                          title="Xóa hội đồng"
+                          aria-label="Xóa hội đồng"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
                       )}
                     </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5 min-w-0">
+                      <MapPin className="size-3.5 shrink-0" />
+                      <span className="truncate">
+                        {c.location || 'Chưa định phòng'}
+                      </span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 tabular-nums">
+                      <Calendar className="size-3.5 shrink-0" />
+                      <span>{formatDate(c.defenseDate)}</span>
+                    </span>
+                  </div>
+
+                  <div className="rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-50/70 dark:bg-neutral-900/40 p-3 text-xs space-y-1">
+                    <p className="font-medium text-muted-foreground">
+                      Thành phần ({c.members.length} GV)
+                    </p>
+                    {c.members.length === 0 ? (
+                      <p className="text-muted-foreground">
+                        Chưa phân công thành viên
+                      </p>
+                    ) : (
+                      <div className="space-y-0.5 text-slate-700 dark:text-neutral-300">
+                        {president && (
+                          <p>
+                            <span className="font-medium">Chủ tịch: </span>
+                            {
+                              sanitizeLecturerName(
+                                president.lecturer.fullName,
+                                president.lecturer.academicTitle,
+                              ).displayName
+                            }
+                          </p>
+                        )}
+                        {secretary && (
+                          <p>
+                            <span className="font-medium">Thư ký: </span>
+                            {
+                              sanitizeLecturerName(
+                                secretary.lecturer.fullName,
+                                secretary.lecturer.academicTitle,
+                              ).displayName
+                            }
+                          </p>
+                        )}
+                        {otherMembers.length > 0 && (
+                          <p>
+                            <span className="font-medium">Ủy viên: </span>
+                            {otherMembers
+                              .map(
+                                (m) =>
+                                  sanitizeLecturerName(
+                                    m.lecturer.fullName,
+                                    m.lecturer.academicTitle,
+                                  ).displayName,
+                              )
+                              .join(', ')}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Footer action */}
-                <div className="flex items-center justify-between pt-2 border-t text-xs">
-                  <div className="font-medium text-muted-foreground">
-                    Đề tài bảo vệ:{' '}
+                <div className="flex items-center justify-between border-t border-slate-200 dark:border-neutral-700 pt-3 text-xs">
+                  <span className="text-muted-foreground tabular-nums">
+                    Đã khóa điểm:{' '}
                     <strong className="text-foreground">
-                      {c.stats.completedTopics} / {c.stats.totalTopics}
+                      {c.stats.completedTopics}/{c.stats.totalTopics}
                     </strong>{' '}
-                    hoàn thành
-                  </div>
+                    nhóm
+                  </span>
 
                   <Button
                     size="sm"
-                    className="gap-1.5 text-xs font-semibold"
+                    variant="outline"
+                    className="h-8 text-xs cursor-pointer"
                     onClick={() => setManagingCouncilId(c.id)}
                   >
-                    Chi tiết & Xếp lịch
+                    Quản lý &amp; Xếp lịch
                   </Button>
                 </div>
               </div>
@@ -384,18 +434,70 @@ export function AdminCouncilsView() {
         </div>
       )}
 
-      {/* Dialogs */}
       <CouncilCreateDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
+        open={formDialogOpen}
+        onOpenChange={(next) => {
+          setFormDialogOpen(next);
+          if (!next) setEditingCouncil(null);
+        }}
         defaultSemesterId={currentSemesterId}
+        council={editingCouncil}
       />
 
       <CouncilManagementDialog
         open={managingCouncilId !== null}
-        onOpenChange={(open) => !open && setManagingCouncilId(null)}
+        onOpenChange={(next) => {
+          if (!next) setManagingCouncilId(null);
+        }}
         councilId={managingCouncilId}
+        onEditCouncil={(council) => {
+          openEditDialog(council);
+        }}
+      />
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(next) => {
+          if (!next) setDeleteTarget(null);
+        }}
+        title="Xóa hội đồng bảo vệ"
+        description={
+          deleteTarget
+            ? `Bạn có chắc muốn xóa hội đồng "${deleteTarget.name}"?`
+            : ''
+        }
+        confirmLabel="Xóa hội đồng"
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          await deleteMutation.mutateAsync(deleteTarget.id);
+          toast.success('Đã xóa hội đồng.');
+        }}
       />
     </div>
+  );
+}
+
+function SummaryFigure({
+  value,
+  label,
+  valueClass,
+}: {
+  value: number;
+  label: string;
+  valueClass?: string;
+}) {
+  return (
+    <span className="inline-flex items-baseline gap-2">
+      <span
+        className={`text-xl font-bold tabular-nums ${
+          valueClass ?? 'text-slate-900 dark:text-neutral-100'
+        }`}
+      >
+        {value}
+      </span>
+      <span className="text-sm font-medium text-slate-600 dark:text-neutral-400">
+        {label}
+      </span>
+    </span>
   );
 }
