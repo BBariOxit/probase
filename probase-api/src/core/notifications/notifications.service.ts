@@ -136,14 +136,19 @@ export class NotificationsService {
   }
 
   async studentsWithoutGroupIn(round: {
+    roundId?: number;
+    hasSpecificRoster?: boolean;
     semesterId: number;
     cohorts: string[];
   }): Promise<number[]> {
-    if (round.cohorts.length === 0) return [];
+    const useSpecificRoster = Boolean(round.roundId && round.hasSpecificRoster);
+    if (!useSpecificRoster && round.cohorts.length === 0) return [];
 
     const students = await this.prisma.studentProfile.findMany({
       where: {
-        cohort: { in: round.cohorts },
+        ...(useSpecificRoster
+          ? { roundEligibilities: { some: { roundId: round.roundId } } }
+          : { cohort: { in: round.cohorts } }),
         user: { isActive: true },
         NOT: {
           groupMemberships: {

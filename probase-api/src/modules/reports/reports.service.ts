@@ -97,6 +97,7 @@ export class ReportsService {
         registrationEnd: true,
         projectType: { select: { id: true, name: true, code: true } },
         eligibilities: { select: { cohort: true }, orderBy: { cohort: 'asc' } },
+        _count: { select: { eligibleStudents: true } },
       },
       orderBy: { projectTypeId: 'asc' },
     });
@@ -139,15 +140,19 @@ export class ReportsService {
     return Promise.all(
       rounds.map(async (round) => {
         const cohorts = round.eligibilities.map((rule) => rule.cohort);
+        const hasSpecificRoster = (round._count?.eligibleStudents ?? 0) > 0;
+        const scopeFilter = hasSpecificRoster
+          ? { roundId: round.id }
+          : { cohorts };
 
         // Asked of the shared roster rather than counted here, so "has a topic"
         // means the same thing on this screen as it does on the faculty list and
         // the allocation desk.
         const [eligible, withGroup] = await Promise.all([
-          this.roster.count({ cohorts }),
+          this.roster.count(scopeFilter),
           this.roster.count({
             semesterId: round.semesterId,
-            cohorts,
+            ...scopeFilter,
             hasGroup: true,
           }),
         ]);
@@ -421,6 +426,7 @@ type RoundRow = {
   registrationEnd: Date;
   projectType: { id: number; name: string; code: string };
   eligibilities: { cohort: string }[];
+  _count?: { eligibleStudents: number };
 };
 
 interface Membership {

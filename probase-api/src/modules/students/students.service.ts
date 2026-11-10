@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import ExcelJS from 'exceljs';
+import { sanitizeSpreadsheetText } from '../../common/utils/spreadsheet.util';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { QueryStudentsDto } from './dto/query-students.dto';
 import {
@@ -124,22 +125,24 @@ export class StudentsService {
 
 function toSheetRow(row: RosterRow) {
   return {
-    studentCode: row.studentCode,
-    fullName: row.fullName,
-    class: row.class ?? '',
-    cohort: row.cohort ?? '',
-    major: row.major?.name ?? '',
-    email: row.email,
-    projectType: row.group?.topic.projectType.name ?? '',
-    topic: row.group?.topic.title ?? '',
+    studentCode: sanitizeSpreadsheetText(row.studentCode),
+    fullName: sanitizeSpreadsheetText(row.fullName),
+    class: sanitizeSpreadsheetText(row.class),
+    cohort: sanitizeSpreadsheetText(row.cohort),
+    major: sanitizeSpreadsheetText(row.major?.name),
+    email: sanitizeSpreadsheetText(row.email),
+    projectType: sanitizeSpreadsheetText(row.group?.topic.projectType.name),
+    topic: sanitizeSpreadsheetText(row.group?.topic.title),
     lecturer: row.group
-      ? [
-          row.group.topic.lecturer.academicTitle,
-          row.group.topic.lecturer.fullName,
-        ]
-          .filter(Boolean)
-          .join(' ')
+      ? sanitizeSpreadsheetText(
+          [
+            row.group.topic.lecturer.academicTitle,
+            row.group.topic.lecturer.fullName,
+          ]
+            .filter(Boolean)
+            .join(' '),
+        )
       : '',
-    note: row.note ?? '',
+    note: sanitizeSpreadsheetText(row.note),
   };
 }

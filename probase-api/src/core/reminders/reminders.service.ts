@@ -65,6 +65,7 @@ export class RemindersService {
         registrationEnd: true,
         projectType: { select: { name: true } },
         eligibilities: { select: { cohort: true } },
+        _count: { select: { eligibleStudents: true } },
       },
     });
 
@@ -78,6 +79,8 @@ export class RemindersService {
       if (!GATE_OPEN.includes(phase)) continue;
 
       const userIds = await this.notifications.studentsWithoutGroupIn({
+        roundId: round.id,
+        hasSpecificRoster: (round._count?.eligibleStudents ?? 0) > 0,
         semesterId: round.semesterId,
         cohorts: round.eligibilities.map((rule) => rule.cohort),
       });
