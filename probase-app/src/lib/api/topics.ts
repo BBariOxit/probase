@@ -168,7 +168,7 @@ export function useDepartmentReviewTopic() {
     }) => topicService.reviewDepartment(id, data),
     onSuccess: (topic) => {
       queryClient.setQueryData(topicKeys.detail(topic.id), topic);
-      return queryClient.invalidateQueries({ queryKey: topicKeys.all });
+      return queryClient.invalidateQueries({ queryKey: topicKeys.lists() });
     },
   });
 }
