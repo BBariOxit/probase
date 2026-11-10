@@ -507,6 +507,13 @@ function StudentTopicsContent() {
                           <span className="text-xs text-slate-400 dark:text-neutral-500 font-medium">
                             Đã có nhóm
                           </span>
+                        ) : topic.fromProposal && topic.proposedByMe === false ? (
+                          <span
+                            className="text-xs text-slate-400 dark:text-neutral-500 font-medium"
+                            title="Đề tài này do sinh viên khác đề xuất, chỉ người đề xuất mới có quyền đăng ký"
+                          >
+                            Giữ cho SV đề xuất
+                          </span>
                         ) : topic.maxStudents < myGroup.members.length ? (
                           <span
                             className="text-xs text-slate-400 dark:text-neutral-500 font-medium"

@@ -613,11 +613,16 @@ export class RoundsService {
   ) {
     if (rounds.length < 2) return rounds;
 
+    const roundIds = rounds.map((round) => round.id);
+
     const membership = await this.prisma.registrationGroupMember.findFirst({
       where: {
         student: { userId },
         status: GroupMemberStatus.ACCEPTED,
-        group: { status: { not: RegistrationGroupStatus.REJECTED } },
+        group: {
+          status: { not: RegistrationGroupStatus.REJECTED },
+          topic: { roundId: { in: roundIds } },
+        },
       },
       select: { group: { select: { topic: { select: { roundId: true } } } } },
     });
