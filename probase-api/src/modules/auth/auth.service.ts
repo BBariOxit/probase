@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { createHash, randomBytes, randomUUID } from 'crypto';
+import { Role } from '../../../generated/prisma/client';
 import { MailService } from '../../core/mail/mail.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -55,6 +56,14 @@ const FORGOT_PASSWORD_REPLY = {
     'Nếu email tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu đã được gửi.',
 };
 
+const DLU_EMAIL_DOMAIN = 'dlu.edu.vn';
+const GOOGLE_VERIFY_TIMEOUT_MS = 10_000;
+
+function isDluEmail(email: string): boolean {
+  const parts = email.split('@');
+  return parts.length === 2 && parts[0].length > 0 && parts[1] === DLU_EMAIL_DOMAIN;
+}
+
 @Injectable()
 export class AuthService {
   private readonly refreshSecret: string;
@@ -71,7 +80,8 @@ export class AuthService {
     this.refreshSecret = config.getOrThrow<string>('JWT_REFRESH_SECRET');
     this.refreshExpiresIn = config.get('JWT_REFRESH_EXPIRES_IN', '30d');
     this.frontendUrl = config.get('FRONTEND_URL', 'http://localhost:3000');
-    this.googleClientId = config.get<string>('GOOGLE_CLIENT_ID');
+    this.googleClientId =
+      config.get<string>('GOOGLE_CLIENT_ID')?.trim() || undefined;
   }
 
   async login(dto: LoginDto) {
@@ -189,12 +199,15 @@ export class AuthService {
 
       if (isAccessToken) {
         // Với Google Access Token: Xác thực audience & thông tin qua tokeninfo và userinfo
+        const signal = AbortSignal.timeout(GOOGLE_VERIFY_TIMEOUT_MS);
         const [tokenInfoRes, userInfoRes] = await Promise.all([
           fetch(
             `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(rawToken)}`,
+            { signal },
           ),
           fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
             headers: { Authorization: `Bearer ${rawToken}` },
+            signal,
           }),
         ]);
 
@@ -215,13 +228,19 @@ export class AuthService {
         googlePayload = {
           email: tokenInfo.email,
           email_verified: tokenInfo.email_verified,
-          aud: tokenInfo.aud || tokenInfo.azp,
+          aud:
+            this.googleClientId &&
+            (tokenInfo.aud === this.googleClientId ||
+              tokenInfo.azp === this.googleClientId)
+              ? this.googleClientId
+              : tokenInfo.aud || tokenInfo.azp,
           name: userInfo.name,
           picture: userInfo.picture,
         };
       } else {
         const response = await fetch(
           `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(rawToken)}`,
+          { signal: AbortSignal.timeout(GOOGLE_VERIFY_TIMEOUT_MS) },
         );
 
         if (!response.ok) {
@@ -236,7 +255,7 @@ export class AuthService {
       );
     }
 
-    const email = googlePayload.email?.toLowerCase();
+    const email = googlePayload.email?.trim().toLowerCase();
     const isEmailVerified =
       googlePayload.email_verified === 'true' ||
       googlePayload.email_verified === true;
@@ -247,18 +266,14 @@ export class AuthService {
       );
     }
 
-    if (
-      this.googleClientId &&
-      googlePayload.aud &&
-      googlePayload.aud !== this.googleClientId
-    ) {
+    if (this.googleClientId && googlePayload.aud !== this.googleClientId) {
       throw new UnauthorizedException(
         'Mã xác thực Google không thuộc ứng dụng này',
       );
     }
 
     // Ràng buộc bảo mật DLU: Chỉ chấp nhận duy nhất đuôi trường DLU (@dlu.edu.vn)
-    if (!email.endsWith('@dlu.edu.vn')) {
+    if (!isDluEmail(email)) {
       throw new BadRequestException(
         `Hệ thống ProBase chỉ chấp nhận email do Trường Đại học Đà Lạt cấp (@dlu.edu.vn). Địa chỉ "${email}" không được phép đăng nhập.`,
       );
@@ -305,7 +320,7 @@ export class AuthService {
             },
           },
         });
-        if (student?.user) {
+        if (student?.user?.role === Role.STUDENT) {
           user = student.user;
         }
       }
@@ -332,8 +347,12 @@ export class AuthService {
       user.mustChangePassword = false;
     }
 
-    // Tự động cập nhật avatar nếu tài khoản chưa có và Google có ảnh đại diện
-    if (!user.avatarUrl && googlePayload.picture) {
+    // Tự động cập nhật avatar nếu tài khoản chưa có và Google có ảnh đại diện HTTPS hợp lệ
+    if (
+      !user.avatarUrl &&
+      googlePayload.picture &&
+      googlePayload.picture.startsWith('https://')
+    ) {
       await this.prisma.user
         .update({
           where: { id: user.id },

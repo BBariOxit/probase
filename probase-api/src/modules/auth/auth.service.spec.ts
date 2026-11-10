@@ -480,6 +480,77 @@ describe('AuthService password backoff', () => {
       expect(result).toHaveProperty('accessToken');
       expect(result.user.studentProfile?.studentCode).toBe('2212345');
     });
+
+    it('rejects 7-digit DLU student email absent from both User and StudentProfile tables (BR-01)', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          email: '2299887@dlu.edu.vn',
+          email_verified: true,
+          name: 'Outsider Student',
+        }),
+      });
+
+      findUnique.mockResolvedValue(null);
+      studentProfileFindUnique.mockResolvedValue(null);
+
+      await expect(
+        service.googleLogin({ idToken: 'valid-token' }),
+      ).rejects.toThrow('chưa được cập nhật vào danh sách của Khoa CNTT');
+    });
+
+    it('rejects inactive DLU account on Google login', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          email: '2212345@dlu.edu.vn',
+          email_verified: true,
+        }),
+      });
+
+      findUnique.mockResolvedValue({
+        id: 12,
+        email: '2212345@dlu.edu.vn',
+        role: 'STUDENT',
+        isActive: false,
+        mustChangePassword: false,
+        avatarUrl: null,
+        studentProfile: null,
+        lecturerProfile: null,
+      });
+
+      await expect(
+        service.googleLogin({ idToken: 'valid-token' }),
+      ).rejects.toThrow('Tài khoản đã bị vô hiệu hoá');
+    });
+
+    it('does not allow studentCode fallback to log into a non-STUDENT account', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          email: '2212345@dlu.edu.vn',
+          email_verified: true,
+        }),
+      });
+
+      findUnique.mockResolvedValue(null);
+      studentProfileFindUnique.mockResolvedValue({
+        id: 99,
+        studentCode: '2212345',
+        user: {
+          id: 999,
+          email: 'admin@dlu.edu.vn',
+          role: 'ADMIN',
+          isActive: true,
+          mustChangePassword: false,
+          avatarUrl: null,
+        },
+      });
+
+      await expect(
+        service.googleLogin({ idToken: 'valid-token' }),
+      ).rejects.toThrow('chưa được cập nhật vào danh sách của Khoa CNTT');
+    });
   });
 
   describe('changePassword', () => {
