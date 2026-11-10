@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
 
 export const AutoAssignReviewersSchema = z.object({
+  semesterId: z.coerce.number().int().positive().optional(),
   roundId: z.coerce.number().int().positive().optional(),
   majorId: z.coerce.number().int().positive().optional(),
   maxReviewsPerLecturer: z.coerce.number().int().min(1).max(20).optional(),

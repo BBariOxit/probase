@@ -1,10 +1,10 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { GroupMemberStatus, Role } from '../../../generated/prisma/client';
+import {
+  GroupMemberStatus,
+  RegistrationGroupStatus,
+  Role,
+} from '../../../generated/prisma/client';
 import { CloudinaryService } from '../../core/cloudinary/cloudinary.service';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
@@ -202,6 +202,86 @@ describe('OutlinesService', () => {
       expect(result.status).toBe('APPROVED_BY_LECTURER');
       expect(prisma.topicOutline.update).toHaveBeenCalled();
       expect(notifications.notify).toHaveBeenCalled();
+    });
+  });
+
+  describe('getFacultyOutlines', () => {
+    it('throws ForbiddenException for regular lecturer without TLGV or TTBM role', async () => {
+      prisma.lecturerProfile.findUnique.mockResolvedValue({
+        id: 5,
+        userId: 30,
+        isAcademicAssistant: false,
+        isHeadOfDepartment: false,
+      });
+
+      await expect(
+        service.getFacultyOutlines(
+          { id: 30, role: Role.LECTURER },
+          { page: 1, limit: 20 },
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('filters by semesterId, roundId, majorId, search and computes scoped stats excluding REJECTED', async () => {
+      prisma.registrationGroup.findMany.mockResolvedValue([
+        { id: 1, name: 'Nhóm 01', topic: { title: 'Đề tài A' }, outline: null },
+      ]);
+      prisma.registrationGroup.count
+        .mockResolvedValueOnce(1) // filtered total
+        .mockResolvedValueOnce(10) // totalWithTopic (baseGroupWhere)
+        .mockResolvedValueOnce(4) // approved
+        .mockResolvedValueOnce(2) // submitted
+        .mockResolvedValueOnce(1); // needsRevision
+
+      const result = await service.getFacultyOutlines(
+        { id: 1, role: Role.ADMIN },
+        {
+          page: 1,
+          limit: 20,
+          semesterId: 2,
+          roundId: 5,
+          majorId: 3,
+          status: 'NOT_SUBMITTED',
+          search: '2266666',
+        },
+      );
+
+      expect(prisma.registrationGroup.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: { not: RegistrationGroupStatus.REJECTED },
+            semesterId: 2,
+            topic: { semesterId: 2, roundId: 5, majorId: 3 },
+            outline: null,
+            OR: expect.arrayContaining([
+              expect.objectContaining({
+                members: expect.objectContaining({
+                  some: expect.objectContaining({
+                    status: GroupMemberStatus.ACCEPTED,
+                  }),
+                }),
+              }),
+            ]),
+          }),
+        }),
+      );
+
+      // Summary stats use baseGroupWhere with REJECTED excluded (not unfiltered topicOutline)
+      expect(prisma.registrationGroup.count).toHaveBeenNthCalledWith(2, {
+        where: {
+          status: { not: RegistrationGroupStatus.REJECTED },
+          semesterId: 2,
+          topic: { semesterId: 2, roundId: 5, majorId: 3 },
+        },
+      });
+      expect(result.total).toBe(1);
+      expect(result.stats).toEqual({
+        totalGroups: 10,
+        approved: 4,
+        submitted: 2,
+        needsRevision: 1,
+        notSubmitted: 3,
+      });
     });
   });
 });

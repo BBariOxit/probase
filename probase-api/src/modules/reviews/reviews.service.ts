@@ -8,6 +8,7 @@ import {
   GroupMemberStatus,
   NotificationType,
   Prisma,
+  RegistrationGroupStatus,
   Role,
 } from '../../../generated/prisma/client';
 import { recordAudit } from '../../core/audit/audit-entry';
@@ -273,7 +274,9 @@ export class ReviewsService {
     if (user.role === Role.STUDENT) {
       const isMember = group.members.some((m) => m.student.userId === user.id);
       if (!isMember) {
-        throw new ForbiddenException('Bạn không phải là thành viên của nhóm này.');
+        throw new ForbiddenException(
+          'Bạn không phải là thành viên của nhóm này.',
+        );
       }
     } else if (
       user.role === Role.LECTURER &&
@@ -319,7 +322,7 @@ export class ReviewsService {
     } else if (
       (hasSupervisorReview && !isSupervisorAllowed) ||
       (hasReviewerReview && !isReviewerAllowed) ||
-      (stage2 && !stage2Passed)
+      stage2?.isPassed === false
     ) {
       eligibilityStatus = 'NOT_ELIGIBLE';
     } else {
@@ -498,8 +501,10 @@ export class ReviewsService {
       if (!g.topic) continue;
       const projectTypeCode = g.topic.round?.projectType?.code;
       const expectedTemplate = projectTypeCode === 'KLTN' ? 'M04' : 'M02';
-      const myReview = g.reviews.find((r) => r.reviewerType === 'SUPERVISOR') ?? null;
-      const partnerReview = g.reviews.find((r) => r.reviewerType === 'REVIEWER') ?? null;
+      const myReview =
+        g.reviews.find((r) => r.reviewerType === 'SUPERVISOR') ?? null;
+      const partnerReview =
+        g.reviews.find((r) => r.reviewerType === 'REVIEWER') ?? null;
 
       items.push({
         groupId: g.id,
@@ -525,8 +530,10 @@ export class ReviewsService {
     for (const a of reviewerAssignments) {
       const g = a.group;
       if (!g?.topic) continue;
-      const myReview = g.reviews.find((r) => r.reviewerType === 'REVIEWER') ?? null;
-      const partnerReview = g.reviews.find((r) => r.reviewerType === 'SUPERVISOR') ?? null;
+      const myReview =
+        g.reviews.find((r) => r.reviewerType === 'REVIEWER') ?? null;
+      const partnerReview =
+        g.reviews.find((r) => r.reviewerType === 'SUPERVISOR') ?? null;
 
       items.push({
         groupId: g.id,
@@ -558,47 +565,44 @@ export class ReviewsService {
     user: RequestUser,
     query: QueryDefenseEligibilityDto,
   ) {
-    const where: Prisma.RegistrationGroupWhereInput = {
-      topicId: { not: undefined },
-    };
-
-    if (query.roundId) {
-      where.topic = { roundId: query.roundId };
-    }
-
-    if (query.semesterId) {
-      where.semesterId = query.semesterId;
-    }
-
-    // Nếu là TTBM, giới hạn theo chuyên ngành của bộ môn
-    if (
+    const isHodOnly =
       user.role === Role.LECTURER &&
       user.lecturerProfile?.isHeadOfDepartment &&
-      !user.lecturerProfile?.isAcademicAssistant
-    ) {
-      if (user.lecturerProfile.majorId) {
-        where.topic = {
-          ...((where.topic as any) || {}),
-          majorId: user.lecturerProfile.majorId,
-        };
-      }
-    } else if (query.majorId) {
-      where.topic = {
-        ...((where.topic as any) || {}),
-        majorId: query.majorId,
-      };
-    }
+      !user.lecturerProfile?.isAcademicAssistant;
+
+    const targetMajorId = isHodOnly
+      ? (user.lecturerProfile?.majorId ?? undefined)
+      : query.majorId;
+
+    const topicFilter: Prisma.TopicWhereInput = {
+      ...(query.semesterId ? { semesterId: query.semesterId } : {}),
+      ...(query.roundId ? { roundId: query.roundId } : {}),
+      ...(targetMajorId ? { majorId: targetMajorId } : {}),
+    };
+
+    const where: Prisma.RegistrationGroupWhereInput = {
+      status: { not: RegistrationGroupStatus.REJECTED },
+      ...(query.semesterId ? { semesterId: query.semesterId } : {}),
+      ...(Object.keys(topicFilter).length > 0 ? { topic: topicFilter } : {}),
+    };
 
     if (query.search) {
       where.OR = [
+        { name: { contains: query.search, mode: 'insensitive' } },
         { topic: { title: { contains: query.search, mode: 'insensitive' } } },
         {
           members: {
             some: {
+              status: GroupMemberStatus.ACCEPTED,
               student: {
                 OR: [
                   { fullName: { contains: query.search, mode: 'insensitive' } },
-                  { studentCode: { contains: query.search, mode: 'insensitive' } },
+                  {
+                    studentCode: {
+                      contains: query.search,
+                      mode: 'insensitive',
+                    },
+                  },
                 ],
               },
             },
@@ -712,7 +716,7 @@ export class ReviewsService {
       } else if (
         (hasSupervisorReview && !supervisorAllowed) ||
         (hasReviewerReview && !reviewerAllowed) ||
-        (stage2 && !stage2Passed)
+        stage2?.isPassed === false
       ) {
         status = 'NOT_ELIGIBLE';
       } else {
@@ -756,8 +760,12 @@ export class ReviewsService {
 
     // Thống kê toàn bộ trước khi lọc status
     const totalGroups = processed.length;
-    const eligibleCount = processed.filter((p) => p.status === 'ELIGIBLE').length;
-    const notEligibleCount = processed.filter((p) => p.status === 'NOT_ELIGIBLE').length;
+    const eligibleCount = processed.filter(
+      (p) => p.status === 'ELIGIBLE',
+    ).length;
+    const notEligibleCount = processed.filter(
+      (p) => p.status === 'NOT_ELIGIBLE',
+    ).length;
     const pendingCount = processed.filter((p) => p.status === 'PENDING').length;
 
     // Lọc theo status nếu có yêu cầu
