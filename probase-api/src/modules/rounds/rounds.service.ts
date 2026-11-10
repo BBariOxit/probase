@@ -129,7 +129,8 @@ export class RoundsService {
     });
     if (!student) return [];
 
-    // Prioritize specific student eligibility imported for this semester
+    // Evaluate eligibility per round: imported roster overrides cohort rule only
+    // for rounds that actually have an imported roster (_count > 0).
     const specificRounds = await this.prisma.roundStudentEligibility.findMany({
       where: {
         studentId: student.id,
@@ -138,6 +139,7 @@ export class RoundsService {
       select: {
         round: {
           select: {
+            id: true,
             projectType: { select: { id: true, name: true, code: true } },
           },
         },
@@ -145,29 +147,38 @@ export class RoundsService {
       orderBy: { round: { projectType: { code: 'asc' } } },
     });
 
-    if (specificRounds.length > 0) {
-      return specificRounds.map((r) => r.round.projectType);
+    const eligibleMap = new Map<
+      number,
+      { id: number; name: string; code: string }
+    >();
+    for (const row of specificRounds) {
+      eligibleMap.set(row.round.projectType.id, row.round.projectType);
     }
 
-    // Fallback: check rounds with cohort rule where NO specific student roster was imported
-    if (!student.cohort) return [];
+    if (student.cohort) {
+      const cohortRounds = await this.prisma.registrationRound.findMany({
+        where: {
+          semesterId,
+          eligibilities: { some: { cohort: student.cohort } },
+        },
+        select: {
+          id: true,
+          projectType: { select: { id: true, name: true, code: true } },
+          _count: { select: { eligibleStudents: true } },
+        },
+        orderBy: { projectType: { code: 'asc' } },
+      });
 
-    const cohortRounds = await this.prisma.registrationRound.findMany({
-      where: {
-        semesterId,
-        eligibilities: { some: { cohort: student.cohort } },
-      },
-      select: {
-        id: true,
-        projectType: { select: { id: true, name: true, code: true } },
-        _count: { select: { eligibleStudents: true } },
-      },
-      orderBy: { projectType: { code: 'asc' } },
-    });
+      for (const r of cohortRounds) {
+        if (r._count.eligibleStudents === 0) {
+          eligibleMap.set(r.projectType.id, r.projectType);
+        }
+      }
+    }
 
-    return cohortRounds
-      .filter((r) => r._count.eligibleStudents === 0)
-      .map((round) => round.projectType);
+    return [...eligibleMap.values()].sort((a, b) =>
+      a.code.localeCompare(b.code),
+    );
   }
 
   async eligibleRoundIds(userId: number, semesterIds?: number[]) {
@@ -185,26 +196,28 @@ export class RoundsService {
       select: { roundId: true },
     });
 
-    if (specificRows.length > 0) {
-      return specificRows.map((r) => r.roundId);
+    const eligibleIds = new Set(specificRows.map((r) => r.roundId));
+
+    if (student.cohort) {
+      const cohortRounds = await this.prisma.registrationRound.findMany({
+        where: {
+          eligibilities: { some: { cohort: student.cohort } },
+          ...(semesterIds && { semesterId: { in: semesterIds } }),
+        },
+        select: {
+          id: true,
+          _count: { select: { eligibleStudents: true } },
+        },
+      });
+
+      for (const r of cohortRounds) {
+        if (r._count.eligibleStudents === 0) {
+          eligibleIds.add(r.id);
+        }
+      }
     }
 
-    if (!student.cohort) return [];
-
-    const cohortRounds = await this.prisma.registrationRound.findMany({
-      where: {
-        eligibilities: { some: { cohort: student.cohort } },
-        ...(semesterIds && { semesterId: { in: semesterIds } }),
-      },
-      select: {
-        id: true,
-        _count: { select: { eligibleStudents: true } },
-      },
-    });
-
-    return cohortRounds
-      .filter((r) => r._count.eligibleStudents === 0)
-      .map((row) => row.id);
+    return [...eligibleIds];
   }
 
   async requireRoundFor(semesterId: number, projectTypeId: number) {
@@ -537,7 +550,13 @@ export class RoundsService {
     cohorts: string[];
     projectType: { name: string };
   }) {
+    const specificCount = await this.prisma.roundStudentEligibility.count({
+      where: { roundId: round.id },
+    });
+
     const userIds = await this.notifications.studentsWithoutGroupIn({
+      roundId: round.id,
+      hasSpecificRoster: specificCount > 0,
       semesterId: round.semesterId,
       cohorts: round.cohorts,
     });
