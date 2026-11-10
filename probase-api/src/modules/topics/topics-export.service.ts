@@ -24,10 +24,12 @@ const VN_DATE_FORMAT = new Intl.DateTimeFormat('vi-VN', {
   timeZone: 'Asia/Ho_Chi_Minh',
 });
 
-const TOPIC_STATUS_LABELS: Record<TopicStatus, string> = {
+const TOPIC_STATUS_LABELS: Partial<Record<TopicStatus, string>> &
+  Record<string, string> = {
   DRAFT: 'Bản nháp',
   PENDING: 'Chờ duyệt',
   PENDING_DEPARTMENT: 'Chờ Bộ môn duyệt',
+  PENDING_FACULTY: 'Chờ Khoa duyệt',
   APPROVED_OPEN: 'Đã duyệt mở',
   APPROVED: 'Đã duyệt — chờ mở',
   OPEN: 'Đang mở đăng ký',
