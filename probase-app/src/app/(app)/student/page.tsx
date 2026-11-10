@@ -110,21 +110,10 @@ function StudentTopicsContent() {
 
   const [search, setSearch] = useState('');
   const [projectTypeId, setProjectTypeId] = useState<number | null>(null);
-  const userChangedTypeRef = useRef(false);
   const [lecturerId, setLecturerId] = useState(ANY);
   const [onlyAvailable, setOnlyAvailable] = useState(true);
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const debouncedSearch = useDebounce(search);
-
-  // Set default project type to the student's eligible type as soon as myTypes loads
-  useEffect(() => {
-    if (userChangedTypeRef.current) return;
-    if (myTypes && myTypes.length > 0) {
-      setProjectTypeId(myTypes[0].id);
-    } else if (myTypes && myTypes.length === 0) {
-      setProjectTypeId(ANY);
-    }
-  }, [myTypes]);
 
   const effectiveProjectTypeId = projectTypeId ?? myTypes?.[0]?.id ?? ANY;
 
@@ -149,7 +138,6 @@ function StudentTopicsContent() {
   );
 
   const rawTopics = data?.pages.flatMap((page) => page.items) ?? [];
-  const rawTotal = data?.pages[0]?.total ?? 0;
 
   // Filter topics for "Còn trống" & lecturerId guarantee
   const topics = rawTopics.filter((t) => {
@@ -338,7 +326,6 @@ function StudentTopicsContent() {
           <Select
             value={effectiveProjectTypeId}
             onValueChange={(val) => {
-              userChangedTypeRef.current = true;
               setProjectTypeId(val as number);
             }}
           >

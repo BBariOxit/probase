@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   AlertCircle,
   AlertTriangle,
@@ -56,9 +56,7 @@ export function EligibleStudentsImportDialog({
   const semester = useActiveSemester();
   const { data: rounds } = useRoundsForSemester(semester?.id);
 
-  const [selectedRoundId, setSelectedRoundId] = useState<number | null>(
-    defaultRoundId ?? null,
-  );
+  const [selectedRoundId, setSelectedRoundId] = useState<number | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
@@ -67,17 +65,6 @@ export function EligibleStudentsImportDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const importMutation = useImportEligibleStudents();
-
-  useEffect(() => {
-    if (open) {
-      setSelectedRoundId(defaultRoundId ?? null);
-    } else {
-      clearSelectedFile();
-      setResult(null);
-      setErrorMsg(null);
-      setIsDragging(false);
-    }
-  }, [open, defaultRoundId]);
 
   function clearSelectedFile() {
     setFile(null);
@@ -115,6 +102,7 @@ export function EligibleStudentsImportDialog({
 
   function handleOpenChange(newOpen: boolean) {
     if (!newOpen) {
+      setSelectedRoundId(null);
       clearSelectedFile();
       setResult(null);
       setErrorMsg(null);
@@ -126,7 +114,8 @@ export function EligibleStudentsImportDialog({
   async function handleDownloadTemplate() {
     try {
       setIsDownloadingTemplate(true);
-      const targetRoundId = selectedRoundId ?? rounds?.[0]?.id;
+      const targetRoundId =
+        selectedRoundId ?? defaultRoundId ?? rounds?.[0]?.id;
       await downloadEligibleTemplate(targetRoundId);
     } catch {
       setErrorMsg('Không thể tải file mẫu. Vui lòng thử lại sau.');
@@ -136,7 +125,7 @@ export function EligibleStudentsImportDialog({
   }
 
   async function handleSubmit() {
-    const targetRoundId = selectedRoundId ?? rounds?.[0]?.id;
+    const targetRoundId = selectedRoundId ?? defaultRoundId ?? rounds?.[0]?.id;
     if (!targetRoundId) {
       setErrorMsg('Vui lòng chọn đợt đăng ký đồ án.');
       return;
@@ -163,7 +152,7 @@ export function EligibleStudentsImportDialog({
     }
   }
 
-  const effectiveRoundId = selectedRoundId ?? rounds?.[0]?.id;
+  const effectiveRoundId = selectedRoundId ?? defaultRoundId ?? rounds?.[0]?.id;
 
   const isZeroImported =
     result !== null && result.importedCount === 0 && result.errorCount > 0;
