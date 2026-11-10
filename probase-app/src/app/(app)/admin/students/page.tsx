@@ -3,15 +3,22 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import {
+  CheckCircle2,
   Download,
   FileUp,
   Loader2,
   RotateCcw,
   Search,
   SlidersHorizontal,
+  Trash2,
   Users,
   X,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  useEligibleStudents,
+  useRemoveEligibleStudent,
+} from '@/lib/api/eligible-students';
 import { useMajors } from '@/lib/api/majors';
 import { useActiveSemester, useRoundsForSemester } from '@/lib/api/master-data';
 import { useExportStudents, useStudents } from '@/lib/api/students';
@@ -20,6 +27,7 @@ import type { StudentRosterRow } from '@/lib/api/types';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
 import { EligibleStudentsImportDialog } from '@/components/admin/eligible-students-import-dialog';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { usePagination } from '@/hooks/use-pagination';
@@ -105,6 +113,7 @@ export default function StudentRosterPage() {
   const [groupState, setGroupState] = useState('ALL');
   const [importOpen, setImportOpen] = useState(false);
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
+  const [studentToRemove, setStudentToRemove] = useState<StudentRosterRow | null>(null);
 
   const debouncedSearch = useDebouncedValue(search);
   const debouncedClass = useDebouncedValue(classCode);
@@ -124,11 +133,18 @@ export default function StudentRosterPage() {
     page,
     limit: pageSize,
   });
+  const { data: eligibleMeta } = useEligibleStudents(
+    roundId !== ANY ? roundId : undefined,
+    { page: 1, limit: 1 },
+  );
+  const removeEligibleMutation = useRemoveEligibleStudent();
   const exportRoster = useExportStudents();
 
   if (!allowed) return null;
 
   const students = data?.items ?? [];
+  const hasImportedRoundRoster =
+    roundId !== ANY && (eligibleMeta?.totalEligible ?? 0) > 0;
 
   const lecturerOptions = (lecturers ?? []).map((l) => ({
     value: String(l.id),
@@ -556,6 +572,18 @@ export default function StudentRosterPage() {
           </p>
         )}
 
+        {hasImportedRoundRoster && eligibleMeta && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/8 px-3.5 py-2 text-xs text-slate-700 dark:text-neutral-200">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <span>
+                Đợt <strong className="font-semibold">{eligibleMeta.round.projectTypeName}</strong> đang áp dụng danh sách import:{' '}
+                <strong className="font-semibold">{eligibleMeta.totalEligible}</strong> SV đủ ĐK ({eligibleMeta.withGroupCount} đã có nhóm, {eligibleMeta.withoutGroupCount} chưa có nhóm).
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* BẢNG DỮ LIỆU: VÙNG BẢNG (flex-1 min-h-0 overflow-auto), STICKY HEADER z-10 */}
         <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs overflow-hidden">
           <div className="flex-auto min-h-0 overflow-auto">
@@ -583,12 +611,22 @@ export default function StudentRosterPage() {
                   <TableHead className="w-32 px-4 whitespace-nowrap">
                     Ghi chú
                   </TableHead>
+                  {hasImportedRoundRoster && (
+                    <TableHead className="w-16 px-3 text-right whitespace-nowrap">
+                      Xóa
+                    </TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
 
               <TableBody>
                 {students.map((student) => (
-                  <StudentRow key={student.id} student={student} />
+                  <StudentRow
+                    key={student.id}
+                    student={student}
+                    canManageRound={hasImportedRoundRoster}
+                    onRemoveFromRound={setStudentToRemove}
+                  />
                 ))}
               </TableBody>
             </Table>
@@ -613,7 +651,7 @@ export default function StudentRosterPage() {
                   title={
                     hasAnyFilter
                       ? 'Không có sinh viên nào khớp bộ lọc.'
-                      : 'Chưa có sinh viên nào trong hệ thống. Nhập danh sách ở màn Tài khoản.'
+                      : 'Chưa có sinh viên nào trong hệ thống. Bấm "Import SV đủ ĐK" để nhập danh sách sinh viên.'
                   }
                 />
               </div>
@@ -638,12 +676,45 @@ export default function StudentRosterPage() {
           onOpenChange={setImportOpen}
           defaultRoundId={roundId !== ANY ? roundId : undefined}
         />
+
+        <ConfirmDialog
+          open={studentToRemove !== null}
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) setStudentToRemove(null);
+          }}
+          title="Xóa khỏi danh sách đủ điều kiện?"
+          description={
+            studentToRemove
+              ? `Sinh viên ${studentToRemove.fullName} (${studentToRemove.studentCode}) sẽ bị xóa khỏi danh sách đủ điều kiện của đợt đang chọn và không thể đăng ký đề tài trong đợt này trừ khi được import lại.`
+              : ''
+          }
+          confirmLabel="Xóa khỏi đợt"
+          onConfirm={async () => {
+            if (!studentToRemove || roundId === ANY) return;
+            await removeEligibleMutation.mutateAsync({
+              roundId,
+              studentId: studentToRemove.id,
+            });
+            toast.success(
+              `Đã xóa ${studentToRemove.fullName} khỏi danh sách đủ điều kiện`,
+            );
+            setStudentToRemove(null);
+          }}
+        />
       </div>
     </TooltipProvider>
   );
 }
 
-function StudentRow({ student }: { student: StudentRosterRow }) {
+function StudentRow({
+  student,
+  canManageRound,
+  onRemoveFromRound,
+}: {
+  student: StudentRosterRow;
+  canManageRound: boolean;
+  onRemoveFromRound: (student: StudentRosterRow) => void;
+}) {
   return (
     <TableRow className="hover:bg-slate-50/70 dark:hover:bg-white/4 transition-colors">
       {/* 1. Sinh viên */}
@@ -728,6 +799,27 @@ function StudentRow({ student }: { student: StudentRosterRow }) {
       <TableCell className="w-32 px-4 py-3.5 text-xs text-muted-foreground align-middle">
         {student.note ?? '—'}
       </TableCell>
+
+      {canManageRound && (
+        <TableCell className="w-16 px-3 py-3.5 text-right align-middle">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            disabled={student.group !== null}
+            onClick={() => onRemoveFromRound(student)}
+            title={
+              student.group !== null
+                ? 'Sinh viên đã có nhóm đề tài, không thể xóa khỏi đợt'
+                : 'Xóa khỏi danh sách đủ điều kiện của đợt'
+            }
+            aria-label={`Xóa ${student.fullName} khỏi danh sách đủ điều kiện`}
+            className="text-muted-foreground hover:text-destructive disabled:opacity-35"
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </TableCell>
+      )}
     </TableRow>
   );
 }

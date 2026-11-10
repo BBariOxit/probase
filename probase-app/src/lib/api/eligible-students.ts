@@ -60,6 +60,7 @@ export function useImportEligibleStudents() {
       qc.invalidateQueries({ queryKey: ['eligible-students', variables.roundId] });
       qc.invalidateQueries({ queryKey: ['students'] });
       qc.invalidateQueries({ queryKey: ['rounds'] });
+      qc.invalidateQueries({ queryKey: ['my-eligibility-status'] });
     },
   });
 }
@@ -90,6 +91,8 @@ export function useRemoveEligibleStudent() {
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['eligible-students', variables.roundId] });
       qc.invalidateQueries({ queryKey: ['students'] });
+      qc.invalidateQueries({ queryKey: ['rounds'] });
+      qc.invalidateQueries({ queryKey: ['my-eligibility-status'] });
     },
   });
 }

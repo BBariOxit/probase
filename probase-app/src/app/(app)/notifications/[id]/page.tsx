@@ -152,7 +152,15 @@ function getNotificationAction(
     };
   }
 
-  // 5. Đợt đồ án
+  // 5. Đủ điều kiện làm đồ án & Đợt đồ án
+  if (notice.type === 'STUDENT_ELIGIBILITY_CONFIRMED') {
+    return {
+      label: 'Xem danh sách đề tài',
+      url: '/student',
+      icon: ExternalLink,
+    };
+  }
+
   if (
     notice.type === 'ROUND_EXTENDED' ||
     notice.type === 'REGISTRATION_CLOSING_SOON' ||
