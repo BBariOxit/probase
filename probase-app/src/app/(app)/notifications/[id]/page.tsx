@@ -13,7 +13,10 @@ import {
 } from 'lucide-react';
 import { useNotification } from '@/lib/api/notifications';
 import { useSession } from '@/lib/auth/session';
-import { isTopicDepartmentReviewNotification } from '@/lib/notifications';
+import {
+  formatNotificationContent,
+  isTopicDepartmentReviewNotification,
+} from '@/lib/notifications';
 import { Button } from '@/components/ui/button';
 
 function getNotificationAction(
@@ -149,7 +152,15 @@ function getNotificationAction(
     };
   }
 
-  // 5. Đợt đồ án
+  // 5. Đủ điều kiện làm đồ án & Đợt đồ án
+  if (notice.type === 'STUDENT_ELIGIBILITY_CONFIRMED') {
+    return {
+      label: 'Xem danh sách đề tài',
+      url: '/student',
+      icon: ExternalLink,
+    };
+  }
+
   if (
     notice.type === 'ROUND_EXTENDED' ||
     notice.type === 'REGISTRATION_CLOSING_SOON' ||
@@ -259,7 +270,7 @@ export default function NotificationDetailPage() {
 
           {/* Dưới gạch ngang là nội dung thông báo */}
           <div className="text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line font-normal py-2 selection:bg-primary/20 break-words [overflow-wrap:anywhere]">
-            {notice.content}
+            {formatNotificationContent(notice)}
           </div>
 
           {/* Nút hành động trực tiếp nếu thông báo có liên kết */}

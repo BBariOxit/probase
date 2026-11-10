@@ -292,6 +292,10 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
       toast.success(messages[action]);
       setDraftFeedback({ topicId: null, text: '' });
       setDraftFeedbackError({ topicId: null, message: null });
+
+      if (fromTopicReviews || (action === 'REQUEST_REVISION' && !isOwner)) {
+        router.replace('/lecturer/topic-reviews');
+      }
     } catch (err: unknown) {
       toast.error(
         err instanceof Error ? err.message : 'Có lỗi xảy ra khi duyệt đề tài.',

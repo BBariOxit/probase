@@ -9,6 +9,7 @@ import {
   GroupMemberStatus,
   NotificationType,
   Prisma,
+  RegistrationGroupStatus,
   Role,
   TopicStatus,
 } from '../../../generated/prisma/client';
@@ -523,10 +524,21 @@ export class OutlinesService {
       }
     }
 
+    const topicScope: Prisma.TopicWhereInput = {
+      ...(query.semesterId && { semesterId: query.semesterId }),
+      ...(query.roundId && { roundId: query.roundId }),
+      ...(query.majorId && { majorId: query.majorId }),
+    };
+    const hasTopicScope = Object.keys(topicScope).length > 0;
+
+    const baseGroupWhere: Prisma.RegistrationGroupWhereInput = {
+      status: { not: RegistrationGroupStatus.REJECTED },
+      ...(query.semesterId && { semesterId: query.semesterId }),
+      ...(hasTopicScope && { topic: topicScope }),
+    };
+
     const where: Prisma.RegistrationGroupWhereInput = {
-      ...(query.semesterId && {
-        topic: { semesterId: query.semesterId },
-      }),
+      ...baseGroupWhere,
       ...(query.status && {
         outline:
           query.status === 'NOT_SUBMITTED' ? null : { status: query.status },
@@ -539,6 +551,26 @@ export class OutlinesService {
             topic: {
               lecturer: {
                 fullName: { contains: query.search, mode: 'insensitive' },
+              },
+            },
+          },
+          {
+            members: {
+              some: {
+                status: GroupMemberStatus.ACCEPTED,
+                student: {
+                  OR: [
+                    {
+                      fullName: { contains: query.search, mode: 'insensitive' },
+                    },
+                    {
+                      studentCode: {
+                        contains: query.search,
+                        mode: 'insensitive',
+                      },
+                    },
+                  ],
+                },
               },
             },
           },
@@ -592,28 +624,18 @@ export class OutlinesService {
         take: query.limit,
       }),
       this.prisma.registrationGroup.count({ where }),
+      this.prisma.registrationGroup.count({ where: baseGroupWhere }),
       this.prisma.registrationGroup.count({
         where: {
-          ...(query.semesterId && { topic: { semesterId: query.semesterId } }),
+          ...baseGroupWhere,
+          outline: { status: 'APPROVED_BY_LECTURER' },
         },
       }),
-      this.prisma.topicOutline.count({
-        where: {
-          status: 'APPROVED_BY_LECTURER',
-          ...(query.semesterId && { topic: { semesterId: query.semesterId } }),
-        },
+      this.prisma.registrationGroup.count({
+        where: { ...baseGroupWhere, outline: { status: 'SUBMITTED' } },
       }),
-      this.prisma.topicOutline.count({
-        where: {
-          status: 'SUBMITTED',
-          ...(query.semesterId && { topic: { semesterId: query.semesterId } }),
-        },
-      }),
-      this.prisma.topicOutline.count({
-        where: {
-          status: 'NEEDS_REVISION',
-          ...(query.semesterId && { topic: { semesterId: query.semesterId } }),
-        },
+      this.prisma.registrationGroup.count({
+        where: { ...baseGroupWhere, outline: { status: 'NEEDS_REVISION' } },
       }),
     ]);
 

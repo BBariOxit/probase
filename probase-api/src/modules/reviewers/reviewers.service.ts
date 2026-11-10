@@ -8,7 +8,9 @@ import {
   GroupMemberStatus,
   NotificationType,
   Prisma,
+  RegistrationGroupStatus,
   Role,
+  TopicStatus,
 } from '../../../generated/prisma/client';
 import type { RequestUser } from '../auth/guards/roles.guard';
 import { NotificationsService } from '../../core/notifications/notifications.service';
@@ -28,6 +30,32 @@ export class ReviewersService {
   // 1. TỔNG QUAN PHÂN CÔNG (TTBM & ADMIN)
   // ─────────────────────────────────────────────────────────
 
+  private async resolveEffectiveSemesterId(
+    semesterId?: number,
+    roundId?: number,
+  ): Promise<number | undefined> {
+    if (semesterId) return semesterId;
+    if (
+      roundId &&
+      (
+        this.prisma as {
+          registrationRound?: {
+            findUnique?: (
+              args: unknown,
+            ) => Promise<{ semesterId: number } | null>;
+          };
+        }
+      ).registrationRound?.findUnique
+    ) {
+      const round = await this.prisma.registrationRound.findUnique({
+        where: { id: roundId },
+        select: { semesterId: true },
+      });
+      return round?.semesterId;
+    }
+    return undefined;
+  }
+
   async getAssignmentsOverview(
     user: RequestUser,
     query: QueryReviewAssignmentsDto,
@@ -42,10 +70,22 @@ export class ReviewersService {
       ? (user.lecturerProfile?.majorId ?? undefined)
       : query.majorId;
 
+    const effectiveSemesterId = await this.resolveEffectiveSemesterId(
+      query.semesterId,
+      query.roundId,
+    );
+
+    const topicFilter: Prisma.TopicWhereInput = {
+      ...(effectiveSemesterId ? { semesterId: effectiveSemesterId } : {}),
+      ...(targetMajorId ? { majorId: targetMajorId } : {}),
+      ...(query.roundId ? { roundId: query.roundId } : {}),
+    };
+
     // Điều kiện lọc nhóm đồ án
     const whereGroup: Prisma.RegistrationGroupWhereInput = {
-      ...(targetMajorId ? { topic: { majorId: targetMajorId } } : {}),
-      ...(query.roundId ? { topic: { roundId: query.roundId } } : {}),
+      status: { not: RegistrationGroupStatus.REJECTED },
+      ...(effectiveSemesterId ? { semesterId: effectiveSemesterId } : {}),
+      ...(Object.keys(topicFilter).length > 0 ? { topic: topicFilter } : {}),
     };
 
     if (query.status === 'ASSIGNED') {
@@ -61,6 +101,19 @@ export class ReviewersService {
         {
           topic: {
             lecturer: { fullName: { contains: query.q, mode: 'insensitive' } },
+          },
+        },
+        {
+          members: {
+            some: {
+              status: GroupMemberStatus.ACCEPTED,
+              student: {
+                OR: [
+                  { fullName: { contains: query.q, mode: 'insensitive' } },
+                  { studentCode: { contains: query.q, mode: 'insensitive' } },
+                ],
+              },
+            },
           },
         },
       ];
@@ -163,9 +216,19 @@ export class ReviewersService {
         major: { select: { id: true, name: true, code: true } },
         isHeadOfDepartment: true,
         topics: {
+          where: {
+            status: { not: TopicStatus.REJECTED },
+            ...(effectiveSemesterId ? { semesterId: effectiveSemesterId } : {}),
+          },
           select: { id: true },
         },
         reviewerAssignments: {
+          where: {
+            group: { status: { not: RegistrationGroupStatus.REJECTED } },
+            ...(effectiveSemesterId
+              ? { topic: { semesterId: effectiveSemesterId } }
+              : {}),
+          },
           select: { id: true },
         },
       },
@@ -221,6 +284,12 @@ export class ReviewersService {
       throw new NotFoundException('Không tìm thấy nhóm đồ án.');
     }
 
+    if (group.status === RegistrationGroupStatus.REJECTED) {
+      throw new BadRequestException(
+        'Nhóm đồ án đã bị hủy hoặc từ chối, không thể phân công phản biện.',
+      );
+    }
+
     // Kiểm tra quyền TTBM theo chuyên môn
     const isHodOnly =
       user.role === Role.LECTURER &&
@@ -245,6 +314,15 @@ export class ReviewersService {
 
     if (!reviewer) {
       throw new NotFoundException('Không tìm thấy Giảng viên phản biện.');
+    }
+
+    if (
+      reviewer.user?.isActive === false ||
+      reviewer.isAcademicAssistant === true
+    ) {
+      throw new BadRequestException(
+        'Giảng viên được chọn không khả dụng để nhận phân công phản biện.',
+      );
     }
 
     // RÀNG BUỘC 1: Không được vừa hướng dẫn vừa phản biện
@@ -372,10 +450,22 @@ export class ReviewersService {
       ? (user.lecturerProfile?.majorId ?? undefined)
       : dto.majorId;
 
+    const effectiveSemesterId = await this.resolveEffectiveSemesterId(
+      dto.semesterId,
+      dto.roundId,
+    );
+
+    const topicFilter: Prisma.TopicWhereInput = {
+      ...(effectiveSemesterId ? { semesterId: effectiveSemesterId } : {}),
+      ...(targetMajorId ? { majorId: targetMajorId } : {}),
+      ...(dto.roundId ? { roundId: dto.roundId } : {}),
+    };
+
     const whereUnassigned: Prisma.RegistrationGroupWhereInput = {
       assignment: null,
-      ...(targetMajorId ? { topic: { majorId: targetMajorId } } : {}),
-      ...(dto.roundId ? { topic: { roundId: dto.roundId } } : {}),
+      status: { not: RegistrationGroupStatus.REJECTED },
+      ...(effectiveSemesterId ? { semesterId: effectiveSemesterId } : {}),
+      ...(Object.keys(topicFilter).length > 0 ? { topic: topicFilter } : {}),
     };
 
     // 1. Tìm các nhóm chưa có phân công phản biện
@@ -413,8 +503,22 @@ export class ReviewersService {
       },
       include: {
         user: { select: { id: true } },
-        topics: { select: { id: true } },
-        reviewerAssignments: { select: { id: true } },
+        topics: {
+          where: {
+            status: { not: TopicStatus.REJECTED },
+            ...(effectiveSemesterId ? { semesterId: effectiveSemesterId } : {}),
+          },
+          select: { id: true },
+        },
+        reviewerAssignments: {
+          where: {
+            group: { status: { not: RegistrationGroupStatus.REJECTED } },
+            ...(effectiveSemesterId
+              ? { topic: { semesterId: effectiveSemesterId } }
+              : {}),
+          },
+          select: { id: true },
+        },
       },
     });
 

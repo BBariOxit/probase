@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '@/lib/api/client';
 import type { LoginResponse, Role } from '@/lib/api/types';
 import { homePathFor, useSession } from '@/lib/auth/session';
@@ -16,6 +17,7 @@ interface UseGoogleSsoOptions {
 
 export function useGoogleSso(options?: UseGoogleSsoOptions) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { signIn } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +47,7 @@ export function useGoogleSso(options?: UseGoogleSsoOptions) {
         isAccessToken ? { accessToken: token } : { credential: token },
       );
 
+      queryClient.clear();
       signIn(result, result.user);
       options?.onSuccess?.(result.user);
       router.replace(destinationFor(result.user));

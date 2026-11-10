@@ -9,6 +9,7 @@ import {
   GroupMemberStatus,
   NotificationType,
   Prisma,
+  RegistrationGroupStatus,
   Role,
 } from '../../../generated/prisma/client';
 import { recordAudit } from '../../core/audit/audit-entry';
@@ -207,7 +208,8 @@ export class CouncilsService {
     }
 
     const topicsWithProgress = council.topics.map((t) => {
-      const evaluations = (t.evaluations as unknown as CouncilMemberEvaluationItem[]) || [];
+      const evaluations =
+        (t.evaluations as unknown as CouncilMemberEvaluationItem[]) || [];
       const totalMembers = council.members.length;
       const evaluatedCount = evaluations.length;
       const avgScore =
@@ -449,15 +451,10 @@ export class CouncilsService {
   async getEligibleGroups(semesterId?: number, majorId?: number) {
     // 1. Lấy tất cả nhóm có đề tài hợp lệ
     const whereGroup: Prisma.RegistrationGroupWhereInput = {
-      topicId: { not: undefined },
+      status: { not: RegistrationGroupStatus.REJECTED },
+      ...(semesterId ? { semesterId } : {}),
+      ...(majorId ? { topic: { majorId } } : {}),
     };
-
-    if (semesterId) {
-      whereGroup.semesterId = semesterId;
-    }
-    if (majorId) {
-      whereGroup.topic = { majorId };
-    }
 
     const groups = await this.prisma.registrationGroup.findMany({
       where: whereGroup,
@@ -568,6 +565,11 @@ export class CouncilsService {
   ) {
     const council = await this.prisma.council.findUnique({
       where: { id: councilId },
+      include: {
+        topics: {
+          select: { defenseOrder: true },
+        },
+      },
     });
     if (!council) {
       throw new NotFoundException('Hội đồng không tồn tại.');
@@ -579,6 +581,11 @@ export class CouncilsService {
         topic: true,
         assignment: true,
         councilTopic: true,
+        reviews: true,
+        progressReports: {
+          where: { stage: 'STAGE_2' },
+          select: { isPassed: true },
+        },
         members: {
           where: { status: GroupMemberStatus.ACCEPTED },
           include: { student: { include: { user: true } } },
@@ -587,7 +594,25 @@ export class CouncilsService {
     });
 
     if (!group || !group.topicId) {
-      throw new NotFoundException('Nhóm đồ án không hợp lệ hoặc chưa có đề tài.');
+      throw new NotFoundException(
+        'Nhóm đồ án không hợp lệ hoặc chưa có đề tài.',
+      );
+    }
+
+    if (group.status === RegistrationGroupStatus.REJECTED) {
+      throw new BadRequestException(
+        'Nhóm đồ án đã bị hủy hoặc từ chối, không thể xếp lịch bảo vệ.',
+      );
+    }
+
+    if (
+      council.semesterId &&
+      group.semesterId &&
+      council.semesterId !== group.semesterId
+    ) {
+      throw new BadRequestException(
+        'Nhóm đồ án không thuộc cùng học kỳ với Hội đồng.',
+      );
     }
 
     if (group.councilTopic) {
@@ -602,6 +627,28 @@ export class CouncilsService {
       );
     }
 
+    if (Array.isArray(group.reviews) && Array.isArray(group.progressReports)) {
+      const stage2Passed = group.progressReports[0]?.isPassed ?? false;
+      const supervisorAllowed =
+        group.reviews.find((r) => r.reviewerType === 'SUPERVISOR')
+          ?.isDefenseAllowed ?? false;
+      const reviewerAllowed =
+        group.reviews.find((r) => r.reviewerType === 'REVIEWER')
+          ?.isDefenseAllowed ?? false;
+
+      if (!stage2Passed || !supervisorAllowed || !reviewerAllowed) {
+        throw new BadRequestException(
+          'Nhóm đồ án chưa đủ điều kiện bảo vệ (Tiến độ 2 đạt và được GVHD, GVPB cho phép bảo vệ).',
+        );
+      }
+    }
+
+    const maxOrder =
+      council.topics?.reduce(
+        (max, item) => Math.max(max, item.defenseOrder),
+        0,
+      ) ?? 0;
+
     const councilTopic = await this.prisma.councilTopic.create({
       data: {
         councilId,
@@ -609,7 +656,7 @@ export class CouncilsService {
         topicId: group.topicId,
         reviewerId: group.assignment.reviewerId,
         timeSlot: dto.timeSlot ?? null,
-        defenseOrder: dto.defenseOrder ?? 1,
+        defenseOrder: dto.defenseOrder ?? maxOrder + 1,
         status: 'SCHEDULED',
         evaluations: [],
       },
@@ -838,14 +885,18 @@ export class CouncilsService {
       (m) => m.lecturerId === lecturer.id,
     );
     if (!membership && user.role !== Role.ADMIN) {
-      throw new ForbiddenException('Bạn không phải thành viên của Hội đồng này.');
+      throw new ForbiddenException(
+        'Bạn không phải thành viên của Hội đồng này.',
+      );
     }
 
     const currentEvaluations: CouncilMemberEvaluationItem[] =
       (councilTopic.evaluations as unknown as CouncilMemberEvaluationItem[]) ||
       [];
 
-    const memberRole = membership ? membership.councilRole : CouncilMemberRole.MEMBER;
+    const memberRole = membership
+      ? membership.councilRole
+      : CouncilMemberRole.MEMBER;
 
     // Cập nhật hoặc thêm mới điểm của giảng viên này
     const existingIndex = currentEvaluations.findIndex(
@@ -896,9 +947,7 @@ export class CouncilsService {
       let finalGradeLetter: string | undefined = undefined;
 
       if (p1 !== null && p2 !== null) {
-        finalGradeNum = Number(
-          (0.2 * p1 + 0.3 * p2 + 0.5 * bv).toFixed(2),
-        );
+        finalGradeNum = Number((0.2 * p1 + 0.3 * p2 + 0.5 * bv).toFixed(2));
         finalGradeLetter = calculateLetterGrade(finalGradeNum);
       }
 

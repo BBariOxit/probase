@@ -1,471 +1,700 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  AlertTriangle,
-  Award,
-  CheckCircle2,
-  Clock,
-  Download,
-  ExternalLink,
+  FileSpreadsheet,
   FileText,
-  Filter,
-  GraduationCap,
-  Layers,
   Loader2,
   Search,
-  ShieldAlert,
   ShieldCheck,
-  User,
-  Users,
-  XCircle,
+  X,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useMajors } from '@/lib/api/majors';
-import { useDefenseEligibility } from '@/lib/api/reviews';
-import { Badge } from '@/components/ui/badge';
+import { useRoundsForSemester, useSemesters } from '@/lib/api/master-data';
+import {
+  fetchDefenseEligibility,
+  useDefenseEligibility,
+} from '@/lib/api/reviews';
+import type { DefenseEligibilityOverviewResponse } from '@/lib/api/types';
+import { useDebouncedValue } from '@/lib/use-debounced-value';
+import { downloadCsvFile, sanitizeLecturerName } from '@/lib/utils';
+import { EmptyState } from '@/components/shared/empty-state';
+import { PaginationBar } from '@/components/shared/pagination-bar';
+import { StatusPill, type StatusLabel } from '@/components/shared/status-pill';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { TopicReviewDialog } from './topic-review-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { ReviewInspectionDialog } from './review-inspection-dialog';
 
-export function DefenseEligibilityAdminView() {
-  const [selectedMajorId, setSelectedMajorId] = useState<number | undefined>();
-  const [selectedStatus, setSelectedStatus] = useState<
+const PAGE_SIZE = 20;
+
+const ELIGIBILITY_STATUS_OPTIONS: Array<{
+  value: 'ALL' | 'ELIGIBLE' | 'PENDING' | 'NOT_ELIGIBLE';
+  label: string;
+}> = [
+  { value: 'ALL', label: 'Mọi kết quả' },
+  { value: 'ELIGIBLE', label: 'Đủ điều kiện' },
+  { value: 'PENDING', label: 'Chờ duyệt' },
+  { value: 'NOT_ELIGIBLE', label: 'Không đạt' },
+];
+
+function getConclusionLabel(
+  status: 'ELIGIBLE' | 'NOT_ELIGIBLE' | 'PENDING',
+): StatusLabel {
+  switch (status) {
+    case 'ELIGIBLE':
+      return { label: 'Đủ điều kiện', tone: 'success' };
+    case 'NOT_ELIGIBLE':
+      return { label: 'Không đạt', tone: 'danger' };
+    default:
+      return { label: 'Chờ duyệt', tone: 'waiting' };
+  }
+}
+
+interface DefenseEligibilityAdminViewProps {
+  semesterId?: number;
+  roundId?: number;
+}
+
+export function DefenseEligibilityAdminView({
+  semesterId: controlledSemesterId,
+  roundId: controlledRoundId,
+}: DefenseEligibilityAdminViewProps) {
+  const showScopePickers = controlledSemesterId === undefined;
+
+  const { data: semesters } = useSemesters();
+  const { data: majors } = useMajors();
+
+  const defaultSemesterId = useMemo(
+    () => semesters?.find((s) => s.isActive)?.id ?? semesters?.[0]?.id,
+    [semesters],
+  );
+
+  const [localSemesterId, setLocalSemesterId] = useState<number | undefined>(
+    undefined,
+  );
+  const [localRoundId, setLocalRoundId] = useState<string>('ALL');
+  const [majorId, setMajorId] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<
     'ALL' | 'ELIGIBLE' | 'NOT_ELIGIBLE' | 'PENDING'
   >('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [inspectingItem, setInspectingItem] = useState<any | null>(null);
+  const [page, setPage] = useState(1);
+  const [exporting, setExporting] = useState(false);
+  const [inspectingGroupId, setInspectingGroupId] = useState<number | null>(
+    null,
+  );
 
-  const { data: majors } = useMajors();
+  const effectiveSemesterId =
+    controlledSemesterId ?? localSemesterId ?? defaultSemesterId;
+  const { data: rounds } = useRoundsForSemester(
+    showScopePickers ? effectiveSemesterId : undefined,
+  );
+  const effectiveRoundId =
+    controlledRoundId !== undefined
+      ? controlledRoundId
+      : localRoundId === 'ALL'
+        ? undefined
+        : Number(localRoundId);
+  const parsedMajorId = majorId === 'ALL' ? undefined : Number(majorId);
 
-  const { data, isPending, error } = useDefenseEligibility({
-    majorId: selectedMajorId,
-    status: selectedStatus,
-    search: searchQuery.trim() || undefined,
-    limit: 50,
-  });
+  const debouncedSearch = useDebouncedValue(searchQuery);
 
-  const stats = data?.stats || {
+  const { data, isPending, error } = useDefenseEligibility(
+    {
+      semesterId: effectiveSemesterId,
+      roundId: effectiveRoundId,
+      majorId: parsedMajorId,
+      status: statusFilter,
+      search: debouncedSearch.trim() || undefined,
+      page,
+      limit: PAGE_SIZE,
+    },
+    { enabled: effectiveSemesterId !== undefined },
+  );
+
+  const stats = data?.stats ?? {
     totalGroups: 0,
     eligibleCount: 0,
     notEligibleCount: 0,
     pendingCount: 0,
   };
+  const items = data?.items ?? [];
 
-  const items = data?.items || [];
+  async function handleExportCsv() {
+    if (!effectiveSemesterId || exporting) return;
+    setExporting(true);
+    try {
+      const allItems: DefenseEligibilityOverviewResponse['items'] = [];
+      let currentPage = 1;
+      let totalPages = 1;
 
-  // Export CSV of eligible groups
-  const handleExportCsv = () => {
-    if (!items.length) return;
+      do {
+        const res = await fetchDefenseEligibility({
+          semesterId: effectiveSemesterId,
+          roundId: effectiveRoundId,
+          majorId: parsedMajorId,
+          status: statusFilter,
+          search: debouncedSearch.trim() || undefined,
+          page: currentPage,
+          limit: 100,
+        });
+        allItems.push(...res.items);
+        totalPages = Math.max(1, res.pagination.totalPages);
+        currentPage += 1;
+      } while (currentPage <= totalPages);
 
-    const headers = [
-      'STT',
-      'Mã nhóm',
-      'Tên đề tài',
-      'Chuyên ngành',
-      'Loại đồ án',
-      'Sinh viên thực hiện',
-      'GVHD',
-      'GVPB',
-      'Tiến độ 2 (%)',
-      'Kết quả TĐ2',
-      'GVHD Cho bảo vệ',
-      'GVPB Cho bảo vệ',
-      'Trạng thái thẩm định',
-    ];
+      if (allItems.length === 0) {
+        toast.error('Không có dữ liệu phù hợp để xuất.');
+        return;
+      }
 
-    const rows = items.map((item, idx) => {
-      const studentNames = item.members
-        .map((m) => `${m.fullName} (${m.studentCode})`)
-        .join('; ');
+      const headers = [
+        'STT',
+        'Nhóm',
+        'Tên đề tài',
+        'Chuyên ngành',
+        'Loại đồ án',
+        'Sinh viên thực hiện',
+        'GVHD',
+        'GVPB',
+        'Tiến độ 2 (%)',
+        'Kết quả TĐ2',
+        'GVHD duyệt',
+        'GVPB duyệt',
+        'Kết luận',
+      ];
 
-      return [
-        idx + 1,
-        item.name || item.id,
-        `"${item.topic?.title?.replace(/"/g, '""') || ''}"`,
-        item.topic?.major?.name || '—',
-        item.topic?.round?.projectType?.name || '—',
-        `"${studentNames}"`,
-        item.supervisor?.fullName || '—',
-        item.reviewer?.fullName || '—',
-        item.stage2?.workloadPercentage ?? 0,
-        item.stage2?.isPassed ? 'Đạt' : 'Chưa đạt',
-        item.supervisorReview
-          ? item.supervisorReview.isDefenseAllowed
-            ? 'Đồng ý'
-            : 'Không'
-          : 'Chưa duyệt',
-        item.reviewerReview
-          ? item.reviewerReview.isDefenseAllowed
-            ? 'Đồng ý'
-            : 'Không'
-          : 'Chưa duyệt',
-        item.status === 'ELIGIBLE'
-          ? 'ĐỦ ĐIỀU KIỆN'
-          : item.status === 'NOT_ELIGIBLE'
-          ? 'TỪ CHỐI'
-          : 'ĐANG CHỜ',
-      ].join(',');
-    });
+      const rows = allItems.map((item, idx) => {
+        const supName = item.supervisor
+          ? sanitizeLecturerName(
+              item.supervisor.fullName,
+              item.supervisor.academicTitle,
+            ).displayName
+          : '';
+        const revName = item.reviewer
+          ? sanitizeLecturerName(
+              item.reviewer.fullName,
+              item.reviewer.academicTitle,
+            ).displayName
+          : '';
+        const stage2Label =
+          item.stage2.workloadPercentage === null
+            ? 'Chưa đánh giá'
+            : item.stage2.isPassed
+              ? 'Đạt'
+              : 'Chưa đạt';
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute(
-      'download',
-      `DS_Tham_Dinh_Dieu_Kien_Bao_Ve_${new Date().toISOString().slice(0, 10)}.csv`,
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+        return [
+          idx + 1,
+          item.name ?? `Nhóm ${item.id}`,
+          item.topic?.title ?? '',
+          item.topic?.major?.name ?? '',
+          item.topic?.round?.projectType?.name ?? '',
+          item.members
+            .map((m) => `${m.fullName} (${m.studentCode})`)
+            .join('; '),
+          supName,
+          revName,
+          item.stage2.workloadPercentage ?? '',
+          stage2Label,
+          item.supervisorReview
+            ? item.supervisorReview.isDefenseAllowed
+              ? 'Cho bảo vệ'
+              : 'Không cho'
+            : 'Chưa nộp',
+          item.reviewerReview
+            ? item.reviewerReview.isDefenseAllowed
+              ? 'Cho bảo vệ'
+              : 'Không cho'
+            : 'Chưa nộp',
+          getConclusionLabel(item.status).label,
+        ];
+      });
+
+      const semesterCode =
+        semesters?.find((s) => s.id === effectiveSemesterId)?.code ?? 'HK';
+      downloadCsvFile(
+        `DieuKienBaoVe_${semesterCode}_${new Date().toISOString().slice(0, 10)}.csv`,
+        headers,
+        rows,
+      );
+
+      toast.success(`Đã xuất ${allItems.length} bản ghi điều kiện bảo vệ.`);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : 'Không xuất được tệp CSV.',
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
-    <div className="space-y-6">
-      {/* 4 Stats Cards */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <p className="text-xs font-medium text-muted-foreground">
-            Tổng số nhóm đề tài
-          </p>
-          <p className="mt-1 font-heading text-2xl font-bold tracking-tight">
-            {stats.totalGroups}
-          </p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
-            toàn bộ đợt đồ án
-          </p>
+    <TooltipProvider delay={200}>
+      <div className="space-y-4">
+        {/* Summary Strip */}
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] px-5 py-3 shadow-2xs text-sm">
+          <SummaryFigure value={stats.totalGroups} label="tổng nhóm" />
+          <div className="h-4 w-px bg-slate-200 dark:bg-neutral-700 hidden sm:block" />
+          <SummaryFigure
+            value={stats.eligibleCount}
+            label="đủ điều kiện"
+            valueClass="text-emerald-600 dark:text-emerald-400"
+          />
+          <div className="h-4 w-px bg-slate-200 dark:bg-neutral-700 hidden sm:block" />
+          <SummaryFigure
+            value={stats.pendingCount}
+            label="chờ duyệt"
+            valueClass="text-amber-600 dark:text-amber-400"
+          />
+          <div className="h-4 w-px bg-slate-200 dark:bg-neutral-700 hidden sm:block" />
+          <SummaryFigure
+            value={stats.notEligibleCount}
+            label="không đạt"
+            valueClass="text-rose-600 dark:text-rose-400"
+          />
         </div>
 
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 shadow-sm">
-          <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-            <ShieldCheck className="size-4" />
-            Đủ điều kiện ra Hội đồng
-          </p>
-          <p className="mt-1 font-heading text-2xl font-bold tracking-tight text-emerald-700 dark:text-emerald-300">
-            {stats.eligibleCount}
-          </p>
-          <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">
-            Cả 2 GV đồng ý & TĐ2 ≥ 50%
-          </p>
-        </div>
-
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 shadow-sm">
-          <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-            <Clock className="size-4" />
-            Chờ thẩm định
-          </p>
-          <p className="mt-1 font-heading text-2xl font-bold tracking-tight text-amber-700 dark:text-amber-300">
-            {stats.pendingCount}
-          </p>
-          <p className="text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-0.5">
-            Chưa đủ 2/2 nhận xét
-          </p>
-        </div>
-
-        <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 shadow-sm">
-          <p className="text-xs font-semibold text-destructive flex items-center gap-1.5">
-            <ShieldAlert className="size-4" />
-            Từ chối / Đình chỉ
-          </p>
-          <p className="mt-1 font-heading text-2xl font-bold tracking-tight text-destructive">
-            {stats.notEligibleCount}
-          </p>
-          <p className="text-[11px] text-destructive/80 mt-0.5">
-            Không đạt hoặc GV từ chối
-          </p>
-        </div>
-      </div>
-
-      {/* Filter and Action Bar */}
-      <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between shadow-sm">
+        {/* Filters */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Search */}
-          <div className="relative min-w-[220px]">
-            <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <div className="relative min-w-56 flex-1 sm:max-w-xs">
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Tìm theo tên đề tài, SV, MSSV..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 pl-8 text-xs"
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Tìm đề tài, nhóm, SV, MSSV…"
+              className="pl-8 pr-8"
+              aria-label="Tìm kiếm điều kiện bảo vệ"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setPage(1);
+                }}
+                className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                aria-label="Xóa từ khóa"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
           </div>
 
-          {/* Specialization Filter */}
-          {majors && majors.length > 0 && (
-            <div className="flex items-center gap-1">
-              <Button
-                size="sm"
-                variant={selectedMajorId === undefined ? 'default' : 'outline'}
-                className="h-8 text-xs"
-                onClick={() => setSelectedMajorId(undefined)}
-              >
-                Tất cả ngành
-              </Button>
-              {majors.map((m) => (
-                <Button
-                  key={m.id}
-                  size="sm"
-                  variant={selectedMajorId === m.id ? 'default' : 'outline'}
-                  className="h-8 text-xs"
-                  onClick={() => setSelectedMajorId(m.id)}
-                >
-                  {m.code || m.name}
-                </Button>
-              ))}
-            </div>
+          {showScopePickers && semesters && semesters.length > 0 && (
+            <Select
+              value={effectiveSemesterId ? String(effectiveSemesterId) : ''}
+              onValueChange={(val) => {
+                setLocalSemesterId(val ? Number(val) : undefined);
+                setLocalRoundId('ALL');
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-48" aria-label="Chọn học kỳ">
+                <SelectValue>
+                  {(value) => {
+                    const sem = semesters.find(
+                      (s) => String(s.id) === String(value),
+                    );
+                    return sem
+                      ? `${sem.name}${sem.isActive ? ' (Hiện tại)' : ''}`
+                      : 'Chọn học kỳ';
+                  }}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {semesters.map((s) => (
+                  <SelectItem key={s.id} value={String(s.id)}>
+                    {s.name}
+                    {s.isActive ? ' (Hiện tại)' : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
 
-          {/* Status Filter */}
-          <div className="flex items-center gap-1 border-l pl-2">
-            <Button
-              size="sm"
-              variant={selectedStatus === 'ALL' ? 'secondary' : 'ghost'}
-              className="h-8 text-xs"
-              onClick={() => setSelectedStatus('ALL')}
+          {showScopePickers && (
+            <Select
+              value={localRoundId}
+              onValueChange={(val) => {
+                setLocalRoundId(val ?? 'ALL');
+                setPage(1);
+              }}
             >
-              Tất cả
-            </Button>
-            <Button
-              size="sm"
-              variant={selectedStatus === 'ELIGIBLE' ? 'secondary' : 'ghost'}
-              className="h-8 text-xs text-emerald-600 dark:text-emerald-400"
-              onClick={() => setSelectedStatus('ELIGIBLE')}
-            >
-              Đủ ĐK
-            </Button>
-            <Button
-              size="sm"
-              variant={selectedStatus === 'PENDING' ? 'secondary' : 'ghost'}
-              className="h-8 text-xs text-amber-600 dark:text-amber-400"
-              onClick={() => setSelectedStatus('PENDING')}
-            >
-              Chờ duyệt
-            </Button>
-            <Button
-              size="sm"
-              variant={selectedStatus === 'NOT_ELIGIBLE' ? 'secondary' : 'ghost'}
-              className="h-8 text-xs text-destructive"
-              onClick={() => setSelectedStatus('NOT_ELIGIBLE')}
-            >
-              Đình chỉ
-            </Button>
-          </div>
-        </div>
+              <SelectTrigger className="w-44" aria-label="Lọc theo đợt đồ án">
+                <SelectValue>
+                  {(value) => {
+                    if (value === 'ALL') return 'Mọi đợt đồ án';
+                    return (
+                      rounds?.find((r) => String(r.id) === String(value))
+                        ?.projectType.name ?? 'Mọi đợt đồ án'
+                    );
+                  }}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Mọi đợt đồ án</SelectItem>
+                {rounds?.map((r) => (
+                  <SelectItem key={r.id} value={String(r.id)}>
+                    {r.projectType.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
 
-        {/* Export CSV Button */}
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-8 text-xs gap-1.5 shrink-0"
-          onClick={handleExportCsv}
-          disabled={!items.length}
-        >
-          <Download className="size-3.5" />
-          Xuất danh sách đối soát (CSV)
-        </Button>
-      </div>
-
-      {/* Main Table */}
-      {isPending ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
-        </div>
-      ) : error ? (
-        <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-xs text-destructive">
-          Không tải được danh sách đối soát điều kiện bảo vệ.
-        </div>
-      ) : items.length === 0 ? (
-        <div className="rounded-xl border bg-card p-12 text-center text-xs text-muted-foreground">
-          Không tìm thấy nhóm đồ án nào phù hợp với điều kiện lọc.
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                <tr>
-                  <th className="px-4 py-3">Đề tài & Thành viên</th>
-                  <th className="px-4 py-3">GVHD & GVPB</th>
-                  <th className="px-3 py-3 text-center">Tiến độ 2</th>
-                  <th className="px-3 py-3 text-center">Nhận xét GVHD</th>
-                  <th className="px-3 py-3 text-center">Nhận xét GVPB</th>
-                  <th className="px-4 py-3 text-center">Điều kiện bảo vệ</th>
-                  <th className="px-4 py-3 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {items.map((item) => {
+          <Select
+            value={majorId}
+            onValueChange={(val) => {
+              setMajorId(val ?? 'ALL');
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-48" aria-label="Lọc theo chuyên ngành">
+              <SelectValue>
+                {(value) => {
+                  if (value === 'ALL') return 'Mọi chuyên ngành';
                   return (
-                    <tr
+                    majors?.find((m) => String(m.id) === String(value))?.name ??
+                    'Mọi chuyên ngành'
+                  );
+                }}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Mọi chuyên ngành</SelectItem>
+              {majors?.map((m) => (
+                <SelectItem key={m.id} value={String(m.id)}>
+                  {m.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={statusFilter}
+            onValueChange={(val) => {
+              setStatusFilter(
+                (val ?? 'ALL') as
+                  'ALL' | 'ELIGIBLE' | 'NOT_ELIGIBLE' | 'PENDING',
+              );
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-40" aria-label="Lọc theo kết luận">
+              <SelectValue>
+                {(value) =>
+                  ELIGIBILITY_STATUS_OPTIONS.find((opt) => opt.value === value)
+                    ?.label ?? 'Mọi kết quả'
+                }
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {ELIGIBILITY_STATUS_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Button
+            variant="outline"
+            className="ml-auto gap-1.5 cursor-pointer"
+            onClick={handleExportCsv}
+            disabled={
+              !effectiveSemesterId ||
+              (data?.pagination.total ?? 0) === 0 ||
+              exporting
+            }
+          >
+            {exporting ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="size-4" />
+            )}
+            <span>Xuất CSV</span>
+          </Button>
+        </div>
+
+        {error && (
+          <p className="text-sm text-destructive">
+            Không tải được danh sách điều kiện bảo vệ.
+          </p>
+        )}
+
+        {/* Table */}
+        <div className="isolate w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
+          {isPending ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="size-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : items.length === 0 ? (
+            <EmptyState
+              icon={ShieldCheck}
+              title="Không có nhóm đồ án nào phù hợp với bộ lọc."
+            />
+          ) : (
+            <Table
+              containerClassName="w-full overflow-x-auto"
+              className="w-full min-w-[1000px] table-fixed text-left text-sm"
+            >
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[270px] px-4">
+                    Đề tài &amp; Nhóm
+                  </TableHead>
+                  <TableHead className="w-[205px] px-3 whitespace-nowrap">
+                    GVHD &amp; GVPB
+                  </TableHead>
+                  <TableHead className="w-[130px] px-3 whitespace-nowrap">
+                    Tiến độ 2
+                  </TableHead>
+                  <TableHead className="w-[115px] px-3 whitespace-nowrap">
+                    Phiếu GVHD
+                  </TableHead>
+                  <TableHead className="w-[115px] px-3 whitespace-nowrap">
+                    Phiếu GVPB
+                  </TableHead>
+                  <TableHead className="w-[120px] px-3 whitespace-nowrap">
+                    Kết luận
+                  </TableHead>
+                  <TableHead className="w-[105px] px-4 text-right whitespace-nowrap">
+                    Thao tác
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((item) => {
+                  const supName = item.supervisor
+                    ? sanitizeLecturerName(
+                        item.supervisor.fullName,
+                        item.supervisor.academicTitle,
+                      ).displayName
+                    : '—';
+                  const revName = item.reviewer
+                    ? sanitizeLecturerName(
+                        item.reviewer.fullName,
+                        item.reviewer.academicTitle,
+                      ).displayName
+                    : null;
+                  const conclusion = getConclusionLabel(item.status);
+
+                  return (
+                    <TableRow
                       key={item.id}
-                      className="hover:bg-muted/20 transition-colors"
+                      className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                     >
-                      {/* Đề tài & Thành viên */}
-                      <td className="px-4 py-3 max-w-[280px]">
-                        <p className="font-semibold text-foreground leading-snug">
-                          {item.topic?.title}
-                        </p>
-                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                          {item.topic?.round?.projectType && (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                              {item.topic.round.projectType.name}
-                            </Badge>
+                      <TableCell className="align-top px-4 py-3 whitespace-normal">
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <p className="font-semibold text-slate-900 dark:text-neutral-100 line-clamp-2 leading-snug">
+                                {item.topic?.title ?? '—'}
+                              </p>
+                            }
+                          />
+                          {item.topic?.title && (
+                            <TooltipContent className="max-w-sm">
+                              {item.topic.title}
+                            </TooltipContent>
                           )}
-                          {item.topic?.major && (
-                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                              {item.topic.major.code || item.topic.major.name}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="mt-1 text-[11px] text-muted-foreground">
-                          {item.members.map((m) => `${m.fullName} (${m.studentCode})`).join(', ')}
+                        </Tooltip>
+                        {(item.topic?.major ||
+                          item.topic?.round?.projectType) && (
+                          <p className="mt-0.5 text-xs text-muted-foreground truncate">
+                            {[
+                              item.topic?.major?.name,
+                              item.topic?.round?.projectType?.name,
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </p>
+                        )}
+                        <p className="mt-1 text-xs text-slate-600 dark:text-neutral-400">
+                          {item.members
+                            .map((m) => `${m.fullName} (${m.studentCode})`)
+                            .join(', ')}
                         </p>
-                      </td>
+                      </TableCell>
 
-                      {/* GVHD & GVPB */}
-                      <td className="px-4 py-3 whitespace-nowrap space-y-1">
-                        <div>
-                          <span className="text-[10px] font-medium text-muted-foreground">
-                            HD:{' '}
+                      <TableCell className="align-top px-3 py-3 text-xs space-y-1">
+                        <p className="truncate">
+                          <span className="text-muted-foreground">HD: </span>
+                          <span className="font-medium text-foreground">
+                            {supName}
                           </span>
-                          <span className="font-semibold text-foreground">
-                            {item.supervisor?.fullName || '—'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-medium text-muted-foreground">
-                            PB:{' '}
-                          </span>
-                          <span className="text-foreground">
-                            {item.reviewer?.fullName || (
-                              <span className="italic text-muted-foreground">
-                                Chưa phân công
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                      </td>
+                        </p>
+                        <p className="truncate">
+                          <span className="text-muted-foreground">PB: </span>
+                          {revName ? (
+                            <span className="font-medium text-foreground">
+                              {revName}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">
+                              Chưa phân công
+                            </span>
+                          )}
+                        </p>
+                      </TableCell>
 
-                      {/* Tiến độ 2 */}
-                      <td className="px-3 py-3 text-center whitespace-nowrap">
-                        <Badge
-                          variant="outline"
-                          className={
-                            item.stage2.isPassed
-                              ? 'text-emerald-600 border-emerald-300 dark:text-emerald-400 font-semibold'
-                              : 'text-destructive border-destructive/30 font-semibold'
-                          }
-                        >
-                          {item.stage2.workloadPercentage ?? 0}% (
-                          {item.stage2.isPassed ? 'Đạt' : 'Chưa đạt'})
-                        </Badge>
-                      </td>
+                      <TableCell className="align-top px-3 py-3">
+                        {item.stage2.workloadPercentage !== null ? (
+                          <StatusPill
+                            variant="tag"
+                            label={`${item.stage2.workloadPercentage}% · ${
+                              item.stage2.isPassed ? 'Đạt' : 'Chưa đạt'
+                            }`}
+                            tone={item.stage2.isPassed ? 'success' : 'danger'}
+                          />
+                        ) : (
+                          <StatusPill
+                            variant="tag"
+                            label="Chưa đánh giá"
+                            tone="idle"
+                          />
+                        )}
+                      </TableCell>
 
-                      {/* Nhận xét GVHD */}
-                      <td className="px-3 py-3 text-center whitespace-nowrap">
+                      <TableCell className="align-top px-3 py-3">
                         {item.supervisorReview ? (
-                          <Badge
-                            className={
+                          <StatusPill
+                            label={
                               item.supervisorReview.isDefenseAllowed
-                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 font-bold'
-                                : 'bg-destructive/10 text-destructive border-destructive/20 font-bold'
+                                ? 'Cho bảo vệ'
+                                : 'Không cho'
                             }
-                          >
-                            {item.supervisorReview.isDefenseAllowed
-                              ? '✓ Cho bảo vệ'
-                              : '✕ Không cho'}
-                          </Badge>
+                            tone={
+                              item.supervisorReview.isDefenseAllowed
+                                ? 'success'
+                                : 'danger'
+                            }
+                          />
                         ) : (
-                          <span className="text-[11px] text-muted-foreground italic">
+                          <span className="text-xs text-muted-foreground">
                             Chưa nộp
                           </span>
                         )}
-                      </td>
+                      </TableCell>
 
-                      {/* Nhận xét GVPB */}
-                      <td className="px-3 py-3 text-center whitespace-nowrap">
+                      <TableCell className="align-top px-3 py-3">
                         {item.reviewerReview ? (
-                          <Badge
-                            className={
+                          <StatusPill
+                            label={
                               item.reviewerReview.isDefenseAllowed
-                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 font-bold'
-                                : 'bg-destructive/10 text-destructive border-destructive/20 font-bold'
+                                ? 'Cho bảo vệ'
+                                : 'Không cho'
                             }
-                          >
-                            {item.reviewerReview.isDefenseAllowed
-                              ? '✓ Cho bảo vệ'
-                              : '✕ Không cho'}
-                          </Badge>
+                            tone={
+                              item.reviewerReview.isDefenseAllowed
+                                ? 'success'
+                                : 'danger'
+                            }
+                          />
                         ) : (
-                          <span className="text-[11px] text-muted-foreground italic">
+                          <span className="text-xs text-muted-foreground">
                             Chưa nộp
                           </span>
                         )}
-                      </td>
+                      </TableCell>
 
-                      {/* Kết luận điều kiện */}
-                      <td className="px-4 py-3 text-center whitespace-nowrap">
-                        {item.status === 'ELIGIBLE' ? (
-                          <Badge className="bg-emerald-600 text-white font-bold text-xs gap-1">
-                            <ShieldCheck className="size-3" />
-                            ĐỦ ĐIỀU KIỆN
-                          </Badge>
-                        ) : item.status === 'NOT_ELIGIBLE' ? (
-                          <Badge variant="destructive" className="font-bold text-xs gap-1">
-                            <ShieldAlert className="size-3" />
-                            ĐÌNH CHỈ
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-amber-600 border-amber-300 font-semibold text-xs gap-1">
-                            <Clock className="size-3" />
-                            CHỜ DUYỆT
-                          </Badge>
-                        )}
-                      </td>
+                      <TableCell className="align-top px-3 py-3">
+                        <StatusPill
+                          variant="tag"
+                          label={conclusion.label}
+                          tone={conclusion.tone}
+                        />
+                      </TableCell>
 
-                      {/* Thao tác */}
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <TableCell className="align-top px-4 py-3 text-right">
                         <Button
                           size="sm"
-                          variant="ghost"
-                          className="h-7 text-xs text-primary"
-                          onClick={() => setInspectingItem(item)}
+                          variant="outline"
+                          className="h-7.5 text-xs gap-1 cursor-pointer"
+                          onClick={() => setInspectingGroupId(item.id)}
                         >
-                          <FileText className="size-3 mr-1" />
-                          Xem chi tiết
+                          <FileText className="size-3.5" />
+                          Xem phiếu
                         </Button>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          )}
         </div>
-      )}
 
-      {/* Inspecting Dialog */}
-      {inspectingItem && (
-        <TopicReviewDialog
-          open={!!inspectingItem}
-          onOpenChange={(open) => !open && setInspectingItem(null)}
-          groupId={inspectingItem.id}
-          groupName={inspectingItem.name}
-          topicTitle={inspectingItem.topic?.title || ''}
-          projectTypeName={inspectingItem.topic?.round?.projectType?.name}
-          projectTypeCode={inspectingItem.topic?.round?.projectType?.code}
-          role="SUPERVISOR"
-          expectedTemplate={
-            inspectingItem.topic?.round?.projectType?.code === 'KLTN' ? 'M04' : 'M02'
-          }
-          supervisorName={inspectingItem.supervisor?.fullName}
-          reviewerName={inspectingItem.reviewer?.fullName}
-          members={inspectingItem.members}
-          stage2Report={inspectingItem.stage2}
+        {data?.pagination && (
+          <PaginationBar
+            page={page}
+            totalPages={data.pagination.totalPages}
+            onPageChange={setPage}
+            total={data.pagination.total}
+            pageSize={PAGE_SIZE}
+            itemName="nhóm"
+          />
+        )}
+
+        <ReviewInspectionDialog
+          open={inspectingGroupId !== null}
+          onOpenChange={(next) => {
+            if (!next) setInspectingGroupId(null);
+          }}
+          groupId={inspectingGroupId}
         />
-      )}
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
 
+function SummaryFigure({
+  value,
+  label,
+  valueClass,
+}: {
+  value: number;
+  label: string;
+  valueClass?: string;
+}) {
+  return (
+    <span className="inline-flex items-baseline gap-2">
+      <span
+        className={`text-xl font-bold tabular-nums ${
+          valueClass ?? 'text-slate-900 dark:text-neutral-100'
+        }`}
+      >
+        {value}
+      </span>
+      <span className="text-sm font-medium text-slate-600 dark:text-neutral-400">
+        {label}
+      </span>
+    </span>
+  );
+}

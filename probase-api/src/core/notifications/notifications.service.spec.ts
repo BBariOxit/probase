@@ -111,5 +111,35 @@ describe('NotificationsService', () => {
         select: { userId: true },
       });
     });
+
+    it('targets the imported round roster when hasSpecificRoster is true', async () => {
+      prisma.studentProfile.findMany.mockResolvedValue([{ userId: 15 }]);
+
+      await expect(
+        service.studentsWithoutGroupIn({
+          roundId: 7,
+          hasSpecificRoster: true,
+          semesterId: 3,
+          cohorts: ['2022'],
+        }),
+      ).resolves.toEqual([15]);
+
+      expect(prisma.studentProfile.findMany).toHaveBeenCalledWith({
+        where: {
+          roundEligibilities: { some: { roundId: 7 } },
+          user: { isActive: true },
+          NOT: {
+            groupMemberships: {
+              some: {
+                semesterId: 3,
+                status: GroupMemberStatus.ACCEPTED,
+                group: { status: { not: RegistrationGroupStatus.REJECTED } },
+              },
+            },
+          },
+        },
+        select: { userId: true },
+      });
+    });
   });
 });

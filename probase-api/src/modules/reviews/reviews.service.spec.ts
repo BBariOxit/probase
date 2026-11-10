@@ -4,10 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  GroupMemberStatus,
-  Role,
-} from '../../../generated/prisma/client';
+import { GroupMemberStatus, Role } from '../../../generated/prisma/client';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import type { RequestUser } from '../auth/guards/roles.guard';
@@ -263,6 +260,47 @@ describe('ReviewsService', () => {
       expect(result.isDefenseEligible).toBe(false);
       expect(result.eligibilityStatus).toBe('NOT_ELIGIBLE');
     });
+
+    it('should compute eligibilityStatus=PENDING when stage2 report is submitted but not yet graded (isPassed=null)', async () => {
+      prisma.registrationGroup.findUnique.mockResolvedValue({
+        id: 1,
+        name: 'Nhóm 1',
+        topic: { id: 101, title: 'Đề tài 1', lecturer: mockLecturer },
+        assignment: { reviewer: { id: 6, fullName: 'GVPB' } },
+        members: [{ student: { userId: 10, studentCode: '2212345' } }],
+        reviews: [],
+        progressReports: [{ stage: 'STAGE_2', isPassed: null }],
+        submissions: [],
+      });
+
+      const result = await service.getGroupReviews(1, {
+        ...mockUser,
+        role: Role.ADMIN,
+      });
+
+      expect(result.isDefenseEligible).toBe(false);
+      expect(result.eligibilityStatus).toBe('PENDING');
+    });
+
+    it('should compute eligibilityStatus=NOT_ELIGIBLE when stage2 is explicitly failed (isPassed=false)', async () => {
+      prisma.registrationGroup.findUnique.mockResolvedValue({
+        id: 1,
+        name: 'Nhóm 1',
+        topic: { id: 101, title: 'Đề tài 1', lecturer: mockLecturer },
+        assignment: { reviewer: { id: 6, fullName: 'GVPB' } },
+        members: [{ student: { userId: 10, studentCode: '2212345' } }],
+        reviews: [],
+        progressReports: [{ stage: 'STAGE_2', isPassed: false }],
+        submissions: [],
+      });
+
+      const result = await service.getGroupReviews(1, {
+        ...mockUser,
+        role: Role.ADMIN,
+      });
+
+      expect(result.isDefenseEligible).toBe(false);
+      expect(result.eligibilityStatus).toBe('NOT_ELIGIBLE');
+    });
   });
 });
-

@@ -221,7 +221,7 @@ export function useSwitchTopic(id: number) {
     mutationFn: (newTopicId: number) =>
       api<RegistrationGroup>(`/registration-groups/${id}/switch-topic`, {
         method: 'POST',
-        body: JSON.stringify({ newTopicId }),
+        body: { newTopicId },
       }),
     onSuccess: (updated) => {
       queryClient.setQueryData(groupKeys.mine(), updated);

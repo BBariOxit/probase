@@ -187,13 +187,19 @@ export class RegistrationGroupsService {
         fullName: true,
         cohort: true,
         studentCode: true,
-        user: { select: { id: true, email: true } },
+        user: { select: { id: true, email: true, isActive: true } },
       },
     });
 
     if (!targetStudent) {
       throw new NotFoundException(
         `Không tìm thấy sinh viên với MSSV "${cleanCode}"`,
+      );
+    }
+
+    if (!targetStudent.user.isActive) {
+      throw new ConflictException(
+        `Tài khoản sinh viên "${cleanCode}" đang bị vô hiệu hóa, không thể thêm vào nhóm.`,
       );
     }
 
@@ -657,15 +663,19 @@ export class RegistrationGroupsService {
     }
 
     // 6. Cập nhật nhóm sang đề tài mới (ngay lập tức nhả đề tài cũ)
-    await this.prisma.$transaction(async (tx) => {
-      await tx.registrationGroup.update({
-        where: { id: group.id },
-        data: {
-          topicId: newTopic.id,
-          status: statusForSeats(activeMembers.length, newTopic.maxStudents),
-        },
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.registrationGroup.update({
+          where: { id: group.id },
+          data: {
+            topicId: newTopic.id,
+            status: statusForSeats(activeMembers.length, newTopic.maxStudents),
+          },
+        });
       });
-    });
+    } catch (err) {
+      throw this.translateRegistrationConflict(err);
+    }
 
     // 7. Thông báo cho các thành viên khác trong nhóm
     await this.notifications.notify(

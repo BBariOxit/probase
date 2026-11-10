@@ -128,8 +128,9 @@ export class RoundsController {
     @Param('id', ParseIntPipe) id: number,
     @UploadedFile(new ParseFilePipe({ validators: [], fileIsRequired: true }))
     file: Express.Multer.File,
+    @GetUser('id') userId: number,
   ) {
-    return this.eligibleStudents.importFile(id, file);
+    return this.eligibleStudents.importFile(id, file, userId);
   }
 
   @Roles('ADMIN')
@@ -146,7 +147,8 @@ export class RoundsController {
   removeEligibleStudent(
     @Param('id', ParseIntPipe) id: number,
     @Param('studentId', ParseIntPipe) studentId: number,
+    @GetUser('id') userId: number,
   ) {
-    return this.eligibleStudents.removeEligible(id, studentId);
+    return this.eligibleStudents.removeEligible(id, studentId, userId);
   }
 }

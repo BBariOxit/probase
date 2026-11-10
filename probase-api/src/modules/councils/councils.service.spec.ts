@@ -1,10 +1,10 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { CouncilMemberRole, Role } from '../../../generated/prisma/client';
+import {
+  CouncilMemberRole,
+  RegistrationGroupStatus,
+  Role,
+} from '../../../generated/prisma/client';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import type { RequestUser } from '../auth/guards/roles.guard';
@@ -175,6 +175,136 @@ describe('CouncilsService', () => {
         service.scheduleTopic(5, { groupId: 100 }, mockAdmin),
       ).rejects.toThrow(BadRequestException);
     });
+
+    it('should reject REJECTED group, cross-semester group, and ineligible group', async () => {
+      prisma.council.findUnique.mockResolvedValue({
+        id: 5,
+        semesterId: 1,
+        topics: [{ defenseOrder: 2 }],
+      });
+
+      prisma.registrationGroup.findUnique.mockResolvedValue({
+        id: 100,
+        topicId: 200,
+        semesterId: 1,
+        status: RegistrationGroupStatus.REJECTED,
+        assignment: { reviewerId: 30 },
+        councilTopic: null,
+      });
+      await expect(
+        service.scheduleTopic(5, { groupId: 100 }, mockAdmin),
+      ).rejects.toThrow(BadRequestException);
+
+      prisma.registrationGroup.findUnique.mockResolvedValue({
+        id: 100,
+        topicId: 200,
+        semesterId: 2,
+        status: RegistrationGroupStatus.APPROVED,
+        assignment: { reviewerId: 30 },
+        councilTopic: null,
+      });
+      await expect(
+        service.scheduleTopic(5, { groupId: 100 }, mockAdmin),
+      ).rejects.toThrow(BadRequestException);
+
+      prisma.registrationGroup.findUnique.mockResolvedValue({
+        id: 100,
+        topicId: 200,
+        semesterId: 1,
+        status: RegistrationGroupStatus.APPROVED,
+        assignment: { reviewerId: 30 },
+        councilTopic: null,
+        progressReports: [{ isPassed: false }],
+        reviews: [
+          { reviewerType: 'SUPERVISOR', isDefenseAllowed: true },
+          { reviewerType: 'REVIEWER', isDefenseAllowed: true },
+        ],
+      });
+      await expect(
+        service.scheduleTopic(5, { groupId: 100 }, mockAdmin),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should auto-increment defenseOrder from existing council topics when omitted', async () => {
+      prisma.council.findUnique.mockResolvedValue({
+        id: 5,
+        name: 'HĐ 01',
+        semesterId: 1,
+        location: 'A11',
+        topics: [{ defenseOrder: 1 }, { defenseOrder: 3 }],
+      });
+      prisma.registrationGroup.findUnique.mockResolvedValue({
+        id: 100,
+        topicId: 200,
+        semesterId: 1,
+        status: RegistrationGroupStatus.APPROVED,
+        assignment: { reviewerId: 30 },
+        councilTopic: null,
+        progressReports: [{ isPassed: true }],
+        reviews: [
+          { reviewerType: 'SUPERVISOR', isDefenseAllowed: true },
+          { reviewerType: 'REVIEWER', isDefenseAllowed: true },
+        ],
+        members: [],
+      });
+      prisma.councilTopic.create.mockResolvedValue({ id: 2, defenseOrder: 4 });
+
+      const res = await service.scheduleTopic(5, { groupId: 100 }, mockAdmin);
+      expect(res.defenseOrder).toBe(4);
+      expect(prisma.councilTopic.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            defenseOrder: 4,
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('getEligibleGroups', () => {
+    it('excludes REJECTED groups and keeps only Stage 2 passed + both defense allowed', async () => {
+      prisma.registrationGroup.findMany.mockResolvedValue([
+        {
+          id: 1,
+          name: 'Đủ điều kiện',
+          topic: { id: 10, lecturer: { id: 1, fullName: 'GV A' } },
+          assignment: { reviewer: { id: 2, fullName: 'GV B' } },
+          members: [],
+          councilTopic: null,
+          progressReports: [{ isPassed: true }],
+          reviews: [
+            { reviewerType: 'SUPERVISOR', isDefenseAllowed: true },
+            { reviewerType: 'REVIEWER', isDefenseAllowed: true },
+          ],
+        },
+        {
+          id: 2,
+          name: 'Chưa cho bảo vệ',
+          topic: { id: 11, lecturer: { id: 1, fullName: 'GV A' } },
+          assignment: { reviewer: { id: 2, fullName: 'GV B' } },
+          members: [],
+          councilTopic: null,
+          progressReports: [{ isPassed: true }],
+          reviews: [
+            { reviewerType: 'SUPERVISOR', isDefenseAllowed: true },
+            { reviewerType: 'REVIEWER', isDefenseAllowed: false },
+          ],
+        },
+      ]);
+
+      const eligible = await service.getEligibleGroups(1, 2);
+      expect(prisma.registrationGroup.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            status: { not: RegistrationGroupStatus.REJECTED },
+            semesterId: 1,
+            topic: { majorId: 2 },
+          },
+        }),
+      );
+      expect(eligible).toHaveLength(1);
+      expect(eligible[0].id).toBe(1);
+    });
   });
 
   describe('evaluateTopic', () => {
@@ -216,7 +346,10 @@ describe('CouncilsService', () => {
         },
       });
 
-      prisma.councilTopic.update.mockResolvedValue({ id: 1, status: 'DEFENDING' });
+      prisma.councilTopic.update.mockResolvedValue({
+        id: 1,
+        status: 'DEFENDING',
+      });
 
       // Member 20 submits 9.0 -> average = (8.0 + 9.0) / 2 = 8.5
       // Final Grade = 0.2*8.0 + 0.3*9.0 + 0.5*8.5 = 1.6 + 2.7 + 4.25 = 8.55 -> Letter 'A'

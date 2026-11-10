@@ -348,6 +348,14 @@ export class AllocationService {
   // ── the two lists ─────────────────────────────────────────
 
   private async unplacedStudents(round: RoundRow) {
+    if ((round._count?.eligibleStudents ?? 0) > 0) {
+      return this.roster.find({
+        semesterId: round.semesterId,
+        roundId: round.id,
+        hasGroup: false,
+      });
+    }
+
     const cohorts = round.eligibilities.map((rule) => rule.cohort);
 
     // No declared intake means the round covers nobody yet, which is not the
@@ -453,6 +461,7 @@ export class AllocationService {
         semester: { select: { id: true, name: true, code: true } },
         projectType: { select: { id: true, name: true, code: true } },
         eligibilities: { select: { cohort: true } },
+        _count: { select: { eligibleStudents: true } },
       },
     });
 
@@ -489,12 +498,30 @@ export class AllocationService {
       throw new NotFoundException('Không tìm thấy sinh viên này');
     }
 
-    const cohorts = round.eligibilities.map((rule) => rule.cohort);
+    if ((round._count?.eligibleStudents ?? 0) > 0) {
+      const match = await this.prisma.roundStudentEligibility.findUnique({
+        where: {
+          roundId_studentId: {
+            roundId: round.id,
+            studentId,
+          },
+        },
+        select: { id: true },
+      });
 
-    if (student.cohort === null || !cohorts.includes(student.cohort)) {
-      throw new ForbiddenException(
-        `Khóa ${student.cohort ?? 'chưa rõ'} không thuộc đợt này, nên không xếp ${student.fullName} vào đây được.`,
-      );
+      if (!match) {
+        throw new ForbiddenException(
+          `${student.fullName} không nằm trong danh sách đủ điều kiện của đợt này, nên không xếp vào đây được.`,
+        );
+      }
+    } else {
+      const cohorts = round.eligibilities.map((rule) => rule.cohort);
+
+      if (student.cohort === null || !cohorts.includes(student.cohort)) {
+        throw new ForbiddenException(
+          `Khóa ${student.cohort ?? 'chưa rõ'} không thuộc đợt này, nên không xếp ${student.fullName} vào đây được.`,
+        );
+      }
     }
 
     // Checked before the write as well as by the index behind it, so the common
@@ -679,6 +706,7 @@ type RoundRow = {
   id: number;
   semesterId: number;
   eligibilities: { cohort: string }[];
+  _count?: { eligibleStudents: number };
 };
 
 const PLACEMENT_CLOSED: Record<Exclude<RoundPhase, 'RECONCILING'>, string> = {

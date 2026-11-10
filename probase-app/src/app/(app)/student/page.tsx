@@ -20,6 +20,7 @@ import {
   useMyRounds,
   useProjectTypes,
 } from '@/lib/api/master-data';
+import { useMyEligibilityStatus } from '@/lib/api/eligible-students';
 import { useMyGroup, useSwitchTopic } from '@/lib/api/registration';
 import { useInfiniteTopics, useTopicLecturers } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
@@ -30,6 +31,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { LecturerCombobox } from '@/components/shared/lecturer-combobox';
 import { RegistrationPhaseNotice } from '@/components/rounds/registration-phase-notice';
 import { StatusPill } from '@/components/shared/status-pill';
+import { StudentEligibilityBanner } from '@/components/students/student-eligibility-banner';
 import { TopicRegisterButton } from '@/components/topics/topic-register-button';
 import { TopicDetailSheet } from '@/components/topics/topic-detail-sheet';
 import type { TopicListItem } from '@/lib/api/types';
@@ -90,6 +92,7 @@ function StudentTopicsContent() {
   const searchParams = useSearchParams();
   const activeSemester = useActiveSemester();
   const { data: rounds } = useMyRounds(activeSemester?.id);
+  const { data: eligibilityStatus } = useMyEligibilityStatus();
   const { data: projectTypes } = useProjectTypes();
   const { data: myTypes } = useMyEligibleProjectTypes(activeSemester?.id);
   const { data: lecturers } = useTopicLecturers(activeSemester?.id);
@@ -107,21 +110,10 @@ function StudentTopicsContent() {
 
   const [search, setSearch] = useState('');
   const [projectTypeId, setProjectTypeId] = useState<number | null>(null);
-  const userChangedTypeRef = useRef(false);
   const [lecturerId, setLecturerId] = useState(ANY);
   const [onlyAvailable, setOnlyAvailable] = useState(true);
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const debouncedSearch = useDebounce(search);
-
-  // Set default project type to the student's eligible type as soon as myTypes loads
-  useEffect(() => {
-    if (userChangedTypeRef.current) return;
-    if (myTypes && myTypes.length > 0) {
-      setProjectTypeId(myTypes[0].id);
-    } else if (myTypes && myTypes.length === 0) {
-      setProjectTypeId(ANY);
-    }
-  }, [myTypes]);
 
   const effectiveProjectTypeId = projectTypeId ?? myTypes?.[0]?.id ?? ANY;
 
@@ -146,7 +138,6 @@ function StudentTopicsContent() {
   );
 
   const rawTopics = data?.pages.flatMap((page) => page.items) ?? [];
-  const rawTotal = data?.pages[0]?.total ?? 0;
 
   // Filter topics for "Còn trống" & lecturerId guarantee
   const topics = rawTopics.filter((t) => {
@@ -285,7 +276,10 @@ function StudentTopicsContent() {
         </div>
       )}
 
-      {/* ── Thông báo tiến trình đợt ── */}
+      {/* ── Thông báo tiến trình đợt & điều kiện tham gia ── */}
+      {eligibilityStatus && !eligibilityStatus.isEligible && activeSemester && (
+        <StudentEligibilityBanner />
+      )}
       {rounds?.map((round) => (
         <RegistrationPhaseNotice
           key={round.id}
@@ -294,21 +288,24 @@ function StudentTopicsContent() {
           hasGroup={myGroup != null}
         />
       ))}
-      {activeSemester && rounds && rounds.length === 0 && (
-        <div className="flex items-start justify-between gap-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white px-4 py-3 shadow-2xs dark:bg-[#1e1e1e]">
-          <div className="flex items-start gap-3">
-            <CalendarClock className="mt-0.5 size-4.5 shrink-0 text-primary" />
-            <div className="space-y-0.5 text-sm">
-              <p className="font-semibold text-slate-900 dark:text-neutral-100">
-                Chưa mở đợt đăng ký đề tài
-              </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
-                Hiện tại chưa có đợt đăng ký nào được mở cho học kỳ này. Bạn có thể xem trước danh sách đề tài.
-              </p>
+      {activeSemester &&
+        rounds &&
+        rounds.length === 0 &&
+        eligibilityStatus?.isEligible && (
+          <div className="flex items-start justify-between gap-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white px-4 py-3 shadow-2xs dark:bg-[#1e1e1e]">
+            <div className="flex items-start gap-3">
+              <CalendarClock className="mt-0.5 size-4.5 shrink-0 text-primary" />
+              <div className="space-y-0.5 text-sm">
+                <p className="font-semibold text-slate-900 dark:text-neutral-100">
+                  Chưa mở đợt đăng ký đề tài
+                </p>
+                <p className="text-xs text-slate-500 dark:text-neutral-400">
+                  Hiện tại chưa có đợt đăng ký nào được mở cho học kỳ này. Bạn có thể xem trước danh sách đề tài.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* ── Khung tìm kiếm & bộ lọc: [Tìm tên đề tài...] [Loại đồ án ▾] [Giảng viên ▾] [Còn trống 🔘] ── */}
       <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3">
@@ -329,7 +326,6 @@ function StudentTopicsContent() {
           <Select
             value={effectiveProjectTypeId}
             onValueChange={(val) => {
-              userChangedTypeRef.current = true;
               setProjectTypeId(val as number);
             }}
           >
@@ -510,6 +506,13 @@ function StudentTopicsContent() {
                         ) : isTaken ? (
                           <span className="text-xs text-slate-400 dark:text-neutral-500 font-medium">
                             Đã có nhóm
+                          </span>
+                        ) : topic.fromProposal && topic.proposedByMe === false ? (
+                          <span
+                            className="text-xs text-slate-400 dark:text-neutral-500 font-medium"
+                            title="Đề tài này do sinh viên khác đề xuất, chỉ người đề xuất mới có quyền đăng ký"
+                          >
+                            Giữ cho SV đề xuất
                           </span>
                         ) : topic.maxStudents < myGroup.members.length ? (
                           <span

@@ -1,10 +1,11 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotificationType, Role } from '../../../generated/prisma/client';
+import {
+  NotificationType,
+  RegistrationGroupStatus,
+  Role,
+  TopicStatus,
+} from '../../../generated/prisma/client';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { ReviewersService } from './reviewers.service';
@@ -18,6 +19,9 @@ describe('ReviewersService', () => {
     prisma = {
       registrationGroup: {
         findMany: jest.fn(),
+        findUnique: jest.fn(),
+      },
+      registrationRound: {
         findUnique: jest.fn(),
       },
       lecturerProfile: {
@@ -169,6 +173,120 @@ describe('ReviewersService', () => {
       ]);
 
       expect(result.reviewerId).toBe(7);
+    });
+
+    it('should reject REJECTED group, inactive reviewer, or academic assistant', async () => {
+      prisma.registrationGroup.findUnique.mockResolvedValue({
+        id: 10,
+        status: RegistrationGroupStatus.REJECTED,
+        topic: { id: 20, lecturerId: 5, majorId: 1 },
+      });
+
+      await expect(
+        service.assignReviewer(adminUser, { groupId: 10, reviewerId: 7 }),
+      ).rejects.toThrow(BadRequestException);
+
+      prisma.registrationGroup.findUnique.mockResolvedValue({
+        id: 10,
+        status: RegistrationGroupStatus.APPROVED,
+        topic: { id: 20, lecturerId: 5, majorId: 1 },
+      });
+      prisma.lecturerProfile.findUnique.mockResolvedValue({
+        id: 7,
+        majorId: 1,
+        isAcademicAssistant: false,
+        user: { id: 70, isActive: false },
+      });
+
+      await expect(
+        service.assignReviewer(adminUser, { groupId: 10, reviewerId: 7 }),
+      ).rejects.toThrow(BadRequestException);
+
+      prisma.lecturerProfile.findUnique.mockResolvedValue({
+        id: 8,
+        majorId: 1,
+        isAcademicAssistant: true,
+        user: { id: 80, isActive: true },
+      });
+
+      await expect(
+        service.assignReviewer(adminUser, { groupId: 10, reviewerId: 8 }),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('getAssignmentsOverview', () => {
+    const adminUser: any = {
+      id: 1,
+      role: Role.ADMIN,
+      isActive: true,
+    };
+
+    it('combines roundId, majorId, derived semesterId without overwriting keys and excludes REJECTED', async () => {
+      prisma.registrationRound.findUnique.mockResolvedValue({ semesterId: 3 });
+      prisma.registrationGroup.findMany.mockResolvedValue([
+        { id: 1, assignment: null },
+        { id: 2, assignment: { id: 11 } },
+      ]);
+      prisma.lecturerProfile.findMany.mockResolvedValue([
+        {
+          id: 5,
+          fullName: 'GV A',
+          academicTitle: 'ThS.',
+          lecturerCode: 'GV01',
+          majorId: 2,
+          major: { id: 2, name: 'CNPM', code: 'CNPM' },
+          isHeadOfDepartment: false,
+          topics: [{ id: 100 }],
+          reviewerAssignments: [],
+        },
+      ]);
+
+      const result = await service.getAssignmentsOverview(adminUser, {
+        roundId: 9,
+        majorId: 2,
+      });
+
+      expect(prisma.registrationRound.findUnique).toHaveBeenCalledWith({
+        where: { id: 9 },
+        select: { semesterId: true },
+      });
+      expect(prisma.registrationGroup.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: { not: RegistrationGroupStatus.REJECTED },
+            semesterId: 3,
+            topic: {
+              semesterId: 3,
+              majorId: 2,
+              roundId: 9,
+            },
+          }),
+        }),
+      );
+      expect(prisma.lecturerProfile.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          select: expect.objectContaining({
+            topics: expect.objectContaining({
+              where: {
+                status: { not: TopicStatus.REJECTED },
+                semesterId: 3,
+              },
+            }),
+            reviewerAssignments: expect.objectContaining({
+              where: {
+                group: { status: { not: RegistrationGroupStatus.REJECTED } },
+                topic: { semesterId: 3 },
+              },
+            }),
+          }),
+        }),
+      );
+      expect(result.stats).toEqual({
+        totalGroups: 2,
+        assignedCount: 1,
+        unassignedCount: 1,
+      });
     });
   });
 

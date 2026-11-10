@@ -290,6 +290,7 @@ const TITLE_BY_PREFIX: { prefix: string; label: string }[] = [
   // "Giảng viên" because the sub-page is the person, not a new section.
   { prefix: '/lecturers', label: 'Giảng viên' },
   { prefix: '/admin/topics', label: 'Chi tiết đề tài' },
+  { prefix: '/admin/defense-eligibility', label: 'Điều kiện bảo vệ' },
 ];
 
 export function topicHref(role: Role, topicId: number): string {

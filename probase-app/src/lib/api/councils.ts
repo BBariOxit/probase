@@ -43,12 +43,26 @@ export interface CouncilTopicItem {
     major?: { id: number; name: string; code: string } | null;
     lecturer: { id: number; fullName: string; academicTitle?: string | null };
   };
-  reviewer?: { id: number; fullName: string; academicTitle?: string | null } | null;
+  reviewer?: {
+    id: number;
+    fullName: string;
+    academicTitle?: string | null;
+  } | null;
   group: {
     id: number;
     name?: string | null;
-    leader: { id: number; fullName: string; studentCode: string; class?: string | null };
-    members: Array<{ id: number; fullName: string; studentCode: string; class?: string | null }>;
+    leader: {
+      id: number;
+      fullName: string;
+      studentCode: string;
+      class?: string | null;
+    };
+    members: Array<{
+      id: number;
+      fullName: string;
+      studentCode: string;
+      class?: string | null;
+    }>;
     latestSubmission?: {
       id: number;
       fileName?: string | null;
@@ -105,11 +119,28 @@ export interface EligibleGroupItem {
     id: number;
     title: string;
     major?: { id: number; name: string; code: string } | null;
+    round?: {
+      id: number;
+      projectType?: { id: number; name: string; code?: string } | null;
+    } | null;
     lecturer: { id: number; fullName: string; academicTitle?: string | null };
   };
-  supervisor: { id: number; fullName: string; academicTitle?: string | null } | null;
-  reviewer: { id: number; fullName: string; academicTitle?: string | null } | null;
-  members: Array<{ id: number; fullName: string; studentCode: string; class?: string | null }>;
+  supervisor: {
+    id: number;
+    fullName: string;
+    academicTitle?: string | null;
+  } | null;
+  reviewer: {
+    id: number;
+    fullName: string;
+    academicTitle?: string | null;
+  } | null;
+  members: Array<{
+    id: number;
+    fullName: string;
+    studentCode: string;
+    class?: string | null;
+  }>;
 }
 
 export interface MyCouncilItem {
@@ -178,9 +209,13 @@ export interface FinalizeCouncilTopicInput {
 // HOOKS
 // ─────────────────────────────────────────────────────────
 
-export function useCouncils(params?: QueryCouncilsParams) {
+export function useCouncils(
+  params?: QueryCouncilsParams,
+  options?: { enabled?: boolean },
+) {
   const searchParams = new URLSearchParams();
-  if (params?.semesterId) searchParams.set('semesterId', String(params.semesterId));
+  if (params?.semesterId)
+    searchParams.set('semesterId', String(params.semesterId));
   if (params?.majorId) searchParams.set('majorId', String(params.majorId));
   if (params?.search) searchParams.set('search', params.search);
   if (params?.status && params.status !== 'ALL')
@@ -192,6 +227,8 @@ export function useCouncils(params?: QueryCouncilsParams) {
   return useQuery({
     queryKey: ['councils', params],
     queryFn: () => api<CouncilListItem[]>(url),
+    enabled: options?.enabled ?? true,
+    placeholderData: (previous) => previous,
   });
 }
 
@@ -203,7 +240,10 @@ export function useCouncilDetail(id: number | null | undefined) {
   });
 }
 
-export function useEligibleGroupsForCouncil(semesterId?: number, majorId?: number) {
+export function useEligibleGroupsForCouncil(
+  semesterId?: number,
+  majorId?: number,
+) {
   const searchParams = new URLSearchParams();
   if (semesterId) searchParams.set('semesterId', String(semesterId));
   if (majorId) searchParams.set('majorId', String(majorId));
@@ -214,6 +254,7 @@ export function useEligibleGroupsForCouncil(semesterId?: number, majorId?: numbe
   return useQuery({
     queryKey: ['councils', 'eligible-groups', semesterId, majorId],
     queryFn: () => api<EligibleGroupItem[]>(url),
+    enabled: typeof semesterId === 'number' && semesterId > 0,
   });
 }
 
@@ -230,7 +271,7 @@ export function useCreateCouncil() {
     mutationFn: (data: CreateCouncilInput) =>
       api<CouncilListItem>('/councils', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: data,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['councils'] });
@@ -244,10 +285,11 @@ export function useUpdateCouncil(id: number) {
     mutationFn: (data: UpdateCouncilInput) =>
       api<CouncilListItem>(`/councils/${id}`, {
         method: 'PUT',
-        body: JSON.stringify(data),
+        body: data,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['councils'] });
+      queryClient.invalidateQueries({ queryKey: ['councils', id] });
     },
   });
 }
@@ -271,7 +313,7 @@ export function useAddCouncilMember(councilId: number) {
     mutationFn: (data: AddCouncilMemberInput) =>
       api<CouncilMemberItem>(`/councils/${councilId}/members`, {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: data,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['councils', councilId] });
@@ -300,11 +342,14 @@ export function useScheduleCouncilTopic(councilId: number) {
     mutationFn: (data: ScheduleCouncilTopicInput) =>
       api<CouncilTopicItem>(`/councils/${councilId}/topics`, {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: data,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['councils', councilId] });
-      queryClient.invalidateQueries({ queryKey: ['councils', 'eligible-groups'] });
+      queryClient.invalidateQueries({
+        queryKey: ['councils', 'eligible-groups'],
+      });
+      queryClient.invalidateQueries({ queryKey: ['councils'] });
     },
   });
 }
@@ -313,12 +358,18 @@ export function useRemoveCouncilTopic(councilId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (councilTopicId: number) =>
-      api<{ message: string }>(`/councils/${councilId}/topics/${councilTopicId}`, {
-        method: 'DELETE',
-      }),
+      api<{ message: string }>(
+        `/councils/${councilId}/topics/${councilTopicId}`,
+        {
+          method: 'DELETE',
+        },
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['councils', councilId] });
-      queryClient.invalidateQueries({ queryKey: ['councils', 'eligible-groups'] });
+      queryClient.invalidateQueries({
+        queryKey: ['councils', 'eligible-groups'],
+      });
+      queryClient.invalidateQueries({ queryKey: ['councils'] });
     },
   });
 }
@@ -333,13 +384,13 @@ export function useEvaluateCouncilTopic() {
       councilTopicId: number;
       data: SubmitCouncilEvaluationInput;
     }) =>
-      api<{ message: string; evaluationSummary: any }>(
-        `/councils/topics/${councilTopicId}/evaluate`,
-        {
-          method: 'POST',
-          body: JSON.stringify(data),
-        },
-      ),
+      api<{
+        message: string;
+        evaluationSummary: NonNullable<CouncilTopicItem['evaluationSummary']>;
+      }>(`/councils/topics/${councilTopicId}/evaluate`, {
+        method: 'POST',
+        body: data,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['councils'] });
     },
@@ -356,13 +407,10 @@ export function useFinalizeCouncilTopic() {
       councilTopicId: number;
       data: FinalizeCouncilTopicInput;
     }) =>
-      api<{ message: string }>(
-        `/councils/topics/${councilTopicId}/finalize`,
-        {
-          method: 'POST',
-          body: JSON.stringify(data),
-        },
-      ),
+      api<{ message: string }>(`/councils/topics/${councilTopicId}/finalize`, {
+        method: 'POST',
+        body: data,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['councils'] });
     },

@@ -71,7 +71,7 @@ export function useMyEligibleProjectTypes(semesterId: number | undefined) {
     queryFn: () =>
       api<ProjectType[]>(`/semesters/${semesterId!}/eligibility/mine`),
     enabled: semesterId !== undefined,
-    staleTime: MASTER_DATA_STALE_TIME,
+    staleTime: 60_000,
   });
 }
 

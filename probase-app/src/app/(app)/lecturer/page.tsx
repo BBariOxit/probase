@@ -6,7 +6,6 @@ import {
   BookOpen,
   Eye,
   Loader2,
-  MessageSquareText,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -357,7 +356,7 @@ export default function LecturerTopicsPage() {
                       >
                         {topic.title}
                       </Link>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-normal text-muted-foreground">
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-normal text-muted-foreground">
                         <span>
                           {topic.activeGroup
                             ? `Nhóm ${topic.activeGroup.occupiedSeats}/${topic.maxStudents} sinh viên`
@@ -366,14 +365,16 @@ export default function LecturerTopicsPage() {
                         {(topic.status === 'DRAFT' ||
                           topic.status === 'REJECTED') &&
                           topic.departmentFeedback?.trim() && (
-                            <Link
-                              href={`/lecturer/topics/${topic.id}`}
-                              title={topic.departmentFeedback}
-                              className="inline-flex items-center gap-1 rounded-md border border-amber-200/80 bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-700 hover:bg-amber-100/80 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-400 dark:hover:bg-amber-950/60 transition-colors"
-                            >
-                              <MessageSquareText className="size-3 shrink-0" />
-                              <span>Có góp ý Bộ môn</span>
-                            </Link>
+                            <>
+                              <span aria-hidden="true">•</span>
+                              <Link
+                                href={`/lecturer/topics/${topic.id}`}
+                                title={topic.departmentFeedback}
+                                className="font-medium text-amber-600 hover:underline dark:text-amber-400"
+                              >
+                                Xem góp ý
+                              </Link>
+                            </>
                           )}
                       </div>
                     </div>
