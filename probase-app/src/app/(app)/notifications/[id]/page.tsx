@@ -13,7 +13,10 @@ import {
 } from 'lucide-react';
 import { useNotification } from '@/lib/api/notifications';
 import { useSession } from '@/lib/auth/session';
-import { isTopicDepartmentReviewNotification } from '@/lib/notifications';
+import {
+  formatNotificationContent,
+  isTopicDepartmentReviewNotification,
+} from '@/lib/notifications';
 import { Button } from '@/components/ui/button';
 
 function getNotificationAction(
@@ -259,7 +262,7 @@ export default function NotificationDetailPage() {
 
           {/* Dưới gạch ngang là nội dung thông báo */}
           <div className="text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line font-normal py-2 selection:bg-primary/20 break-words [overflow-wrap:anywhere]">
-            {notice.content}
+            {formatNotificationContent(notice)}
           </div>
 
           {/* Nút hành động trực tiếp nếu thông báo có liên kết */}

@@ -878,17 +878,17 @@ export class TopicsService {
       nextStatus = TopicStatus.APPROVED;
       auditAction = 'TOPIC_DEPARTMENT_APPROVED';
       notifTitle = 'Đề tài đã được Bộ môn phê duyệt';
-      notifContent = `Đề tài "${topic.title}" đã được Tổ trưởng Bộ môn phê duyệt và chuyển sang trạng thái Đã duyệt, sẵn sàng chờ Giáo vụ mở đăng ký.${dto.feedback ? ` Nhận xét: ${dto.feedback}` : ''}`;
+      notifContent = `Đề tài "${topic.title}" đã được Tổ trưởng Bộ môn phê duyệt và chuyển sang trạng thái Đã duyệt, sẵn sàng chờ Giáo vụ mở đăng ký.${dto.feedback ? `\n\nNội dung: ${dto.feedback}` : ''}`;
     } else if (dto.action === 'REQUEST_REVISION') {
       nextStatus = TopicStatus.DRAFT;
       auditAction = 'TOPIC_DEPARTMENT_REVISION_REQUESTED';
       notifTitle = 'Yêu cầu chỉnh sửa đề tài';
-      notifContent = `Tổ trưởng Bộ môn yêu cầu chỉnh sửa đề tài "${topic.title}". Lý do: ${dto.feedback}`;
+      notifContent = `Tổ trưởng Bộ môn yêu cầu chỉnh sửa đề tài "${topic.title}".\n\nNội dung: ${dto.feedback}`;
     } else {
       nextStatus = TopicStatus.REJECTED;
       auditAction = 'TOPIC_DEPARTMENT_REJECTED';
       notifTitle = 'Đề tài bị từ chối';
-      notifContent = `Đề tài "${topic.title}" đã bị Tổ trưởng Bộ môn từ chối. Lý do: ${dto.feedback}`;
+      notifContent = `Đề tài "${topic.title}" đã bị Tổ trưởng Bộ môn từ chối.\n\nNội dung: ${dto.feedback}`;
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {

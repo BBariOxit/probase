@@ -16,6 +16,18 @@ export function isTopicDepartmentReviewNotification(notice: {
   );
 }
 
+export function formatNotificationContent(notice: {
+  type: string;
+  title?: string;
+  content: string;
+}): string {
+  if (!isTopicDepartmentReviewNotification(notice)) {
+    return notice.content;
+  }
+
+  return notice.content.replace(/\.\s+(?:Lý do|Nhận xét):\s*/, '.\n\nNội dung: ');
+}
+
 export function notificationHref(
   notice: AppNotification,
   role: Role,
