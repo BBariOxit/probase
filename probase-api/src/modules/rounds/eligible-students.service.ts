@@ -266,7 +266,9 @@ export class EligibleStudentsService {
     );
 
     if (totalDataRows === 0) {
-      throw new BadRequestException('File không chứa hàng dữ liệu sinh viên nào');
+      throw new BadRequestException(
+        'File không chứa hàng dữ liệu sinh viên nào',
+      );
     }
 
     if (validRows.length === 0) {
@@ -589,7 +591,9 @@ export class EligibleStudentsService {
     const [usersByEmailRaw, profilesByCodeRaw] = await Promise.all([
       this.prisma.user.findMany({
         where: { email: { in: allEmails } },
-        include: { studentProfile: { select: { id: true, studentCode: true } } },
+        include: {
+          studentProfile: { select: { id: true, studentCode: true } },
+        },
       }),
       this.prisma.studentProfile.findMany({
         where: { studentCode: { in: allCodes } },
@@ -1263,7 +1267,7 @@ function cellToString(val: ExcelJS.CellValue): string {
     }
     if ('text' in val) {
       return typeof val.text === 'object' && val.text !== null
-        ? cellToString(val.text as ExcelJS.CellValue)
+        ? cellToString(val.text)
         : String(val.text ?? '');
     }
     if ('result' in val) {

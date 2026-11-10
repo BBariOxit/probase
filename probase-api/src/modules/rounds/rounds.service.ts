@@ -95,7 +95,8 @@ export class RoundsService {
       select: ROUND_SELECT,
     });
 
-    if (!round) throw new NotFoundException(`Không tìm thấy đợt đăng ký mã #${id}`);
+    if (!round)
+      throw new NotFoundException(`Không tìm thấy đợt đăng ký mã #${id}`);
 
     return (await this.renderMany([round]))[0];
   }
@@ -405,7 +406,9 @@ export class RoundsService {
         data: {
           registrationStart,
           registrationEnd,
-          ...(dto.targetCohort !== undefined && { targetCohort: dto.targetCohort }),
+          ...(dto.targetCohort !== undefined && {
+            targetCohort: dto.targetCohort,
+          }),
           ...(dto.officialStartDate !== undefined && {
             officialStartDate: dto.officialStartDate,
           }),
@@ -640,7 +643,8 @@ export class RoundsService {
       },
     });
 
-    if (!round) throw new NotFoundException(`Không tìm thấy đợt đăng ký mã #${id}`);
+    if (!round)
+      throw new NotFoundException(`Không tìm thấy đợt đăng ký mã #${id}`);
 
     return round;
   }
@@ -660,7 +664,8 @@ export class RoundsService {
       select: { id: true },
     });
 
-    if (!semester) throw new NotFoundException(`Không tìm thấy học kỳ mã #${id}`);
+    if (!semester)
+      throw new NotFoundException(`Không tìm thấy học kỳ mã #${id}`);
   }
 
   private async requireProjectTypes(ids: number[]) {
@@ -675,7 +680,9 @@ export class RoundsService {
     const found = new Set(known.map((type) => type.id));
     const missing = wanted.filter((id) => !found.has(id));
 
-    throw new NotFoundException(`Không tìm thấy loại đồ án mã: ${missing.join(', ')}`);
+    throw new NotFoundException(
+      `Không tìm thấy loại đồ án mã: ${missing.join(', ')}`,
+    );
   }
 }
 

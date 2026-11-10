@@ -11,6 +11,72 @@ import { NotificationsService } from '../../core/notifications/notifications.ser
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { EligibleStudentsService } from './eligible-students.service';
 
+interface MockPrisma {
+  registrationRound: {
+    findUnique: jest.Mock;
+    findMany: jest.Mock;
+    count: jest.Mock;
+  };
+  semester: {
+    findFirst: jest.Mock;
+  };
+  studentProfile: {
+    findUnique: jest.Mock;
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+  };
+  user: {
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
+    create: jest.Mock;
+  };
+  roundStudentEligibility: {
+    findUnique: jest.Mock;
+    findMany: jest.Mock;
+    upsert: jest.Mock;
+    deleteMany: jest.Mock;
+    count: jest.Mock;
+  };
+  registrationGroupMember: {
+    findFirst: jest.Mock;
+  };
+  auditLog: {
+    create: jest.Mock;
+  };
+  major: {
+    findMany: jest.Mock;
+  };
+  $transaction: jest.Mock;
+}
+
+interface CreatedUserCallArg {
+  data: {
+    email: string;
+    role: Role;
+    mustChangePassword: boolean;
+    password: string;
+    studentProfile: {
+      create: {
+        studentCode: string;
+        fullName: string;
+        class: string;
+        cohort: string;
+        majorId: number;
+      };
+    };
+  };
+}
+
+interface AuditCallArg {
+  data: {
+    userId: number;
+    action: string;
+    targetId: string;
+  };
+}
+
 async function buildXlsxFile(
   rows: unknown[][],
   originalname = 'eligible.xlsx',
@@ -29,7 +95,7 @@ async function buildXlsxFile(
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     size: buffer.length,
     buffer,
-    stream: null as any,
+    stream: undefined as unknown as Express.Multer.File['stream'],
     destination: '',
     filename: originalname,
     path: '',
@@ -50,7 +116,7 @@ function buildCsvFile(
     mimetype: 'text/csv',
     size: buffer.length,
     buffer,
-    stream: null as any,
+    stream: undefined as unknown as Express.Multer.File['stream'],
     destination: '',
     filename: originalname,
     path: '',
@@ -59,8 +125,8 @@ function buildCsvFile(
 
 describe('EligibleStudentsService', () => {
   let service: EligibleStudentsService;
-  let prisma: any;
-  let notifications: any;
+  let prisma: MockPrisma;
+  let notifications: { notify: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
@@ -103,7 +169,10 @@ describe('EligibleStudentsService', () => {
           { id: 2, name: 'Mạng máy tính', code: 'MMT' },
         ]),
       },
-      $transaction: jest.fn(async (cb: (tx: any) => Promise<any>) => cb(prisma)),
+      $transaction: jest.fn(
+        (cb: (tx: MockPrisma) => Promise<unknown>): Promise<unknown> =>
+          cb(prisma),
+      ),
     };
 
     notifications = {
@@ -190,17 +259,17 @@ describe('EligibleStudentsService', () => {
 
       let nextUserId = 100;
       let nextProfileId = 200;
-      prisma.user.create.mockImplementation(async ({ data }: any) => {
+      prisma.user.create.mockImplementation(({ data }: CreatedUserCallArg) => {
         const userId = nextUserId++;
         const profileId = nextProfileId++;
-        return {
+        return Promise.resolve({
           id: userId,
           email: data.email,
           role: data.role,
           mustChangePassword: data.mustChangePassword,
           password: data.password,
           studentProfile: { id: profileId },
-        };
+        });
       });
 
       // Custom column layout without Email column and with split Họ lót + Tên:
@@ -220,7 +289,10 @@ describe('EligibleStudentsService', () => {
       expect(res.errorCount).toBe(0);
 
       expect(prisma.user.create).toHaveBeenCalledTimes(2);
-      const firstCall = prisma.user.create.mock.calls[0][0].data;
+      const createCalls = prisma.user.create.mock.calls as [
+        [CreatedUserCallArg],
+      ];
+      const firstCall = createCalls[0][0].data;
       expect(firstCall.email).toBe('2212345@dlu.edu.vn');
       expect(firstCall.role).toBe(Role.STUDENT);
       expect(firstCall.mustChangePassword).toBe(false);
@@ -245,15 +317,13 @@ describe('EligibleStudentsService', () => {
           }),
         ]),
       );
-      expect(prisma.auditLog.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            userId: 99,
-            action: 'ELIGIBLE_STUDENTS_IMPORTED',
-            targetId: '1',
-          }),
-        }),
-      );
+
+      const auditCalls = prisma.auditLog.create.mock.calls as [[AuditCallArg]];
+      expect(auditCalls[0][0].data).toMatchObject({
+        userId: 99,
+        action: 'ELIGIBLE_STUDENTS_IMPORTED',
+        targetId: '1',
+      });
     });
 
     it('parses UTF-8 BOM CSV files and rejects invalid emails, duplicates, non-students, and inactive accounts', async () => {
@@ -410,15 +480,13 @@ describe('EligibleStudentsService', () => {
 
       const res = await service.removeEligible(1, 50, 99);
       expect(res.message).toContain('Đã xóa');
-      expect(prisma.auditLog.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            userId: 99,
-            action: 'ELIGIBLE_STUDENT_REMOVED',
-            targetId: '1',
-          }),
-        }),
-      );
+
+      const auditCalls = prisma.auditLog.create.mock.calls as [[AuditCallArg]];
+      expect(auditCalls[0][0].data).toMatchObject({
+        userId: 99,
+        action: 'ELIGIBLE_STUDENT_REMOVED',
+        targetId: '1',
+      });
     });
   });
 

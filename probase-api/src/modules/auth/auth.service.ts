@@ -61,7 +61,9 @@ const GOOGLE_VERIFY_TIMEOUT_MS = 10_000;
 
 function isDluEmail(email: string): boolean {
   const parts = email.split('@');
-  return parts.length === 2 && parts[0].length > 0 && parts[1] === DLU_EMAIL_DOMAIN;
+  return (
+    parts.length === 2 && parts[0].length > 0 && parts[1] === DLU_EMAIL_DOMAIN
+  );
 }
 
 @Injectable()

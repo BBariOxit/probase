@@ -311,11 +311,12 @@ describe('AuthService password backoff', () => {
     it('rejects emails outside DLU domain (@dlu.edu.vn)', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({
-          email: 'student@gmail.com',
-          email_verified: 'true',
-          name: 'Student Gmail',
-        }),
+        json: () =>
+          Promise.resolve({
+            email: 'student@gmail.com',
+            email_verified: 'true',
+            name: 'Student Gmail',
+          }),
       });
 
       await expect(
@@ -328,11 +329,12 @@ describe('AuthService password backoff', () => {
     it('rejects @st.dlu.edu.vn emails because only @dlu.edu.vn is accepted', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({
-          email: '2212345@st.dlu.edu.vn',
-          email_verified: 'true',
-          name: 'Student St',
-        }),
+        json: () =>
+          Promise.resolve({
+            email: '2212345@st.dlu.edu.vn',
+            email_verified: 'true',
+            name: 'Student St',
+          }),
       });
 
       await expect(
@@ -345,11 +347,12 @@ describe('AuthService password backoff', () => {
     it('rejects DLU email not registered in the system (BR-01)', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({
-          email: 'unregistered@dlu.edu.vn',
-          email_verified: 'true',
-          name: 'Unregistered Student',
-        }),
+        json: () =>
+          Promise.resolve({
+            email: 'unregistered@dlu.edu.vn',
+            email_verified: 'true',
+            name: 'Unregistered Student',
+          }),
       });
 
       findUnique.mockResolvedValue(null);
@@ -362,12 +365,13 @@ describe('AuthService password backoff', () => {
     it('successfully logs in an existing DLU user', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({
-          email: '2266666@dlu.edu.vn',
-          email_verified: 'true',
-          name: 'Nguyễn Văn A',
-          picture: 'https://avatar.google.com/a.jpg',
-        }),
+        json: () =>
+          Promise.resolve({
+            email: '2266666@dlu.edu.vn',
+            email_verified: 'true',
+            name: 'Nguyễn Văn A',
+            picture: 'https://avatar.google.com/a.jpg',
+          }),
       });
 
       findUnique.mockResolvedValue({
@@ -400,19 +404,21 @@ describe('AuthService password backoff', () => {
         if (url.includes('tokeninfo')) {
           return Promise.resolve({
             ok: true,
-            json: async () => ({
-              email: '2212345@dlu.edu.vn',
-              email_verified: true,
-              aud: 'client-app-id',
-            }),
+            json: () =>
+              Promise.resolve({
+                email: '2212345@dlu.edu.vn',
+                email_verified: true,
+                aud: 'client-app-id',
+              }),
           } as Response);
         }
         return Promise.resolve({
           ok: true,
-          json: async () => ({
-            name: 'Trần Văn B',
-            picture: 'https://avatar.google.com/b.jpg',
-          }),
+          json: () =>
+            Promise.resolve({
+              name: 'Trần Văn B',
+              picture: 'https://avatar.google.com/b.jpg',
+            }),
         } as Response);
       });
 
@@ -445,11 +451,12 @@ describe('AuthService password backoff', () => {
     it('matches student account by extracting 7-digit studentCode from email when emails mismatch', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({
-          email: '2212345@dlu.edu.vn',
-          email_verified: true,
-          name: 'Trần Văn B',
-        }),
+        json: () =>
+          Promise.resolve({
+            email: '2212345@dlu.edu.vn',
+            email_verified: true,
+            name: 'Trần Văn B',
+          }),
       });
 
       findUnique.mockResolvedValue(null);
@@ -484,11 +491,12 @@ describe('AuthService password backoff', () => {
     it('rejects 7-digit DLU student email absent from both User and StudentProfile tables (BR-01)', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({
-          email: '2299887@dlu.edu.vn',
-          email_verified: true,
-          name: 'Outsider Student',
-        }),
+        json: () =>
+          Promise.resolve({
+            email: '2299887@dlu.edu.vn',
+            email_verified: true,
+            name: 'Outsider Student',
+          }),
       });
 
       findUnique.mockResolvedValue(null);
@@ -502,10 +510,11 @@ describe('AuthService password backoff', () => {
     it('rejects inactive DLU account on Google login', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({
-          email: '2212345@dlu.edu.vn',
-          email_verified: true,
-        }),
+        json: () =>
+          Promise.resolve({
+            email: '2212345@dlu.edu.vn',
+            email_verified: true,
+          }),
       });
 
       findUnique.mockResolvedValue({
@@ -527,10 +536,11 @@ describe('AuthService password backoff', () => {
     it('does not allow studentCode fallback to log into a non-STUDENT account', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({
-          email: '2212345@dlu.edu.vn',
-          email_verified: true,
-        }),
+        json: () =>
+          Promise.resolve({
+            email: '2212345@dlu.edu.vn',
+            email_verified: true,
+          }),
       });
 
       findUnique.mockResolvedValue(null);
@@ -577,14 +587,14 @@ describe('AuthService password backoff', () => {
 
       expect(result).toHaveProperty('accessToken');
       expect(result.message).toBe('Đổi mật khẩu thành công');
-      expect(update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 1 },
-          data: expect.objectContaining({
-            mustChangePassword: false,
-          }),
-        }),
-      );
+      const updateCalls = update.mock.calls as [
+        [{ where: { id: number }; data: { mustChangePassword?: boolean } }],
+      ];
+      const passwordChangeCall = updateCalls
+        .map(([arg]) => arg)
+        .find((arg) => arg.data.mustChangePassword !== undefined);
+      expect(passwordChangeCall?.where).toEqual({ id: 1 });
+      expect(passwordChangeCall?.data.mustChangePassword).toBe(false);
     });
   });
 });
