@@ -348,7 +348,7 @@ export class TopicsExportService {
         sanitizeSpreadsheetText(majorName),
         sanitizeSpreadsheetText(topic.round.projectType.name),
         topic.maxStudents,
-        topic.sourceProposalId ? 'Từ đề xuất SV' : 'GV đề xuất',
+        topic.sourceProposalId ? 'SV đề xuất' : 'GV đề xuất',
         TOPIC_STATUS_LABELS[topic.status] ?? topic.status,
         VN_DATE_FORMAT.format(topic.createdAt),
       ];
