@@ -1031,8 +1031,115 @@ export interface ImportEligibleStudentsResult {
   totalRows: number;
   importedCount: number;
   createdAccountsCount: number;
+  updatedExistingCount?: number;
   errorCount: number;
   errors: { row: number; reason: string }[];
+}
+
+export type EligibleField =
+  | 'studentCode'
+  | 'fullName'
+  | 'surname'
+  | 'givenName'
+  | 'class'
+  | 'email'
+  | 'note';
+
+export type EligibleNameMode = 'full' | 'split';
+
+export type EligibleMatchReason =
+  | 'exact'
+  | 'synonym'
+  | 'phrase'
+  | 'fuzzy'
+  | 'content'
+  | 'none';
+
+export interface EligibleColumnMapping {
+  studentCodeCol: number | null;
+  fullNameCol: number | null;
+  surnameCol: number | null;
+  givenNameCol: number | null;
+  classCol: number | null;
+  emailCol: number | null;
+  noteCol: number | null;
+}
+
+export interface EligibleImportColumnDescriptor {
+  index: number;
+  letter: string;
+  header: string;
+  samples: string[];
+}
+
+export interface EligibleFieldSuggestion {
+  columnIndex: number | null;
+  fileHeader: string | null;
+  confidence: number;
+  matchReason: EligibleMatchReason;
+}
+
+export interface EligibleCandidateHeaderRow {
+  rowIndex: number;
+  preview: string[];
+}
+
+export interface ParseEligibleImportResult {
+  sessionId: string;
+  fileName: string;
+  round: {
+    id: number;
+    semesterName: string;
+    projectTypeName: string;
+  };
+  headerRowIndex: number;
+  totalDataRows: number;
+  columns: EligibleImportColumnDescriptor[];
+  nameMode: EligibleNameMode;
+  suggestions: Record<EligibleField, EligibleFieldSuggestion>;
+  candidateHeaderRows: EligibleCandidateHeaderRow[];
+  expiresAt: string;
+}
+
+export interface ReanalyzeEligibleImportResult {
+  sessionId: string;
+  headerRowIndex: number;
+  totalDataRows: number;
+  columns: EligibleImportColumnDescriptor[];
+  nameMode: EligibleNameMode;
+  suggestions: Record<EligibleField, EligibleFieldSuggestion>;
+}
+
+export interface PreviewEligibleImportRow {
+  row: number;
+  valid: boolean;
+  action?: 'create_account' | 'add_to_round' | 'already_in_round';
+  studentCode?: string;
+  fullName?: string;
+  className?: string;
+  cohort?: string;
+  majorCode?: string | null;
+  effectiveEmail?: string;
+  note?: string;
+  warnings?: string[];
+  reason?: string;
+}
+
+export interface PreviewEligibleImportResult {
+  sessionId: string;
+  totalRows: number;
+  validCount: number;
+  errorCount: number;
+  warningCount: number;
+  newAccountsCount: number;
+  existingStudentsCount: number;
+  alreadyEligibleCount: number;
+  rows: PreviewEligibleImportRow[];
+}
+
+export interface CommitEligibleImportResult extends ImportEligibleStudentsResult {
+  sessionId: string;
+  updatedExistingCount: number;
 }
 
 export interface StudentEligibilityStatus {

@@ -3,8 +3,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, download } from '@/lib/api/client';
 import type {
+  CommitEligibleImportResult,
+  EligibleColumnMapping,
+  EligibleNameMode,
   EligibleStudentsResponse,
   ImportEligibleStudentsResult,
+  ParseEligibleImportResult,
+  PreviewEligibleImportResult,
+  ReanalyzeEligibleImportResult,
   StudentEligibilityStatus,
 } from '@/lib/api/types';
 
@@ -56,6 +62,101 @@ export function useImportEligibleStudents() {
         },
       );
     },
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: ['eligible-students', variables.roundId] });
+      qc.invalidateQueries({ queryKey: ['students'] });
+      qc.invalidateQueries({ queryKey: ['rounds'] });
+      qc.invalidateQueries({ queryKey: ['my-eligibility-status'] });
+    },
+  });
+}
+
+export function useParseEligibleImport() {
+  return useMutation({
+    mutationFn: async ({ roundId, file }: { roundId: number; file: File }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      return api<ParseEligibleImportResult>(
+        `/rounds/${roundId}/eligible-students/import/parse`,
+        {
+          method: 'POST',
+          body: formData,
+        },
+      );
+    },
+  });
+}
+
+export function useReanalyzeEligibleImport() {
+  return useMutation({
+    mutationFn: ({
+      roundId,
+      sessionId,
+      headerRowIndex,
+    }: {
+      roundId: number;
+      sessionId: string;
+      headerRowIndex: number;
+    }) =>
+      api<ReanalyzeEligibleImportResult>(
+        `/rounds/${roundId}/eligible-students/import/reanalyze`,
+        {
+          method: 'POST',
+          body: { sessionId, headerRowIndex },
+        },
+      ),
+  });
+}
+
+export function usePreviewEligibleImport() {
+  return useMutation({
+    mutationFn: ({
+      roundId,
+      sessionId,
+      headerRowIndex,
+      nameMode,
+      mapping,
+    }: {
+      roundId: number;
+      sessionId: string;
+      headerRowIndex: number;
+      nameMode: EligibleNameMode;
+      mapping: EligibleColumnMapping;
+    }) =>
+      api<PreviewEligibleImportResult>(
+        `/rounds/${roundId}/eligible-students/import/preview`,
+        {
+          method: 'POST',
+          body: { sessionId, headerRowIndex, nameMode, mapping },
+        },
+      ),
+  });
+}
+
+export function useCommitEligibleImport() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      roundId,
+      sessionId,
+      headerRowIndex,
+      nameMode,
+      mapping,
+    }: {
+      roundId: number;
+      sessionId: string;
+      headerRowIndex: number;
+      nameMode: EligibleNameMode;
+      mapping: EligibleColumnMapping;
+    }) =>
+      api<CommitEligibleImportResult>(
+        `/rounds/${roundId}/eligible-students/import/commit`,
+        {
+          method: 'POST',
+          body: { sessionId, headerRowIndex, nameMode, mapping },
+        },
+      ),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['eligible-students', variables.roundId] });
       qc.invalidateQueries({ queryKey: ['students'] });

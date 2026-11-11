@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
@@ -29,93 +30,35 @@ import {
   cohortFromStudentCode,
   studentCodeMatchesEmail,
 } from '../users/student-code.util';
+import {
+  EligibleImportMappingRequestDto,
+  ReanalyzeEligibleImportDto,
+} from './dto/eligible-import.dto';
 import { QueryEligibleStudentsDto } from './dto/query-eligible-students.dto';
+import {
+  analyzeSheetRows,
+  CandidateHeaderRow,
+  EligibleColumnDescriptor,
+  EligibleColumnMapping,
+  EligibleField,
+  EligibleFieldSuggestion,
+  EligibleNameMode,
+  extractWorksheetRows,
+  RawSheetRow,
+  toColumnMappingFromSuggestions,
+} from './eligible-column-matcher.util';
+import {
+  EligibleImportCommitSummary,
+  EligibleImportSessionService,
+} from './eligible-import-session.service';
 
 const MAX_IMPORT_ROWS = 2000;
-const HEADER_SCAN_LIMIT = 10;
 const PASSWORD_HASH_CONCURRENCY = 8;
 const DB_WRITE_CONCURRENCY = 5;
 
 const DLU_EMAIL_DOMAIN = 'dlu.edu.vn';
 const STUDENT_CODE_RE = /^\d{7}$/;
 const EMAIL_SYNTAX_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const STUDENT_CODE_HEADERS = new Set([
-  'mssv',
-  'ma sv',
-  'masv',
-  'ma sinh vien',
-  'masinhvien',
-  'ma so sinh vien',
-  'ma so sv',
-  'student code',
-  'studentcode',
-  'student id',
-  'studentid',
-]);
-
-const FULL_NAME_HEADERS = new Set([
-  'ho va ten',
-  'ho ten',
-  'hovaten',
-  'hoten',
-  'ho va ten sv',
-  'ho ten sv',
-  'ho va ten sinh vien',
-  'ho ten sinh vien',
-  'full name',
-  'fullname',
-  'ten sinh vien',
-  'ten sv',
-]);
-
-const SURNAME_HEADERS = new Set([
-  'ho',
-  'ho dem',
-  'hodem',
-  'ho lot',
-  'ho va ten lot',
-  'surname',
-]);
-const GIVEN_NAME_HEADERS = new Set(['ten', 'ten goi', 'name', 'given name']);
-
-const CLASS_HEADERS = new Set([
-  'lop',
-  'ma lop',
-  'malop',
-  'ten lop',
-  'lop sinh hoat',
-  'lop sh',
-  'class',
-  'class code',
-  'classcode',
-]);
-
-const EMAIL_HEADERS = new Set([
-  'email',
-  'e mail',
-  'mail',
-  'thu dien tu',
-  'dia chi email',
-  'email dlu',
-  'email sinh vien',
-  'email sv',
-  'email truong',
-  'gmail',
-]);
-
-const NOTE_HEADERS = new Set(['ghi chu', 'ghichu', 'note', 'notes']);
-
-interface DetectedColumns {
-  headerRowIndex: number;
-  studentCodeCol: number;
-  fullNameCol: number | null;
-  surnameCol: number | null;
-  givenNameCol: number | null;
-  classCol: number | null;
-  emailCol: number | null;
-  noteCol: number | null;
-}
 
 interface ValidatedRow {
   rowNumber: number;
@@ -124,9 +67,11 @@ interface ValidatedRow {
   className?: string;
   cohort: string;
   majorId: number | null;
+  majorCode?: string | null;
   explicitEmail?: string;
   effectiveEmail: string;
   note?: string;
+  warnings: string[];
 }
 
 type ExistingUserWithProfile = {
@@ -139,6 +84,16 @@ type ExistingUserWithProfile = {
     studentCode: string;
   } | null;
 };
+
+type RawImportPlan =
+  | { kind: 'create_user'; row: ValidatedRow }
+  | { kind: 'create_profile'; row: ValidatedRow; userId: number }
+  | {
+      kind: 'update_student';
+      row: ValidatedRow;
+      userId: number;
+      studentProfileId: number;
+    };
 
 type ImportPlan =
   | {
@@ -166,14 +121,75 @@ export interface ImportResultSummary {
   errors: { row: number; reason: string }[];
 }
 
+export interface ParseEligibleImportResult {
+  sessionId: string;
+  fileName: string;
+  round: {
+    id: number;
+    semesterName: string;
+    projectTypeName: string;
+  };
+  headerRowIndex: number;
+  totalDataRows: number;
+  columns: EligibleColumnDescriptor[];
+  nameMode: EligibleNameMode;
+  suggestions: Record<EligibleField, EligibleFieldSuggestion>;
+  candidateHeaderRows: CandidateHeaderRow[];
+  expiresAt: Date;
+}
+
+export interface ReanalyzeEligibleImportResult {
+  sessionId: string;
+  headerRowIndex: number;
+  totalDataRows: number;
+  columns: EligibleColumnDescriptor[];
+  nameMode: EligibleNameMode;
+  suggestions: Record<EligibleField, EligibleFieldSuggestion>;
+}
+
+export interface PreviewEligibleImportRow {
+  row: number;
+  valid: boolean;
+  action?: 'create_account' | 'add_to_round' | 'already_in_round';
+  studentCode?: string;
+  fullName?: string;
+  className?: string;
+  cohort?: string;
+  majorCode?: string | null;
+  effectiveEmail?: string;
+  note?: string;
+  warnings?: string[];
+  reason?: string;
+}
+
+export interface PreviewEligibleImportResult {
+  sessionId: string;
+  totalRows: number;
+  validCount: number;
+  errorCount: number;
+  warningCount: number;
+  newAccountsCount: number;
+  existingStudentsCount: number;
+  alreadyEligibleCount: number;
+  rows: PreviewEligibleImportRow[];
+}
+
+export interface CommitEligibleImportResult extends EligibleImportCommitSummary {
+  sessionId: string;
+}
+
 @Injectable()
 export class EligibleStudentsService {
   private readonly logger = new Logger(EligibleStudentsService.name);
+  private readonly sessions: EligibleImportSessionService;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
-  ) {}
+    @Optional() importSessions?: EligibleImportSessionService,
+  ) {
+    this.sessions = importSessions ?? new EligibleImportSessionService();
+  }
 
   /**
    * Generates a standard Excel template for eligible students import.
@@ -236,14 +252,383 @@ export class EligibleStudentsService {
   }
 
   /**
-   * Imports eligible students from Excel/CSV for a specific registration round.
-   * Pre-provisions DLU Google SSO student accounts cleanly without predictable passwords.
+   * Step 1 (Wizard): Parse uploaded spreadsheet, run hybrid header + content
+   * inference, and store raw rows in a short-lived admin-scoped session.
+   */
+  async parseImport(
+    roundId: number,
+    file: Express.Multer.File,
+    actorId: number,
+  ): Promise<ParseEligibleImportResult> {
+    const round = await this.requireRound(roundId);
+    const sheet = await this.parseUploadWorkbook(file);
+    const { rows, maxCol } = extractWorksheetRows(sheet);
+
+    if (rows.length === 0) {
+      throw new BadRequestException('File không chứa hàng dữ liệu');
+    }
+
+    const analysis = analyzeSheetRows(rows, maxCol);
+    if (analysis.totalDataRows === 0) {
+      throw new BadRequestException(
+        'File không chứa hàng dữ liệu sinh viên nào',
+      );
+    }
+
+    if (analysis.totalDataRows > MAX_IMPORT_ROWS) {
+      throw new BadRequestException(
+        `File vượt quá giới hạn tối đa ${MAX_IMPORT_ROWS} dòng dữ liệu mỗi lần import.`,
+      );
+    }
+
+    const session = this.sessions.create({
+      roundId,
+      adminId: actorId,
+      fileName: file.originalname || 'import.xlsx',
+      rows,
+      maxCol,
+    });
+
+    return {
+      sessionId: session.id,
+      fileName: session.fileName,
+      round: {
+        id: round.id,
+        semesterName: round.semester.name,
+        projectTypeName: round.projectType.name,
+      },
+      headerRowIndex: analysis.headerRowIndex,
+      totalDataRows: analysis.totalDataRows,
+      columns: analysis.columns,
+      nameMode: analysis.nameMode,
+      suggestions: analysis.suggestions,
+      candidateHeaderRows: analysis.candidateHeaderRows,
+      expiresAt: session.expiresAt,
+    };
+  }
+
+  /**
+   * Step 1b (Wizard): Re-analyze column suggestions if the user selects
+   * a different header row index (or switches to headerless mode: 0).
+   */
+  async reanalyzeSession(
+    roundId: number,
+    dto: ReanalyzeEligibleImportDto,
+    actorId: number,
+  ): Promise<ReanalyzeEligibleImportResult> {
+    await this.requireRound(roundId);
+    const session = this.sessions.get(dto.sessionId, roundId, actorId);
+
+    if (session.committed) {
+      throw new ConflictException(
+        'Phiên import này đã được xác nhận. Không thể phân tích lại.',
+      );
+    }
+
+    const analysis = analyzeSheetRows(
+      session.rows,
+      session.maxCol,
+      dto.headerRowIndex,
+    );
+
+    if (analysis.totalDataRows === 0) {
+      throw new BadRequestException(
+        'Không có dòng dữ liệu nào bên dưới dòng tiêu đề đã chọn.',
+      );
+    }
+
+    if (analysis.totalDataRows > MAX_IMPORT_ROWS) {
+      throw new BadRequestException(
+        `File vượt quá giới hạn tối đa ${MAX_IMPORT_ROWS} dòng dữ liệu mỗi lần import.`,
+      );
+    }
+
+    return {
+      sessionId: session.id,
+      headerRowIndex: analysis.headerRowIndex,
+      totalDataRows: analysis.totalDataRows,
+      columns: analysis.columns,
+      nameMode: analysis.nameMode,
+      suggestions: analysis.suggestions,
+    };
+  }
+
+  /**
+   * Step 2 (Wizard): Dry-run validate every row under the confirmed mapping
+   * and check DB conflicts / existing round eligibility. No DB writes happen.
+   */
+  async previewImport(
+    roundId: number,
+    dto: EligibleImportMappingRequestDto,
+    actorId: number,
+  ): Promise<PreviewEligibleImportResult> {
+    await this.requireRound(roundId);
+    const session = this.sessions.get(dto.sessionId, roundId, actorId);
+
+    if (session.committed) {
+      throw new ConflictException(
+        'Phiên import này đã được xác nhận lưu. Không thể xem trước lại.',
+      );
+    }
+
+    this.assertValidMapping(dto.mapping, dto.nameMode, session.maxCol);
+
+    const majors = await this.prisma.major.findMany({
+      select: { id: true, code: true },
+    });
+
+    const { totalDataRows, validRows, errors } =
+      this.extractAndValidateRowsFromRaw(
+        session.rows,
+        dto.headerRowIndex,
+        dto.nameMode,
+        dto.mapping,
+        majors,
+      );
+
+    if (totalDataRows === 0) {
+      throw new BadRequestException(
+        'Không có hàng dữ liệu nào bên dưới dòng tiêu đề đã chọn.',
+      );
+    }
+
+    const rawPlans =
+      validRows.length > 0
+        ? await this.resolveImportPlans(validRows, errors)
+        : [];
+
+    const existingStudentProfileIds = rawPlans
+      .filter(
+        (
+          p,
+        ): p is {
+          kind: 'update_student';
+          row: ValidatedRow;
+          userId: number;
+          studentProfileId: number;
+        } => p.kind === 'update_student',
+      )
+      .map((p) => p.studentProfileId);
+
+    const existingRoundEligibilities =
+      existingStudentProfileIds.length > 0
+        ? ((await this.prisma.roundStudentEligibility.findMany({
+            where: {
+              roundId,
+              studentId: { in: existingStudentProfileIds },
+            },
+            select: { studentId: true },
+          })) ?? [])
+        : [];
+
+    const alreadyEligibleIds = new Set(
+      existingRoundEligibilities.map((e) => e.studentId),
+    );
+
+    const previewRows: PreviewEligibleImportRow[] = [];
+    let newAccountsCount = 0;
+    let existingStudentsCount = 0;
+    let alreadyEligibleCount = 0;
+    let warningCount = 0;
+
+    for (const plan of rawPlans) {
+      const warnings = [...plan.row.warnings];
+      let action: PreviewEligibleImportRow['action'];
+
+      if (plan.kind === 'create_user') {
+        action = 'create_account';
+        newAccountsCount += 1;
+      } else if (
+        plan.kind === 'update_student' &&
+        alreadyEligibleIds.has(plan.studentProfileId)
+      ) {
+        action = 'already_in_round';
+        alreadyEligibleCount += 1;
+        warnings.push(
+          'Sinh viên đã có trong danh sách đợt này — sẽ cập nhật thông tin & ghi chú',
+        );
+      } else {
+        action = 'add_to_round';
+        existingStudentsCount += 1;
+      }
+
+      if (warnings.length > 0) {
+        warningCount += 1;
+      }
+
+      previewRows.push({
+        row: plan.row.rowNumber,
+        valid: true,
+        action,
+        studentCode: plan.row.studentCode,
+        fullName: plan.row.fullName,
+        className: plan.row.className,
+        cohort: plan.row.cohort,
+        majorCode: plan.row.majorCode ?? null,
+        effectiveEmail: plan.row.effectiveEmail,
+        note: plan.row.note,
+        ...(warnings.length > 0 && { warnings }),
+      });
+    }
+
+    for (const err of errors) {
+      previewRows.push({
+        row: err.row,
+        valid: false,
+        studentCode: err.studentCode,
+        fullName: err.fullName,
+        effectiveEmail: err.effectiveEmail,
+        reason: err.reason,
+      });
+    }
+
+    previewRows.sort((a, b) => a.row - b.row);
+
+    return {
+      sessionId: session.id,
+      totalRows: totalDataRows,
+      validCount: rawPlans.length,
+      errorCount: errors.length,
+      warningCount,
+      newAccountsCount,
+      existingStudentsCount,
+      alreadyEligibleCount,
+      rows: previewRows,
+    };
+  }
+
+  /**
+   * Step 3 (Wizard): Commit validated rows using the confirmed mapping.
+   * Idempotent per session: once committed, cannot be re-executed.
+   */
+  async commitImport(
+    roundId: number,
+    dto: EligibleImportMappingRequestDto,
+    actorId: number,
+  ): Promise<CommitEligibleImportResult> {
+    const round = await this.requireRound(roundId);
+    const session = this.sessions.get(dto.sessionId, roundId, actorId);
+
+    if (session.committed) {
+      throw new ConflictException(
+        'Phiên import này đã được xác nhận lưu trước đó.',
+      );
+    }
+
+    this.assertValidMapping(dto.mapping, dto.nameMode, session.maxCol);
+
+    const majors = await this.prisma.major.findMany({
+      select: { id: true, code: true },
+    });
+
+    const { totalDataRows, validRows, errors } =
+      this.extractAndValidateRowsFromRaw(
+        session.rows,
+        dto.headerRowIndex,
+        dto.nameMode,
+        dto.mapping,
+        majors,
+      );
+
+    if (totalDataRows === 0) {
+      throw new BadRequestException(
+        'File không chứa hàng dữ liệu sinh viên nào',
+      );
+    }
+
+    const summary = await this.executeImportPipeline({
+      round,
+      totalDataRows,
+      validRows,
+      errors,
+      actorId,
+      auditExtra: {
+        mode: 'wizard',
+        headerRowIndex: dto.headerRowIndex,
+        nameMode: dto.nameMode,
+      },
+    });
+
+    this.sessions.markCommitted(session.id, summary);
+
+    return {
+      sessionId: session.id,
+      ...summary,
+    };
+  }
+
+  /**
+   * Single-step import endpoint (backwards compatible).
+   * Uses hybrid header + content inference automatically.
    */
   async importFile(
     roundId: number,
     file: Express.Multer.File,
     actorId?: number,
   ): Promise<ImportResultSummary> {
+    const round = await this.requireRound(roundId);
+    const sheet = await this.parseUploadWorkbook(file);
+    const { rows, maxCol } = extractWorksheetRows(sheet);
+
+    if (rows.length === 0) {
+      throw new BadRequestException('File không chứa hàng dữ liệu');
+    }
+
+    const analysis = analyzeSheetRows(rows, maxCol);
+    const mapping = toColumnMappingFromSuggestions(
+      analysis.suggestions,
+      analysis.nameMode,
+    );
+
+    const hasCode = mapping.studentCodeCol !== null;
+    const hasName =
+      analysis.nameMode === 'full'
+        ? mapping.fullNameCol !== null
+        : mapping.surnameCol !== null && mapping.givenNameCol !== null;
+
+    if (!hasCode || !hasName || analysis.headerRowIndex === 0) {
+      throw new BadRequestException(
+        'Không tìm thấy cột bắt buộc (MSSV, Họ và tên) trong dòng tiêu đề file.',
+      );
+    }
+
+    const majors = await this.prisma.major.findMany({
+      select: { id: true, code: true },
+    });
+
+    const { totalDataRows, validRows, errors } =
+      this.extractAndValidateRowsFromRaw(
+        rows,
+        analysis.headerRowIndex,
+        analysis.nameMode,
+        mapping,
+        majors,
+      );
+
+    if (totalDataRows === 0) {
+      throw new BadRequestException(
+        'File không chứa hàng dữ liệu sinh viên nào',
+      );
+    }
+
+    const summary = await this.executeImportPipeline({
+      round,
+      totalDataRows,
+      validRows,
+      errors,
+      actorId,
+    });
+
+    return {
+      totalRows: summary.totalRows,
+      importedCount: summary.importedCount,
+      createdAccountsCount: summary.createdAccountsCount,
+      errorCount: summary.errorCount,
+      errors: summary.errors,
+    };
+  }
+
+  private async requireRound(roundId: number) {
     const round = await this.prisma.registrationRound.findUnique({
       where: { id: roundId },
       include: { semester: true, projectType: true },
@@ -253,32 +638,99 @@ export class EligibleStudentsService {
       throw new NotFoundException('Không tìm thấy đợt đăng ký');
     }
 
-    const sheet = await this.parseUploadWorkbook(file);
-    const columns = this.detectColumns(sheet);
-    const majors = await this.prisma.major.findMany({
-      select: { id: true, code: true },
-    });
+    return round;
+  }
 
-    const { totalDataRows, validRows, errors } = this.extractAndValidateRows(
-      sheet,
-      columns,
-      majors,
-    );
+  private assertValidMapping(
+    mapping: EligibleColumnMapping,
+    nameMode: EligibleNameMode,
+    maxCol: number,
+  ): void {
+    if (mapping.studentCodeCol === null) {
+      throw new BadRequestException('Vui lòng chọn cột tương ứng với MSSV.');
+    }
 
-    if (totalDataRows === 0) {
+    if (nameMode === 'full' && mapping.fullNameCol === null) {
       throw new BadRequestException(
-        'File không chứa hàng dữ liệu sinh viên nào',
+        'Vui lòng chọn cột tương ứng với Họ và tên.',
       );
     }
 
+    if (
+      nameMode === 'split' &&
+      (mapping.surnameCol === null || mapping.givenNameCol === null)
+    ) {
+      throw new BadRequestException(
+        'Vui lòng chọn đầy đủ cả cột Họ / Họ đệm và cột Tên.',
+      );
+    }
+
+    const activeCols: Array<{ field: string; col: number }> = [
+      { field: 'MSSV', col: mapping.studentCodeCol },
+    ];
+    if (nameMode === 'full' && mapping.fullNameCol !== null) {
+      activeCols.push({ field: 'Họ và tên', col: mapping.fullNameCol });
+    } else if (nameMode === 'split') {
+      if (mapping.surnameCol !== null) {
+        activeCols.push({ field: 'Họ đệm', col: mapping.surnameCol });
+      }
+      if (mapping.givenNameCol !== null) {
+        activeCols.push({ field: 'Tên', col: mapping.givenNameCol });
+      }
+    }
+    if (mapping.classCol !== null) {
+      activeCols.push({ field: 'Lớp', col: mapping.classCol });
+    }
+    if (mapping.emailCol !== null) {
+      activeCols.push({ field: 'Email', col: mapping.emailCol });
+    }
+    if (mapping.noteCol !== null) {
+      activeCols.push({ field: 'Ghi chú', col: mapping.noteCol });
+    }
+
+    const seenCol = new Map<number, string>();
+    for (const item of activeCols) {
+      if (item.col < 1 || item.col > maxCol) {
+        throw new BadRequestException(
+          `Cột ánh xạ cho trường "${item.field}" không tồn tại trong file.`,
+        );
+      }
+      const prevField = seenCol.get(item.col);
+      if (prevField) {
+        throw new BadRequestException(
+          `Trường "${item.field}" và "${prevField}" không thể dùng chung cùng một cột trong file.`,
+        );
+      }
+      seenCol.set(item.col, item.field);
+    }
+  }
+
+  private async executeImportPipeline(params: {
+    round: {
+      id: number;
+      semester: { name: string };
+      projectType: { name: string };
+    };
+    totalDataRows: number;
+    validRows: ValidatedRow[];
+    errors: Array<{ row: number; reason: string }>;
+    actorId?: number;
+    auditExtra?: Record<string, unknown>;
+  }): Promise<EligibleImportCommitSummary> {
+    const { round, totalDataRows, validRows, errors, actorId, auditExtra } =
+      params;
+
     if (validRows.length === 0) {
-      errors.sort((a, b) => a.row - b.row);
+      const sortedErrors = errors
+        .map((e) => ({ row: e.row, reason: e.reason }))
+        .sort((a, b) => a.row - b.row);
       return {
         totalRows: totalDataRows,
         importedCount: 0,
         createdAccountsCount: 0,
-        errorCount: errors.length,
-        errors,
+        updatedExistingCount: 0,
+        errorCount: sortedErrors.length,
+        errors: sortedErrors,
       };
     }
 
@@ -286,15 +738,18 @@ export class EligibleStudentsService {
     const plans = await this.preparePasswordHashes(rawPlans);
 
     let createdAccountsCount = 0;
+    let updatedExistingCount = 0;
     let importedCount = 0;
     const notifiedUserIds: number[] = [];
 
     await mapWithConcurrency(plans, DB_WRITE_CONCURRENCY, async (plan) => {
       try {
-        const result = await this.persistStudentPlan(roundId, plan);
+        const result = await this.persistStudentPlan(round.id, plan);
         importedCount += 1;
         if (result.createdAccount) {
           createdAccountsCount += 1;
+        } else {
+          updatedExistingCount += 1;
         }
         notifiedUserIds.push(result.userId);
       } catch (err) {
@@ -310,19 +765,23 @@ export class EligibleStudentsService {
       }
     });
 
-    errors.sort((a, b) => a.row - b.row);
+    const formattedErrors = errors
+      .map((e) => ({ row: e.row, reason: e.reason }))
+      .sort((a, b) => a.row - b.row);
 
     if (actorId) {
       await recordAudit(this.prisma, {
         userId: actorId,
         action: 'ELIGIBLE_STUDENTS_IMPORTED',
         targetTable: 'round_student_eligibilities',
-        targetId: roundId,
+        targetId: round.id,
         newValue: {
           totalRows: totalDataRows,
           importedCount,
           createdAccountsCount,
-          errorCount: errors.length,
+          updatedExistingCount,
+          errorCount: formattedErrors.length,
+          ...auditExtra,
         },
       }).catch(() => undefined);
     }
@@ -345,8 +804,9 @@ export class EligibleStudentsService {
       totalRows: totalDataRows,
       importedCount,
       createdAccountsCount,
-      errorCount: errors.length,
-      errors,
+      updatedExistingCount,
+      errorCount: formattedErrors.length,
+      errors: formattedErrors,
     };
   }
 
@@ -387,54 +847,55 @@ export class EligibleStudentsService {
     }
 
     const sheet = workbook.worksheets[0];
-    if (!sheet || sheet.rowCount < 2) {
+    if (!sheet || sheet.rowCount < 1) {
       throw new BadRequestException('File không chứa hàng dữ liệu');
     }
 
     return sheet;
   }
 
-  private detectColumns(sheet: ExcelJS.Worksheet): DetectedColumns {
-    const scanLimit = Math.min(sheet.rowCount, HEADER_SCAN_LIMIT);
-
-    for (let rowIdx = 1; rowIdx <= scanLimit; rowIdx += 1) {
-      const candidate = matchHeaderRow(sheet.getRow(rowIdx), rowIdx);
-      if (candidate) {
-        return candidate;
-      }
-    }
-
-    throw new BadRequestException(
-      'Không tìm thấy cột bắt buộc (MSSV, Họ và tên) trong dòng tiêu đề file.',
-    );
-  }
-
-  private extractAndValidateRows(
-    sheet: ExcelJS.Worksheet,
-    columns: DetectedColumns,
+  private extractAndValidateRowsFromRaw(
+    rows: RawSheetRow[],
+    headerRowIndex: number,
+    nameMode: EligibleNameMode,
+    mapping: EligibleColumnMapping,
     majors: { id: number; code: string }[],
   ): {
     totalDataRows: number;
     validRows: ValidatedRow[];
-    errors: { row: number; reason: string }[];
+    errors: Array<{
+      row: number;
+      reason: string;
+      studentCode?: string;
+      fullName?: string;
+      effectiveEmail?: string;
+    }>;
   } {
     const validRows: ValidatedRow[] = [];
-    const errors: { row: number; reason: string }[] = [];
+    const errors: Array<{
+      row: number;
+      reason: string;
+      studentCode?: string;
+      fullName?: string;
+      effectiveEmail?: string;
+    }> = [];
     const seenCodes = new Map<string, number>();
     const seenEmails = new Map<string, number>();
     let totalDataRows = 0;
 
-    for (
-      let rowNumber = columns.headerRowIndex + 1;
-      rowNumber <= sheet.rowCount;
-      rowNumber += 1
-    ) {
-      const row = sheet.getRow(rowNumber);
-      const rawCode = readCellText(row, columns.studentCodeCol);
-      const rawName = readFullName(row, columns);
-      const rawClass = readCellText(row, columns.classCol);
-      const rawEmail = readCellText(row, columns.emailCol);
-      const rawNote = readCellText(row, columns.noteCol);
+    const majorCodeById = new Map<number, string>();
+    for (const m of majors) {
+      majorCodeById.set(m.id, m.code);
+    }
+
+    for (const rawRow of rows) {
+      if (rawRow.rowNumber <= headerRowIndex) continue;
+
+      const rawCode = readMappedCell(rawRow, mapping.studentCodeCol);
+      const rawName = readMappedFullName(rawRow, nameMode, mapping);
+      const rawClass = readMappedCell(rawRow, mapping.classCol);
+      const rawEmail = readMappedCell(rawRow, mapping.emailCol);
+      const rawNote = readMappedCell(rawRow, mapping.noteCol);
 
       if (!rawCode && !rawName && !rawClass && !rawEmail && !rawNote) {
         continue;
@@ -448,9 +909,13 @@ export class EligibleStudentsService {
       }
 
       const studentCode = rawCode.replace(/\s+/g, '');
+      const normalizedFullName = rawName.replace(/\s+/g, ' ').trim();
+
       if (!STUDENT_CODE_RE.test(studentCode)) {
         errors.push({
-          row: rowNumber,
+          row: rawRow.rowNumber,
+          studentCode: rawCode || undefined,
+          fullName: normalizedFullName || undefined,
           reason: `MSSV "${rawCode}" không hợp lệ (phải gồm đúng 7 chữ số)`,
         });
         continue;
@@ -459,18 +924,21 @@ export class EligibleStudentsService {
       const duplicateCodeRow = seenCodes.get(studentCode);
       if (duplicateCodeRow !== undefined) {
         errors.push({
-          row: rowNumber,
+          row: rawRow.rowNumber,
+          studentCode,
+          fullName: normalizedFullName || undefined,
           reason: `MSSV "${studentCode}" bị trùng với dòng ${duplicateCodeRow}`,
         });
         continue;
       }
 
-      const fullName = rawName.replace(/\s+/g, ' ').trim();
-      if (fullName.length < 2 || fullName.length > 150) {
+      if (normalizedFullName.length < 2 || normalizedFullName.length > 150) {
         errors.push({
-          row: rowNumber,
+          row: rawRow.rowNumber,
+          studentCode,
+          fullName: normalizedFullName || undefined,
           reason:
-            fullName.length === 0
+            normalizedFullName.length === 0
               ? 'Họ và tên không được để trống'
               : 'Họ và tên phải có độ dài từ 2 đến 150 ký tự',
         });
@@ -479,7 +947,9 @@ export class EligibleStudentsService {
 
       if (rawClass.length > 50) {
         errors.push({
-          row: rowNumber,
+          row: rawRow.rowNumber,
+          studentCode,
+          fullName: normalizedFullName,
           reason: 'Mã lớp vượt quá 50 ký tự',
         });
         continue;
@@ -487,7 +957,9 @@ export class EligibleStudentsService {
 
       if (rawNote.length > 500) {
         errors.push({
-          row: rowNumber,
+          row: rawRow.rowNumber,
+          studentCode,
+          fullName: normalizedFullName,
           reason: 'Ghi chú vượt quá 500 ký tự',
         });
         continue;
@@ -495,13 +967,16 @@ export class EligibleStudentsService {
 
       let explicitEmail: string | undefined;
       if (rawEmail) {
-        const normalizedEmail = rawEmail.toLowerCase();
+        const normalizedEmail = rawEmail.replace(/\s+/g, '').toLowerCase();
         if (
           normalizedEmail.length > 254 ||
           !EMAIL_SYNTAX_RE.test(normalizedEmail)
         ) {
           errors.push({
-            row: rowNumber,
+            row: rawRow.rowNumber,
+            studentCode,
+            fullName: normalizedFullName,
+            effectiveEmail: rawEmail,
             reason: `Email "${rawEmail}" không đúng định dạng`,
           });
           continue;
@@ -510,7 +985,10 @@ export class EligibleStudentsService {
         const [, domain] = normalizedEmail.split('@');
         if (domain !== DLU_EMAIL_DOMAIN) {
           errors.push({
-            row: rowNumber,
+            row: rawRow.rowNumber,
+            studentCode,
+            fullName: normalizedFullName,
+            effectiveEmail: normalizedEmail,
             reason: `Email "${rawEmail}" phải sử dụng tên miền @${DLU_EMAIL_DOMAIN} để đăng nhập Gmail DLU`,
           });
           continue;
@@ -518,7 +996,10 @@ export class EligibleStudentsService {
 
         if (!studentCodeMatchesEmail(studentCode, normalizedEmail)) {
           errors.push({
-            row: rowNumber,
+            row: rawRow.rowNumber,
+            studentCode,
+            fullName: normalizedFullName,
+            effectiveEmail: normalizedEmail,
             reason: `Email "${normalizedEmail}" phải trùng phần đầu với MSSV "${studentCode}" (ví dụ: ${studentCode}@${DLU_EMAIL_DOMAIN})`,
           });
           continue;
@@ -533,37 +1014,59 @@ export class EligibleStudentsService {
       const duplicateEmailRow = seenEmails.get(effectiveEmail);
       if (duplicateEmailRow !== undefined) {
         errors.push({
-          row: rowNumber,
+          row: rawRow.rowNumber,
+          studentCode,
+          fullName: normalizedFullName,
+          effectiveEmail,
           reason: `Email "${effectiveEmail}" bị trùng với dòng ${duplicateEmailRow}`,
         });
         continue;
       }
 
-      seenCodes.set(studentCode, rowNumber);
-      seenEmails.set(effectiveEmail, rowNumber);
+      seenCodes.set(studentCode, rawRow.rowNumber);
+      seenEmails.set(effectiveEmail, rawRow.rowNumber);
 
       const cohort = cohortFromStudentCode(studentCode)!;
-      let normalizedClass = rawClass || undefined;
+      const warnings: string[] = [];
+      let normalizedClass = rawClass ? rawClass.toUpperCase() : undefined;
       let majorId: number | null = null;
 
       if (rawClass) {
-        const parsedClass = parseClassCode(rawClass);
+        const parsedClass = parseClassCode(rawClass.toUpperCase());
         if (parsedClass) {
           normalizedClass = parsedClass.normalised;
           majorId = resolveMajorId(parsedClass.majorSuffix, majors);
+          if (parsedClass.cohort !== cohort) {
+            warnings.push(
+              `Lớp ${normalizedClass} thuộc khóa ${parsedClass.cohort}, khác khóa ${cohort} theo MSSV`,
+            );
+          }
+          if (majorId === null && parsedClass.majorSuffix) {
+            warnings.push(
+              `Chưa khớp được chuyên ngành từ mã lớp "${normalizedClass}"`,
+            );
+          }
+        } else {
+          normalizedClass = rawClass;
+          warnings.push(
+            `Mã lớp "${rawClass}" chưa theo mẫu CTK{khóa}{ngành}, chưa tự xác định chuyên ngành`,
+          );
         }
       }
 
       validRows.push({
-        rowNumber,
+        rowNumber: rawRow.rowNumber,
         studentCode,
-        fullName,
+        fullName: normalizedFullName,
         className: normalizedClass,
         cohort,
         majorId,
+        majorCode:
+          majorId !== null ? (majorCodeById.get(majorId) ?? null) : null,
         explicitEmail,
         effectiveEmail,
         note: rawNote || undefined,
+        warnings,
       });
     }
 
@@ -572,19 +1075,14 @@ export class EligibleStudentsService {
 
   private async resolveImportPlans(
     validRows: ValidatedRow[],
-    errors: { row: number; reason: string }[],
-  ): Promise<
-    Array<
-      | { kind: 'create_user'; row: ValidatedRow }
-      | { kind: 'create_profile'; row: ValidatedRow; userId: number }
-      | {
-          kind: 'update_student';
-          row: ValidatedRow;
-          userId: number;
-          studentProfileId: number;
-        }
-    >
-  > {
+    errors: Array<{
+      row: number;
+      reason: string;
+      studentCode?: string;
+      fullName?: string;
+      effectiveEmail?: string;
+    }>,
+  ): Promise<RawImportPlan[]> {
     const allCodes = validRows.map((r) => r.studentCode);
     const allEmails = validRows.map((r) => r.effectiveEmail);
 
@@ -608,7 +1106,7 @@ export class EligibleStudentsService {
     ]);
 
     const userMapByEmail = new Map<string, ExistingUserWithProfile>();
-    for (const user of usersByEmailRaw) {
+    for (const user of usersByEmailRaw ?? []) {
       userMapByEmail.set(user.email.toLowerCase(), user);
     }
 
@@ -616,20 +1114,11 @@ export class EligibleStudentsService {
       string,
       { id: number; studentCode: string; user: ExistingUserWithProfile }
     >();
-    for (const profile of profilesByCodeRaw) {
+    for (const profile of profilesByCodeRaw ?? []) {
       profileMapByCode.set(profile.studentCode, profile);
     }
 
-    const plans: Array<
-      | { kind: 'create_user'; row: ValidatedRow }
-      | { kind: 'create_profile'; row: ValidatedRow; userId: number }
-      | {
-          kind: 'update_student';
-          row: ValidatedRow;
-          userId: number;
-          studentProfileId: number;
-        }
-    > = [];
+    const plans: RawImportPlan[] = [];
 
     for (const row of validRows) {
       const byEmail = userMapByEmail.get(row.effectiveEmail);
@@ -638,6 +1127,9 @@ export class EligibleStudentsService {
       if (byEmail && byEmail.role !== Role.STUDENT) {
         errors.push({
           row: row.rowNumber,
+          studentCode: row.studentCode,
+          fullName: row.fullName,
+          effectiveEmail: row.effectiveEmail,
           reason: `Email "${row.effectiveEmail}" thuộc tài khoản Giảng viên/Giáo vụ, không thể import làm sinh viên`,
         });
         continue;
@@ -646,6 +1138,9 @@ export class EligibleStudentsService {
       if (byCode && byCode.user.role !== Role.STUDENT) {
         errors.push({
           row: row.rowNumber,
+          studentCode: row.studentCode,
+          fullName: row.fullName,
+          effectiveEmail: row.effectiveEmail,
           reason: `MSSV "${row.studentCode}" đang gắn với tài khoản không phải sinh viên`,
         });
         continue;
@@ -654,6 +1149,9 @@ export class EligibleStudentsService {
       if (byCode && byEmail && byCode.user.id !== byEmail.id) {
         errors.push({
           row: row.rowNumber,
+          studentCode: row.studentCode,
+          fullName: row.fullName,
+          effectiveEmail: row.effectiveEmail,
           reason: `MSSV "${row.studentCode}" và email "${row.effectiveEmail}" thuộc hai tài khoản khác nhau trong hệ thống`,
         });
         continue;
@@ -665,6 +1163,9 @@ export class EligibleStudentsService {
       ) {
         errors.push({
           row: row.rowNumber,
+          studentCode: row.studentCode,
+          fullName: row.fullName,
+          effectiveEmail: row.effectiveEmail,
           reason: `Email "${row.effectiveEmail}" đã thuộc về sinh viên có MSSV "${byEmail.studentProfile.studentCode}"`,
         });
         continue;
@@ -677,6 +1178,9 @@ export class EligibleStudentsService {
       ) {
         errors.push({
           row: row.rowNumber,
+          studentCode: row.studentCode,
+          fullName: row.fullName,
+          effectiveEmail: row.effectiveEmail,
           reason: `MSSV "${row.studentCode}" đã đăng ký với email "${byCode.user.email}"`,
         });
         continue;
@@ -686,6 +1190,9 @@ export class EligibleStudentsService {
       if (matchedUser && !matchedUser.isActive) {
         errors.push({
           row: row.rowNumber,
+          studentCode: row.studentCode,
+          fullName: row.fullName,
+          effectiveEmail: row.effectiveEmail,
           reason: `Tài khoản "${matchedUser.email}" đang bị vô hiệu hoá, cần kích hoạt lại trước khi import`,
         });
         continue;
@@ -713,16 +1220,7 @@ export class EligibleStudentsService {
   }
 
   private async preparePasswordHashes(
-    rawPlans: Array<
-      | { kind: 'create_user'; row: ValidatedRow }
-      | { kind: 'create_profile'; row: ValidatedRow; userId: number }
-      | {
-          kind: 'update_student';
-          row: ValidatedRow;
-          userId: number;
-          studentProfileId: number;
-        }
-    >,
+    rawPlans: RawImportPlan[],
   ): Promise<ImportPlan[]> {
     return mapWithConcurrency(
       rawPlans,
@@ -1141,6 +1639,24 @@ export class EligibleStudentsService {
   }
 }
 
+function readMappedCell(rawRow: RawSheetRow, colNumber: number | null): string {
+  if (colNumber === null) return '';
+  return (rawRow.cells[colNumber] ?? '').trim();
+}
+
+function readMappedFullName(
+  rawRow: RawSheetRow,
+  nameMode: EligibleNameMode,
+  mapping: EligibleColumnMapping,
+): string {
+  if (nameMode === 'full') {
+    return readMappedCell(rawRow, mapping.fullNameCol);
+  }
+  const surname = readMappedCell(rawRow, mapping.surnameCol);
+  const givenName = readMappedCell(rawRow, mapping.givenNameCol);
+  return [surname, givenName].filter(Boolean).join(' ');
+}
+
 function hasZipSignature(buffer: Buffer): boolean {
   return (
     buffer.length >= 4 &&
@@ -1160,127 +1676,6 @@ function stripUtf8Bom(buffer: Buffer): Buffer {
     return buffer.subarray(3);
   }
   return buffer;
-}
-
-function normalizeHeaderLabel(raw: string): string {
-  return raw
-    .replace(/^\uFEFF/, '')
-    .replace(/\([^)]*\)/g, ' ')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/gi, 'd')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function matchHeaderRow(
-  row: ExcelJS.Row,
-  headerRowIndex: number,
-): DetectedColumns | null {
-  let studentCodeCol: number | null = null;
-  let fullNameCol: number | null = null;
-  let surnameCol: number | null = null;
-  let givenNameCol: number | null = null;
-  let classCol: number | null = null;
-  let emailCol: number | null = null;
-  let noteCol: number | null = null;
-
-  row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
-    const label = normalizeHeaderLabel(cellToString(cell.value));
-    if (!label) return;
-
-    if (studentCodeCol === null && STUDENT_CODE_HEADERS.has(label)) {
-      studentCodeCol = colNumber;
-    } else if (classCol === null && CLASS_HEADERS.has(label)) {
-      classCol = colNumber;
-    } else if (emailCol === null && EMAIL_HEADERS.has(label)) {
-      emailCol = colNumber;
-    } else if (noteCol === null && NOTE_HEADERS.has(label)) {
-      noteCol = colNumber;
-    } else if (fullNameCol === null && FULL_NAME_HEADERS.has(label)) {
-      fullNameCol = colNumber;
-    } else if (surnameCol === null && SURNAME_HEADERS.has(label)) {
-      surnameCol = colNumber;
-    } else if (givenNameCol === null && GIVEN_NAME_HEADERS.has(label)) {
-      givenNameCol = colNumber;
-    }
-  });
-
-  if (fullNameCol === null && surnameCol === null && givenNameCol !== null) {
-    fullNameCol = givenNameCol;
-    givenNameCol = null;
-  }
-
-  const hasName =
-    fullNameCol !== null || (surnameCol !== null && givenNameCol !== null);
-
-  if (studentCodeCol === null || !hasName) {
-    return null;
-  }
-
-  return {
-    headerRowIndex,
-    studentCodeCol,
-    fullNameCol,
-    surnameCol,
-    givenNameCol,
-    classCol,
-    emailCol,
-    noteCol,
-  };
-}
-
-function readCellText(row: ExcelJS.Row, colNumber: number | null): string {
-  if (colNumber === null) return '';
-  return stripControlChars(cellToString(row.getCell(colNumber).value)).trim();
-}
-
-function readFullName(row: ExcelJS.Row, columns: DetectedColumns): string {
-  if (columns.fullNameCol !== null) {
-    return readCellText(row, columns.fullNameCol);
-  }
-  const surname = readCellText(row, columns.surnameCol);
-  const givenName = readCellText(row, columns.givenNameCol);
-  return [surname, givenName].filter(Boolean).join(' ');
-}
-
-function stripControlChars(input: string): string {
-  let result = '';
-  for (let i = 0; i < input.length; i += 1) {
-    const code = input.charCodeAt(i);
-    if (code >= 0x20 && code !== 0x7f) {
-      result += input[i];
-    }
-  }
-  return result;
-}
-
-function cellToString(val: ExcelJS.CellValue): string {
-  if (val === null || val === undefined) return '';
-  if (val instanceof Date) return val.toISOString();
-
-  if (typeof val === 'object') {
-    if ('richText' in val && Array.isArray(val.richText)) {
-      return val.richText.map((fragment) => fragment.text).join('');
-    }
-    if ('text' in val) {
-      return typeof val.text === 'object' && val.text !== null
-        ? cellToString(val.text)
-        : String(val.text ?? '');
-    }
-    if ('result' in val) {
-      const { result } = val;
-      if (typeof result === 'string' || typeof result === 'number') {
-        return String(result);
-      }
-      return '';
-    }
-    return '';
-  }
-
-  return String(val);
 }
 
 function resolveMajorId(

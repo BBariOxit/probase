@@ -4,6 +4,8 @@ import {
   Delete,
   Get,
   Header,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseFilePipe,
   ParseIntPipe,
@@ -20,6 +22,10 @@ import { memoryStorage } from 'multer';
 import { Role } from '../../../generated/prisma/client';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import {
+  EligibleImportMappingRequestDto,
+  ReanalyzeEligibleImportDto,
+} from './dto/eligible-import.dto';
 import { ExtendRoundDto } from './dto/extend-round.dto';
 import { QueryEligibleStudentsDto } from './dto/query-eligible-students.dto';
 import { QueryRoundsDto } from './dto/query-rounds.dto';
@@ -131,6 +137,57 @@ export class RoundsController {
     @GetUser('id') userId: number,
   ) {
     return this.eligibleStudents.importFile(id, file, userId);
+  }
+
+  @Roles('ADMIN')
+  @Post(':id/eligible-students/import/parse')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024, files: 1 },
+    }),
+  )
+  parseEligibleStudentsImport(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile(new ParseFilePipe({ validators: [], fileIsRequired: true }))
+    file: Express.Multer.File,
+    @GetUser('id') userId: number,
+  ) {
+    return this.eligibleStudents.parseImport(id, file, userId);
+  }
+
+  @Roles('ADMIN')
+  @Post(':id/eligible-students/import/reanalyze')
+  @HttpCode(HttpStatus.OK)
+  reanalyzeEligibleStudentsImport(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ReanalyzeEligibleImportDto,
+    @GetUser('id') userId: number,
+  ) {
+    return this.eligibleStudents.reanalyzeSession(id, dto, userId);
+  }
+
+  @Roles('ADMIN')
+  @Post(':id/eligible-students/import/preview')
+  @HttpCode(HttpStatus.OK)
+  previewEligibleStudentsImport(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: EligibleImportMappingRequestDto,
+    @GetUser('id') userId: number,
+  ) {
+    return this.eligibleStudents.previewImport(id, dto, userId);
+  }
+
+  @Roles('ADMIN')
+  @Post(':id/eligible-students/import/commit')
+  @HttpCode(HttpStatus.OK)
+  commitEligibleStudentsImport(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: EligibleImportMappingRequestDto,
+    @GetUser('id') userId: number,
+  ) {
+    return this.eligibleStudents.commitImport(id, dto, userId);
   }
 
   @Roles('ADMIN')

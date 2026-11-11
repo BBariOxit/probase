@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { NotificationsModule } from '../../core/notifications/notifications.module';
+import { EligibleImportSessionService } from './eligible-import-session.service';
 import { EligibleStudentsService } from './eligible-students.service';
 import { RequirementsService } from './requirements.service';
 import { RoundPhaseService } from './round-phase.service';
@@ -13,6 +14,7 @@ import { RoundsService } from './rounds.service';
     RoundsService,
     RoundPhaseService,
     RequirementsService,
+    EligibleImportSessionService,
     EligibleStudentsService,
   ],
   exports: [
