@@ -9,6 +9,7 @@ import ExcelJS from 'exceljs';
 import { Role } from '../../../generated/prisma/client';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { EligibleImportSessionService } from './eligible-import-session.service';
 import { EligibleStudentsService } from './eligible-students.service';
 
 interface MockPrisma {
@@ -182,6 +183,7 @@ describe('EligibleStudentsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EligibleStudentsService,
+        EligibleImportSessionService,
         { provide: PrismaService, useValue: prisma },
         { provide: NotificationsService, useValue: notifications },
       ],
@@ -399,6 +401,239 @@ describe('EligibleStudentsService', () => {
         }),
       );
       expect(prisma.user.create).not.toHaveBeenCalled();
+    });
+
+    it('imports spreadsheets with messy, typo-ridden, or prefixed column headers', async () => {
+      prisma.registrationRound.findUnique.mockResolvedValue(activeRound);
+      let nextUserId = 200;
+      let nextProfileId = 300;
+      prisma.user.create.mockImplementation(({ data }: CreatedUserCallArg) =>
+        Promise.resolve({
+          id: nextUserId++,
+          email: data.email,
+          role: data.role,
+          mustChangePassword: data.mustChangePassword,
+          password: data.password,
+          studentProfile: { id: nextProfileId++ },
+        }),
+      );
+
+      const file = await buildXlsxFile([
+        [
+          '1. Mã số SV DLU',
+          'Họ và tê',
+          'Lớp quản lý',
+          'Emial',
+          'Chú thích PĐT',
+        ],
+        [
+          '2212345',
+          'Nguyễn Văn An',
+          'ctk46pm',
+          '2212345@dlu.edu.vn',
+          'Đủ tín chỉ',
+        ],
+      ]);
+
+      const res = await service.importFile(1, file, 1);
+
+      expect(res.totalRows).toBe(1);
+      expect(res.importedCount).toBe(1);
+      expect(res.createdAccountsCount).toBe(1);
+      expect(res.errorCount).toBe(0);
+      const createCalls = prisma.user.create.mock.calls as [
+        [CreatedUserCallArg],
+      ];
+      expect(createCalls[0][0].data.studentProfile.create).toMatchObject({
+        studentCode: '2212345',
+        fullName: 'Nguyễn Văn An',
+        class: 'CTK46PM',
+        majorId: 1,
+      });
+    });
+  });
+
+  describe('import wizard (parse -> reanalyze -> preview -> commit)', () => {
+    const activeRound = {
+      id: 1,
+      semesterId: 10,
+      semester: { id: 10, name: 'HK1 2026-2027' },
+      projectType: { id: 2, name: 'Khóa luận tốt nghiệp' },
+    };
+
+    it('parses messy file, allows manual mapping & preview with warnings, and commits idempotently', async () => {
+      prisma.registrationRound.findUnique.mockResolvedValue(activeRound);
+      prisma.user.findMany.mockResolvedValue([
+        {
+          id: 50,
+          email: '2112890@dlu.edu.vn',
+          role: Role.STUDENT,
+          isActive: true,
+          studentProfile: { id: 500, studentCode: '2112890' },
+        },
+      ]);
+      prisma.studentProfile.findMany.mockResolvedValue([
+        {
+          id: 500,
+          studentCode: '2112890',
+          user: {
+            id: 50,
+            email: '2112890@dlu.edu.vn',
+            role: Role.STUDENT,
+            isActive: true,
+            studentProfile: { id: 500, studentCode: '2112890' },
+          },
+        },
+      ]);
+      prisma.roundStudentEligibility.findMany.mockResolvedValue([
+        { studentId: 500 },
+      ]);
+
+      let nextUserId = 300;
+      let nextProfileId = 400;
+      prisma.user.create.mockImplementation(({ data }: CreatedUserCallArg) =>
+        Promise.resolve({
+          id: nextUserId++,
+          email: data.email,
+          role: data.role,
+          mustChangePassword: data.mustChangePassword,
+          password: data.password,
+          studentProfile: { id: nextProfileId++ },
+        }),
+      );
+
+      // Column 2 uses an unrecognizable header "Thông tin SV" — admin maps it manually in Wizard
+      const file = await buildXlsxFile([
+        ['Col_A', 'Thông tin SV', 'Lớp học', 'Ghi chú'],
+        ['2212345', 'Nguyễn Văn An', 'CTK46PM', 'Mới'],
+        ['2112890', 'Lê Hoàng Nam', 'CTK45UNKNOWN', 'Trả nợ'],
+        ['bad_id', 'Lỗi MSSV', 'CTK46PM', ''],
+      ]);
+
+      const parsed = await service.parseImport(1, file, 77);
+      expect(parsed.totalDataRows).toBe(3);
+      expect(parsed.suggestions.studentCode.columnIndex).toBe(1);
+      expect(parsed.suggestions.studentCode.matchReason).toBe('content');
+      expect(parsed.suggestions.fullName.columnIndex).toBeNull();
+      expect(parsed.suggestions.class.columnIndex).toBe(3);
+
+      // Reanalyze works on stored session without re-upload
+      const reanalyzed = await service.reanalyzeSession(
+        1,
+        { sessionId: parsed.sessionId, headerRowIndex: 1 },
+        77,
+      );
+      expect(reanalyzed.totalDataRows).toBe(3);
+
+      // Reject duplicate column mappings cleanly
+      await expect(
+        service.previewImport(
+          1,
+          {
+            sessionId: parsed.sessionId,
+            headerRowIndex: 1,
+            nameMode: 'full',
+            mapping: {
+              studentCodeCol: 1,
+              fullNameCol: 1,
+              surnameCol: null,
+              givenNameCol: null,
+              classCol: 3,
+              emailCol: null,
+              noteCol: 4,
+            },
+          },
+          77,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      // Preview with admin's manual mapping for fullName -> Col 2
+      const preview = await service.previewImport(
+        1,
+        {
+          sessionId: parsed.sessionId,
+          headerRowIndex: 1,
+          nameMode: 'full',
+          mapping: {
+            studentCodeCol: 1,
+            fullNameCol: 2,
+            surnameCol: null,
+            givenNameCol: null,
+            classCol: 3,
+            emailCol: null,
+            noteCol: 4,
+          },
+        },
+        77,
+      );
+
+      expect(preview.totalRows).toBe(3);
+      expect(preview.validCount).toBe(2);
+      expect(preview.errorCount).toBe(1);
+      expect(preview.newAccountsCount).toBe(1);
+      expect(preview.alreadyEligibleCount).toBe(1);
+      expect(preview.warningCount).toBe(1);
+      expect(preview.rows[1]).toMatchObject({
+        row: 3,
+        valid: true,
+        action: 'already_in_round',
+        studentCode: '2112890',
+      });
+      expect(preview.rows[2]).toMatchObject({
+        row: 4,
+        valid: false,
+      });
+      // Preview must never write to DB
+      expect(prisma.user.create).not.toHaveBeenCalled();
+
+      // Commit
+      const commit = await service.commitImport(
+        1,
+        {
+          sessionId: parsed.sessionId,
+          headerRowIndex: 1,
+          nameMode: 'full',
+          mapping: {
+            studentCodeCol: 1,
+            fullNameCol: 2,
+            surnameCol: null,
+            givenNameCol: null,
+            classCol: 3,
+            emailCol: null,
+            noteCol: 4,
+          },
+        },
+        77,
+      );
+
+      expect(commit.totalRows).toBe(3);
+      expect(commit.importedCount).toBe(2);
+      expect(commit.createdAccountsCount).toBe(1);
+      expect(commit.updatedExistingCount).toBe(1);
+      expect(commit.errorCount).toBe(1);
+      expect(prisma.user.create).toHaveBeenCalledTimes(1);
+
+      // Idempotency: committing the same session a second time must fail
+      await expect(
+        service.commitImport(
+          1,
+          {
+            sessionId: parsed.sessionId,
+            headerRowIndex: 1,
+            nameMode: 'full',
+            mapping: {
+              studentCodeCol: 1,
+              fullNameCol: 2,
+              surnameCol: null,
+              givenNameCol: null,
+              classCol: 3,
+              emailCol: null,
+              noteCol: 4,
+            },
+          },
+          77,
+        ),
+      ).rejects.toThrow(ConflictException);
     });
   });
 
