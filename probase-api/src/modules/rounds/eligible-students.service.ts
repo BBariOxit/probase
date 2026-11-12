@@ -1711,12 +1711,12 @@ function formatPersistenceError(err: unknown, row: ValidatedRow): string {
   if (isUniqueViolation(err)) {
     const fields = uniqueConstraintFields(err);
     if (fields.some((f) => f.includes('email'))) {
-      return `Email "${row.effectiveEmail}" đã tồn tại trong hệ thống`;
+      return `Email "${row.effectiveEmail}" đã tồn tại`;
     }
     if (fields.some((f) => f.includes('student'))) {
-      return `MSSV "${row.studentCode}" đã tồn tại trong hệ thống`;
+      return `MSSV "${row.studentCode}" đã tồn tại`;
     }
-    return 'Dữ liệu bị trùng lặp với tài khoản khác trong hệ thống';
+    return 'Dữ liệu trùng với tài khoản khác';
   }
-  return err instanceof Error ? err.message : 'Lỗi hệ thống khi lưu';
+  return 'Không thể lưu sinh viên này';
 }

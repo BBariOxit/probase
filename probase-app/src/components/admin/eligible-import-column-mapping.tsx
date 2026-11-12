@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   HelpCircle,
   Loader2,
-  Sparkles,
 } from 'lucide-react';
 import type {
   EligibleCandidateHeaderRow,
@@ -14,7 +13,6 @@ import type {
   EligibleField,
   EligibleFieldSuggestion,
   EligibleImportColumnDescriptor,
-  EligibleMatchReason,
   EligibleNameMode,
 } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
@@ -25,18 +23,9 @@ interface FieldConfig {
   field: EligibleField;
   mappingKey: MappingKey;
   label: string;
-  hint: string;
+  hint?: string;
   required: boolean;
 }
-
-const MATCH_REASON_LABELS: Record<EligibleMatchReason, string> = {
-  exact: 'Khớp chuẩn',
-  synonym: 'Đồng nghĩa',
-  phrase: 'Chứa từ khóa',
-  fuzzy: 'Khớp gần đúng',
-  content: 'Suy luận từ dữ liệu',
-  none: 'Chưa nhận diện',
-};
 
 function getFieldConfigs(nameMode: EligibleNameMode): FieldConfig[] {
   const nameFields: FieldConfig[] =
@@ -46,7 +35,6 @@ function getFieldConfigs(nameMode: EligibleNameMode): FieldConfig[] {
             field: 'fullName',
             mappingKey: 'fullNameCol',
             label: 'Họ và tên',
-            hint: '1 cột gộp họ tên đầy đủ (2–150 ký tự)',
             required: true,
           },
         ]
@@ -54,15 +42,15 @@ function getFieldConfigs(nameMode: EligibleNameMode): FieldConfig[] {
           {
             field: 'surname',
             mappingKey: 'surnameCol',
-            label: 'Họ / Họ đệm',
-            hint: 'Phần họ & tên lót (VD: Nguyễn Văn)',
+            label: 'Họ đệm',
+            hint: 'VD: Nguyễn Văn',
             required: true,
           },
           {
             field: 'givenName',
             mappingKey: 'givenNameCol',
             label: 'Tên',
-            hint: 'Tên gọi (VD: An) — tự ghép với Họ đệm',
+            hint: 'VD: An',
             required: true,
           },
         ];
@@ -72,29 +60,27 @@ function getFieldConfigs(nameMode: EligibleNameMode): FieldConfig[] {
       field: 'studentCode',
       mappingKey: 'studentCodeCol',
       label: 'MSSV',
-      hint: 'Đúng 7 chữ số — dùng tạo khóa (cohort) & email DLU',
+      hint: '7 chữ số',
       required: true,
     },
     ...nameFields,
     {
       field: 'class',
       mappingKey: 'classCol',
-      label: 'Lớp',
-      hint: 'Tùy chọn — tự suy ra chuyên ngành nếu dạng CTK46PM',
+      label: 'Lớp (tùy chọn)',
       required: false,
     },
     {
       field: 'email',
       mappingKey: 'emailCol',
-      label: 'Email DLU',
-      hint: 'Tùy chọn — tự sinh <MSSV>@dlu.edu.vn nếu để trống',
+      label: 'Email (tùy chọn)',
+      hint: 'Mặc định <MSSV>@dlu.edu.vn',
       required: false,
     },
     {
       field: 'note',
       mappingKey: 'noteCol',
-      label: 'Ghi chú (PĐT)',
-      hint: 'Tùy chọn — lưu ghi chú cho đợt đồ án',
+      label: 'Ghi chú (tùy chọn)',
       required: false,
     },
   ];
@@ -164,9 +150,9 @@ export function EligibleImportColumnMapping({
   }
 
   return (
-    <div className="space-y-3.5">
+    <div className="space-y-3">
       {/* Toolbar: Header row selector + Name mode toggle */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2.5 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2 text-xs">
         <div className="flex items-center gap-2">
           <label
             htmlFor="eligible-header-row-select"
@@ -181,7 +167,7 @@ export function EligibleImportColumnMapping({
             onChange={(e) => onChangeHeaderRow(Number(e.target.value))}
             className="max-w-[260px] rounded-md border bg-background px-2 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-ring"
           >
-            <option value={0}>Không có tiêu đề (dữ liệu từ dòng 1)</option>
+            <option value={0}>Không có tiêu đề</option>
             {candidateHeaderRows.map((cand) => (
               <option key={cand.rowIndex} value={cand.rowIndex}>
                 Dòng {cand.rowIndex}: {cand.preview.slice(0, 3).join(' | ')}
@@ -194,7 +180,7 @@ export function EligibleImportColumnMapping({
         </div>
 
         <div className="flex items-center gap-1.5">
-          <span className="font-medium text-muted-foreground">Cột họ tên:</span>
+          <span className="font-medium text-muted-foreground">Họ tên:</span>
           <div className="inline-flex rounded-md border bg-background p-0.5">
             <button
               type="button"
@@ -206,7 +192,7 @@ export function EligibleImportColumnMapping({
                   : 'text-muted-foreground hover:text-foreground',
               )}
             >
-              1 cột gộp
+              Gộp 1 cột
             </button>
             <button
               type="button"
@@ -229,7 +215,7 @@ export function EligibleImportColumnMapping({
         <p className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <span>
-            Vui lòng chọn cột trong file cho các trường bắt buộc:{' '}
+            Thiếu cột bắt buộc:{' '}
             <strong>{missingRequired.map((f) => f.label).join(', ')}</strong>.
           </span>
         </p>
@@ -238,10 +224,7 @@ export function EligibleImportColumnMapping({
       {duplicateCols.size > 0 && (
         <p className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-          <span>
-            Có trường dữ liệu đang ánh xạ trùng cùng một cột trong file. Vui
-            lòng chọn lại để mỗi trường gắn với một cột riêng biệt.
-          </span>
+          <span>Có trường đang chọn trùng cùng một cột trong file.</span>
         </p>
       )}
 
@@ -250,18 +233,14 @@ export function EligibleImportColumnMapping({
         <table className="w-full">
           <thead>
             <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
+              <th className="px-3 py-2 text-left font-medium">Hệ thống cần</th>
               <th className="px-3 py-2 text-left font-medium">
-                Trường hệ thống
-              </th>
-              <th className="px-3 py-2 text-left font-medium">
-                Cột trong file của bạn
+                Cột trong file
               </th>
               <th className="hidden px-3 py-2 text-left font-medium sm:table-cell">
-                Dữ liệu mẫu
+                Mẫu dữ liệu
               </th>
-              <th className="w-28 px-3 py-2 text-center font-medium">
-                Nhận diện
-              </th>
+              <th className="w-12 px-2 py-2 text-center font-medium" />
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -284,8 +263,6 @@ export function EligibleImportColumnMapping({
                 isUsingSuggestion &&
                 suggestion.confidence >= 0.72 &&
                 suggestion.confidence < 0.9;
-              const isManual =
-                selectedColIdx !== null && !isUsingSuggestion;
 
               return (
                 <tr
@@ -295,19 +272,21 @@ export function EligibleImportColumnMapping({
                     isDuplicate && 'bg-destructive/5',
                   )}
                 >
-                  <td className="px-3 py-2.5 align-top">
+                  <td className="px-3 py-2 align-middle">
                     <div className="font-medium">
                       {cfg.label}
                       {cfg.required && (
                         <span className="ml-1 text-destructive">*</span>
                       )}
                     </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      {cfg.hint}
-                    </p>
+                    {cfg.hint && (
+                      <p className="text-[11px] text-muted-foreground">
+                        {cfg.hint}
+                      </p>
+                    )}
                   </td>
 
-                  <td className="px-3 py-2.5 align-middle">
+                  <td className="px-3 py-2 align-middle">
                     <select
                       id={`eligible-mapping-${cfg.field}`}
                       value={selectedColIdx ?? ''}
@@ -332,9 +311,12 @@ export function EligibleImportColumnMapping({
                     </select>
                   </td>
 
-                  <td className="hidden max-w-[180px] px-3 py-2.5 align-middle text-xs text-muted-foreground sm:table-cell">
+                  <td className="hidden max-w-[180px] px-3 py-2 align-middle text-xs text-muted-foreground sm:table-cell">
                     {selectedCol && selectedCol.samples.length > 0 ? (
-                      <div className="truncate" title={selectedCol.samples.join(' · ')}>
+                      <div
+                        className="truncate"
+                        title={selectedCol.samples.join(' · ')}
+                      >
                         {selectedCol.samples.slice(0, 2).join(', ')}
                       </div>
                     ) : (
@@ -342,40 +324,28 @@ export function EligibleImportColumnMapping({
                     )}
                   </td>
 
-                  <td className="px-3 py-2.5 text-center align-middle">
+                  <td className="px-2 py-2 text-center align-middle">
                     {isDuplicate ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5 text-[11px] font-medium text-destructive">
-                        <AlertTriangle className="size-3" />
-                        Trùng cột
-                      </span>
+                      <AlertTriangle
+                        className="mx-auto size-4 text-destructive"
+                        aria-label="Trùng cột"
+                      />
                     ) : isHighConf ? (
-                      <span
-                        className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400"
-                        title={`${MATCH_REASON_LABELS[suggestion.matchReason]} (${Math.round(suggestion.confidence * 100)}%)`}
-                      >
-                        <CheckCircle2 className="size-3" />
-                        {Math.round(suggestion.confidence * 100)}%
-                      </span>
+                      <CheckCircle2
+                        className="mx-auto size-4 text-green-500"
+                        aria-label={`Tự khớp (${Math.round(suggestion.confidence * 100)}%)`}
+                      />
                     ) : isMediumConf ? (
-                      <span
-                        className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-400"
-                        title={`${MATCH_REASON_LABELS[suggestion.matchReason]} (${Math.round(suggestion.confidence * 100)}%) — vui lòng kiểm tra`}
-                      >
-                        <Sparkles className="size-3" />
-                        {suggestion.matchReason === 'content'
-                          ? 'Theo dữ liệu'
-                          : `${Math.round(suggestion.confidence * 100)}%`}
-                      </span>
-                    ) : isManual ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                        Chọn tay
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/70">
-                        <HelpCircle className="size-3" />
-                        Chưa khớp
-                      </span>
-                    )}
+                      <AlertCircle
+                        className="mx-auto size-4 text-amber-500"
+                        aria-label={`Cần kiểm tra (${Math.round(suggestion.confidence * 100)}%)`}
+                      />
+                    ) : selectedColIdx === null ? (
+                      <HelpCircle
+                        className="mx-auto size-4 text-muted-foreground/40"
+                        aria-label="Chưa chọn cột"
+                      />
+                    ) : null}
                   </td>
                 </tr>
               );
@@ -383,18 +353,6 @@ export function EligibleImportColumnMapping({
           </tbody>
         </table>
       </div>
-
-      <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <CheckCircle2 className="size-3 text-emerald-600 dark:text-emerald-400" />
-          Xanh = khớp chuẩn / đồng nghĩa
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <Sparkles className="size-3 text-amber-600 dark:text-amber-400" />
-          Vàng = khớp gần đúng / suy luận từ dữ liệu (nên kiểm tra lại)
-        </span>
-      </p>
     </div>
   );
 }
-

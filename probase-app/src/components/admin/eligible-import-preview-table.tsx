@@ -9,6 +9,14 @@ import {
   XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import type {
   PreviewEligibleImportResult,
   PreviewEligibleImportRow,
@@ -61,7 +69,9 @@ interface Props {
 }
 
 export function EligibleImportPreviewTable({ preview }: Props) {
-  const [tab, setTab] = useState<FilterTab>('all');
+  const [tab, setTab] = useState<FilterTab>(
+    preview.errorCount > 0 ? 'error' : 'all',
+  );
 
   const filteredRows = preview.rows.filter((row) => {
     if (tab === 'valid') return row.valid;
@@ -72,42 +82,6 @@ export function EligibleImportPreviewTable({ preview }: Props) {
 
   return (
     <div className="space-y-3">
-      {/* KPI summary */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <div className="rounded-lg border bg-emerald-500/8 px-3 py-2">
-          <span className="block text-[11px] text-muted-foreground">
-            Hợp lệ (sẽ lưu)
-          </span>
-          <span className="text-lg font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-            {preview.validCount}
-          </span>
-        </div>
-        <div className="rounded-lg border bg-primary/6 px-3 py-2">
-          <span className="block text-[11px] text-muted-foreground">
-            Tạo tài khoản mới
-          </span>
-          <span className="text-lg font-bold tabular-nums text-primary">
-            {preview.newAccountsCount}
-          </span>
-        </div>
-        <div className="rounded-lg border bg-amber-500/8 px-3 py-2">
-          <span className="block text-[11px] text-muted-foreground">
-            Cảnh báo / Đã có
-          </span>
-          <span className="text-lg font-bold tabular-nums text-amber-600 dark:text-amber-400">
-            {preview.warningCount}
-          </span>
-        </div>
-        <div className="rounded-lg border bg-destructive/8 px-3 py-2">
-          <span className="block text-[11px] text-muted-foreground">
-            Dòng lỗi (bỏ qua)
-          </span>
-          <span className="text-lg font-bold tabular-nums text-destructive">
-            {preview.errorCount}
-          </span>
-        </div>
-      </div>
-
       {/* Filter tabs + Error download */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="inline-flex rounded-lg border bg-muted/40 p-0.5 text-xs">
@@ -135,58 +109,68 @@ export function EligibleImportPreviewTable({ preview }: Props) {
           ))}
         </div>
 
-        {preview.errorCount > 0 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => exportErrorRowsCsv(preview.rows)}
-          >
-            <Download className="size-3.5" />
-            Tải file lỗi (.csv)
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          {preview.newAccountsCount > 0 && (
+            <span className="text-xs text-muted-foreground">
+              Tạo mới{' '}
+              <strong className="font-semibold text-foreground">
+                {preview.newAccountsCount}
+              </strong>{' '}
+              tài khoản
+            </span>
+          )}
+          {preview.errorCount > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => exportErrorRowsCsv(preview.rows)}
+            >
+              <Download className="size-3.5" />
+              Tải file lỗi
+            </Button>
+          )}
+        </div>
       </div>
 
       {preview.errorCount > 0 && (
         <p className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
           <span>
-            Các dòng lỗi sẽ bị bỏ qua. Hệ thống chỉ lưu{' '}
-            <strong>{preview.validCount} sinh viên hợp lệ</strong> vào đợt đăng
-            ký.
+            Các dòng lỗi sẽ bị bỏ qua. Chỉ lưu{' '}
+            <strong>{preview.validCount} sinh viên hợp lệ</strong>.
           </span>
         </p>
       )}
 
       {/* Preview rows table */}
-      <div className="max-h-72 overflow-auto rounded-lg border text-xs">
-        <table className="min-w-full">
-          <thead className="sticky top-0 z-10 border-b bg-muted/90 backdrop-blur text-muted-foreground">
-            <tr>
-              <th className="px-2.5 py-2 text-left font-medium">Dòng</th>
-              <th className="px-2.5 py-2 text-left font-medium">Trạng thái</th>
-              <th className="px-2.5 py-2 text-left font-medium">MSSV</th>
-              <th className="px-2.5 py-2 text-left font-medium">Họ và tên</th>
-              <th className="px-2.5 py-2 text-left font-medium">Lớp / Ngành</th>
-              <th className="px-2.5 py-2 text-left font-medium">Chi tiết</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
+      <div className="max-h-96 overflow-auto rounded-xl border border-slate-300 bg-white dark:border-neutral-700 dark:bg-[#1e1e1e]">
+        <Table containerClassName="overflow-visible" className="text-xs">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="h-9.5 w-14 px-3">Dòng</TableHead>
+              <TableHead className="h-9.5 px-3">Trạng thái</TableHead>
+              <TableHead className="h-9.5 px-3">MSSV</TableHead>
+              <TableHead className="h-9.5 px-3">Họ và tên</TableHead>
+              <TableHead className="h-9.5 px-3">Lớp</TableHead>
+              <TableHead className="h-9.5 px-3">Email / Chi tiết</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {filteredRows.length === 0 ? (
-              <tr>
-                <td
+              <TableRow className="hover:bg-transparent">
+                <TableCell
                   colSpan={6}
-                  className="px-3 py-6 text-center text-muted-foreground"
+                  className="px-3 py-8 text-center text-xs text-muted-foreground"
                 >
-                  Không có dòng nào trong mục này.
-                </td>
-              </tr>
+                  Không có dòng nào.
+                </TableCell>
+              </TableRow>
             ) : (
               filteredRows.map((row) => {
                 const hasWarnings = (row.warnings?.length ?? 0) > 0;
                 return (
-                  <tr
+                  <TableRow
                     key={row.row}
                     className={cn(
                       row.valid
@@ -196,10 +180,10 @@ export function EligibleImportPreviewTable({ preview }: Props) {
                         : 'bg-destructive/5 hover:bg-destructive/10',
                     )}
                   >
-                    <td className="px-2.5 py-2 tabular-nums text-muted-foreground">
+                    <TableCell className="px-3 py-2.5 text-xs tabular-nums text-muted-foreground">
                       {row.row}
-                    </td>
-                    <td className="px-2.5 py-2 whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="px-3 py-2.5 text-xs">
                       {!row.valid ? (
                         <span className="inline-flex items-center gap-1 font-medium text-destructive">
                           <XCircle className="size-3.5" />
@@ -221,14 +205,14 @@ export function EligibleImportPreviewTable({ preview }: Props) {
                           Thêm vào đợt
                         </span>
                       )}
-                    </td>
-                    <td className="px-2.5 py-2 font-mono font-medium">
+                    </TableCell>
+                    <TableCell className="px-3 py-2.5 font-mono text-xs font-medium text-foreground">
                       {row.studentCode ?? '—'}
-                    </td>
-                    <td className="px-2.5 py-2 font-medium">
+                    </TableCell>
+                    <TableCell className="px-3 py-2.5 text-xs font-medium text-foreground">
                       {row.fullName ?? '—'}
-                    </td>
-                    <td className="px-2.5 py-2 whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="px-3 py-2.5 text-xs">
                       {row.className ? (
                         <span>
                           {row.className}
@@ -241,8 +225,8 @@ export function EligibleImportPreviewTable({ preview }: Props) {
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
-                    </td>
-                    <td className="px-2.5 py-2">
+                    </TableCell>
+                    <TableCell className="px-3 py-2.5 text-xs whitespace-normal">
                       {!row.valid ? (
                         <span className="text-destructive">{row.reason}</span>
                       ) : hasWarnings ? (
@@ -252,18 +236,16 @@ export function EligibleImportPreviewTable({ preview }: Props) {
                       ) : (
                         <span className="text-muted-foreground">
                           {row.effectiveEmail}
-                          {row.note ? ` · ${row.note}` : ''}
                         </span>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
 }
-
