@@ -73,12 +73,7 @@ export default function AllocationDeskPage() {
             <SelectContent className="border-slate-200 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e]">
               {rounds?.map((round) => (
                 <SelectItem key={round.id} value={round.id}>
-                  <span className="flex flex-col items-start">
-                    <span className="font-semibold">{round.projectType.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {PHASE_LABEL[round.phase]} · khóa {round.cohorts.join(', ')}
-                    </span>
-                  </span>
+                  <span className="font-semibold">{round.projectType.name}</span>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -109,14 +104,6 @@ export default function AllocationDeskPage() {
     </div>
   );
 }
-
-const PHASE_LABEL: Record<string, string> = {
-  PREP: 'Chưa mở',
-  OPEN: 'Đang mở',
-  RECONCILING: 'Đang phân bổ',
-  EXTENDED: 'Đang gia hạn',
-  FINALIZED: 'Đã chốt',
-};
 
 function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
   const place = usePlaceStudent();
