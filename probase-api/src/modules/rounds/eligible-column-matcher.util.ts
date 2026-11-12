@@ -876,15 +876,35 @@ export function analyzeSheetRows(
   maxCol: number,
   explicitHeaderRowIndex?: number,
 ): SheetColumnAnalysis {
-  const candidateHeaderRows: CandidateHeaderRow[] = rows
-    .filter((r) => r.rowNumber <= HEADER_SCAN_LIMIT)
-    .map((r) => ({
-      rowIndex: r.rowNumber,
-      preview: Object.entries(r.cells)
-        .sort(([a], [b]) => Number(a) - Number(b))
-        .slice(0, 5)
-        .map(([, v]) => v),
-    }));
+  const firstStudentDataRow = rows.find((r) => rowLooksLikeStudentData(r));
+  const maxHeaderRowNumber = firstStudentDataRow
+    ? Math.min(HEADER_SCAN_LIMIT, firstStudentDataRow.rowNumber - 1)
+    : HEADER_SCAN_LIMIT;
+
+  const candidateRows = rows.filter(
+    (r) => r.rowNumber <= maxHeaderRowNumber && !rowLooksLikeStudentData(r),
+  );
+  if (
+    explicitHeaderRowIndex &&
+    explicitHeaderRowIndex > 0 &&
+    !candidateRows.some((r) => r.rowNumber === explicitHeaderRowIndex)
+  ) {
+    const explicitRow = rows.find(
+      (r) => r.rowNumber === explicitHeaderRowIndex,
+    );
+    if (explicitRow && !rowLooksLikeStudentData(explicitRow)) {
+      candidateRows.push(explicitRow);
+      candidateRows.sort((a, b) => a.rowNumber - b.rowNumber);
+    }
+  }
+
+  const candidateHeaderRows: CandidateHeaderRow[] = candidateRows.map((r) => ({
+    rowIndex: r.rowNumber,
+    preview: Object.entries(r.cells)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .slice(0, 5)
+      .map(([, v]) => v),
+  }));
 
   if (explicitHeaderRowIndex !== undefined) {
     const { columns, profilesByCol, totalDataRows } = buildColumnDescriptors(
@@ -910,11 +930,6 @@ export function analyzeSheetRows(
   // Auto-detect the highest scoring header row within HEADER_SCAN_LIMIT.
   // A valid table header must appear before the first student-data row and
   // must have at least one data row beneath it (when the sheet has > 1 row).
-  const firstStudentDataRow = rows.find((r) => rowLooksLikeStudentData(r));
-  const maxHeaderRowNumber = firstStudentDataRow
-    ? Math.min(HEADER_SCAN_LIMIT, firstStudentDataRow.rowNumber - 1)
-    : HEADER_SCAN_LIMIT;
-
   const scanRows = rows.filter(
     (r) =>
       r.rowNumber <= maxHeaderRowNumber &&
