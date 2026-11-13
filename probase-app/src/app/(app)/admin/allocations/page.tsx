@@ -1,11 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   ArrowRight,
   CheckCircle2,
   Loader2,
-  Search,
   TriangleAlert,
   Undo2,
   UserRoundCheck,
@@ -29,7 +28,6 @@ import { FinalizeRoundDialog } from '@/components/admin/finalize-round-dialog';
 import { UnlockRoundDialog } from '@/components/admin/unlock-round-dialog';
 import { UserAvatar } from '@/components/shared/user-avatar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -54,9 +52,9 @@ export default function AllocationDeskPage() {
 
   return (
     <div className="space-y-4">
-      {/* Thanh công cụ: Chọn đợt & các nút thao tác chốt/mở đợt */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2.5">
+      {/* Thanh chọn đợt & các nút thao tác chốt/mở đợt */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
           <Select
             value={roundId ?? null}
             onValueChange={(value) => setPicked(value as number)}
@@ -80,43 +78,6 @@ export default function AllocationDeskPage() {
               ))}
             </SelectContent>
           </Select>
-
-          {data?.round && (
-            <span
-              className={cn(
-                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border select-none',
-                data.round.phase === 'RECONCILING'
-                  ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800'
-                  : data.round.phase === 'FINALIZED'
-                    ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800'
-                    : data.round.phase === 'OPEN' || data.round.phase === 'EXTENDED'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800'
-                      : 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700',
-              )}
-            >
-              <span
-                className={cn(
-                  'size-1.5 rounded-full',
-                  data.round.phase === 'RECONCILING'
-                    ? 'bg-amber-500'
-                    : data.round.phase === 'FINALIZED'
-                      ? 'bg-blue-500'
-                      : data.round.phase === 'OPEN' || data.round.phase === 'EXTENDED'
-                        ? 'bg-emerald-500'
-                        : 'bg-slate-400',
-                )}
-              />
-              {data.round.phase === 'RECONCILING'
-                ? 'Đang phân bổ'
-                : data.round.phase === 'FINALIZED'
-                  ? 'Đã chốt đợt'
-                  : data.round.phase === 'OPEN'
-                    ? 'Đang mở đăng ký'
-                    : data.round.phase === 'EXTENDED'
-                      ? 'Gia hạn đăng ký'
-                      : 'Chuẩn bị'}
-            </span>
-          )}
         </div>
 
         {data && roundId !== undefined && (
@@ -147,8 +108,6 @@ export default function AllocationDeskPage() {
 function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
   const place = usePlaceStudent();
   const [selected, setSelected] = useState<UnplacedStudent | null>(null);
-  const [studentSearch, setStudentSearch] = useState('');
-  const [topicSearch, setTopicSearch] = useState('');
 
   const stillUnplaced =
     selected && desk.students.some((one) => one.id === selected.id)
@@ -164,37 +123,9 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
     );
   }
 
-  const filteredStudents = useMemo(() => {
-    const q = studentSearch.trim().toLowerCase();
-    if (!q) return desk.students;
-    return desk.students.filter(
-      (s) =>
-        s.fullName.toLowerCase().includes(q) ||
-        s.studentCode.toLowerCase().includes(q) ||
-        (s.class && s.class.toLowerCase().includes(q)),
-    );
-  }, [desk.students, studentSearch]);
-
-  const filteredTopics = useMemo(() => {
-    const q = topicSearch.trim().toLowerCase();
-    if (!q) return desk.topics;
-    return desk.topics.filter(
-      (t) =>
-        t.title.toLowerCase().includes(q) ||
-        t.lecturer.fullName.toLowerCase().includes(q),
-    );
-  }, [desk.topics, topicSearch]);
-
   return (
     <div className="space-y-4">
       <Summary desk={desk} />
-
-      {desk.blockedReason && (
-        <div className="flex items-center gap-2.5 rounded-xl border border-amber-300/80 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/20 px-4 py-3 text-xs sm:text-sm text-amber-900 dark:text-amber-200">
-          <TriangleAlert className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
-          <span>{desk.blockedReason}</span>
-        </div>
-      )}
 
       {place.error && (
         <p className="rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-3 text-sm text-destructive font-medium">
@@ -207,21 +138,14 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
         <Panel
           title="Chưa có đề tài"
           count={desk.students.length}
-          searchPlaceholder="Tìm tên, MSSV, lớp..."
-          searchValue={studentSearch}
-          onSearchChange={setStudentSearch}
           empty={
             <EmptyState
               icon={UserRoundCheck}
-              title={
-                studentSearch
-                  ? 'Không tìm thấy sinh viên phù hợp.'
-                  : 'Mọi sinh viên trong đợt đều đã có đề tài.'
-              }
+              title="Mọi sinh viên trong đợt đều đã có đề tài."
             />
           }
         >
-          {filteredStudents.map((student) => (
+          {desk.students.map((student) => (
             <li key={student.id}>
               <button
                 type="button"
@@ -268,21 +192,14 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
         <Panel
           title="Đề tài còn chỗ"
           count={desk.topics.length}
-          searchPlaceholder="Tìm tên đề tài, GV..."
-          searchValue={topicSearch}
-          onSearchChange={setTopicSearch}
           empty={
             <EmptyState
               icon={Users}
-              title={
-                topicSearch
-                  ? 'Không tìm thấy đề tài phù hợp.'
-                  : 'Không còn đề tài nào trống chỗ trong đợt này.'
-              }
+              title="Không còn đề tài nào trống chỗ trong đợt này."
             />
           }
         >
-          {filteredTopics.map((topic) => (
+          {desk.topics.map((topic) => (
             <li
               key={topic.id}
               className="flex items-center gap-3.5 px-4 py-3 text-sm hover:bg-slate-50/70 dark:hover:bg-neutral-800/40 transition-colors"
@@ -379,41 +296,22 @@ function Figure({ value, label }: { value: number; label: string }) {
 function Panel({
   title,
   count,
-  searchPlaceholder,
-  searchValue,
-  onSearchChange,
   empty,
   children,
 }: {
   title: string;
   count: number;
-  searchPlaceholder?: string;
-  searchValue?: string;
-  onSearchChange?: (val: string) => void;
   empty: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <section className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-neutral-700 bg-slate-50/80 dark:bg-[#181818] px-4 py-2.5">
-        <h2 className="text-sm font-bold text-slate-900 dark:text-neutral-100 flex items-center">
-          <span>{title}</span>
-          <span className="font-normal text-muted-foreground ml-1.5 tabular-nums">
-            {count}
-          </span>
-        </h2>
-        {onSearchChange && (
-          <div className="relative w-full sm:w-48">
-            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={searchValue ?? ''}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder={searchPlaceholder}
-              className="h-8 pl-8 text-xs bg-white dark:bg-[#1e1e1e] border-slate-300 dark:border-neutral-700"
-            />
-          </div>
-        )}
-      </div>
+      <h2 className="border-b border-slate-800 dark:border-neutral-300 bg-slate-900 text-slate-100 dark:bg-neutral-100 dark:text-neutral-900 px-4 py-3 text-sm font-bold flex items-center justify-between">
+        <span>{title}</span>
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-200 dark:bg-neutral-200 dark:text-neutral-800 tabular-nums">
+          {count}
+        </span>
+      </h2>
       {count === 0 ? (
         <div className="p-6">{empty}</div>
       ) : (
@@ -438,9 +336,9 @@ function PlacementsMade({
 
   return (
     <section className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
-      <h2 className="border-b border-slate-200 dark:border-neutral-700 bg-slate-50/80 dark:bg-[#181818] px-4 py-3 text-sm font-bold text-slate-900 dark:text-neutral-100">
+      <h2 className="border-b border-slate-800 dark:border-neutral-300 bg-slate-900 text-slate-100 dark:bg-neutral-100 dark:text-neutral-900 px-4 py-3 text-sm font-bold flex items-center justify-between">
         <span>Khoa đã xếp</span>
-        <span className="font-normal text-muted-foreground ml-1.5 tabular-nums">
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-200 dark:bg-neutral-200 dark:text-neutral-800 tabular-nums">
           {desk.placements.length}
         </span>
       </h2>
