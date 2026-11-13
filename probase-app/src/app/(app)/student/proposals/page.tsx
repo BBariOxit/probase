@@ -61,6 +61,7 @@ function StudentProposalsContent() {
       one.status === 'NEEDS_REVISION' ||
       one.status === 'DRAFT',
   );
+  const accepted = proposals.find((one) => one.status === 'ACCEPTED');
 
   /*
     Whether *any* round this student belongs to would still take a proposal.
@@ -76,11 +77,13 @@ function StudentProposalsContent() {
 
   const blocked = group
     ? 'Bạn đã có đề tài trong học kỳ này. Muốn đề xuất đề tài khác thì rời nhóm trước.'
-    : pending
-      ? pending.status === 'DRAFT'
-        ? 'Bạn đang có một bản nháp đề xuất. Hãy hoàn thiện và gửi hoặc xóa bản nháp trước khi tạo đề xuất mới.'
-        : 'Bạn đang có một đề xuất đang chờ duyệt. Rút lại đề xuất đó nếu muốn gửi cái khác.'
-      : closedReason;
+    : accepted
+      ? 'Bạn đã có đề tài đề xuất được duyệt trong học kỳ này.'
+      : pending
+        ? pending.status === 'DRAFT'
+          ? 'Bạn đang có một bản nháp đề xuất. Hãy hoàn thiện và gửi hoặc xóa bản nháp trước khi tạo đề xuất mới.'
+          : 'Bạn đang có một đề xuất đang chờ duyệt. Rút lại đề xuất đó nếu muốn gửi cái khác.'
+        : closedReason;
 
   return (
     <>

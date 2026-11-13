@@ -147,6 +147,7 @@ export class ProposalsService {
 
     await this.phases.requireCanPropose(round.id, student.id);
     await this.requireNoGroup(student.id, semester.id);
+    await this.requireNoAcceptedProposal(student.id, semester.id);
     await this.requireNoPendingProposal(student.id);
 
     const lecturer = await this.requireLecturer(dto.requestedLecturerId);
@@ -299,6 +300,9 @@ export class ProposalsService {
     if (proposal.status !== TopicProposalStatus.DRAFT) {
       throw new ConflictException('Đề xuất này đã được gửi rồi');
     }
+
+    await this.requireNoGroup(student.id, proposal.semesterId);
+    await this.requireNoAcceptedProposal(student.id, proposal.semesterId);
 
     const updated = await this.prisma.topicProposal.update({
       where: { id },
@@ -1063,6 +1067,26 @@ export class ProposalsService {
     if (pending) {
       throw new ConflictException(
         'Bạn đang có một đề xuất (bản nháp hoặc đang chờ duyệt). Hãy hoàn thiện hoặc rút lại đề xuất đó trước khi gửi cái mới.',
+      );
+    }
+  }
+
+  private async requireNoAcceptedProposal(
+    studentId: number,
+    semesterId: number,
+  ) {
+    const accepted = await this.prisma.topicProposal.findFirst({
+      where: {
+        studentId,
+        semesterId,
+        status: TopicProposalStatus.ACCEPTED,
+      },
+      select: { id: true },
+    });
+
+    if (accepted) {
+      throw new ConflictException(
+        'Bạn đã có đề tài đề xuất được duyệt trong học kỳ này.',
       );
     }
   }

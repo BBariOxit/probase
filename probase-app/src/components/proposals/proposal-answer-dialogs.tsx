@@ -80,7 +80,7 @@ export function AcceptProposalDialog({
         </DialogHeader>
 
         {/* Thông tin sinh viên & loại đề tài */}
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200/80 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900/40 px-3.5 py-2.5 text-xs">
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200/80 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900/40 px-3.5 py-2.5 text-xs min-w-0 max-w-full overflow-hidden">
           <div className="flex items-center gap-2.5 min-w-0">
             <UserAvatar
               name={proposal.student.fullName}
@@ -89,14 +89,14 @@ export function AcceptProposalDialog({
             />
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="font-semibold text-foreground">
+                <span className="font-semibold text-foreground truncate">
                   {proposal.student.fullName}
                 </span>
-                <span className="inline-flex items-center rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-primary">
+                <span className="inline-flex items-center rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-primary shrink-0">
                   {proposal.student.studentCode}
                 </span>
                 {proposal.student.class && (
-                  <span className="text-muted-foreground">
+                  <span className="text-muted-foreground truncate">
                     · {proposal.student.class}
                   </span>
                 )}
@@ -108,11 +108,11 @@ export function AcceptProposalDialog({
           </span>
         </div>
 
-        <div className="space-y-4 pt-1">
+        <div className="space-y-4 pt-1 min-w-0 max-w-full">
           <FormError message={error} />
 
           {/* Ô 1: Tên đề tài chính thức dạng Textarea hiển thị đầy đủ, màu nền tương phản */}
-          <div className="space-y-2">
+          <div className="space-y-2 min-w-0 max-w-full">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
                 <Label htmlFor="officialTitle" className="text-sm font-medium">
@@ -132,7 +132,7 @@ export function AcceptProposalDialog({
               aria-invalid={!titleValid}
               onChange={(e) => setOfficialTitle(e.target.value)}
               placeholder="Nhập tên đề tài chính thức..."
-              className="min-h-[84px] text-sm leading-relaxed resize-none break-words [overflow-wrap:anywhere] bg-slate-100/80 hover:bg-slate-100 focus:bg-white dark:bg-[#121212] dark:hover:bg-[#171717] dark:focus:bg-[#0c0c0c] border-slate-300 hover:border-slate-400 dark:border-neutral-700 dark:hover:border-neutral-600 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-2xs"
+              className="min-h-[84px] text-sm leading-relaxed resize-none break-all [overflow-wrap:anywhere] bg-slate-100/80 hover:bg-slate-100 focus:bg-white dark:bg-[#121212] dark:hover:bg-[#171717] dark:focus:bg-[#0c0c0c] border-slate-300 hover:border-slate-400 dark:border-neutral-700 dark:hover:border-neutral-600 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-2xs"
             />
             {!titleValid && (
               <p className="text-xs text-destructive">
@@ -243,8 +243,8 @@ export function RejectProposalDialog({
         </DialogHeader>
 
         {/* Thông tin đề xuất & sinh viên */}
-        <div className="rounded-lg border bg-muted/40 p-3 space-y-2 text-xs">
-          <div className="flex items-center justify-between gap-2">
+        <div className="rounded-lg border bg-muted/40 p-3 space-y-2 text-xs min-w-0 max-w-full overflow-hidden">
+          <div className="flex items-center justify-between gap-2 min-w-0">
             <div className="flex items-center gap-2 min-w-0">
               <UserAvatar
                 name={proposal.student.fullName}
@@ -254,7 +254,7 @@ export function RejectProposalDialog({
               <span className="font-semibold text-foreground truncate">
                 {proposal.student.fullName}
               </span>
-              <span className="inline-flex items-center rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-primary">
+              <span className="inline-flex items-center rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-primary shrink-0">
                 {proposal.student.studentCode}
               </span>
             </div>
@@ -262,15 +262,15 @@ export function RejectProposalDialog({
               {proposal.projectType.name}
             </span>
           </div>
-          <p className="text-foreground font-medium line-clamp-2 leading-snug break-words [overflow-wrap:anywhere]">
+          <p className="text-foreground font-medium line-clamp-2 leading-snug break-all [overflow-wrap:anywhere]">
             {proposal.title}
           </p>
         </div>
 
-        <div className="space-y-4 pt-1">
+        <div className="space-y-4 pt-1 min-w-0 max-w-full">
           <FormError message={error} />
 
-          <div className="space-y-2">
+          <div className="space-y-2 min-w-0 max-w-full">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="feedback" className="text-sm font-medium">
                 Lý do từ chối
@@ -290,7 +290,7 @@ export function RejectProposalDialog({
               value={feedback}
               aria-invalid={trimmed === ''}
               onChange={(event) => setFeedback(event.target.value)}
-              className="min-h-[96px] text-sm leading-relaxed resize-none bg-slate-100/80 hover:bg-slate-100 focus:bg-white dark:bg-[#121212] dark:hover:bg-[#171717] dark:focus:bg-[#0c0c0c] border-slate-300 hover:border-slate-400 dark:border-neutral-700 dark:hover:border-neutral-600 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-2xs"
+              className="min-h-[96px] text-sm leading-relaxed resize-none break-all [overflow-wrap:anywhere] bg-slate-100/80 hover:bg-slate-100 focus:bg-white dark:bg-[#121212] dark:hover:bg-[#171717] dark:focus:bg-[#0c0c0c] border-slate-300 hover:border-slate-400 dark:border-neutral-700 dark:hover:border-neutral-600 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-2xs"
             />
           </div>
         </div>

@@ -68,12 +68,12 @@ export function ProposalCard({
             <Link
               href={titleHref}
               onClick={(e) => e.stopPropagation()}
-              className="block text-base font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors cursor-pointer leading-snug break-words [overflow-wrap:anywhere]"
+              className="block text-base font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors cursor-pointer leading-snug break-all [overflow-wrap:anywhere]"
             >
               {proposal.title}
             </Link>
           ) : (
-            <h2 className="text-base font-bold text-slate-900 dark:text-neutral-100 group-hover:underline cursor-pointer leading-snug break-words [overflow-wrap:anywhere]">
+            <h2 className="text-base font-bold text-slate-900 dark:text-neutral-100 group-hover:underline cursor-pointer leading-snug break-all [overflow-wrap:anywhere]">
               {proposal.title}
             </h2>
           )}
