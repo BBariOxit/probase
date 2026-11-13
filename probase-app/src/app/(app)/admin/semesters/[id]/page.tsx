@@ -85,6 +85,8 @@ interface TabFormState {
   targetCohort: string;
   officialStart: string;
   officialEnd: string;
+  maxStudentsPerTopic: number;
+  minTopicsPerLecturer: string;
   requirements: RequirementRow[];
 }
 
@@ -191,6 +193,8 @@ function checkTabDirty(
   if (current.targetCohort !== initial.targetCohort) return true;
   if (current.officialStart !== initial.officialStart) return true;
   if (current.officialEnd !== initial.officialEnd) return true;
+  if (current.maxStudentsPerTopic !== initial.maxStudentsPerTopic) return true;
+  if (current.minTopicsPerLecturer !== initial.minTopicsPerLecturer) return true;
 
   if (current.requirements.length !== initial.requirements.length) return true;
   for (let i = 0; i < current.requirements.length; i++) {
@@ -392,6 +396,8 @@ function PlanTabsForm({
       targetCohort: src.targetCohort,
       officialStart: src.officialStart,
       officialEnd: src.officialEnd,
+      maxStudentsPerTopic: src.maxStudentsPerTopic,
+      minTopicsPerLecturer: src.minTopicsPerLecturer,
       requirements: src.requirements.map((r) => ({
         name: r.name,
         due: r.due,
@@ -429,6 +435,12 @@ function PlanTabsForm({
                   : 'CTK46'),
             officialStart: toDateInput(round?.officialStartDate),
             officialEnd: toDateInput(round?.officialEndDate),
+            maxStudentsPerTopic:
+              round?.maxStudentsPerTopic ??
+              (type.code === 'DATN' || type.code === 'KLTN' ? 1 : 2),
+            minTopicsPerLecturer: round?.minTopicsPerLecturer
+              ? String(round.minTopicsPerLecturer)
+              : '',
             requirements: reqs,
           } satisfies TabFormState,
         ];
@@ -503,6 +515,10 @@ function PlanTabsForm({
         officialEndDate: entry.tab.officialEnd
           ? new Date(entry.tab.officialEnd).toISOString()
           : undefined,
+        maxStudentsPerTopic: entry.tab.maxStudentsPerTopic || 2,
+        minTopicsPerLecturer: entry.tab.minTopicsPerLecturer?.trim()
+          ? Number(entry.tab.minTopicsPerLecturer)
+          : null,
         cohorts: [entry.tab.cohorts],
       }));
 
@@ -848,6 +864,60 @@ function PlanTabsForm({
                             patch(type.id, { officialEnd })
                           }
                         />
+                      </div>
+
+                      {/* Sĩ số nhóm & Định mức đề tài */}
+                      <div className="grid gap-4 sm:grid-cols-2 pt-1">
+                        <div className="space-y-1.5">
+                          <Label
+                            htmlFor={`maxStudents-${type.id}`}
+                            className="text-xs font-medium text-slate-800 dark:text-neutral-300"
+                          >
+                            Số sinh viên tối đa / đề tài (nhóm)
+                          </Label>
+                          <input
+                            id={`maxStudents-${type.id}`}
+                            type="number"
+                            min={1}
+                            max={10}
+                            disabled={locked}
+                            value={row.maxStudentsPerTopic}
+                            onChange={(e) =>
+                              patch(type.id, {
+                                maxStudentsPerTopic: Math.max(1, Number(e.target.value) || 1),
+                              })
+                            }
+                            className="h-9 w-full rounded-lg border-[1.5px] border-slate-400 dark:border-neutral-700 hover:border-slate-500 dark:hover:border-neutral-500 bg-slate-100 hover:bg-slate-200/50 focus:bg-white dark:bg-[#141414] dark:hover:bg-[#171717] px-3 text-sm text-slate-900 dark:text-neutral-100 transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:border-primary dark:focus:ring-2 dark:focus:ring-primary/20 disabled:opacity-50 shadow-xs"
+                          />
+                          <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+                            Quy định sĩ số nhóm (KLTN: 1 SV, ĐACN / ĐACS: 2 SV). Dùng tính số nhóm & áp dụng khi tạo đề tài.
+                          </p>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label
+                            htmlFor={`minTopics-${type.id}`}
+                            className="text-xs font-medium text-slate-800 dark:text-neutral-300"
+                          >
+                            Chỉ tiêu đề tài / giảng viên (khuyến nghị)
+                          </Label>
+                          <input
+                            id={`minTopics-${type.id}`}
+                            type="number"
+                            min={1}
+                            max={50}
+                            placeholder="Tự động tính nếu để trống (VD: 5)"
+                            disabled={locked}
+                            value={row.minTopicsPerLecturer}
+                            onChange={(e) =>
+                              patch(type.id, { minTopicsPerLecturer: e.target.value })
+                            }
+                            className="h-9 w-full rounded-lg border-[1.5px] border-slate-400 dark:border-neutral-700 hover:border-slate-500 dark:hover:border-neutral-500 bg-slate-100 hover:bg-slate-200/50 focus:bg-white dark:bg-[#141414] dark:hover:bg-[#171717] px-3 text-sm text-slate-900 dark:text-neutral-100 transition placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:border-primary dark:focus:ring-2 dark:focus:ring-primary/20 disabled:opacity-50 shadow-xs"
+                          />
+                          <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+                            Số lượng đề tài tối thiểu mỗi GV cơ hữu cần nộp để Khoa theo dõi tiến độ.
+                          </p>
+                        </div>
                       </div>
                     </div>
 

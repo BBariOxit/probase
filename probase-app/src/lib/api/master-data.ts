@@ -6,6 +6,7 @@ import type {
   ProjectType,
   ProjectTypeDetail,
   RegistrationRound,
+  RoundCapacitySummary,
   RoundPlanInput,
   Semester,
   SubmissionRequirement,
@@ -149,6 +150,14 @@ export function useSemesterRounds(semesterId: number | undefined) {
     queryKey: ['semesters', semesterId, 'rounds'],
     queryFn: () => api<RegistrationRound[]>(`/semesters/${semesterId!}/rounds`),
     enabled: semesterId !== undefined,
+  });
+}
+
+export function useRoundCapacity(roundId: number | undefined) {
+  return useQuery({
+    queryKey: ['rounds', roundId, 'capacity'],
+    queryFn: () => api<RoundCapacitySummary>(`/rounds/${roundId!}/capacity`),
+    enabled: typeof roundId === 'number' && roundId > 0,
   });
 }
 

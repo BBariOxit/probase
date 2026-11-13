@@ -12,7 +12,15 @@ import {
   LockOpen,
   MoreHorizontal,
   Search,
+  Users,
 } from 'lucide-react';
+import { RoundLecturerProgressTab } from '@/components/admin/round-lecturer-progress-tab';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -204,6 +212,7 @@ function TopicActionsDropdown({ topic }: { topic: TopicListItem }) {
 export default function AdminTopicRegistryPage() {
   const allowed = useRequireRole('ADMIN');
 
+  const [activeTab, setActiveTab] = useState<'topics' | 'progress'>('topics');
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<TopicStatus | 'ALL'>('ALL');
@@ -280,38 +289,64 @@ export default function AdminTopicRegistryPage() {
     <TooltipProvider delay={200}>
       <div className="w-full min-w-0 space-y-4">
         {/* ── Header ── */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-lg font-semibold">Quản lý đề tài</h1>
 
-          <div className="ml-auto flex flex-wrap items-center gap-2">
-            <TopicExportMenu
-              semesterId={activeSemesterId}
-              semesterCode={activeSemester?.code}
-              approvedCount={approvedCount}
-              filteredCount={data?.total ?? 0}
-              filters={{
-                status: statusFilter === 'ALL' ? undefined : statusFilter,
-                lecturerId: lecturerId || undefined,
-                q: debouncedSearch || undefined,
-              }}
-              disabled={!hasActiveSemester}
-            />
+          {activeTab === 'topics' && (
+            <div className="flex flex-wrap items-center gap-2">
+              <TopicExportMenu
+                semesterId={activeSemesterId}
+                semesterCode={activeSemester?.code}
+                approvedCount={approvedCount}
+                filteredCount={data?.total ?? 0}
+                filters={{
+                  status: statusFilter === 'ALL' ? undefined : statusFilter,
+                  lecturerId: lecturerId || undefined,
+                  q: debouncedSearch || undefined,
+                }}
+                disabled={!hasActiveSemester}
+              />
 
-            <Button
-              className="gap-2 cursor-pointer"
-              onClick={() => setBulkOpen(true)}
-              disabled={!hasActiveSemester || approvedCount === 0}
-            >
-              <Check className="size-4" />
-              Mở đăng ký đồng loạt
-              {approvedCount > 0 && (
-                <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-xs font-semibold">
-                  {approvedCount}
+              <Button
+                className="gap-2 cursor-pointer"
+                onClick={() => setBulkOpen(true)}
+                disabled={!hasActiveSemester || approvedCount === 0}
+              >
+                <Check className="size-4" />
+                Mở đăng ký đồng loạt
+                {approvedCount > 0 && (
+                  <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-xs font-semibold">
+                    {approvedCount}
+                  </span>
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* ── Tabs Chuyển đổi: Sổ đề tài & Tiến độ nộp đề tài ── */}
+        <Tabs
+          value={activeTab}
+          onValueChange={(val) => setActiveTab(val as 'topics' | 'progress')}
+          className="space-y-4"
+        >
+          <TabsList className="bg-slate-100 dark:bg-[#141414] border border-slate-200 dark:border-neutral-800">
+            <TabsTrigger value="topics" className="gap-1.5 text-xs font-medium">
+              <BookMarked className="size-4" />
+              <span>Sổ đề tài</span>
+              {data && (
+                <span className="ml-1 rounded-full bg-slate-200 dark:bg-neutral-800 px-1.5 py-0.2 text-[10px] font-mono text-slate-700 dark:text-neutral-300">
+                  {data.total}
                 </span>
               )}
-            </Button>
-          </div>
-        </div>
+            </TabsTrigger>
+            <TabsTrigger value="progress" className="gap-1.5 text-xs font-medium">
+              <Users className="size-4" />
+              <span>Tiến độ nộp đề tài</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="topics" className="space-y-4">
 
         {/* ── Filters ── */}
         <div className="flex flex-wrap items-center gap-2">
@@ -509,6 +544,18 @@ export default function AdminTopicRegistryPage() {
             onPageChange={setPage}
           />
         )}
+          </TabsContent>
+
+          <TabsContent value="progress">
+            <RoundLecturerProgressTab
+              semesterId={activeSemesterId}
+              onFilterByLecturer={(id) => {
+                setLecturerId(id);
+                setActiveTab('topics');
+              }}
+            />
+          </TabsContent>
+        </Tabs>
 
         {/* ── Bulk open dialog ── */}
         <BulkOpenDialog

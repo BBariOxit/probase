@@ -1,12 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { ApiError } from '@/lib/api/client';
-import { useProjectTypes, useSemesters } from '@/lib/api/master-data';
+import {
+  useProjectTypes,
+  useSemesterRounds,
+  useSemesters,
+} from '@/lib/api/master-data';
 import type { TopicInput } from '@/lib/api/topics';
 import {
   TopicSchema,
@@ -73,19 +77,34 @@ export function TopicForm({
     control,
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<TopicFormValues>({
     resolver: zodResolver(TopicSchema),
     mode: 'onSubmit',
     reValidateMode: 'onChange',
     defaultValues: {
-      maxStudents: 3,
+      maxStudents: 2,
       title: '',
       description: '',
       expectedOutcomes: '',
       ...defaultValues,
     },
   });
+
+  const selectedSemesterId = watch('semesterId');
+  const selectedProjectTypeId = watch('projectTypeId');
+  const { data: rounds } = useSemesterRounds(selectedSemesterId);
+  const matchingRound = rounds?.find(
+    (r) => r.projectTypeId === selectedProjectTypeId,
+  );
+
+  useEffect(() => {
+    if (matchingRound?.maxStudentsPerTopic) {
+      setValue('maxStudents', matchingRound.maxStudentsPerTopic);
+    }
+  }, [matchingRound?.maxStudentsPerTopic, setValue]);
 
   async function submit(values: TopicFormValues) {
     setFormError(null);
@@ -217,21 +236,20 @@ export function TopicForm({
         />
       </Field>
 
-      <Field
-        label="Số sinh viên tối đa"
-        htmlFor="maxStudents"
-        error={errors.maxStudents?.message}
-      >
-        <Input
-          id="maxStudents"
-          type="number"
-          min={1}
-          max={10}
-          className="w-28"
-          aria-invalid={!!errors.maxStudents}
-          {...register('maxStudents', { valueAsNumber: true })}
-        />
-      </Field>
+      <div className="space-y-1.5">
+        <Label className="text-xs font-medium text-slate-800 dark:text-neutral-300">
+          Sĩ số nhóm sinh viên
+        </Label>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-xs text-slate-900 dark:text-neutral-100 px-3 py-2 rounded-lg bg-slate-100 dark:bg-neutral-800 border border-slate-300 dark:border-neutral-700">
+            {matchingRound?.maxStudentsPerTopic ?? 2} sinh viên / đề tài
+          </span>
+          <span className="text-xs text-slate-500 dark:text-neutral-400">
+            (Quy định tự động theo đợt {matchingRound?.projectType?.name ?? 'đồ án'})
+          </span>
+        </div>
+        <input type="hidden" {...register('maxStudents', { valueAsNumber: true })} />
+      </div>
 
       {children}
 

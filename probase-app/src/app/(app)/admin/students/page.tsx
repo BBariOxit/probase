@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import {
+  AlertTriangle,
   CheckCircle2,
   Download,
   FileUp,
@@ -21,7 +22,11 @@ import {
   useRemoveEligibleStudent,
 } from '@/lib/api/eligible-students';
 import { useMajors } from '@/lib/api/majors';
-import { useActiveSemester, useRoundsForSemester } from '@/lib/api/master-data';
+import {
+  useActiveSemester,
+  useRoundCapacity,
+  useRoundsForSemester,
+} from '@/lib/api/master-data';
 import { useExportStudents, useStudents } from '@/lib/api/students';
 import { useTopicLecturers } from '@/lib/api/topics';
 import type { StudentRosterRow } from '@/lib/api/types';
@@ -117,6 +122,9 @@ export default function StudentRosterPage() {
   const [addStudentOpen, setAddStudentOpen] = useState(false);
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
   const [studentToRemove, setStudentToRemove] = useState<StudentRosterRow | null>(null);
+
+  const effectiveCapacityRoundId = roundId !== ANY ? roundId : rounds?.[0]?.id;
+  const { data: capacity } = useRoundCapacity(effectiveCapacityRoundId);
 
   const debouncedSearch = useDebouncedValue(search);
   const debouncedClass = useDebouncedValue(classCode);
@@ -461,6 +469,49 @@ export default function StudentRosterPage() {
             </Button>
           </div>
         </div>
+
+        {/* ── BĂNG TỔNG QUAN CHỈ TIÊU & CÂN ĐỐI ĐỢT (CAPACITY PLANNING STRIP) ── */}
+        {capacity && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] px-4 py-2.5 shadow-2xs">
+            <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-slate-700 dark:text-neutral-300">
+              <span className="font-semibold text-slate-900 dark:text-neutral-100">
+                🎓 {capacity.round.projectTypeName}:
+              </span>
+              <span>
+                <strong className="text-slate-900 dark:text-neutral-100 font-semibold">{capacity.eligibleStudentCount}</strong> SV đủ ĐK ({capacity.round.maxStudentsPerTopic} SV/đề tài)
+              </span>
+              <span className="text-slate-300 dark:text-neutral-700">•</span>
+              <span>
+                Mục tiêu: <strong className="text-slate-900 dark:text-neutral-100 font-semibold">~{capacity.estimatedGroupsNeeded} nhóm</strong> ({capacity.estimatedGroupsNeeded} - {capacity.targetTopicsWithBuffer} đề tài)
+              </span>
+              <span className="text-slate-300 dark:text-neutral-700">•</span>
+              <span>
+                Đã nộp: <strong className="text-slate-900 dark:text-neutral-100 font-semibold">{capacity.totalTopicsSubmitted} đề tài</strong> ({capacity.approvedTopicsCount} đã duyệt)
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3 text-xs">
+              {capacity.deficit > 0 ? (
+                <span className="inline-flex items-center gap-1 font-semibold text-amber-600 dark:text-amber-400">
+                  <AlertTriangle className="size-3.5" />
+                  Còn thiếu {capacity.deficit} đề tài
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="size-3.5" />
+                  Đủ đáp ứng ({capacity.approvedTopicsCount}/{capacity.estimatedGroupsNeeded})
+                </span>
+              )}
+
+              <Link
+                href="/admin/topic-registry"
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Kiểm tra tiến độ GV →
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* HÀNG ACTIVE FILTER CHIPS (HIỆN DƯỚI DẠNG CHIP CÓ THỂ XÓA TỪNG CÁI) */}
         {hasAnyFilter && (
