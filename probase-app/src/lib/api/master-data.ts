@@ -180,6 +180,34 @@ export function useSetSemesterRounds() {
   });
 }
 
+export function useUpdateRound() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      roundId,
+      data,
+    }: {
+      roundId: number;
+      data: {
+        maxStudentsPerTopic?: number;
+        minTopicsPerLecturer?: number | null;
+      };
+    }) =>
+      api<RegistrationRound>(`/rounds/${roundId}`, {
+        method: 'PATCH',
+        body: data,
+      }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['rounds'] });
+      queryClient.invalidateQueries({
+        queryKey: ['rounds', variables.roundId, 'capacity'],
+      });
+      queryClient.invalidateQueries({ queryKey: ['semesters'] });
+    },
+  });
+}
+
 export interface CatalogueInput {
   name: string;
   code: string;

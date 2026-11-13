@@ -1,24 +1,31 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
 import {
-  AlertTriangle,
   ArrowRight,
-  CheckCircle2,
-  Clock,
-  FileText,
-  GraduationCap,
-  Layers,
   Loader2,
   Search,
-  Users,
+  SlidersHorizontal,
 } from 'lucide-react';
-import { useRoundCapacity, useRoundsForSemester } from '@/lib/api/master-data';
+import { toast } from 'sonner';
+import {
+  useRoundCapacity,
+  useRoundsForSemester,
+  useUpdateRound,
+} from '@/lib/api/master-data';
 import { useMajors } from '@/lib/api/majors';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { sanitizeLecturerName } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -47,6 +54,7 @@ export function RoundLecturerProgressTab({
   const { data: rounds, isPending: isRoundsPending } =
     useRoundsForSemester(semesterId);
   const { data: majors } = useMajors();
+  const updateRound = useUpdateRound();
 
   const [selectedRoundId, setSelectedRoundId] = useState<number | undefined>(
     undefined,
@@ -55,11 +63,52 @@ export function RoundLecturerProgressTab({
   const [majorFilter, setMajorFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
+  // Quota adjustment dialog state
+  const [quotaDialogOpen, setQuotaDialogOpen] = useState(false);
+  const [editMaxStudents, setEditMaxStudents] = useState<number>(2);
+  const [editMinTopics, setEditMinTopics] = useState<string>('1');
+
   // Default to first round once loaded
   const effectiveRoundId = selectedRoundId ?? rounds?.[0]?.id;
 
   const { data: capacity, isPending: isCapacityPending } =
     useRoundCapacity(effectiveRoundId);
+
+  function handleOpenQuotaDialog() {
+    if (!capacity) return;
+    setEditMaxStudents(capacity.round.maxStudentsPerTopic || 2);
+    setEditMinTopics(
+      capacity.round.minTopicsPerLecturer !== null &&
+        capacity.round.minTopicsPerLecturer !== undefined
+        ? String(capacity.round.minTopicsPerLecturer)
+        : '',
+    );
+    setQuotaDialogOpen(true);
+  }
+
+  async function handleSaveQuota(e: React.FormEvent) {
+    e.preventDefault();
+    if (!effectiveRoundId) return;
+
+    const parsedMinTopics =
+      editMinTopics.trim() === ''
+        ? null
+        : Math.max(1, Number(editMinTopics) || 1);
+
+    try {
+      await updateRound.mutateAsync({
+        roundId: effectiveRoundId,
+        data: {
+          maxStudentsPerTopic: Math.max(1, Number(editMaxStudents) || 1),
+          minTopicsPerLecturer: parsedMinTopics,
+        },
+      });
+      toast.success('Đã cập nhật chỉ tiêu đợt đồ án');
+      setQuotaDialogOpen(false);
+    } catch {
+      toast.error('Không thể cập nhật chỉ tiêu. Vui lòng thử lại.');
+    }
+  }
 
   const filteredLecturers = useMemo(() => {
     if (!capacity?.lecturerProgress) return [];
@@ -102,11 +151,19 @@ export function RoundLecturerProgressTab({
     );
   }
 
+  const currentMax = Math.max(1, Number(editMaxStudents) || 1);
+  const calculatedGroupsNeeded = capacity
+    ? Math.ceil(capacity.eligibleStudentCount / currentMax)
+    : 0;
+  const parsedMin =
+    editMinTopics.trim() === '' ? 1 : Math.max(1, Number(editMinTopics) || 1);
+  const totalFromLecturers = (capacity?.lecturersCount ?? 0) * parsedMin;
+
   return (
-    <div className="space-y-5">
-      {/* ── Chọn đợt đánh giá tiến độ ── */}
+    <div className="space-y-4">
+      {/* ── Chọn đợt đánh giá & Nút cài đặt chỉ tiêu ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
           <span className="text-xs font-medium text-slate-600 dark:text-neutral-400">
             Chọn đợt đồ án:
           </span>
@@ -130,6 +187,19 @@ export function RoundLecturerProgressTab({
               ))}
             </SelectContent>
           </Select>
+
+          {capacity && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleOpenQuotaDialog}
+              className="h-9 gap-1.5 text-xs rounded-lg border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200 cursor-pointer shadow-2xs"
+            >
+              <SlidersHorizontal className="size-3.5 text-primary" />
+              <span>Cài đặt chỉ tiêu đợt</span>
+            </Button>
+          )}
         </div>
 
         {capacity && (
@@ -141,103 +211,68 @@ export function RoundLecturerProgressTab({
         )}
       </div>
 
-      {/* ── Thước đo Cung - Cầu & Sĩ số đợt ── */}
+      {/* ── Băng tổng quan chỉ tiêu & Cân đối đợt (Gọn gàng, thanh mảnh, không tốn diện tích) ── */}
       {isCapacityPending ? (
-        <div className="flex justify-center py-8">
+        <div className="flex justify-center py-6">
           <Loader2 className="size-5 animate-spin text-primary" />
         </div>
       ) : capacity ? (
-        <div className="rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] p-4.5 shadow-2xs space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {/* 1. Nhu cầu sinh viên */}
-            <div className="rounded-lg border border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-[#161616] p-3 space-y-1">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-neutral-400">
-                <Users className="size-3.5 text-primary" />
-                <span>Sinh viên đủ điều kiện</span>
-              </div>
-              <div className="text-xl font-bold text-slate-900 dark:text-neutral-100">
-                {capacity.eligibleStudentCount}{' '}
-                <span className="text-xs font-normal text-slate-500">SV</span>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-neutral-400">
-                Sĩ số tối đa: {capacity.round.maxStudentsPerTopic} SV / đề tài
-              </p>
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] px-4 py-2.5 shadow-2xs">
+          <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-slate-700 dark:text-neutral-300">
+            <span className="font-semibold text-slate-900 dark:text-neutral-100">
+              🎓 {capacity.round.projectTypeName}:
+            </span>
+            <span>
+              <strong className="text-slate-900 dark:text-neutral-100 font-semibold">
+                {capacity.eligibleStudentCount}
+              </strong>{' '}
+              SV đủ ĐK ({capacity.round.maxStudentsPerTopic} SV/đề tài)
+            </span>
+            <span className="text-slate-300 dark:text-neutral-700">•</span>
+            <span>
+              Mục tiêu:{' '}
+              <strong className="text-slate-900 dark:text-neutral-100 font-semibold">
+                ~{capacity.estimatedGroupsNeeded} nhóm
+              </strong>{' '}
+              ({capacity.estimatedGroupsNeeded} - {capacity.targetTopicsWithBuffer} đề tài)
+            </span>
+            <span className="text-slate-300 dark:text-neutral-700">•</span>
+            <span>
+              Đã nộp:{' '}
+              <strong className="text-slate-900 dark:text-neutral-100 font-semibold">
+                {capacity.totalTopicsSubmitted} đề tài
+              </strong>{' '}
+              ({capacity.approvedTopicsCount} đã duyệt
+              {capacity.pendingTopicsCount > 0
+                ? `, ${capacity.pendingTopicsCount} chờ duyệt`
+                : ''}
+              {capacity.draftTopicsCount > 0
+                ? `, ${capacity.draftTopicsCount} nháp`
+                : ''}
+              )
+            </span>
+          </div>
 
-            {/* 2. Mục tiêu số đề tài */}
-            <div className="rounded-lg border border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-[#161616] p-3 space-y-1">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-neutral-400">
-                <Layers className="size-3.5 text-primary" />
-                <span>Nhu cầu đề tài tối thiểu</span>
-              </div>
-              <div className="text-xl font-bold text-slate-900 dark:text-neutral-100">
-                {capacity.estimatedGroupsNeeded}{' '}
-                <span className="text-xs font-normal text-slate-500">đề tài</span>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-neutral-400">
-                Khuyến nghị: {capacity.targetTopicsWithBuffer} đề tài (dự phòng 15%)
-              </p>
-            </div>
-
-            {/* 3. Đề tài hiện có */}
-            <div className="rounded-lg border border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-[#161616] p-3 space-y-1">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-neutral-400">
-                <FileText className="size-3.5 text-primary" />
-                <span>Đề tài đã nộp</span>
-              </div>
-              <div className="text-xl font-bold text-slate-900 dark:text-neutral-100">
-                {capacity.totalTopicsSubmitted}{' '}
-                <span className="text-xs font-normal text-slate-500">
-                  ({capacity.approvedTopicsCount} đã duyệt)
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-neutral-400">
-                Chờ duyệt: {capacity.pendingTopicsCount} • Bản nháp: {capacity.draftTopicsCount}
-              </p>
-            </div>
-
-            {/* 4. Cân đối cung cầu */}
-            <div
-              className={`rounded-lg border p-3 space-y-1 ${
-                capacity.deficit > 0
-                  ? 'border-amber-300 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/20'
-                  : 'border-emerald-300 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/20'
-              }`}
-            >
-              <div className="flex items-center gap-1.5 text-xs font-medium">
-                {capacity.deficit > 0 ? (
-                  <>
-                    <AlertTriangle className="size-3.5 text-amber-600 dark:text-amber-400" />
-                    <span className="text-amber-700 dark:text-amber-300">Cân đối đợt</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-emerald-700 dark:text-emerald-300">Cân đối đợt</span>
-                  </>
-                )}
-              </div>
-              <div
-                className={`text-xl font-bold ${
-                  capacity.deficit > 0
-                    ? 'text-amber-700 dark:text-amber-300'
-                    : 'text-emerald-700 dark:text-emerald-300'
-                }`}
-              >
-                {capacity.deficit > 0
-                  ? `Thiếu ${capacity.deficit} đề tài`
-                  : 'Đủ đáp ứng'}
-              </div>
-              <p className="text-[11px] text-slate-600 dark:text-neutral-400">
-                {capacity.assignedStudentsCount}/{capacity.eligibleStudentCount} SV đã có nhóm
-              </p>
-            </div>
+          <div className="flex items-center gap-3 text-xs">
+            {capacity.deficit > 0 ? (
+              <span className="font-semibold text-amber-600 dark:text-amber-400">
+                Còn thiếu {capacity.deficit} đề tài
+              </span>
+            ) : (
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                Đủ đáp ứng ({capacity.approvedTopicsCount}/{capacity.estimatedGroupsNeeded})
+              </span>
+            )}
+            <span className="text-slate-300 dark:text-neutral-700">•</span>
+            <span className="text-slate-500 dark:text-neutral-400">
+              {capacity.assignedStudentsCount}/{capacity.eligibleStudentCount} SV đã có nhóm
+            </span>
           </div>
         </div>
       ) : null}
 
       {/* ── Bảng tiến độ nộp đề tài của từng Giảng viên ── */}
-      <div className="space-y-3">
+      <div className="space-y-3 pt-1">
         {/* Bộ lọc bảng giảng viên */}
         <div className="flex flex-wrap items-center justify-between gap-2.5">
           <div className="flex flex-wrap items-center gap-2.5">
@@ -256,7 +291,15 @@ export function RoundLecturerProgressTab({
               onValueChange={(val) => setMajorFilter(val ?? 'ALL')}
             >
               <SelectTrigger className="h-9 w-44 text-xs rounded-lg border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e]">
-                <SelectValue placeholder="Mọi bộ môn" />
+                <SelectValue placeholder="Mọi bộ môn">
+                  {(val) => {
+                    if (!val || val === 'ALL') return 'Mọi bộ môn';
+                    return (
+                      majors?.find((m) => String(m.id) === String(val))?.name ??
+                      'Mọi bộ môn'
+                    );
+                  }}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Mọi bộ môn</SelectItem>
@@ -273,7 +316,15 @@ export function RoundLecturerProgressTab({
               onValueChange={(val) => setStatusFilter(val ?? 'ALL')}
             >
               <SelectTrigger className="h-9 w-38 text-xs rounded-lg border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e]">
-                <SelectValue placeholder="Mọi tình trạng" />
+                <SelectValue placeholder="Mọi tình trạng">
+                  {(val) => {
+                    if (!val || val === 'ALL') return 'Mọi tình trạng';
+                    if (val === 'MET') return 'Đạt chỉ tiêu';
+                    if (val === 'IN_PROGRESS') return 'Đang nộp';
+                    if (val === 'NOT_STARTED') return 'Chưa nộp';
+                    return 'Mọi tình trạng';
+                  }}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Mọi tình trạng</SelectItem>
@@ -289,41 +340,21 @@ export function RoundLecturerProgressTab({
           </span>
         </div>
 
-        {/* Bảng danh sách */}
+        {/* Bảng danh sách chuẩn mực, đồng bộ header với các trang khác */}
         <div className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
-          <Table>
-            <TableHeader className="bg-slate-50 dark:bg-[#171717] border-b border-slate-200 dark:border-neutral-800">
+          <Table containerClassName="overflow-visible" className="relative w-full text-left text-sm">
+            <TableHeader sticky>
               <TableRow>
-                <TableHead className="w-12 text-center text-xs font-semibold text-slate-900 dark:text-neutral-100">
-                  STT
-                </TableHead>
-                <TableHead className="text-xs font-semibold text-slate-900 dark:text-neutral-100">
-                  Giảng viên
-                </TableHead>
-                <TableHead className="text-xs font-semibold text-slate-900 dark:text-neutral-100">
-                  Bộ môn / Chuyên ngành
-                </TableHead>
-                <TableHead className="text-center text-xs font-semibold text-slate-900 dark:text-neutral-100">
-                  Đã nộp
-                </TableHead>
-                <TableHead className="text-center text-xs font-semibold text-slate-900 dark:text-neutral-100">
-                  Đã duyệt
-                </TableHead>
-                <TableHead className="text-center text-xs font-semibold text-slate-900 dark:text-neutral-100">
-                  Chờ duyệt
-                </TableHead>
-                <TableHead className="text-center text-xs font-semibold text-slate-900 dark:text-neutral-100">
-                  Bản nháp
-                </TableHead>
-                <TableHead className="text-center text-xs font-semibold text-slate-900 dark:text-neutral-100">
-                  Chỉ tiêu
-                </TableHead>
-                <TableHead className="text-center text-xs font-semibold text-slate-900 dark:text-neutral-100">
-                  Trạng thái
-                </TableHead>
-                <TableHead className="w-24 text-right text-xs font-semibold text-slate-900 dark:text-neutral-100">
-                  Thao tác
-                </TableHead>
+                <TableHead className="w-12 text-center">STT</TableHead>
+                <TableHead className="min-w-48 px-4">Giảng viên</TableHead>
+                <TableHead className="px-4">Bộ môn / Chuyên ngành</TableHead>
+                <TableHead className="text-center px-3">Đã nộp</TableHead>
+                <TableHead className="text-center px-3">Đã duyệt</TableHead>
+                <TableHead className="text-center px-3">Chờ duyệt</TableHead>
+                <TableHead className="text-center px-3">Bản nháp</TableHead>
+                <TableHead className="text-center px-3">Chỉ tiêu</TableHead>
+                <TableHead className="text-center px-4">Trạng thái</TableHead>
+                <TableHead className="w-24 text-right px-4">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -342,85 +373,72 @@ export function RoundLecturerProgressTab({
                     key={lecturer.lecturerId}
                     className="hover:bg-slate-50/80 dark:hover:bg-neutral-800/40"
                   >
-                    <TableCell className="text-center text-xs font-mono text-slate-500">
+                    <TableCell className="text-center text-xs font-mono text-slate-500 py-3.5">
                       {index + 1}
                     </TableCell>
 
-                    <TableCell>
-                      <div className="flex items-center gap-2.5">
-                        <Avatar className="size-7 border border-slate-200 dark:border-neutral-700">
-                          {lecturer.avatarUrl && (
-                            <AvatarImage
-                              src={lecturer.avatarUrl}
-                              alt={lecturer.fullName}
-                            />
-                          )}
-                          <AvatarFallback className="text-[10px] font-semibold bg-primary/10 text-primary">
-                            {lecturer.fullName.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-semibold text-xs text-slate-900 dark:text-neutral-100">
-                            {lecturer.academicTitle
-                              ? `${lecturer.academicTitle}. ${lecturer.fullName}`
-                              : lecturer.fullName}
-                          </p>
-                          <p className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono">
-                            {lecturer.email}
-                          </p>
-                        </div>
+                    <TableCell className="px-4 py-3.5">
+                      <div>
+                        <p className="font-semibold text-xs text-slate-900 dark:text-neutral-100">
+                          {
+                            sanitizeLecturerName(
+                              lecturer.fullName,
+                              lecturer.academicTitle,
+                            ).displayName
+                          }
+                        </p>
+                        <p className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono">
+                          {lecturer.email}
+                        </p>
                       </div>
                     </TableCell>
 
-                    <TableCell className="text-xs text-slate-700 dark:text-neutral-300">
+                    <TableCell className="px-4 py-3.5 text-xs text-slate-700 dark:text-neutral-300">
                       {lecturer.majorName ?? 'Chưa phân bộ môn'}
                     </TableCell>
 
-                    <TableCell className="text-center font-mono font-semibold text-xs text-slate-900 dark:text-neutral-100">
+                    <TableCell className="text-center font-mono font-semibold text-xs text-slate-900 dark:text-neutral-100 px-3 py-3.5">
                       {lecturer.topicsCount}
                     </TableCell>
 
-                    <TableCell className="text-center font-mono text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                    <TableCell className="text-center font-mono font-semibold text-xs text-emerald-600 dark:text-emerald-400 px-3 py-3.5">
                       {lecturer.approvedCount}
                     </TableCell>
 
-                    <TableCell className="text-center font-mono text-xs font-medium text-amber-600 dark:text-amber-400">
+                    <TableCell className="text-center font-mono font-semibold text-xs text-amber-600 dark:text-amber-400 px-3 py-3.5">
                       {lecturer.pendingCount}
                     </TableCell>
 
-                    <TableCell className="text-center font-mono text-xs text-slate-400">
+                    <TableCell className="text-center font-mono text-xs text-slate-400 px-3 py-3.5">
                       {lecturer.draftCount}
                     </TableCell>
 
-                    <TableCell className="text-center font-mono text-xs text-slate-600 dark:text-neutral-400">
+                    <TableCell className="text-center font-mono text-xs text-slate-600 dark:text-neutral-400 px-3 py-3.5">
                       {lecturer.targetQuota}
                     </TableCell>
 
-                    <TableCell className="text-center">
+                    <TableCell className="text-center px-4 py-3.5">
                       {lecturer.status === 'MET' ? (
-                        <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
-                          <CheckCircle2 className="size-3" />
+                        <span className="font-semibold text-xs text-emerald-600 dark:text-emerald-400">
                           Đạt chỉ tiêu
                         </span>
                       ) : lecturer.status === 'IN_PROGRESS' ? (
-                        <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">
-                          <Clock className="size-3" />
+                        <span className="font-semibold text-xs text-amber-600 dark:text-amber-400">
                           Đang nộp ({lecturer.approvedCount}/{lecturer.targetQuota})
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300">
-                          <AlertTriangle className="size-3" />
+                        <span className="font-semibold text-xs text-rose-600 dark:text-rose-400">
                           Chưa nộp
                         </span>
                       )}
                     </TableCell>
 
-                    <TableCell className="text-right">
+                    <TableCell className="text-right px-4 py-3.5">
                       {onFilterByLecturer && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 px-2 text-[11px] text-primary hover:text-primary hover:bg-primary/10 cursor-pointer gap-1"
+                          className="h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10 cursor-pointer gap-1"
                           onClick={() => onFilterByLecturer(lecturer.lecturerId)}
                         >
                           <span>Xem đề tài</span>
@@ -435,6 +453,110 @@ export function RoundLecturerProgressTab({
           </Table>
         </div>
       </div>
+
+      {/* ── Dialog Cài đặt chỉ tiêu đợt đồ án ── */}
+      <Dialog open={quotaDialogOpen} onOpenChange={setQuotaDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-semibold">
+              <SlidersHorizontal className="size-4 text-primary" />
+              Cài đặt chỉ tiêu đợt đồ án
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 dark:text-neutral-400">
+              Điều chỉnh số sinh viên tối đa một nhóm và chỉ tiêu đề tài mỗi giảng viên cho đợt{' '}
+              <strong className="text-slate-900 dark:text-neutral-100 font-semibold">
+                {capacity?.round.projectTypeName}
+              </strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveQuota} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="quota-max-students" className="text-xs font-medium">
+                Số sinh viên tối đa / đề tài (nhóm)
+              </Label>
+              <Input
+                id="quota-max-students"
+                type="number"
+                min={1}
+                max={10}
+                required
+                value={editMaxStudents}
+                onChange={(e) => setEditMaxStudents(Number(e.target.value) || 1)}
+                className="h-9 text-xs rounded-lg"
+              />
+              <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+                Quy định sĩ số nhóm (KLTN: 1 SV, ĐACN / ĐACS: 2 SV). Dùng để tính toán số đề tài cần thiết và tự động áp dụng khi tạo đề tài.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="quota-min-topics" className="text-xs font-medium">
+                Chỉ tiêu đề tài tối thiểu mỗi giảng viên
+              </Label>
+              <Input
+                id="quota-min-topics"
+                type="number"
+                min={1}
+                max={50}
+                placeholder="Tự động tính nếu để trống (VD: 2)"
+                value={editMinTopics}
+                onChange={(e) => setEditMinTopics(e.target.value)}
+                className="h-9 text-xs rounded-lg"
+              />
+              <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+                Số lượng đề tài tối thiểu mỗi giảng viên cơ hữu cần đưa ra để Khoa theo dõi tiến độ nộp.
+              </p>
+            </div>
+
+            {/* Khung tính toán thực tế tham khảo */}
+            {capacity && (
+              <div className="rounded-lg border border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-[#161616] p-3 text-xs space-y-1 text-slate-700 dark:text-neutral-300">
+                <p className="font-semibold text-slate-900 dark:text-neutral-100">
+                  Dự tính cung - cầu theo cài đặt:
+                </p>
+                <p>
+                  • Số SV đủ điều kiện:{' '}
+                  <strong className="text-slate-900 dark:text-neutral-100">{capacity.eligibleStudentCount} SV</strong>
+                </p>
+                <p>
+                  • Nhu cầu tối thiểu:{' '}
+                  <strong className="text-slate-900 dark:text-neutral-100">~{calculatedGroupsNeeded} đề tài</strong>{' '}
+                  (chia theo {currentMax} SV/nhóm)
+                </p>
+                <p>
+                  • Cung từ {capacity.lecturersCount} GV:{' '}
+                  <strong className="text-slate-900 dark:text-neutral-100">~{totalFromLecturers} đề tài</strong>{' '}
+                  ({parsedMin} đề tài / GV)
+                </p>
+              </div>
+            )}
+
+            <DialogFooter className="gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setQuotaDialogOpen(false)}
+                className="h-9 text-xs cursor-pointer"
+              >
+                Hủy
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={updateRound.isPending}
+                className="h-9 text-xs bg-primary text-white hover:bg-primary/90 font-semibold cursor-pointer"
+              >
+                {updateRound.isPending && (
+                  <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                )}
+                Lưu cài đặt
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
