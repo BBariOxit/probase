@@ -866,14 +866,14 @@ function PlanTabsForm({
                         />
                       </div>
 
-                      {/* Sĩ số nhóm & Định mức đề tài */}
-                      <div className="grid gap-4 sm:grid-cols-2 pt-1">
+                      {/* Sĩ số nhóm tối đa */}
+                      <div className="grid gap-4 sm:grid-cols-3 pt-1">
                         <div className="space-y-1.5">
                           <Label
                             htmlFor={`maxStudents-${type.id}`}
                             className="text-xs font-medium text-slate-800 dark:text-neutral-300"
                           >
-                            Số sinh viên tối đa / đề tài (nhóm)
+                            Số SV tối đa / đề tài (nhóm)
                           </Label>
                           <input
                             id={`maxStudents-${type.id}`}
@@ -889,34 +889,6 @@ function PlanTabsForm({
                             }
                             className="h-9 w-full rounded-lg border-[1.5px] border-slate-400 dark:border-neutral-700 hover:border-slate-500 dark:hover:border-neutral-500 bg-slate-100 hover:bg-slate-200/50 focus:bg-white dark:bg-[#141414] dark:hover:bg-[#171717] px-3 text-sm text-slate-900 dark:text-neutral-100 transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:border-primary dark:focus:ring-2 dark:focus:ring-primary/20 disabled:opacity-50 shadow-xs"
                           />
-                          <p className="text-[11px] text-slate-500 dark:text-neutral-400">
-                            Quy định sĩ số nhóm (KLTN: 1 SV, ĐACN / ĐACS: 2 SV). Dùng tính số nhóm & áp dụng khi tạo đề tài.
-                          </p>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <Label
-                            htmlFor={`minTopics-${type.id}`}
-                            className="text-xs font-medium text-slate-800 dark:text-neutral-300"
-                          >
-                            Chỉ tiêu đề tài / giảng viên (khuyến nghị)
-                          </Label>
-                          <input
-                            id={`minTopics-${type.id}`}
-                            type="number"
-                            min={1}
-                            max={50}
-                            placeholder="Tự động tính nếu để trống (VD: 5)"
-                            disabled={locked}
-                            value={row.minTopicsPerLecturer}
-                            onChange={(e) =>
-                              patch(type.id, { minTopicsPerLecturer: e.target.value })
-                            }
-                            className="h-9 w-full rounded-lg border-[1.5px] border-slate-400 dark:border-neutral-700 hover:border-slate-500 dark:hover:border-neutral-500 bg-slate-100 hover:bg-slate-200/50 focus:bg-white dark:bg-[#141414] dark:hover:bg-[#171717] px-3 text-sm text-slate-900 dark:text-neutral-100 transition placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:border-primary dark:focus:ring-2 dark:focus:ring-primary/20 disabled:opacity-50 shadow-xs"
-                          />
-                          <p className="text-[11px] text-slate-500 dark:text-neutral-400">
-                            Số lượng đề tài tối thiểu mỗi GV cơ hữu cần nộp để Khoa theo dõi tiến độ.
-                          </p>
                         </div>
                       </div>
                     </div>
