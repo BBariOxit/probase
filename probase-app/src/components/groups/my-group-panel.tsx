@@ -166,7 +166,7 @@ export function MyGroupPanel({
                   setStudentCode(e.target.value);
                   if (inviteError) setInviteError(null);
                 }}
-                placeholder="Nhập mã số sinh viên (ví dụ: 2266666)…"
+                placeholder="2212345"
                 className={cn(
                   'h-10 text-sm bg-white dark:bg-[#202024] border border-[#a6b0c2] dark:border-[#383840] text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 shadow-2xs transition-colors',
                   inviteError
