@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   ArrowRight,
   CalendarDays,
-  CheckCircle2,
   FileEdit,
   FileText,
   Layers,
@@ -135,36 +134,6 @@ export default function StudentProposalDetailPage({
         </div>
       )}
 
-      {/* Thông báo khi được nhận */}
-      {proposal.status === 'ACCEPTED' && (
-        <div className="rounded-xl border border-status-success/30 bg-status-success-bg/40 p-4 space-y-2">
-          <h3 className="text-sm font-semibold text-status-success flex items-center gap-1.5">
-            <CheckCircle2 className="size-4" />
-            Đề xuất đã được Giảng viên nhận hướng dẫn
-          </h3>
-          <p className="text-sm text-foreground">
-            {proposal.convertedTopic?.status === 'OPEN'
-              ? 'Đề tài đã mở đăng ký và đang được giữ cho bạn.'
-              : proposal.convertedTopic?.status === 'APPROVED'
-                ? 'Tổ trưởng Bộ môn đã duyệt đề tài. Sau khi Giáo vụ mở đăng ký, bạn có thể đăng ký giữ chỗ.'
-                : 'Đề tài đã được tạo từ đề xuất này. Sau khi Tổ trưởng Bộ môn duyệt và Giáo vụ mở đăng ký, bạn có thể đăng ký giữ chỗ.'}
-          </p>
-          {proposal.convertedTopic &&
-            ['OPEN', 'IN_PROGRESS', 'COMPLETED'].includes(
-              proposal.convertedTopic.status,
-            ) && (
-              <Button
-                size="sm"
-                className="gap-1.5 mt-1"
-                render={<Link href={`/student/topics/${proposal.convertedTopic.id}`} />}
-              >
-                Xem đề tài &amp; Đăng ký
-                <ArrowRight className="size-3.5" />
-              </Button>
-            )}
-        </div>
-      )}
-
       {/* Thông báo khi bị từ chối */}
       {proposal.status === 'REJECTED' && (
         <div className="rounded-xl border border-status-danger/30 bg-status-danger-bg/40 p-4 space-y-1.5">
@@ -199,6 +168,22 @@ export default function StudentProposalDetailPage({
 
             {/* Nút sửa đề xuất và nút gửi nằm ở góc phải trên cùng của form */}
             <div className="flex items-center gap-2">
+              {proposal.convertedTopic &&
+                ['OPEN', 'IN_PROGRESS', 'COMPLETED'].includes(
+                  proposal.convertedTopic.status,
+                ) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 cursor-pointer font-semibold shadow-xs"
+                    render={
+                      <Link href={`/student/topics/${proposal.convertedTopic.id}`} />
+                    }
+                  >
+                    <span>Xem đề tài</span>
+                    <ArrowRight className="size-3.5" />
+                  </Button>
+                )}
               {isDraft && !isEditing && (
                 <Button
                   variant="default"
