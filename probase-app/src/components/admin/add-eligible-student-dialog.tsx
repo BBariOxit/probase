@@ -61,6 +61,7 @@ export function AddEligibleStudentDialog({
   const [error, setError] = useState<string | null>(null);
 
   const isClassManuallyEdited = useRef(false);
+  const isEmailManuallyEdited = useRef(false);
 
   useEffect(() => {
     if (open) {
@@ -77,13 +78,16 @@ export function AddEligibleStudentDialog({
       setNote('');
       setError(null);
       isClassManuallyEdited.current = false;
+      isEmailManuallyEdited.current = false;
     }
   }, [open, defaultRoundId, rounds]);
 
   function handleStudentCodeChange(val: string) {
     const cleanCode = val.trim();
     setStudentCode(cleanCode);
-    setEmail(deriveEmailFromStudentCode(cleanCode));
+    if (!isEmailManuallyEdited.current) {
+      setEmail(deriveEmailFromStudentCode(cleanCode));
+    }
 
     const prefix = deriveClassPrefixFromStudentCode(cleanCode);
     if (
@@ -156,12 +160,20 @@ export function AddEligibleStudentDialog({
               onValueChange={(val) => setRoundId(Number(val))}
             >
               <SelectTrigger id="add-round" className={`w-full ${inputStyle}`}>
-                <SelectValue placeholder="Chọn đợt đăng ký" />
+                <SelectValue placeholder="Chọn đợt đăng ký">
+                  {(val) => {
+                    if (!val) return 'Chọn đợt đăng ký';
+                    const round = rounds?.find(
+                      (r) => String(r.id) === String(val),
+                    );
+                    return round ? round.projectType.name : 'Chọn đợt đăng ký';
+                  }}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {(rounds ?? []).map((r) => (
                   <SelectItem key={r.id} value={String(r.id)}>
-                    {r.projectType.name} — {r.semester.name}
+                    {r.projectType.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -215,16 +227,24 @@ export function AddEligibleStudentDialog({
             <div className="space-y-2">
               <Label htmlFor="add-major">Chuyên ngành</Label>
               <Select
-                value={majorId ? String(majorId) : 'NONE'}
+                value={majorId ? String(majorId) : 'none'}
                 onValueChange={(val) =>
-                  setMajorId(val === 'NONE' ? null : Number(val))
+                  setMajorId(!val || val === 'none' ? null : Number(val))
                 }
               >
                 <SelectTrigger id="add-major" className={`w-full ${inputStyle}`}>
-                  <SelectValue placeholder="Không phân chuyên ngành" />
+                  <SelectValue>
+                    {(val) => {
+                      if (!val || val === 'none') return 'Không';
+                      return (
+                        majors?.find((m) => String(m.id) === String(val))?.name ??
+                        'Không'
+                      );
+                    }}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="NONE">Không phân chuyên ngành</SelectItem>
+                  <SelectItem value="none">Không</SelectItem>
                   {(majors ?? []).map((m) => (
                     <SelectItem key={m.id} value={String(m.id)}>
                       {m.name}
@@ -244,7 +264,10 @@ export function AddEligibleStudentDialog({
                 type="email"
                 placeholder="2212345@dlu.edu.vn"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  isEmailManuallyEdited.current = true;
+                  setEmail(e.target.value);
+                }}
                 className={inputStyle}
               />
             </div>
