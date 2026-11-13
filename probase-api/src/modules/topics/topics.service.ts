@@ -92,6 +92,7 @@ type TopicRound = {
 };
 
 type TopicWithGroups = {
+  status: TopicStatus;
   maxStudents: number;
   round: TopicRound;
   sourceProposal: { studentId: number } | null;
