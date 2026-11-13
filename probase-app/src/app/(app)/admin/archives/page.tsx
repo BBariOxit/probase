@@ -473,19 +473,19 @@ export default function ArchivesPage() {
                   <TableHead className="w-14 px-3 text-center whitespace-nowrap">
                     STT
                   </TableHead>
-                  <TableHead className="min-w-[280px] max-w-[340px] px-4">
+                  <TableHead className="w-[300px] max-w-[340px] px-5">
                     Tên đề tài
                   </TableHead>
-                  <TableHead className="w-28 px-3 text-center whitespace-nowrap">
+                  <TableHead className="w-28 px-4 text-center whitespace-nowrap">
                     Loại đồ án
                   </TableHead>
-                  <TableHead className="w-36 px-3 whitespace-nowrap">
+                  <TableHead className="w-40 px-4 whitespace-nowrap">
                     Chuyên ngành
                   </TableHead>
-                  <TableHead className="w-28 px-3 whitespace-nowrap">
+                  <TableHead className="w-32 px-4 whitespace-nowrap">
                     Học kỳ
                   </TableHead>
-                  <TableHead className="w-44 px-3 whitespace-nowrap">
+                  <TableHead className="w-48 px-4 whitespace-nowrap">
                     GV hướng dẫn
                   </TableHead>
                   <TableHead className="w-20 px-3 text-center whitespace-nowrap">
@@ -499,7 +499,7 @@ export default function ArchivesPage() {
                     <TableCell colSpan={7} className="h-48 text-center">
                       <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                         <Loader2 className="size-5 animate-spin text-primary" />
-                        <span className="text-xs">Đang tải kho lưu trữ…</span>
+                        <span className="text-sm">Đang tải kho lưu trữ…</span>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -529,23 +529,23 @@ export default function ArchivesPage() {
                         onClick={() => setSelectedTopicId(topic.id)}
                       >
                         {/* 1. STT */}
-                        <TableCell className="w-14 px-3 py-3.5 text-center font-mono text-xs text-muted-foreground align-middle">
+                        <TableCell className="w-14 px-3 py-4 text-center font-mono text-sm font-medium text-slate-600 dark:text-neutral-400 align-middle">
                           {stt}
                         </TableCell>
 
-                        {/* 2. Tên đề tài: 1 dòng duy nhất + truncate + hover tooltip popup */}
-                        <TableCell className="min-w-[280px] max-w-[340px] px-4 py-3.5 align-middle">
+                        {/* 2. Tên đề tài: 1 dòng duy nhất + truncate 3 chấm + hover tooltip popup */}
+                        <TableCell className="w-[300px] max-w-[340px] px-5 py-4 align-middle">
                           <Tooltip>
                             <TooltipTrigger
                               render={
                                 <button
                                   type="button"
                                   onClick={() => setSelectedTopicId(topic.id)}
-                                  className="block w-full max-w-[320px] truncate text-left cursor-pointer"
+                                  className="block w-full max-w-[280px] truncate text-left cursor-pointer"
                                 />
                               }
                             >
-                              <span className="truncate text-sm font-semibold text-slate-900 dark:text-neutral-100 leading-snug hover:text-primary transition-colors">
+                              <span className="truncate block text-sm font-semibold text-slate-900 dark:text-neutral-100 leading-snug hover:text-primary transition-colors">
                                 {topicTitle}
                               </span>
                             </TooltipTrigger>
@@ -564,28 +564,28 @@ export default function ArchivesPage() {
                           </Tooltip>
                         </TableCell>
 
-                        {/* 3. Loại đồ án (chữ thường không badge như sinh viên) */}
-                        <TableCell className="w-28 px-3 py-3.5 text-center font-medium text-slate-700 dark:text-neutral-300 align-middle whitespace-nowrap">
+                        {/* 3. Loại đồ án */}
+                        <TableCell className="w-28 px-4 py-4 text-center font-medium text-slate-800 dark:text-neutral-200 text-sm align-middle whitespace-nowrap">
                           <span title={projectTypeInfo.full}>
                             {projectTypeInfo.short}
                           </span>
                         </TableCell>
 
                         {/* 4. Chuyên ngành */}
-                        <TableCell className="w-36 px-3 py-3.5 text-slate-700 dark:text-neutral-300 align-middle whitespace-nowrap">
+                        <TableCell className="w-40 px-4 py-4 text-slate-800 dark:text-neutral-200 text-sm align-middle whitespace-nowrap">
                           {topic.major?.name ?? '—'}
                         </TableCell>
 
                         {/* 5. Học kỳ */}
-                        <TableCell className="w-28 px-3 py-3.5 text-slate-600 dark:text-neutral-400 align-middle whitespace-nowrap text-xs">
+                        <TableCell className="w-32 px-4 py-4 text-slate-700 dark:text-neutral-300 text-sm align-middle whitespace-nowrap">
                           {formatSemesterAbbr(topic.semester)}
                         </TableCell>
 
                         {/* 6. GV hướng dẫn */}
-                        <TableCell className="w-44 px-3 py-3.5 align-middle whitespace-nowrap">
-                          <div className="text-xs font-semibold text-slate-900 dark:text-neutral-100 leading-snug truncate">
+                        <TableCell className="w-48 px-4 py-4 align-middle whitespace-nowrap">
+                          <div className="text-sm font-medium text-slate-900 dark:text-neutral-100 leading-snug truncate">
                             {topic.lecturer?.academicTitle && (
-                              <span className="text-muted-foreground mr-1 font-normal">
+                              <span className="text-muted-foreground mr-1">
                                 {topic.lecturer.academicTitle}
                               </span>
                             )}
@@ -593,9 +593,9 @@ export default function ArchivesPage() {
                           </div>
                         </TableCell>
 
-                        {/* 7. Thao tác 3 chấm (Đủ w-20 không bao giờ bị cắt chữ THAO TÁC) */}
+                        {/* 7. Thao tác 3 chấm */}
                         <TableCell
-                          className="w-20 px-3 py-3.5 text-center align-middle whitespace-nowrap"
+                          className="w-20 px-3 py-4 text-center align-middle whitespace-nowrap"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <DropdownMenu>
@@ -668,30 +668,10 @@ export default function ArchivesPage() {
             <DetailSheet
               open={!!selectedTopicId}
               onOpenChange={(open) => !open && setSelectedTopicId(null)}
+              className="sm:max-w-lg"
               title={
-                <div className="text-base font-semibold leading-snug text-slate-900 dark:text-neutral-100 break-words [overflow-wrap:anywhere]">
+                <div className="text-base sm:text-lg font-semibold leading-snug text-slate-900 dark:text-neutral-100 break-words [overflow-wrap:anywhere]">
                   {selectedTopic.titleVi || selectedTopic.title}
-                </div>
-              }
-              meta={
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5">
-                    <GraduationCap className="size-3.5 shrink-0 text-muted-foreground/70" />
-                    <span>{supervisorName}</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <Layers className="size-3.5 shrink-0 text-muted-foreground/70" />
-                    <span className="font-semibold text-primary">{projectTypeInfo.short}</span>
-                    {projectTypeInfo.full && projectTypeInfo.full !== projectTypeInfo.short && (
-                      <span className="text-muted-foreground/80">({projectTypeInfo.full})</span>
-                    )}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <BookOpen className="size-3.5 shrink-0 text-muted-foreground/70" />
-                    <span>{selectedTopic.major?.name ?? '—'}</span>
-                  </span>
-                  <span>•</span>
-                  <span>{formatSemesterAbbr(selectedTopic.semester)}</span>
                 </div>
               }
               footer={
@@ -711,20 +691,50 @@ export default function ArchivesPage() {
                 </div>
               }
             >
-              <div className="space-y-5 text-sm">
+              <div className="space-y-6 text-sm">
+                {/* 4 dòng thông tin chi tiết trước phần Mô tả */}
+                <div className="space-y-2.5 pb-4 border-b border-slate-200 dark:border-neutral-800 text-sm">
+                  <div className="flex items-center gap-2.5 text-slate-800 dark:text-neutral-200">
+                    <GraduationCap className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="text-muted-foreground min-w-[110px] shrink-0">GV hướng dẫn:</span>
+                    <span className="font-semibold text-slate-900 dark:text-neutral-100">{supervisorName}</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-slate-800 dark:text-neutral-200">
+                    <Layers className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="text-muted-foreground min-w-[110px] shrink-0">Loại đồ án:</span>
+                    <span className="font-semibold text-primary">{projectTypeInfo.full}</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-slate-800 dark:text-neutral-200">
+                    <BookOpen className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="text-muted-foreground min-w-[110px] shrink-0">Chuyên ngành:</span>
+                    <span className="font-medium text-slate-900 dark:text-neutral-100">{selectedTopic.major?.name ?? '—'}</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-slate-800 dark:text-neutral-200">
+                    <Archive className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="text-muted-foreground min-w-[110px] shrink-0">Học kỳ:</span>
+                    <span className="font-medium text-slate-900 dark:text-neutral-100 whitespace-nowrap">
+                      {(selectedTopic.semester?.name || '')
+                        .replace(/\s*năm học\s*/gi, ' ')
+                        .trim() || formatSemesterAbbr(selectedTopic.semester)}
+                    </span>
+                  </div>
+                </div>
+
                 {/* 1. Mô tả */}
                 <TextSection
                   title="Mô tả"
+                  titleClassName="text-sm font-semibold text-slate-900 dark:text-neutral-100"
                   body={selectedTopic.description}
-                  bodyClassName="text-justify text-xs leading-relaxed"
+                  bodyClassName="text-justify text-sm leading-relaxed text-slate-700 dark:text-neutral-300"
                 />
 
                 {/* 2. Mục tiêu đề tài */}
                 {selectedTopic.objectives && (
                   <TextSection
                     title="Mục tiêu đề tài"
+                    titleClassName="text-sm font-semibold text-slate-900 dark:text-neutral-100"
                     body={selectedTopic.objectives}
-                    bodyClassName="text-justify text-xs leading-relaxed"
+                    bodyClassName="text-justify text-sm leading-relaxed text-slate-700 dark:text-neutral-300"
                   />
                 )}
 
@@ -732,22 +742,23 @@ export default function ArchivesPage() {
                 {selectedTopic.expectedOutcomes && (
                   <TextSection
                     title="Yêu cầu đầu ra"
+                    titleClassName="text-sm font-semibold text-slate-900 dark:text-neutral-100"
                     body={selectedTopic.expectedOutcomes}
-                    bodyClassName="text-justify text-xs leading-relaxed"
+                    bodyClassName="text-justify text-sm leading-relaxed text-slate-700 dark:text-neutral-300"
                   />
                 )}
 
                 {/* 4. Công nghệ & công cụ đề xuất */}
                 {selectedTopic.techStack && (
-                  <div className="space-y-1.5">
-                    <h4 className="text-xs font-semibold text-slate-900 dark:text-neutral-100">
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-neutral-100">
                       Công nghệ & Công cụ đề xuất
                     </h4>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-2">
                       {selectedTopic.techStack.split(',').map((tech, i) => (
                         <span
                           key={i}
-                          className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-neutral-800 dark:text-neutral-300"
+                          className="inline-flex items-center rounded-lg bg-slate-100 dark:bg-neutral-800 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-neutral-200 border border-slate-200 dark:border-neutral-700"
                         >
                           {tech.trim()}
                         </span>
@@ -756,35 +767,35 @@ export default function ArchivesPage() {
                   </div>
                 )}
 
-                {/* 5. Sinh viên thực hiện & Điểm tổng kết (Tập trung nghiệp vụ, không kể lể) */}
-                <div className="space-y-2 pt-1 border-t border-slate-200 dark:border-neutral-800">
+                {/* 5. Sinh viên thực hiện & Điểm tổng kết */}
+                <div className="space-y-2.5 pt-2 border-t border-slate-200 dark:border-neutral-800">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-semibold text-slate-900 dark:text-neutral-100">
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-neutral-100">
                       Sinh viên thực hiện
                     </h4>
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       {members.length} sinh viên
                     </span>
                   </div>
 
                   {members.length === 0 ? (
-                    <p className="text-xs text-muted-foreground italic py-1">
+                    <p className="text-sm text-muted-foreground italic py-1">
                       Chưa có dữ liệu sinh viên thực hiện đề tài này.
                     </p>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-2.5">
                       {members.map((m) => {
                         const stGrade = grades.find((g) => g.studentId === m.student.id);
                         return (
                           <div
                             key={m.id}
-                            className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-neutral-800 bg-slate-50/60 dark:bg-white/[0.02]"
+                            className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-neutral-800 bg-slate-50/70 dark:bg-white/[0.03]"
                           >
-                            <div className="space-y-0.5">
-                              <div className="text-xs font-semibold text-slate-900 dark:text-neutral-100">
+                            <div className="space-y-1">
+                              <div className="text-sm font-semibold text-slate-900 dark:text-neutral-100">
                                 {m.student.fullName}
                               </div>
-                              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                 <span className="font-mono font-medium text-primary">
                                   {m.student.studentCode}
                                 </span>
@@ -798,10 +809,10 @@ export default function ArchivesPage() {
                             </div>
 
                             <div className="text-right">
-                              <div className="text-sm font-bold font-mono text-slate-900 dark:text-neutral-100">
+                              <div className="text-base font-bold font-mono text-slate-900 dark:text-neutral-100">
                                 {stGrade?.finalGradeNum != null ? stGrade.finalGradeNum.toFixed(1) : '—'}
                               </div>
-                              <div className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                              <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                                 {stGrade?.finalGradeLetter ? `Loại ${stGrade.finalGradeLetter}` : '—'}
                               </div>
                             </div>
