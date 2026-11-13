@@ -123,11 +123,12 @@ function withActiveGroup<T extends TopicWithGroups>(
   const { registrationGroups, round, sourceProposal, ...rest } = topic;
   const group = registrationGroups[0];
   const allowed =
-    viewer === undefined ||
-    (viewer.gateOpen &&
-      viewer.eligible &&
-      !viewer.hasGroup &&
-      !viewer.reservedForOther);
+    topic.status === TopicStatus.OPEN &&
+    (viewer === undefined ||
+      (viewer.gateOpen &&
+        viewer.eligible &&
+        !viewer.hasGroup &&
+        !viewer.reservedForOther));
 
   const fromProposal = sourceProposal !== null;
   const proposedByMe =

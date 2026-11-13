@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -101,9 +101,9 @@ function StudentTopicsContent() {
   const switchTopicForGroupId = searchParams.get('switchTopicForGroup');
   const isSwitchingTopic = Boolean(
     switchTopicForGroupId &&
-      myGroup &&
-      String(myGroup.id) === switchTopicForGroupId &&
-      myGroup.isLeader,
+    myGroup &&
+    String(myGroup.id) === switchTopicForGroupId &&
+    myGroup.isLeader,
   );
   const switchTopicMutation = useSwitchTopic(myGroup?.id ?? 0);
   const [topicToSwitch, setTopicToSwitch] = useState<TopicListItem | null>(null);
@@ -111,7 +111,7 @@ function StudentTopicsContent() {
   const [search, setSearch] = useState('');
   const [projectTypeId, setProjectTypeId] = useState<number | null>(null);
   const [lecturerId, setLecturerId] = useState(ANY);
-  const [onlyAvailable, setOnlyAvailable] = useState(true);
+  const [onlyAvailable, setOnlyAvailable] = useState(false);
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const debouncedSearch = useDebounce(search);
 
@@ -140,14 +140,19 @@ function StudentTopicsContent() {
   const rawTopics = data?.pages.flatMap((page) => page.items) ?? [];
 
   // Filter topics for "Còn trống" & lecturerId guarantee
-  const topics = rawTopics.filter((t) => {
+  const filteredTopics = rawTopics.filter((t) => {
     const isTaken =
       Boolean(t.activeGroup) ||
       t.isFull ||
       (t.occupiedSeats ?? 0) >= t.maxStudents ||
       t.status !== 'OPEN';
 
-    if (onlyAvailable && isTaken) {
+    const isHeldForOther = Boolean(
+      t.fromProposal && t.proposedByMe === false && !isTaken,
+    );
+
+    // Khi bật "Còn trống": Ẩn hẳn Nhóm 2 (Đã giữ chỗ) và Nhóm 3 (Đã có nhóm)
+    if (onlyAvailable && (isTaken || isHeldForOther)) {
       return false;
     }
     if (lecturerId !== ANY && t.lecturer?.id !== lecturerId) {
@@ -155,6 +160,35 @@ function StudentTopicsContent() {
     }
     return true;
   });
+
+  // Khi tắt "Còn trống" (Xem tất cả): Tự động dồn Nhóm 1 lên đầu, đẩy Nhóm 2 và 3 xuống dưới
+  const topics = useMemo(() => {
+    if (onlyAvailable) return filteredTopics;
+
+    return [...filteredTopics].sort((a, b) => {
+      const isTakenA =
+        Boolean(a.activeGroup) ||
+        a.isFull ||
+        (a.occupiedSeats ?? 0) >= a.maxStudents ||
+        a.status !== 'OPEN';
+      const isHeldA = Boolean(
+        a.fromProposal && a.proposedByMe === false && !isTakenA,
+      );
+      const priorityA = isTakenA ? 3 : isHeldA ? 2 : 1;
+
+      const isTakenB =
+        Boolean(b.activeGroup) ||
+        b.isFull ||
+        (b.occupiedSeats ?? 0) >= b.maxStudents ||
+        b.status !== 'OPEN';
+      const isHeldB = Boolean(
+        b.fromProposal && b.proposedByMe === false && !isTakenB,
+      );
+      const priorityB = isTakenB ? 3 : isHeldB ? 2 : 1;
+
+      return priorityA - priorityB;
+    });
+  }, [filteredTopics, onlyAvailable]);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const restoredRef = useRef(false);
@@ -245,36 +279,10 @@ function StudentTopicsContent() {
     debouncedSearch !== '' ||
     effectiveProjectTypeId !== ANY ||
     lecturerId !== ANY ||
-    !onlyAvailable;
+    onlyAvailable;
 
   return (
-    <div className="space-y-4">
-      {/* ── Banner đổi đề tài cho nhóm ── */}
-      {isSwitchingTopic && myGroup && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary dark:bg-primary/20 dark:text-blue-400">
-              <RotateCcw className="size-4.5" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-slate-900 dark:text-neutral-100">
-                Đang đổi đề tài cho nhóm ({myGroup.members.length} thành viên)
-              </p>
-              <p className="text-xs text-slate-600 dark:text-neutral-400">
-                Đề tài hiện tại: <span className="font-semibold text-slate-800 dark:text-neutral-200">{myGroup.topic.title}</span>
-              </p>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            onClick={() => router.push('/student/groups')}
-            className="shrink-0 h-8.5 text-xs font-semibold"
-          >
-            Hủy đổi đề tài
-          </Button>
-        </div>
-      )}
-
+    <div className={cn('space-y-4', isSwitchingTopic && myGroup && 'pb-16')}>
       {/* ── Thông báo tiến trình đợt & điều kiện tham gia ── */}
       {eligibilityStatus && !eligibilityStatus.isEligible && activeSemester && (
         <StudentEligibilityBanner />
@@ -436,11 +444,18 @@ function StudentTopicsContent() {
                 topic.isFull ||
                 (topic.occupiedSeats ?? 0) >= topic.maxStudents ||
                 topic.status !== 'OPEN';
+              const isHeldForOther = Boolean(
+                topic.fromProposal && topic.proposedByMe === false && !isTaken,
+              );
+              const isUnavailable = isTaken || isHeldForOther;
 
               return (
                 <TableRow
                   key={topic.id}
-                  className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
+                  className={cn(
+                    'cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40',
+                    isUnavailable && 'opacity-70 dark:opacity-60',
+                  )}
                   onClick={() => setSelectedTopicId(topic.id)}
                 >
                   <TableCell className="w-[340px] max-w-[340px] px-5 py-3.5 align-middle whitespace-normal">
@@ -485,7 +500,7 @@ function StudentTopicsContent() {
                   </TableCell>
 
                   <TableCell className="w-32 px-3 py-3.5 text-center align-middle whitespace-nowrap">
-                    {isTaken ? (
+                    {isTaken || isHeldForOther ? (
                       <StatusPill label="Đã có nhóm" tone="idle" />
                     ) : (
                       <StatusPill label="Còn trống" tone="success" />
@@ -502,16 +517,12 @@ function StudentTopicsContent() {
                           <span className="text-xs font-semibold text-primary">
                             Đề tài hiện tại
                           </span>
-                        ) : isTaken ? (
-                          <span className="text-xs text-slate-400 dark:text-neutral-500 font-medium">
-                            Đã có nhóm
-                          </span>
-                        ) : topic.fromProposal && topic.proposedByMe === false ? (
+                        ) : isTaken || isHeldForOther ? (
                           <span
-                            className="text-xs text-slate-400 dark:text-neutral-500 font-medium"
-                            title="Đề tài này do sinh viên khác đề xuất, chỉ người đề xuất mới có quyền đăng ký"
+                            className="text-sm font-medium text-slate-400 dark:text-neutral-500 px-2 select-none"
+                            title={isHeldForOther ? 'Đề tài do sinh viên khác đề xuất' : 'Đã có nhóm'}
                           >
-                            Giữ cho SV đề xuất
+                            -
                           </span>
                         ) : topic.maxStudents < myGroup.members.length ? (
                           <span
@@ -535,20 +546,39 @@ function StudentTopicsContent() {
                         className="flex items-center justify-end gap-1.5"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <TopicRegisterButton
-                          topic={topic}
-                          idle={
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              disabled
-                              className="text-xs cursor-not-allowed opacity-50 border-slate-300 dark:border-neutral-700 bg-transparent text-slate-400 dark:text-neutral-500 select-none"
-                            >
-                              Đăng ký
-                            </Button>
-                          }
-                        />
+                        {isHeldForOther || topic.status !== 'OPEN' ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled
+                            title={
+                              isHeldForOther
+                                ? 'Đề tài do sinh viên khác đề xuất'
+                                : topic.status === 'IN_PROGRESS'
+                                  ? 'Đề tài đang thực hiện'
+                                  : 'Đề tài đã đóng đăng ký'
+                            }
+                            className="text-xs cursor-not-allowed opacity-50 border-slate-300 dark:border-neutral-700 bg-transparent text-slate-400 dark:text-neutral-500 select-none"
+                          >
+                            Đăng ký
+                          </Button>
+                        ) : (
+                          <TopicRegisterButton
+                            topic={topic}
+                            idle={
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled
+                                className="text-xs cursor-not-allowed opacity-50 border-slate-300 dark:border-neutral-700 bg-transparent text-slate-400 dark:text-neutral-500 select-none"
+                              >
+                                Đăng ký
+                              </Button>
+                            }
+                          />
+                        )}
                         <DropdownMenu>
                           <DropdownMenuTrigger
                             render={
@@ -667,7 +697,7 @@ function StudentTopicsContent() {
               icon={BookOpen}
               title={
                 onlyAvailable && rawTopics.length > 0
-                  ? 'Tất cả đề tài hiện tại đã có nhóm nhận. Tắt nút "Còn trống" để xem toàn bộ danh sách.'
+                  ? 'Tất cả đề tài hiện tại đã có nhóm nhận hoặc được giữ chỗ. Tắt nút "Còn trống" để xem toàn bộ danh sách.'
                   : filtering
                     ? 'Không có đề tài nào khớp bộ lọc.'
                     : 'Chưa có đề tài nào được mở đăng ký.'
@@ -726,6 +756,35 @@ function StudentTopicsContent() {
           }
         }}
       />
+
+      {/* ── Sticky Bottom Bar khi ở chế độ đổi đề tài ── */}
+      {isSwitchingTopic && myGroup && (
+        <aside
+          role="status"
+          aria-label="Chế độ đổi đề tài"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between gap-3 sm:gap-4 rounded-full border border-slate-300 dark:border-neutral-700 bg-white/95 dark:bg-[#1e1e1e]/95 px-4 py-2 sm:px-5 sm:py-2.5 shadow-xl backdrop-blur-md max-w-[calc(100vw-2rem)] sm:max-w-2xl text-slate-900 dark:text-neutral-100 animate-in fade-in slide-in-from-bottom-4 duration-200"
+        >
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 text-xs sm:text-sm">
+            <RotateCcw className="size-3.5 text-primary shrink-0" />
+            <span className="font-semibold whitespace-nowrap">Chế độ đổi đề tài</span>
+            <span className="text-slate-400 dark:text-neutral-500 select-none">|</span>
+            <span className="truncate text-slate-600 dark:text-neutral-300">
+              Hiện tại:{' '}
+              <span className="font-medium text-slate-900 dark:text-neutral-100" title={myGroup.topic.title}>
+                {myGroup.topic.title}
+              </span>
+            </span>
+          </div>
+
+          <Button
+            size="sm"
+            onClick={() => router.push('/student/groups')}
+            className="h-7 px-3.5 text-xs font-bold rounded-full bg-primary hover:bg-primary/90 text-white shadow-xs shrink-0 cursor-pointer"
+          >
+            Hủy
+          </Button>
+        </aside>
+      )}
     </div>
   );
 }

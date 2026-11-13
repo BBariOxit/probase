@@ -26,6 +26,7 @@ interface TopicLike extends TopicAvailability {
   id: number;
   title: string;
   maxStudents: number;
+  status?: string;
 }
 
 export function TopicRegisterButton({
@@ -49,9 +50,11 @@ export function TopicRegisterButton({
 
   const pending = register.isPending || join.isPending;
   const error = register.error ?? join.error;
-  const registering = topic.canRegister;
+  const isTopicOpen = !topic.status || topic.status === 'OPEN';
+  const registering = isTopicOpen && topic.canRegister;
+  const canJoin = isTopicOpen && topic.canJoin;
 
-  const showButton = topic.canRegister || topic.canJoin;
+  const showButton = registering || canJoin;
 
   function act() {
     if (registering) {

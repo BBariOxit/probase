@@ -605,7 +605,7 @@ export default function StudentRosterPage() {
         <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs overflow-hidden">
           <div className="flex-auto min-h-0 overflow-auto">
             <Table containerClassName="overflow-visible" className="relative w-full min-w-[960px] text-left text-sm">
-              <TableHeader>
+              <TableHeader sticky>
                 <TableRow>
                   <TableHead className="min-w-44 px-5">
                     Sinh viên

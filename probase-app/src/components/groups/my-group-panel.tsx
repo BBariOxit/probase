@@ -80,7 +80,7 @@ export function MyGroupPanel({
           <h2 className="font-heading min-w-0 text-lg sm:text-xl leading-snug font-bold tracking-tight text-slate-900 dark:text-neutral-100 break-words [overflow-wrap:anywhere]">
             <Link
               href={`/student/topics/${topic.id}`}
-              className="rounded-sm hover:text-primary hover:underline transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="rounded-sm no-underline hover:text-primary transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               {topic.title}
             </Link>
@@ -222,8 +222,15 @@ export function MyGroupPanel({
       <ConfirmDialog
         open={confirming === 'disband'}
         onOpenChange={(open) => setConfirming(open ? 'disband' : null)}
-        title="Hủy đăng ký đề tài?"
-        description={`Nhóm của bạn sẽ hủy đăng ký đề tài "${topic.title}". Đề tài sẽ trở lại danh sách cho sinh viên khác đăng ký.`}
+        title="Hủy đăng ký đề tài"
+        description={
+          <div className="text-left text-sm pt-1">
+            <span className="text-xs text-slate-500 dark:text-neutral-400">Đề tài:</span>
+            <p className="font-semibold text-slate-900 dark:text-neutral-100 mt-0.5">
+              {topic.title}
+            </p>
+          </div>
+        }
         confirmLabel="Hủy đăng ký"
         onConfirm={() => disband.mutateAsync()}
       />
@@ -231,8 +238,15 @@ export function MyGroupPanel({
       <ConfirmDialog
         open={confirming === 'leave'}
         onOpenChange={(open) => setConfirming(open ? 'leave' : null)}
-        title="Rời nhóm?"
-        description="Bạn sẽ không còn trong nhóm này nữa, và chỗ của bạn sẽ được nhả lại cho người khác."
+        title="Rời nhóm"
+        description={
+          <div className="text-left text-sm pt-1">
+            <span className="text-xs text-slate-500 dark:text-neutral-400">Đề tài:</span>
+            <p className="font-semibold text-slate-900 dark:text-neutral-100 mt-0.5">
+              {topic.title}
+            </p>
+          </div>
+        }
         confirmLabel="Rời nhóm"
         onConfirm={() => leave.mutateAsync()}
       />
