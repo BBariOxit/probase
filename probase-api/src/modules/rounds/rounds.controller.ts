@@ -60,6 +60,12 @@ export class RoundsController {
     return this.eligibleStudents.getStudentEligibilityStatus(userId);
   }
 
+  @Roles('ADMIN', 'LECTURER')
+  @Get(':id/capacity')
+  getRoundCapacity(@Param('id', ParseIntPipe) id: number) {
+    return this.roundsService.getRoundCapacity(id);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.roundsService.findOne(id);

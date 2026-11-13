@@ -21,7 +21,10 @@ import {
   useRemoveEligibleStudent,
 } from '@/lib/api/eligible-students';
 import { useMajors } from '@/lib/api/majors';
-import { useActiveSemester, useRoundsForSemester } from '@/lib/api/master-data';
+import {
+  useActiveSemester,
+  useRoundsForSemester,
+} from '@/lib/api/master-data';
 import { useExportStudents, useStudents } from '@/lib/api/students';
 import { useTopicLecturers } from '@/lib/api/topics';
 import type { StudentRosterRow } from '@/lib/api/types';

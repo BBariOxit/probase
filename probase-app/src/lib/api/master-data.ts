@@ -6,6 +6,7 @@ import type {
   ProjectType,
   ProjectTypeDetail,
   RegistrationRound,
+  RoundCapacitySummary,
   RoundPlanInput,
   Semester,
   SubmissionRequirement,
@@ -152,6 +153,14 @@ export function useSemesterRounds(semesterId: number | undefined) {
   });
 }
 
+export function useRoundCapacity(roundId: number | undefined) {
+  return useQuery({
+    queryKey: ['rounds', roundId, 'capacity'],
+    queryFn: () => api<RoundCapacitySummary>(`/rounds/${roundId!}/capacity`),
+    enabled: typeof roundId === 'number' && roundId > 0,
+  });
+}
+
 export function useSetSemesterRounds() {
   const queryClient = useQueryClient();
 
@@ -168,6 +177,34 @@ export function useSetSemesterRounds() {
         body: { rounds },
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rounds'] }),
+  });
+}
+
+export function useUpdateRound() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      roundId,
+      data,
+    }: {
+      roundId: number;
+      data: {
+        maxStudentsPerTopic?: number;
+        minTopicsPerLecturer?: number | null;
+      };
+    }) =>
+      api<RegistrationRound>(`/rounds/${roundId}`, {
+        method: 'PATCH',
+        body: data,
+      }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['rounds'] });
+      queryClient.invalidateQueries({
+        queryKey: ['rounds', variables.roundId, 'capacity'],
+      });
+      queryClient.invalidateQueries({ queryKey: ['semesters'] });
+    },
   });
 }
 

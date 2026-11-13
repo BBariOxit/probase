@@ -19,8 +19,8 @@ export const CreateTopicSchema = z.object({
     .trim()
     .min(1, 'Vui lòng nhập kết quả mong đợi')
     .max(3000, 'Yêu cầu đầu ra tối đa 3000 ký tự'),
-  // Capped so a typo cannot turn one topic into a whole cohort.
-  maxStudents: z.coerce.number().int().min(1).max(10).default(3),
+  // If omitted, defaults to the round's maxStudentsPerTopic
+  maxStudents: z.coerce.number().int().min(1).max(10).optional(),
   majorId: z.coerce.number().int().positive().optional(),
   objectives: z.string().trim().max(3000).optional(),
   techStack: z.string().trim().max(255).optional(),

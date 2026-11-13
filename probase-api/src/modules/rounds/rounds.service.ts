@@ -11,6 +11,7 @@ import {
   RegistrationGroupStatus,
   Role,
   RoundPhase,
+  TopicStatus,
 } from '../../../generated/prisma/client';
 import { formatDate } from '../../common/utils/named-day.util';
 import { NotificationsService } from '../../core/notifications/notifications.service';
@@ -36,6 +37,8 @@ const ROUND_SELECT = {
   phase: true,
   allocationMode: true,
   finalisedAt: true,
+  maxStudentsPerTopic: true,
+  minTopicsPerLecturer: true,
   semester: { select: { id: true, name: true, code: true } },
   projectType: { select: { id: true, name: true, code: true } },
   eligibilities: {
@@ -224,7 +227,7 @@ export class RoundsService {
   async requireRoundFor(semesterId: number, projectTypeId: number) {
     const round = await this.prisma.registrationRound.findUnique({
       where: { semesterId_projectTypeId: { semesterId, projectTypeId } },
-      select: { id: true },
+      select: { id: true, maxStudentsPerTopic: true, minTopicsPerLecturer: true },
     });
 
     if (!round) {
@@ -318,6 +321,12 @@ export class RoundsService {
                 ...(plan.officialEndDate !== undefined && {
                   officialEndDate: plan.officialEndDate,
                 }),
+                ...(plan.maxStudentsPerTopic !== undefined && {
+                  maxStudentsPerTopic: plan.maxStudentsPerTopic,
+                }),
+                ...(plan.minTopicsPerLecturer !== undefined && {
+                  minTopicsPerLecturer: plan.minTopicsPerLecturer,
+                }),
                 ...(plan.allocationMode && {
                   allocationMode: plan.allocationMode,
                 }),
@@ -338,6 +347,12 @@ export class RoundsService {
                 }),
                 ...(plan.officialEndDate !== undefined && {
                   officialEndDate: plan.officialEndDate,
+                }),
+                ...(plan.maxStudentsPerTopic !== undefined && {
+                  maxStudentsPerTopic: plan.maxStudentsPerTopic,
+                }),
+                ...(plan.minTopicsPerLecturer !== undefined && {
+                  minTopicsPerLecturer: plan.minTopicsPerLecturer,
                 }),
                 ...(plan.allocationMode && {
                   allocationMode: plan.allocationMode,
@@ -414,6 +429,12 @@ export class RoundsService {
           }),
           ...(dto.officialEndDate !== undefined && {
             officialEndDate: dto.officialEndDate,
+          }),
+          ...(dto.maxStudentsPerTopic !== undefined && {
+            maxStudentsPerTopic: dto.maxStudentsPerTopic,
+          }),
+          ...(dto.minTopicsPerLecturer !== undefined && {
+            minTopicsPerLecturer: dto.minTopicsPerLecturer,
           }),
           ...(dto.allocationMode && { allocationMode: dto.allocationMode }),
         },
@@ -635,6 +656,184 @@ export class RoundsService {
 
       return a.registrationEnd.getTime() - b.registrationEnd.getTime();
     });
+  }
+
+  async getRoundCapacity(roundId: number) {
+    const round = await this.prisma.registrationRound.findUnique({
+      where: { id: roundId },
+      include: {
+        semester: { select: { id: true, name: true, code: true } },
+        projectType: { select: { id: true, name: true, code: true } },
+      },
+    });
+
+    if (!round) {
+      throw new NotFoundException(`Không tìm thấy đợt đăng ký mã #${roundId}`);
+    }
+
+    const eligibleStudentCount =
+      await this.prisma.roundStudentEligibility.count({
+        where: { roundId },
+      });
+
+    const activeGroups = await this.prisma.registrationGroup.findMany({
+      where: {
+        topic: { roundId },
+        status: { not: RegistrationGroupStatus.REJECTED },
+      },
+      include: {
+        members: {
+          where: { status: GroupMemberStatus.ACCEPTED },
+          select: { studentId: true },
+        },
+      },
+    });
+
+    const assignedStudentIds = new Set<number>();
+    for (const group of activeGroups) {
+      for (const m of group.members) {
+        assignedStudentIds.add(m.studentId);
+      }
+    }
+    const assignedStudentsCount = assignedStudentIds.size;
+    const unassignedStudentsCount = Math.max(
+      0,
+      eligibleStudentCount - assignedStudentsCount,
+    );
+
+    const maxStudentsPerTopic = round.maxStudentsPerTopic || 2;
+    const estimatedGroupsNeeded = Math.ceil(
+      eligibleStudentCount / maxStudentsPerTopic,
+    );
+    const targetTopicsWithBuffer = Math.ceil(estimatedGroupsNeeded * 1.15);
+
+    const topics = await this.prisma.topic.findMany({
+      where: { roundId },
+      select: {
+        id: true,
+        lecturerId: true,
+        status: true,
+        maxStudents: true,
+        majorId: true,
+      },
+    });
+
+    const approvedStatuses: TopicStatus[] = [
+      TopicStatus.APPROVED,
+      TopicStatus.APPROVED_OPEN,
+      TopicStatus.OPEN,
+      TopicStatus.ASSIGNED,
+      TopicStatus.IN_PROGRESS,
+      TopicStatus.COMPLETED,
+    ];
+
+    const isPending = (status: TopicStatus) =>
+      status === TopicStatus.PENDING ||
+      status === TopicStatus.PENDING_DEPARTMENT;
+
+    const approvedTopicsCount = topics.filter((t) =>
+      approvedStatuses.includes(t.status),
+    ).length;
+    const pendingTopicsCount = topics.filter((t) => isPending(t.status)).length;
+    const draftTopicsCount = topics.filter(
+      (t) => t.status === TopicStatus.DRAFT,
+    ).length;
+
+    const deficit = Math.max(0, estimatedGroupsNeeded - approvedTopicsCount);
+    const balanceStatus: 'DEFICIT' | 'BALANCED' | 'SURPLUS' =
+      approvedTopicsCount < estimatedGroupsNeeded
+        ? 'DEFICIT'
+        : approvedTopicsCount >= targetTopicsWithBuffer
+          ? 'SURPLUS'
+          : 'BALANCED';
+
+    const lecturers = await this.prisma.lecturerProfile.findMany({
+      where: {
+        user: { isActive: true, role: Role.LECTURER },
+        isAcademicAssistant: false,
+      },
+      select: {
+        id: true,
+        fullName: true,
+        academicTitle: true,
+        majorId: true,
+        major: { select: { id: true, name: true, code: true } },
+        user: { select: { email: true, avatarUrl: true } },
+      },
+      orderBy: [{ majorId: 'asc' }, { fullName: 'asc' }],
+    });
+
+    const defaultSuggestedQuota =
+      lecturers.length > 0
+        ? Math.max(1, Math.ceil(estimatedGroupsNeeded / lecturers.length))
+        : 5;
+    const targetQuota = round.minTopicsPerLecturer ?? defaultSuggestedQuota;
+
+    const lecturerProgress = lecturers.map((lecturer) => {
+      const lecturerTopics = topics.filter((t) => t.lecturerId === lecturer.id);
+      const total = lecturerTopics.length;
+      const approved = lecturerTopics.filter((t) =>
+        approvedStatuses.includes(t.status),
+      ).length;
+      const pending = lecturerTopics.filter((t) => isPending(t.status)).length;
+      const draft = lecturerTopics.filter(
+        (t) => t.status === TopicStatus.DRAFT,
+      ).length;
+
+      let status: 'MET' | 'IN_PROGRESS' | 'NOT_STARTED' = 'NOT_STARTED';
+      if (approved >= targetQuota) {
+        status = 'MET';
+      } else if (total > 0) {
+        status = 'IN_PROGRESS';
+      }
+
+      return {
+        lecturerId: lecturer.id,
+        fullName: lecturer.fullName,
+        academicTitle: lecturer.academicTitle,
+        email: lecturer.user?.email ?? '',
+        avatarUrl: lecturer.user?.avatarUrl ?? null,
+        majorId: lecturer.majorId,
+        majorName: lecturer.major?.name ?? null,
+        majorCode: lecturer.major?.code ?? null,
+        topicsCount: total,
+        approvedCount: approved,
+        pendingCount: pending,
+        draftCount: draft,
+        targetQuota,
+        isMetQuota: approved >= targetQuota,
+        status,
+      };
+    });
+
+    return {
+      round: {
+        id: round.id,
+        semesterId: round.semesterId,
+        semesterName: round.semester.name,
+        projectTypeId: round.projectTypeId,
+        projectTypeName: round.projectType.name,
+        projectTypeCode: round.projectType.code,
+        maxStudentsPerTopic,
+        minTopicsPerLecturer: round.minTopicsPerLecturer,
+      },
+      eligibleStudentCount,
+      estimatedGroupsNeeded,
+      targetTopicsWithBuffer,
+      assignedStudentsCount,
+      unassignedStudentsCount,
+      activeGroupsCount: activeGroups.length,
+      totalTopicsSubmitted: topics.length,
+      approvedTopicsCount,
+      pendingTopicsCount,
+      draftTopicsCount,
+      deficit,
+      balanceStatus,
+      targetQuota,
+      lecturersCount: lecturers.length,
+      lecturersMetQuotaCount: lecturerProgress.filter((l) => l.isMetQuota).length,
+      lecturerProgress,
+    };
   }
 
   private async loadRow(id: number) {

@@ -517,10 +517,12 @@ export class TopicsService {
     const round = await this.rounds.requireRoundFor(semesterId, projectTypeId);
 
     const majorId = dto.majorId ?? lecturerProfile.majorId ?? null;
+    const maxStudents = dto.maxStudents ?? round.maxStudentsPerTopic ?? 2;
 
     const topic = await this.prisma.topic.create({
       data: {
         ...rest,
+        maxStudents,
         majorId,
         semesterId,
         roundId: round.id,

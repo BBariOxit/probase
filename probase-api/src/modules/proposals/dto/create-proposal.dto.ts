@@ -22,7 +22,7 @@ export const CreateProposalSchema = z.object({
     .trim()
     .min(1, 'Vui lòng nêu bạn định làm ra được gì')
     .max(3000, 'Yêu cầu đầu ra tối đa 3000 ký tự'),
-  maxStudents: z.coerce.number().int().min(1).max(10).default(1),
+  maxStudents: z.coerce.number().int().min(1).max(10).optional(),
   isDraft: z.boolean().optional(),
 });
 

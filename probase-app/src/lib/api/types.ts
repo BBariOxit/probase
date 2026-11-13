@@ -78,6 +78,8 @@ export interface RegistrationRound {
   targetCohort?: string | null;
   officialStartDate?: string | null;
   officialEndDate?: string | null;
+  maxStudentsPerTopic?: number;
+  minTopicsPerLecturer?: number | null;
   semester: { id: number; name: string; code: string };
   projectType: ProjectType;
   cohorts: string[];
@@ -697,9 +699,58 @@ export interface RoundPlanInput {
   targetCohort?: string;
   officialStartDate?: string;
   officialEndDate?: string;
+  maxStudentsPerTopic?: number;
+  minTopicsPerLecturer?: number | null;
 
   cohorts: string[];
   allocationMode?: 'FIRST_COME' | 'PREFERENCE_ROUND';
+}
+
+export interface LecturerRoundProgress {
+  lecturerId: number;
+  fullName: string;
+  academicTitle: string | null;
+  email: string;
+  avatarUrl: string | null;
+  majorId: number | null;
+  majorName: string | null;
+  majorCode: string | null;
+  topicsCount: number;
+  approvedCount: number;
+  pendingCount: number;
+  draftCount: number;
+  targetQuota: number;
+  isMetQuota: boolean;
+  status: 'MET' | 'IN_PROGRESS' | 'NOT_STARTED';
+}
+
+export interface RoundCapacitySummary {
+  round: {
+    id: number;
+    semesterId: number;
+    semesterName: string;
+    projectTypeId: number;
+    projectTypeName: string;
+    projectTypeCode: string;
+    maxStudentsPerTopic: number;
+    minTopicsPerLecturer: number | null;
+  };
+  eligibleStudentCount: number;
+  estimatedGroupsNeeded: number;
+  targetTopicsWithBuffer: number;
+  assignedStudentsCount: number;
+  unassignedStudentsCount: number;
+  activeGroupsCount: number;
+  totalTopicsSubmitted: number;
+  approvedTopicsCount: number;
+  pendingTopicsCount: number;
+  draftTopicsCount: number;
+  deficit: number;
+  balanceStatus: 'DEFICIT' | 'BALANCED' | 'SURPLUS';
+  targetQuota: number;
+  lecturersCount: number;
+  lecturersMetQuotaCount: number;
+  lecturerProgress: LecturerRoundProgress[];
 }
 
 export interface StudentRosterRow {

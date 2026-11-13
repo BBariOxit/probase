@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { ApiError } from '@/lib/api/client';
+import { useActiveSemester, useSemesterRounds } from '@/lib/api/master-data';
 import type { ProposalInput } from '@/lib/api/proposals';
 import type { LecturerDirectoryEntry, ProjectType } from '@/lib/api/types';
 import {
@@ -88,6 +89,8 @@ export function ProposalForm({
     control,
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ProposalFormValues>({
     resolver: zodResolver(ProposalSchema),
@@ -102,6 +105,17 @@ export function ProposalForm({
       ...defaultValues,
     },
   });
+
+  const activeSemester = useActiveSemester();
+  const { data: rounds } = useSemesterRounds(activeSemester?.id);
+  const selectedTypeId = watch('projectTypeId');
+  const matchingRound = rounds?.find((r) => r.projectTypeId === selectedTypeId);
+
+  useEffect(() => {
+    if (matchingRound?.maxStudentsPerTopic) {
+      setValue('maxStudents', matchingRound.maxStudentsPerTopic);
+    }
+  }, [matchingRound?.maxStudentsPerTopic, setValue]);
 
   async function submit(values: ProposalFormValues) {
     setFormError(null);
@@ -243,22 +257,20 @@ export function ProposalForm({
         />
       </Field>
 
-      <Field
-        label="Số lượng sinh viên dự kiến"
-        htmlFor="maxStudents"
-        hint="Số lượng thành viên dự kiến cùng làm đề tài này (1 - 3 sinh viên). Giảng viên có thể điều chỉnh khi phê duyệt."
-        error={errors.maxStudents?.message}
-      >
-        <Input
-          id="maxStudents"
-          type="number"
-          min={1}
-          max={3}
-          className="w-28"
-          aria-invalid={!!errors.maxStudents}
-          {...register('maxStudents', { valueAsNumber: true })}
-        />
-      </Field>
+      <div className="space-y-1.5">
+        <Label className="text-xs font-medium text-slate-800 dark:text-neutral-300">
+          Sĩ số nhóm sinh viên đề xuất
+        </Label>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-xs text-slate-900 dark:text-neutral-100 px-3 py-2 rounded-lg bg-slate-100 dark:bg-neutral-800 border border-slate-300 dark:border-neutral-700">
+            {matchingRound?.maxStudentsPerTopic ?? 1} sinh viên / đề tài
+          </span>
+          <span className="text-xs text-slate-500 dark:text-neutral-400">
+            (Quy định tự động theo đợt đồ án)
+          </span>
+        </div>
+        <input type="hidden" {...register('maxStudents', { valueAsNumber: true })} />
+      </div>
 
       {children}
 
