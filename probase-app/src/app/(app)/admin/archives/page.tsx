@@ -6,7 +6,7 @@ import {
   Archive,
   CheckCircle2,
   Code,
-  Database,
+  Download,
   ExternalLink,
   Eye,
   FileCheck2,
@@ -30,7 +30,6 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { StatusPill } from '@/components/shared/status-pill';
 import { TopicDetailSheet } from '@/components/topics/topic-detail-sheet';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -83,6 +82,32 @@ function formatSemesterAbbr(semester: { name: string; code: string }): string {
     .replace('Học kỳ 1 năm học ', 'HKI ')
     .replace('Học kỳ 2 năm học ', 'HKII ')
     .replace('Học kỳ hè năm học ', 'HK Hè ');
+}
+
+/** Rút gọn loại đồ án: KLTN, ĐACN, ĐACS */
+function getProjectTypeAbbr(projectType?: { name: string; code?: string } | null): {
+  short: string;
+  full: string;
+} {
+  if (!projectType) return { short: '—', full: '' };
+  const code = projectType.code?.toUpperCase() ?? '';
+  const name = projectType.name ?? '';
+
+  if (
+    code === 'DATN' ||
+    code === 'KLTN' ||
+    name.toLowerCase().includes('khóa luận') ||
+    name.toLowerCase().includes('tốt nghiệp')
+  ) {
+    return { short: 'KLTN', full: name || 'Khóa luận tốt nghiệp' };
+  }
+  if (code === 'DACN' || name.toLowerCase().includes('chuyên ngành')) {
+    return { short: 'ĐACN', full: name || 'Đồ án chuyên ngành' };
+  }
+  if (code === 'DACS' || name.toLowerCase().includes('cơ sở')) {
+    return { short: 'ĐACS', full: name || 'Đồ án cơ sở' };
+  }
+  return { short: projectType.code || name, full: name };
 }
 
 export default function ArchivesPage() {
@@ -169,13 +194,6 @@ export default function ArchivesPage() {
     }
   };
 
-  const hasActiveFilters =
-    selectedSemesterId !== 'all' ||
-    selectedRoundId !== 'all' ||
-    selectedMajorId !== 'all' ||
-    selectedVerified !== 'all' ||
-    Boolean(searchQuery.trim());
-
   return (
     <TooltipProvider delay={200}>
       <div className="w-full min-w-0 space-y-4">
@@ -196,7 +214,7 @@ export default function ArchivesPage() {
             className="gap-1.5 h-9"
           >
             {exportMutation.isPending ? (
-              <Loader2 className="size-4 animate-spin" />
+              <Loader2 className="size-4 animate-spin text-primary" />
             ) : (
               <FileSpreadsheet className="size-4 text-emerald-600 dark:text-emerald-400" />
             )}
@@ -329,7 +347,7 @@ export default function ArchivesPage() {
             </SelectContent>
           </Select>
 
-          {/* Total Count */}
+          {/* Total Count with primary highlight */}
           {archiveData && (
             <span className="ml-auto text-sm font-medium text-slate-600 dark:text-neutral-400 select-none">
               <strong className="text-primary font-bold text-sm">{total}</strong> đề tài
@@ -337,431 +355,343 @@ export default function ArchivesPage() {
           )}
         </div>
 
-        {/* ── Table Container ── */}
-        <div className="isolate w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
-          <Table
-            containerClassName="w-full overflow-x-auto"
-            className="w-full min-w-[1040px] table-fixed text-left text-sm"
-          >
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[360px] max-w-[360px] px-4">Tên đề tài</TableHead>
-                <TableHead className="w-[170px] max-w-[170px] px-3 whitespace-nowrap">
-                  CB hướng dẫn
-                </TableHead>
-                <TableHead className="w-[220px] max-w-[220px] px-3 whitespace-nowrap">
-                  Sinh viên & Điểm
-                </TableHead>
-                <TableHead className="w-[130px] max-w-[130px] px-2 text-center whitespace-nowrap">
-                  Hồ sơ số hóa
-                </TableHead>
-                <TableHead className="w-[120px] max-w-[120px] px-2 text-center whitespace-nowrap">
-                  Nghiệm thu
-                </TableHead>
-                <TableHead className="w-14 max-w-14 px-2 text-center whitespace-nowrap">
-                  Thao tác
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoadingArchives ? (
+        {/* ── Table Container (Chuẩn students/page.tsx: overflow-hidden wrapper, sticky header) ── */}
+        <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs overflow-hidden">
+          <div className="flex-auto min-h-0 overflow-auto">
+            <Table
+              containerClassName="overflow-visible"
+              className="relative w-full min-w-[1040px] text-left text-sm"
+            >
+              <TableHeader sticky>
                 <TableRow>
-                  <TableCell colSpan={6} className="h-48 text-center">
-                    <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                      <Loader2 className="size-5 animate-spin text-primary" />
-                      <span className="text-xs">Đang tải kho lưu trữ…</span>
-                    </div>
-                  </TableCell>
+                  <TableHead className="w-14 px-3 text-center whitespace-nowrap">
+                    STT
+                  </TableHead>
+                  <TableHead className="min-w-[280px] max-w-[340px] px-4">
+                    Tên đề tài
+                  </TableHead>
+                  <TableHead className="w-28 px-3 text-center whitespace-nowrap">
+                    Loại đồ án
+                  </TableHead>
+                  <TableHead className="w-36 px-3 whitespace-nowrap">
+                    Chuyên ngành
+                  </TableHead>
+                  <TableHead className="w-28 px-3 whitespace-nowrap">
+                    Học kỳ
+                  </TableHead>
+                  <TableHead className="w-44 px-3 whitespace-nowrap">
+                    GV hướng dẫn
+                  </TableHead>
+                  <TableHead className="w-52 px-3 whitespace-nowrap">
+                    Sinh viên & Điểm
+                  </TableHead>
+                  <TableHead className="w-32 px-3 text-center whitespace-nowrap">
+                    Nghiệm thu
+                  </TableHead>
+                  <TableHead className="w-20 px-3 text-center whitespace-nowrap">
+                    Thao tác
+                  </TableHead>
                 </TableRow>
-              ) : topics.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-64 text-center">
-                    <EmptyState
-                      icon={Archive}
-                      title="Không có đề tài lưu trữ"
-                      description={
-                        hasActiveFilters
-                          ? 'Không tìm thấy đề tài nào phù hợp với bộ lọc.'
-                          : 'Chưa có đề tài nào hoàn thành được lưu vào kho.'
-                      }
-                    />
-                  </TableCell>
-                </TableRow>
-              ) : (
-                topics.map((topic) => {
-                  const group = topic.registrationGroups[0];
-                  const archive = group?.archive;
-                  const outline = group?.outline;
-                  const grades = group?.studentGrades || [];
-                  const members = group?.members || [];
-                  const isAcademicVerified = archive?.isVerifiedByAcademic ?? false;
+              </TableHeader>
+              <TableBody>
+                {isLoadingArchives ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="h-48 text-center">
+                      <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                        <Loader2 className="size-5 animate-spin text-primary" />
+                        <span className="text-xs">Đang tải kho lưu trữ…</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : topics.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="h-64 text-center">
+                      <EmptyState
+                        icon={Archive}
+                        title="Không có đề tài lưu trữ"
+                        description="Chưa có đề tài nào phù hợp với bộ lọc."
+                      />
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  topics.map((topic, index) => {
+                    const group = topic.registrationGroups[0];
+                    const archive = group?.archive;
+                    const outline = group?.outline;
+                    const grades = group?.studentGrades || [];
+                    const members = group?.members || [];
+                    const isAcademicVerified = archive?.isVerifiedByAcademic ?? false;
 
-                  const topicTitle = topic.titleVi || topic.title;
+                    const topicTitle = topic.titleVi || topic.title;
+                    const projectTypeInfo = getProjectTypeAbbr(topic.round?.projectType);
+                    const stt = (page - 1) * PAGE_SIZE + index + 1;
 
-                  return (
-                    <TableRow
-                      key={topic.id}
-                      className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
-                    >
-                      {/* Cột 1: Tên đề tài & Tags */}
-                      <TableCell className="w-[360px] max-w-[360px] min-w-0 overflow-hidden px-4 py-3 align-top font-medium">
-                        <div className="w-full min-w-0 max-w-full space-y-1 overflow-hidden">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[11px] font-semibold text-muted-foreground">
-                              #{topic.id}
-                            </span>
-                            {topic.major && (
-                              <Badge variant="outline" className="text-[10px] py-0 h-4">
-                                {topic.major.code}
-                              </Badge>
-                            )}
-                            <Badge variant="secondary" className="text-[10px] py-0 h-4">
-                              {topic.round?.projectType?.code || topic.round?.projectType?.name || 'Đề tài'}
-                            </Badge>
-                            <span className="text-[11px] text-muted-foreground">
-                              • {formatSemesterAbbr(topic.semester)}
-                            </span>
-                          </div>
+                    return (
+                      <TableRow
+                        key={topic.id}
+                        className="hover:bg-slate-50/70 dark:hover:bg-white/4 transition-colors"
+                      >
+                        {/* 1. STT */}
+                        <TableCell className="w-14 px-3 py-3.5 text-center font-mono text-xs text-muted-foreground align-middle">
+                          {stt}
+                        </TableCell>
 
-                          {/* Tiêu đề đề tài (Line clamp 2 + Tooltip + break-all) */}
-                          <div className="w-full min-w-0 max-w-full overflow-hidden">
-                            <Tooltip>
-                              <TooltipTrigger
-                                render={
-                                  <button
-                                    type="button"
-                                    onClick={() => setSelectedTopicId(topic.id)}
-                                    className="w-full block line-clamp-2 text-left font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-all [word-break:break-all] [overflow-wrap:anywhere] cursor-pointer"
-                                  />
-                                }
-                              >
-                                {topicTitle}
-                              </TooltipTrigger>
-                              <TooltipContent
-                                side="top"
-                                align="start"
-                                className="max-w-md p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-neutral-800 dark:text-neutral-100 rounded-lg shadow-xl border border-slate-700 dark:border-neutral-700 z-50"
-                              >
-                                <p className="font-semibold text-primary mb-1">
-                                  Tên đề tài đầy đủ:
-                                </p>
-                                <p className="text-slate-200 dark:text-neutral-200 break-all [word-break:break-all] [overflow-wrap:anywhere]">
-                                  {topicTitle}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                        </div>
-                      </TableCell>
-
-                      {/* Cột 2: Cán bộ hướng dẫn */}
-                      <TableCell className="w-[170px] max-w-[170px] min-w-0 overflow-hidden px-3 py-3 align-top">
-                        <div className="text-xs font-semibold text-slate-900 dark:text-neutral-100 leading-snug truncate">
-                          {topic.lecturer?.academicTitle && (
-                            <span className="text-muted-foreground mr-1 font-normal">
-                              {topic.lecturer.academicTitle}
-                            </span>
-                          )}
-                          {topic.lecturer?.fullName}
-                        </div>
-                        {group?.councilTopic?.reviewer && (
-                          <div className="mt-1 text-[11px] text-muted-foreground leading-tight truncate">
-                            PB: {group.councilTopic.reviewer.fullName}
-                          </div>
-                        )}
-                      </TableCell>
-
-                      {/* Cột 3: Sinh viên & Điểm */}
-                      <TableCell className="w-[220px] max-w-[220px] min-w-0 overflow-hidden px-3 py-3 align-top">
-                        {members.length === 0 ? (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        ) : (
-                          <div className="space-y-1">
-                            {members.map((m) => {
-                              const stGrade = grades.find(
-                                (g) => g.studentId === m.student.id,
-                              );
-                              return (
-                                <div
-                                  key={m.id}
-                                  className="flex items-center justify-between text-xs gap-1.5"
-                                >
-                                  <div className="truncate">
-                                    <span className="font-medium text-slate-800 dark:text-neutral-200">
-                                      {m.student.fullName}
-                                    </span>
-                                    <span className="text-[11px] text-muted-foreground ml-1">
-                                      ({m.student.studentCode})
-                                    </span>
-                                  </div>
-                                  <div className="shrink-0 text-right">
-                                    {stGrade?.finalGradeNum !== null &&
-                                    stGrade?.finalGradeNum !== undefined ? (
-                                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                                        {stGrade.finalGradeNum}
-                                        {stGrade.finalGradeLetter && (
-                                          <span className="text-[10px] text-muted-foreground font-normal ml-0.5">
-                                            ({stGrade.finalGradeLetter})
-                                          </span>
-                                        )}
-                                      </span>
-                                    ) : (
-                                      <span className="text-muted-foreground">—</span>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </TableCell>
-
-                      {/* Cột 4: Hồ sơ số hóa (4 icons gọn gàng) */}
-                      <TableCell className="w-[130px] max-w-[130px] px-2 py-3 align-top text-center">
-                        <div className="inline-flex items-center justify-center gap-1.5">
-                          {/* Đề cương M03 */}
+                        {/* 2. Tên đề tài: 1 dòng duy nhất + truncate + hover tooltip popup */}
+                        <TableCell className="min-w-[280px] max-w-[340px] px-4 py-3.5 align-middle">
                           <Tooltip>
                             <TooltipTrigger
                               render={
-                                outline?.attachmentUrl ? (
-                                  <a
-                                    href={outline.attachmentUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="p-1 rounded text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors"
-                                  />
-                                ) : (
-                                  <span className="p-1 text-slate-300 dark:text-neutral-700 cursor-not-allowed" />
-                                )
-                              }
-                            >
-                              <FileCheck2 className="size-4" />
-                            </TooltipTrigger>
-                            <TooltipContent className="text-xs">
-                              {outline?.attachmentUrl
-                                ? 'Đề cương M03'
-                                : 'Chưa có đề cương M03'}
-                            </TooltipContent>
-                          </Tooltip>
-
-                          {/* PDF Luận văn */}
-                          <Tooltip>
-                            <TooltipTrigger
-                              render={
-                                archive?.thesisUrl ? (
-                                  <a
-                                    href={archive.thesisUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="p-1 rounded text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
-                                  />
-                                ) : (
-                                  <span className="p-1 text-slate-300 dark:text-neutral-700 cursor-not-allowed" />
-                                )
-                              }
-                            >
-                              <FileText className="size-4" />
-                            </TooltipTrigger>
-                            <TooltipContent className="text-xs">
-                              {archive?.thesisUrl
-                                ? 'Báo cáo PDF luận văn'
-                                : 'Chưa có file PDF'}
-                            </TooltipContent>
-                          </Tooltip>
-
-                          {/* Source Code */}
-                          <Tooltip>
-                            <TooltipTrigger
-                              render={
-                                archive?.sourceUrl ? (
-                                  <a
-                                    href={archive.sourceUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="p-1 rounded text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition-colors"
-                                  />
-                                ) : (
-                                  <span className="p-1 text-slate-300 dark:text-neutral-700 cursor-not-allowed" />
-                                )
-                              }
-                            >
-                              <Code className="size-4" />
-                            </TooltipTrigger>
-                            <TooltipContent className="text-xs">
-                              {archive?.sourceUrl
-                                ? 'Mã nguồn (Source code)'
-                                : 'Chưa có mã nguồn'}
-                            </TooltipContent>
-                          </Tooltip>
-
-                          {/* CSDL */}
-                          <Tooltip>
-                            <TooltipTrigger
-                              render={
-                                archive?.databaseUrl ? (
-                                  <a
-                                    href={archive.databaseUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="p-1 rounded text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/50 transition-colors"
-                                  />
-                                ) : (
-                                  <span className="p-1 text-slate-300 dark:text-neutral-700 cursor-not-allowed" />
-                                )
-                              }
-                            >
-                              <Database className="size-4" />
-                            </TooltipTrigger>
-                            <TooltipContent className="text-xs">
-                              {archive?.databaseUrl
-                                ? 'Cơ sở dữ liệu'
-                                : 'Chưa có CSDL'}
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </TableCell>
-
-                      {/* Cột 5: Tình trạng nghiệm thu */}
-                      <TableCell className="w-[120px] max-w-[120px] px-2 py-3 align-top text-center whitespace-nowrap">
-                        {isAcademicVerified ? (
-                          <StatusPill
-                            label="Đã nghiệm thu"
-                            tone="success"
-                            variant="tag"
-                          />
-                        ) : archive ? (
-                          <StatusPill
-                            label="Chờ nghiệm thu"
-                            tone="waiting"
-                            variant="tag"
-                          />
-                        ) : (
-                          <StatusPill
-                            label="Chưa nộp"
-                            tone="idle"
-                            variant="tag"
-                          />
-                        )}
-                      </TableCell>
-
-                      {/* Cột 6: Thao tác 3 chấm */}
-                      <TableCell className="w-14 max-w-14 px-2 py-3 align-top text-center whitespace-nowrap">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger
-                            render={
-                              <Button
-                                variant="ghost"
-                                size="icon-xs"
-                                className="size-8 text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-neutral-800 cursor-pointer"
-                                aria-label="Thao tác"
-                              >
-                                <MoreHorizontal className="size-4" />
-                              </Button>
-                            }
-                          />
-                          <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem
-                              onClick={() => setSelectedTopicId(topic.id)}
-                            >
-                              <Eye className="size-4 mr-2" />
-                              <span>Xem nhanh (Sheet)</span>
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem
-                              render={
-                                <Link
-                                  href={`/admin/topics/${topic.id}`}
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedTopicId(topic.id)}
+                                  className="block w-full max-w-[320px] truncate text-left cursor-pointer"
                                 />
                               }
                             >
-                              <ExternalLink className="size-4 mr-2" />
-                              <span>Mở trang đề tài</span>
-                            </DropdownMenuItem>
+                              <span className="truncate text-sm font-semibold text-slate-900 dark:text-neutral-100 leading-snug hover:text-primary transition-colors">
+                                {topicTitle}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="top"
+                              align="start"
+                              className="max-w-md p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-neutral-800 dark:text-neutral-100 rounded-lg shadow-xl border border-slate-700 dark:border-neutral-700 z-50"
+                            >
+                              <p className="font-semibold text-primary mb-1">
+                                Tên đề tài đầy đủ:
+                              </p>
+                              <p className="text-slate-200 dark:text-neutral-200 break-words [overflow-wrap:anywhere]">
+                                {topicTitle}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TableCell>
 
-                            {archive && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    handleToggleVerify(
-                                      archive.id,
-                                      isAcademicVerified,
-                                    )
-                                  }
+                        {/* 3. Loại đồ án (chữ thường không badge như sinh viên) */}
+                        <TableCell className="w-28 px-3 py-3.5 text-center font-medium text-slate-700 dark:text-neutral-300 align-middle whitespace-nowrap">
+                          <span title={projectTypeInfo.full}>
+                            {projectTypeInfo.short}
+                          </span>
+                        </TableCell>
+
+                        {/* 4. Chuyên ngành */}
+                        <TableCell className="w-36 px-3 py-3.5 text-slate-700 dark:text-neutral-300 align-middle whitespace-nowrap">
+                          {topic.major?.name ?? '—'}
+                        </TableCell>
+
+                        {/* 5. Học kỳ */}
+                        <TableCell className="w-28 px-3 py-3.5 text-slate-600 dark:text-neutral-400 align-middle whitespace-nowrap text-xs">
+                          {formatSemesterAbbr(topic.semester)}
+                        </TableCell>
+
+                        {/* 6. GV hướng dẫn */}
+                        <TableCell className="w-44 px-3 py-3.5 align-middle whitespace-nowrap">
+                          <div className="text-xs font-semibold text-slate-900 dark:text-neutral-100 leading-snug truncate">
+                            {topic.lecturer?.academicTitle && (
+                              <span className="text-muted-foreground mr-1 font-normal">
+                                {topic.lecturer.academicTitle}
+                              </span>
+                            )}
+                            {topic.lecturer?.fullName}
+                          </div>
+                          {group?.councilTopic?.reviewer && (
+                            <div className="mt-0.5 text-[11px] text-muted-foreground leading-tight truncate">
+                              PB: {group.councilTopic.reviewer.fullName}
+                            </div>
+                          )}
+                        </TableCell>
+
+                        {/* 7. Sinh viên & Điểm */}
+                        <TableCell className="w-52 px-3 py-3.5 align-middle whitespace-nowrap">
+                          {members.length === 0 ? (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          ) : (
+                            <div className="space-y-1">
+                              {members.map((m) => {
+                                const stGrade = grades.find(
+                                  (g) => g.studentId === m.student.id,
+                                );
+                                return (
+                                  <div
+                                    key={m.id}
+                                    className="flex items-center justify-between text-xs gap-1.5"
+                                  >
+                                    <div className="truncate">
+                                      <span className="font-medium text-slate-800 dark:text-neutral-200">
+                                        {m.student.fullName}
+                                      </span>
+                                      <span className="ml-1 text-[11px]">
+                                        (
+                                        <span className="font-mono text-primary font-semibold">
+                                          {m.student.studentCode}
+                                        </span>
+                                        )
+                                      </span>
+                                    </div>
+                                    <div className="shrink-0 text-right ml-1">
+                                      {stGrade?.finalGradeNum !== null &&
+                                      stGrade?.finalGradeNum !== undefined ? (
+                                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                          {stGrade.finalGradeNum}
+                                          {stGrade.finalGradeLetter && (
+                                            <span className="text-[10px] text-muted-foreground font-normal ml-0.5">
+                                              ({stGrade.finalGradeLetter})
+                                            </span>
+                                          )}
+                                        </span>
+                                      ) : (
+                                        <span className="text-muted-foreground">—</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </TableCell>
+
+                        {/* 8. Nghiệm thu */}
+                        <TableCell className="w-32 px-3 py-3.5 text-center align-middle whitespace-nowrap">
+                          {isAcademicVerified ? (
+                            <StatusPill
+                              label="Đã nghiệm thu"
+                              tone="success"
+                              variant="tag"
+                            />
+                          ) : archive ? (
+                            <StatusPill
+                              label="Chờ nghiệm thu"
+                              tone="waiting"
+                              variant="tag"
+                            />
+                          ) : (
+                            <StatusPill
+                              label="Chưa nộp"
+                              tone="idle"
+                              variant="tag"
+                            />
+                          )}
+                        </TableCell>
+
+                        {/* 9. Thao tác 3 chấm (Đủ w-20 không bao giờ bị cắt chữ THAO TÁC) */}
+                        <TableCell className="w-20 px-3 py-3.5 text-center align-middle whitespace-nowrap">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger
+                              render={
+                                <Button
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  className="size-8 text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-slate-100 dark:hover:bg-neutral-800 cursor-pointer"
+                                  aria-label="Thao tác"
                                 >
-                                  {isAcademicVerified ? (
-                                    <>
-                                      <RotateCcw className="size-4 mr-2 text-muted-foreground" />
-                                      <span>Hủy nghiệm thu</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CheckCircle2 className="size-4 mr-2 text-emerald-600" />
-                                      <span>Xác nhận nghiệm thu</span>
-                                    </>
-                                  )}
-                                </DropdownMenuItem>
-                              </>
-                            )}
+                                  <MoreHorizontal className="size-4" />
+                                </Button>
+                              }
+                            />
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem
+                                onClick={() => setSelectedTopicId(topic.id)}
+                              >
+                                <Eye className="size-4 mr-2" />
+                                <span>Xem nhanh (Sheet)</span>
+                              </DropdownMenuItem>
 
-                            {(archive?.thesisUrl ||
-                              archive?.sourceUrl ||
-                              outline?.attachmentUrl) && (
-                              <>
-                                <DropdownMenuSeparator />
-                                {archive?.thesisUrl && (
+                              <DropdownMenuItem
+                                render={
+                                  <Link
+                                    href={`/admin/topics/${topic.id}`}
+                                  />
+                                }
+                              >
+                                <ExternalLink className="size-4 mr-2" />
+                                <span>Mở trang đề tài</span>
+                              </DropdownMenuItem>
+
+                              {archive && (
+                                <>
+                                  <DropdownMenuSeparator />
                                   <DropdownMenuItem
-                                    render={
-                                      <a
-                                        href={archive.thesisUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                      />
+                                    onClick={() =>
+                                      handleToggleVerify(
+                                        archive.id,
+                                        isAcademicVerified,
+                                      )
                                     }
                                   >
-                                    <FileText className="size-4 mr-2 text-rose-500" />
-                                    <span>Mở PDF luận văn</span>
+                                    {isAcademicVerified ? (
+                                      <>
+                                        <RotateCcw className="size-4 mr-2 text-muted-foreground" />
+                                        <span>Hủy nghiệm thu</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <CheckCircle2 className="size-4 mr-2 text-emerald-600" />
+                                        <span>Xác nhận nghiệm thu</span>
+                                      </>
+                                    )}
                                   </DropdownMenuItem>
-                                )}
-                                {archive?.sourceUrl && (
-                                  <DropdownMenuItem
-                                    render={
-                                      <a
-                                        href={archive.sourceUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                      />
-                                    }
-                                  >
-                                    <Code className="size-4 mr-2 text-emerald-500" />
-                                    <span>Xem mã nguồn</span>
-                                  </DropdownMenuItem>
-                                )}
-                                {outline?.attachmentUrl && (
-                                  <DropdownMenuItem
-                                    render={
-                                      <a
-                                        href={outline.attachmentUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                      />
-                                    }
-                                  >
-                                    <FileCheck2 className="size-4 mr-2 text-blue-500" />
-                                    <span>Tải đề cương M03</span>
-                                  </DropdownMenuItem>
-                                )}
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
+                                </>
+                              )}
+
+                              {(archive?.thesisUrl ||
+                                archive?.sourceUrl ||
+                                outline?.attachmentUrl) && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  {archive?.thesisUrl && (
+                                    <DropdownMenuItem
+                                      render={
+                                        <a
+                                          href={archive.thesisUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                        />
+                                      }
+                                    >
+                                      <FileText className="size-4 mr-2 text-rose-500" />
+                                      <span>Mở PDF luận văn</span>
+                                    </DropdownMenuItem>
+                                  )}
+                                  {archive?.sourceUrl && (
+                                    <DropdownMenuItem
+                                      render={
+                                        <a
+                                          href={archive.sourceUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                        />
+                                      }
+                                    >
+                                      <Code className="size-4 mr-2 text-emerald-500" />
+                                      <span>Xem mã nguồn</span>
+                                    </DropdownMenuItem>
+                                  )}
+                                  {outline?.attachmentUrl && (
+                                    <DropdownMenuItem
+                                      render={
+                                        <a
+                                          href={outline.attachmentUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                        />
+                                      }
+                                    >
+                                      <FileCheck2 className="size-4 mr-2 text-blue-500" />
+                                      <span>Tải đề cương M03</span>
+                                    </DropdownMenuItem>
+                                  )}
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
           {/* Phân trang */}
           <div className="p-3 border-t border-slate-200 dark:border-neutral-800">
