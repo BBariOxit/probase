@@ -341,24 +341,24 @@ export default function ArchivesPage() {
         <div className="isolate w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
           <Table
             containerClassName="w-full overflow-x-auto"
-            className="w-full min-w-[960px] table-fixed text-left text-sm"
+            className="w-full min-w-[1040px] table-fixed text-left text-sm"
           >
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[360px] px-4">Tên đề tài</TableHead>
-                <TableHead className="w-[170px] px-3 whitespace-nowrap">
+                <TableHead className="w-[360px] max-w-[360px] px-4">Tên đề tài</TableHead>
+                <TableHead className="w-[170px] max-w-[170px] px-3 whitespace-nowrap">
                   CB hướng dẫn
                 </TableHead>
-                <TableHead className="w-[220px] px-3 whitespace-nowrap">
+                <TableHead className="w-[220px] max-w-[220px] px-3 whitespace-nowrap">
                   Sinh viên & Điểm
                 </TableHead>
-                <TableHead className="w-[130px] px-2 text-center whitespace-nowrap">
+                <TableHead className="w-[130px] max-w-[130px] px-2 text-center whitespace-nowrap">
                   Hồ sơ số hóa
                 </TableHead>
-                <TableHead className="w-[120px] px-2 text-center whitespace-nowrap">
+                <TableHead className="w-[120px] max-w-[120px] px-2 text-center whitespace-nowrap">
                   Nghiệm thu
                 </TableHead>
-                <TableHead className="w-14 px-2 text-center whitespace-nowrap">
+                <TableHead className="w-14 max-w-14 px-2 text-center whitespace-nowrap">
                   Thao tác
                 </TableHead>
               </TableRow>
@@ -404,8 +404,8 @@ export default function ArchivesPage() {
                       className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                     >
                       {/* Cột 1: Tên đề tài & Tags */}
-                      <TableCell className="w-[360px] px-4 py-3 align-top font-medium whitespace-normal">
-                        <div className="space-y-1">
+                      <TableCell className="w-[360px] max-w-[360px] min-w-0 overflow-hidden px-4 py-3 align-top font-medium">
+                        <div className="w-full min-w-0 max-w-full space-y-1 overflow-hidden">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-[11px] font-semibold text-muted-foreground">
                               #{topic.id}
@@ -416,22 +416,22 @@ export default function ArchivesPage() {
                               </Badge>
                             )}
                             <Badge variant="secondary" className="text-[10px] py-0 h-4">
-                              {topic.round?.projectType?.name || 'Đề tài'}
+                              {topic.round?.projectType?.code || topic.round?.projectType?.name || 'Đề tài'}
                             </Badge>
                             <span className="text-[11px] text-muted-foreground">
                               • {formatSemesterAbbr(topic.semester)}
                             </span>
                           </div>
 
-                          {/* Tiêu đề đề tài (Line clamp 2 + Tooltip) */}
-                          <div className="w-full">
+                          {/* Tiêu đề đề tài (Line clamp 2 + Tooltip + break-all) */}
+                          <div className="w-full min-w-0 max-w-full overflow-hidden">
                             <Tooltip>
                               <TooltipTrigger
                                 render={
                                   <button
                                     type="button"
                                     onClick={() => setSelectedTopicId(topic.id)}
-                                    className="line-clamp-2 text-left font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] cursor-pointer"
+                                    className="w-full block line-clamp-2 text-left font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-all [word-break:break-all] [overflow-wrap:anywhere] cursor-pointer"
                                   />
                                 }
                               >
@@ -445,7 +445,7 @@ export default function ArchivesPage() {
                                 <p className="font-semibold text-primary mb-1">
                                   Tên đề tài đầy đủ:
                                 </p>
-                                <p className="text-slate-200 dark:text-neutral-200 break-words [overflow-wrap:anywhere]">
+                                <p className="text-slate-200 dark:text-neutral-200 break-all [word-break:break-all] [overflow-wrap:anywhere]">
                                   {topicTitle}
                                 </p>
                               </TooltipContent>
@@ -455,8 +455,8 @@ export default function ArchivesPage() {
                       </TableCell>
 
                       {/* Cột 2: Cán bộ hướng dẫn */}
-                      <TableCell className="w-[170px] px-3 py-3 align-top">
-                        <div className="text-xs font-semibold text-slate-900 dark:text-neutral-100 leading-snug">
+                      <TableCell className="w-[170px] max-w-[170px] min-w-0 overflow-hidden px-3 py-3 align-top">
+                        <div className="text-xs font-semibold text-slate-900 dark:text-neutral-100 leading-snug truncate">
                           {topic.lecturer?.academicTitle && (
                             <span className="text-muted-foreground mr-1 font-normal">
                               {topic.lecturer.academicTitle}
@@ -465,14 +465,14 @@ export default function ArchivesPage() {
                           {topic.lecturer?.fullName}
                         </div>
                         {group?.councilTopic?.reviewer && (
-                          <div className="mt-1 text-[11px] text-muted-foreground leading-tight">
+                          <div className="mt-1 text-[11px] text-muted-foreground leading-tight truncate">
                             PB: {group.councilTopic.reviewer.fullName}
                           </div>
                         )}
                       </TableCell>
 
                       {/* Cột 3: Sinh viên & Điểm */}
-                      <TableCell className="w-[220px] px-3 py-3 align-top">
+                      <TableCell className="w-[220px] max-w-[220px] min-w-0 overflow-hidden px-3 py-3 align-top">
                         {members.length === 0 ? (
                           <span className="text-xs text-muted-foreground">—</span>
                         ) : (
@@ -517,7 +517,7 @@ export default function ArchivesPage() {
                       </TableCell>
 
                       {/* Cột 4: Hồ sơ số hóa (4 icons gọn gàng) */}
-                      <TableCell className="w-[130px] px-2 py-3 align-top text-center">
+                      <TableCell className="w-[130px] max-w-[130px] px-2 py-3 align-top text-center">
                         <div className="inline-flex items-center justify-center gap-1.5">
                           {/* Đề cương M03 */}
                           <Tooltip>
@@ -622,7 +622,7 @@ export default function ArchivesPage() {
                       </TableCell>
 
                       {/* Cột 5: Tình trạng nghiệm thu */}
-                      <TableCell className="w-[120px] px-2 py-3 align-top text-center whitespace-nowrap">
+                      <TableCell className="w-[120px] max-w-[120px] px-2 py-3 align-top text-center whitespace-nowrap">
                         {isAcademicVerified ? (
                           <StatusPill
                             label="Đã nghiệm thu"
@@ -645,7 +645,7 @@ export default function ArchivesPage() {
                       </TableCell>
 
                       {/* Cột 6: Thao tác 3 chấm */}
-                      <TableCell className="w-14 px-2 py-3 align-top text-center whitespace-nowrap">
+                      <TableCell className="w-14 max-w-14 px-2 py-3 align-top text-center whitespace-nowrap">
                         <DropdownMenu>
                           <DropdownMenuTrigger
                             render={
