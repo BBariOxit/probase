@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRequireRole } from '@/lib/auth/use-require-role';
+import { usePagination } from '@/hooks/use-pagination';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
 import { useMajors, useRoundsForSemester, useSemesters } from '@/lib/api/master-data';
 import {
@@ -62,8 +63,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-
-const PAGE_SIZE = 15;
 
 const VERIFIED_FILTER_OPTIONS: { value: 'all' | 'true' | 'false'; label: string }[] = [
   { value: 'all', label: 'Mọi tình trạng' },
@@ -121,7 +120,7 @@ export default function ArchivesPage() {
   const [selectedMajorId, setSelectedMajorId] = useState<string>('all');
   const [selectedVerified, setSelectedVerified] = useState<'all' | 'true' | 'false'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, setPageSize } = usePagination();
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
 
   // Selected topic id for shared TopicDetailSheet
@@ -151,7 +150,7 @@ export default function ArchivesPage() {
     verified: selectedVerified,
     q: debouncedSearch || undefined,
     page,
-    limit: PAGE_SIZE,
+    limit: pageSize,
   });
 
   const exportMutation = useExportArchives();
@@ -220,7 +219,7 @@ export default function ArchivesPage() {
 
   return (
     <TooltipProvider delay={200}>
-      <div className="w-full min-w-0 space-y-4">
+      <div className="flex flex-col gap-3 md:max-h-[calc(100dvh-6.5rem)]">
         {/* ── Page Header ── */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -596,7 +595,7 @@ export default function ArchivesPage() {
 
                     const topicTitle = topic.titleVi || topic.title;
                     const projectTypeInfo = getProjectTypeAbbr(topic.round?.projectType);
-                    const stt = (page - 1) * PAGE_SIZE + index + 1;
+                    const stt = (page - 1) * pageSize + index + 1;
 
                     return (
                       <TableRow
@@ -865,18 +864,19 @@ export default function ArchivesPage() {
               </TableBody>
             </Table>
           </div>
+        </div>
 
-          {/* Phân trang */}
-          <div className="p-3 border-t border-slate-200 dark:border-neutral-800">
-            <PaginationBar
-              page={page}
-              totalPages={totalPages}
-              total={total}
-              pageSize={PAGE_SIZE}
-              onPageChange={(newPage) => setPage(newPage)}
-              itemName="đề tài"
-            />
-          </div>
+        {/* ── Phân trang chuẩn students/page.tsx ── */}
+        <div className="shrink-0">
+          <PaginationBar
+            page={archiveData?.page ?? page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            itemName="đề tài"
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
 
         {/* ── Shared TopicDetailSheet ── */}
