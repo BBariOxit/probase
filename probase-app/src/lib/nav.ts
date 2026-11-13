@@ -1,4 +1,5 @@
 import {
+  Archive,
   BookOpen,
   BookUser,
   Building2,
@@ -204,6 +205,12 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           href: '/admin/councils',
           label: 'Hội đồng bảo vệ',
           icon: Gavel,
+          ready: true,
+        },
+        {
+          href: '/admin/archives',
+          label: 'Kho lưu trữ',
+          icon: Archive,
           ready: true,
         },
       ],

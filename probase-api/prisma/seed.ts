@@ -1255,6 +1255,550 @@ async function main() {
   }
   console.log(`[✓] 12. Thông báo: Đã tạo thông báo hệ thống cho sinh viên và giảng viên`);
 
+  // ─────────────────────────────────────────────────────────
+  // 13. SEED KHO LƯU TRỮ ĐỒ ÁN (20 ĐỀ TÀI ĐÃ HOÀN THÀNH - ĐỦ LOẠI ĐỒ ÁN, ĐẦY ĐỦ SINH VIÊN VÀ ĐIỂM SỐ)
+  // ─────────────────────────────────────────────────────────
+  console.log('\n--- BẮT ĐẦU SEED 20 ĐỀ TÀI KHO LƯU TRỮ HOÀN THÀNH (ĐỢT ĐÃ ĐÓNG) ---');
+
+  // A. Tạo 3 Học kỳ đã qua (isActive = false)
+  const semPast1 = await prisma.semester.upsert({
+    where: { code: 'HK2-2024-2025' },
+    create: {
+      code: 'HK2-2024-2025',
+      name: 'Học kỳ 2 năm học 2024–2025',
+      startDate: daysFromNow(-360),
+      endDate: daysFromNow(-180),
+      gradeSubmissionDeadline: daysFromNow(-190),
+      isActive: false,
+      mentorWeight: 0.2,
+      reviewerWeight: 0.3,
+      councilWeight: 0.5,
+      progress1Weight: 0.2,
+      progress2Weight: 0.3,
+      defenseWeight: 0.5,
+    },
+    update: { isActive: false },
+  });
+
+  const semPast2 = await prisma.semester.upsert({
+    where: { code: 'HK1-2024-2025' },
+    create: {
+      code: 'HK1-2024-2025',
+      name: 'Học kỳ 1 năm học 2024–2025',
+      startDate: daysFromNow(-540),
+      endDate: daysFromNow(-370),
+      gradeSubmissionDeadline: daysFromNow(-380),
+      isActive: false,
+      mentorWeight: 0.2,
+      reviewerWeight: 0.3,
+      councilWeight: 0.5,
+      progress1Weight: 0.2,
+      progress2Weight: 0.3,
+      defenseWeight: 0.5,
+    },
+    update: { isActive: false },
+  });
+
+  const semPast3 = await prisma.semester.upsert({
+    where: { code: 'HK2-2023-2024' },
+    create: {
+      code: 'HK2-2023-2024',
+      name: 'Học kỳ 2 năm học 2023–2024',
+      startDate: daysFromNow(-720),
+      endDate: daysFromNow(-550),
+      gradeSubmissionDeadline: daysFromNow(-560),
+      isActive: false,
+      mentorWeight: 0.2,
+      reviewerWeight: 0.3,
+      councilWeight: 0.5,
+      progress1Weight: 0.2,
+      progress2Weight: 0.3,
+      defenseWeight: 0.5,
+    },
+    update: { isActive: false },
+  });
+
+  // B. Tạo các đợt đã đóng (phase = FINALIZED) cho các học kỳ trước
+  const pastRoundsMap = new Map<string, any>();
+  const pastSemConfigs = [
+    { sem: semPast1, types: ['DATN', 'DACN', 'DACS'], cohort: '2021' },
+    { sem: semPast2, types: ['DATN', 'DACN', 'DACS'], cohort: '2021' },
+    { sem: semPast3, types: ['DATN', 'DACN'], cohort: '2020' },
+  ];
+
+  for (const cfg of pastSemConfigs) {
+    for (const tCode of cfg.types) {
+      const pId = projectTypeIdByCode.get(tCode)!;
+      const key = `${cfg.sem.code}_${tCode}`;
+      const r = await prisma.registrationRound.upsert({
+        where: {
+          semesterId_projectTypeId: {
+            semesterId: cfg.sem.id,
+            projectTypeId: pId,
+          },
+        },
+        create: {
+          semesterId: cfg.sem.id,
+          projectTypeId: pId,
+          targetCohort: cfg.cohort,
+          phase: 'FINALIZED',
+          allocationMode: 'FIRST_COME',
+          registrationStart: daysFromNow(-350),
+          registrationEnd: daysFromNow(-330),
+          officialStartDate: daysFromNow(-320),
+          officialEndDate: daysFromNow(-200),
+          topicSubmissionStart: daysFromNow(-360),
+          topicSubmissionEnd: daysFromNow(-335),
+          defenseStartDate: daysFromNow(-210),
+          defenseEndDate: daysFromNow(-200),
+        },
+        update: {
+          phase: 'FINALIZED',
+        },
+      });
+      pastRoundsMap.set(key, r);
+    }
+  }
+
+  // C. Dọn dẹp dữ liệu cũ của các học kỳ đã qua trước khi tạo
+  const pastSemesterIds = [semPast1.id, semPast2.id, semPast3.id];
+  await prisma.studentGrade.deleteMany({ where: { group: { semesterId: { in: pastSemesterIds } } } });
+  await prisma.registrationGroupMember.deleteMany({ where: { semesterId: { in: pastSemesterIds } } });
+  await prisma.registrationGroup.deleteMany({ where: { semesterId: { in: pastSemesterIds } } });
+  await prisma.topic.deleteMany({ where: { semesterId: { in: pastSemesterIds } } });
+
+  // D. Danh sách sinh viên hoàn thành các khóa trước
+  const PAST_STUDENTS_DATA = [
+    { code: '2011234', name: 'Trần Văn Hải', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
+    { code: '2011456', name: 'Nguyễn Thị Lan', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
+    { code: '2011789', name: 'Đặng Quốc Tuấn', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
+    { code: '2011890', name: 'Lê Thu Trang', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
+    { code: '2112345', name: 'Võ Minh Trí', class: 'CTK45PM', majorCode: 'CNPM', cohort: '2022' },
+    { code: '2112567', name: 'Phạm Đức Nam', class: 'CTK45PM', majorCode: 'CNPM', cohort: '2022' },
+    { code: '2213456', name: 'Bùi Hoàng Long', class: 'CTK46PM', majorCode: 'CNPM', cohort: '2023' },
+    { code: '2011342', name: 'Huỳnh Nhật Quang', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
+    { code: '2011998', name: 'Hoàng Gia Huy', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
+    { code: '2112458', name: 'Đỗ Quỳnh Anh', class: 'CTK45PM', majorCode: 'CNPM', cohort: '2022' },
+    { code: '2213789', name: 'Mai Trọng Nghĩa', class: 'CTK46PM', majorCode: 'CNPM', cohort: '2023' },
+    { code: '2012111', name: 'Nguyễn Tuấn Anh', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
+    { code: '2012222', name: 'Phan Thế Anh', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
+    { code: '2113111', name: 'Đặng Thành Công', class: 'CTK45MMT', majorCode: 'MMT', cohort: '2022' },
+    { code: '2113222', name: 'Lương Văn Dũng', class: 'CTK45MMT', majorCode: 'MMT', cohort: '2022' },
+    { code: '2214111', name: 'Trịnh Quốc Bảo', class: 'CTK46MMT', majorCode: 'MMT', cohort: '2023' },
+    { code: '2012333', name: 'Vũ Hoàng Lâm', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
+    { code: '2012444', name: 'Cao Đình Khang', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
+    { code: '2113333', name: 'Hà Tiến Đạt', class: 'CTK45MMT', majorCode: 'MMT', cohort: '2022' },
+    { code: '1911555', name: 'Nguyễn Quang Sáng', class: 'CTK43PM', majorCode: 'CNPM', cohort: '2020' },
+    { code: '1912666', name: 'Trương Quốc Toàn', class: 'CTK43MMT', majorCode: 'MMT', cohort: '2020' },
+    { code: '2011666', name: 'Dương Mỹ Linh', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
+    { code: '2112888', name: 'Tạ Minh Khang', class: 'CTK45PM', majorCode: 'CNPM', cohort: '2022' },
+    { code: '2012777', name: 'Lâm Hải Đăng', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
+  ];
+
+  const pastStudentProfiles: any[] = [];
+  for (const st of PAST_STUDENTS_DATA) {
+    const email = `${st.code}@dlu.edu.vn`;
+    const user = await prisma.user.upsert({
+      where: { email },
+      create: {
+        email,
+        password: hashedPassword,
+        role: 'STUDENT',
+        mustChangePassword: false,
+      },
+      update: {},
+    });
+
+    const profile = await prisma.studentProfile.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        studentCode: st.code,
+        fullName: st.name,
+        class: st.class,
+        cohort: st.cohort,
+        majorId: majorIdByCode.get(st.majorCode),
+      },
+      update: {
+        fullName: st.name,
+        class: st.class,
+        cohort: st.cohort,
+      },
+    });
+    pastStudentProfiles.push(profile);
+  }
+
+  // E. 20 Đề tài lưu trữ hoàn chỉnh (10 CNPM, 10 MMT, đủ KLTN, ĐACN, ĐACS)
+  const ARCHIVED_TOPICS = [
+    // 1. KLTN - CNPM - HK2 24-25
+    {
+      title: 'Xây dựng Hệ thống Quản trị Học tập Trực tuyến (LMS) Hỗ trợ Đào tạo Theo Tín chỉ cho Đại học Đà Lạt',
+      titleEn: 'Development of Credit-based Online Learning Management System (LMS) for Dalat University',
+      description: 'Hệ thống hỗ trợ quản lý học tập trực tuyến tích hợp thời khóa biểu tín chỉ, nộp bài tập tự động chấm mã nguồn, và diễn đàn thảo luận thời gian thực cho sinh viên.\n\nGiải pháp áp dụng kiến trúc Microservices giúp phân tải hệ thống khi có lượng lớn sinh viên đồng thời truy cập trong kỳ thi.',
+      objectives: '- Phân tích và xây dựng hệ thống LMS theo chuẩn tín chỉ Đại học Đà Lạt.\n- Triển khai máy chủ đánh giá mã nguồn tự động an toàn trong Sandbox Docker.\n- Tối ưu hóa hiệu năng chịu tải trên 1000 người dùng trực tuyến.',
+      expectedOutcomes: '- Cổng thông tin web LMS hoàn chỉnh gồm phân hệ sinh viên, giảng viên và quản trị viên.\n- Hệ thống tự động chấm bài tập lập trình (Auto-grader) cho môn C/C++, Java và Python.\n- Báo cáo kết quả thử nghiệm hiệu năng và độ ổn định hệ thống.',
+      techStack: 'Next.js 14, NestJS, PostgreSQL, Redis, Docker, RabbitMQ',
+      majorCode: 'CNPM',
+      semKey: semPast1,
+      roundKey: 'HK2-2024-2025_DATN',
+      lecturerId: pbProfile.id,
+      studentIdx: 0,
+      grade: { p1: 8.5, p2: 9.0, def: 8.8, finalNum: 8.8, finalLetter: 'A' },
+    },
+    // 2. KLTN - CNPM - HK2 24-25
+    {
+      title: 'Ứng dụng Mô hình Thị giác Máy tính YOLOv8 trong Giám sát An toàn Lao động tại Công trường Xây dựng',
+      titleEn: 'Application of YOLOv8 Computer Vision in Construction Site Safety Monitoring',
+      description: 'Nghiên cứu ứng dụng các giải thuật học sâu phát hiện vật thể thời gian thực để nhận diện công nhân không đội mũ bảo hiểm hoặc không mặc áo phản quang tại công trường.\n\nHệ thống phát tín hiệu cảnh báo loa và gửi thông báo tức thì đến ban chỉ huy công trường.',
+      objectives: '- Xây dựng tập dữ liệu hơn 8.000 hình ảnh trang thiết bị bảo hộ lao động thực tế tại Đà Lạt.\n- Huấn luyện mô hình YOLOv8 đạt độ chính xác phát hiện mAP@0.5 trên 92%.\n- Đóng gói ứng dụng giám sát video thời gian thực từ các camera IP RTSP.',
+      expectedOutcomes: '- Mô hình học sâu nhận diện vi phạm an toàn lao động với độ trễ dưới 50ms.\n- Dashboard quản lý các sự kiện vi phạm an toàn và xuất báo cáo hàng tuần.\n- Luận văn tốt nghiệp và video demo hoạt động thực tế.',
+      techStack: 'Python, PyTorch, YOLOv8, OpenCV, FastAPI, React, Docker',
+      majorCode: 'CNPM',
+      semKey: semPast1,
+      roundKey: 'HK2-2024-2025_DATN',
+      lecturerId: lnProfile.id,
+      studentIdx: 1,
+      grade: { p1: 9.0, p2: 9.5, def: 9.2, finalNum: 9.3, finalLetter: 'A+' },
+    },
+    // 3. KLTN - CNPM - HK2 24-25
+    {
+      title: 'Nền tảng Hỗ trợ Khởi nghiệp Đổi mới Sáng tạo và Kết nối Vốn Đầu tư Thiên thần (StartupHub)',
+      titleEn: 'StartupHub - Innovation Support and Angel Investor Matching Platform',
+      description: 'Cung cấp không gian số kết nối các dự án khởi nghiệp tiềm năng của thanh niên và sinh viên với các nhà đầu tư mạo hiểm, quỹ hỗ trợ phát triển.\n\nHệ thống tích hợp quy trình pitching trực tuyến, thẩm định dự án (Due Diligence) và ký cam kết bảo mật NDA điện tử.',
+      objectives: '- Xây dựng thuật toán matching dự án dựa trên lĩnh vực, giai đoạn gọi vốn và khẩu vị đầu tư.\n- Bảo mật dữ liệu tài chính của startup bằng mã hóa và phân quyền truy cập chặt chẽ.\n- Tích hợp phòng họp trực tuyến và chia sẻ tài liệu thuyết trình bảo mật.',
+      expectedOutcomes: '- Nền tảng web StartupHub tương thích hoàn hảo mọi thiết bị di động.\n- Module phân tích chỉ số tài chính (Burn rate, Runway, CAC/LTV) trực quan.\n- Tài liệu đặc tả kiến trúc hệ thống và hướng dẫn sử dụng.',
+      techStack: 'React, Node.js, GraphQL, PostgreSQL, TailwindCSS, WebRTC',
+      majorCode: 'CNPM',
+      semKey: semPast1,
+      roundKey: 'HK2-2024-2025_DATN',
+      lecturerId: abProfile.id,
+      studentIdx: 2,
+      grade: { p1: 8.5, p2: 8.8, def: 8.6, finalNum: 8.6, finalLetter: 'A' },
+    },
+    // 4. ĐACN - CNPM - HK2 24-25
+    {
+      title: 'Ứng dụng Quản lý Tour Du lịch Trải nghiệm Sinh thái và Đặt Phòng Homestay Đà Lạt',
+      titleEn: 'Mobile Application for Eco-tourism Experience Tour and Homestay Booking in Dalat',
+      description: 'Ứng dụng di động giúp du khách tìm kiếm và đặt các tour trải nghiệm nông nghiệp công nghệ cao, hái dâu tây, săn mây và đặt phòng homestay bản địa.\n\nCho phép thanh toán qua cổng VNPay/MoMo và xem đánh giá chân thực từ cộng đồng du lịch.',
+      objectives: '- Thiết kế giao diện di động thân thiện, tối ưu trải nghiệm khám phá địa điểm du lịch.\n- Xây dựng hệ thống quản lý phòng trống (Availability Calendar) đồng bộ tức thì.\n- Tích hợp bản đồ dẫn đường tương tác đến các địa điểm ngoại ô Đà Lạt.',
+      expectedOutcomes: '- Ứng dụng di động chạy tốt trên Android và iOS.\n- Hệ thống Backend API RESTful quản lý đặt chỗ và thanh toán.\n- Báo cáo kiểm thử người dùng thực tế với 30 tình nguyện viên.',
+      techStack: 'Flutter, Dart, Node.js, Express, MongoDB, VNPay SDK',
+      majorCode: 'CNPM',
+      semKey: semPast1,
+      roundKey: 'HK2-2024-2025_DACN',
+      lecturerId: pbProfile.id,
+      studentIdx: 4,
+      grade: { p1: 8.0, p2: 8.5, def: 8.5, finalNum: 8.4, finalLetter: 'B+' },
+    },
+    // 5. ĐACN - CNPM - HK2 24-25
+    {
+      title: 'Hệ thống Quản lý và Tự động Hóa Quy trình Đăng ký Đề tài Nghiên cứu Khoa học Sinh viên',
+      titleEn: 'Automated Student Scientific Research Project Management System',
+      description: 'Chuẩn hóa quy trình từ đề xuất đề tài NCKH, xét duyệt hội đồng khoa học cơ sở, theo dõi tiến độ giải ngân kinh phí và nghiệm thu đề tài cấp trường.\n\nGiúp giảm thiểu 80% hồ sơ giấy tờ và hạn chế thất lạc biên bản đánh giá.',
+      objectives: '- Số hóa quy trình xét duyệt đề tài NCKH theo quy định hiện hành của Bộ GD&ĐT.\n- Xây dựng luồng phê duyệt đa cấp (Giảng viên hướng dẫn -> Bộ môn -> Phòng QLKH).\n- Tự động sinh biên bản nghiệm thu và chứng nhận NCKH dạng PDF.',
+      expectedOutcomes: '- Website ứng dụng Next.js giao diện chuyên nghiệp chuẩn nhận diện thương hiệu Nhà trường.\n- Module sinh file PDF biên bản tự động bằng thư viện Puppeteer/React-PDF.\n- Sổ tay hướng dẫn quản trị viên và sinh viên thực hiện.',
+      techStack: 'Next.js 14, TypeScript, Prisma, PostgreSQL, TailwindCSS',
+      majorCode: 'CNPM',
+      semKey: semPast1,
+      roundKey: 'HK2-2024-2025_DACN',
+      lecturerId: abProfile.id,
+      studentIdx: 5,
+      grade: { p1: 9.0, p2: 9.0, def: 9.0, finalNum: 9.0, finalLetter: 'A' },
+    },
+    // 6. ĐACS - CNPM - HK2 24-25
+    {
+      title: 'Xây dựng Website Bán Nông sản Sạch và Hoa Tươi Đà Lạt Ứng dụng Kiến trúc Hướng Dịch vụ',
+      titleEn: 'Clean Agricultural Products and Fresh Flowers E-commerce Website for Dalat',
+      description: 'Website thương mại điện tử chuyên cung cấp rau củ quả chuẩn VietGAP và hoa tươi cắt cành từ các nhà vườn Đà Lạt đến người tiêu dùng cả nước.\n\nHỗ trợ giỏ hàng, đặt hàng nhanh, chọn ngày giao hoa tươi hẹn giờ và tra cứu đơn hàng.',
+      objectives: '- Phân tích và thiết kế cơ sở dữ liệu quan hệ cho sàn thương mại điện tử nông sản.\n- Áp dụng mô hình MVC và các nguyên lý lập trình hướng đối tượng (OOP).\n- Đảm bảo tính bảo mật trong lưu trữ mật khẩu người dùng và giỏ hàng.',
+      expectedOutcomes: '- Website bán hàng chạy mượt mà trên môi trường Web Responsive.\n- Trang quản trị (Admin Dashboard) quản lý sản phẩm, đơn hàng và doanh thu.\n- Báo cáo đồ án cơ sở đạt loại Khá giỏi.',
+      techStack: 'React, Express.js, MySQL, TailwindCSS, Axios',
+      majorCode: 'CNPM',
+      semKey: semPast1,
+      roundKey: 'HK2-2024-2025_DACS',
+      lecturerId: pbProfile.id,
+      studentIdx: 6,
+      grade: { p1: 8.0, p2: 8.2, def: 8.3, finalNum: 8.2, finalLetter: 'B+' },
+    },
+    // 7. KLTN - CNPM - HK1 24-25
+    {
+      title: 'Hệ thống Phân tích Sắc thái Cảm xúc Đánh giá Khách hàng trên Sàn Thương mại Điện tử Shopee',
+      titleEn: 'Customer Review Sentiment Analysis System on Shopee E-Commerce Platform Using PhoBERT',
+      description: 'Xây dựng hệ thống tự động thu thập và phân loại đánh giá sản phẩm thành các nhóm cảm xúc Tích cực / Tiêu cực / Trung tính nhằm hỗ trợ nhà bán hàng cải thiện chất lượng dịch vụ.\n\nỨng dụng mô hình ngôn ngữ lớn tiếng Việt PhoBERT đã được tinh chỉnh trên tập dữ liệu thương mại điện tử.',
+      objectives: '- Thu thập và gán nhãn tập dữ liệu hơn 50.000 đánh giá sản phẩm Shopee thực tế.\n- Huấn luyện mô hình PhoBERT với kỹ thuật Data Augmentation đạt F1-score trên 91%.\n- Xây dựng Dashboard trực quan hóa xu hướng hài lòng của khách hàng theo thời gian.',
+      expectedOutcomes: '- Đường ống thu thập dữ liệu (Scraper) hoạt động ổn định và an toàn.\n- API phân loại cảm xúc thời gian thực cho các hệ thống CRM bên thứ ba.\n- Luận văn tốt nghiệp đạt kết quả xuất sắc.',
+      techStack: 'Python, PhoBERT, PyTorch, FastAPI, Next.js, Docker, MongoDB',
+      majorCode: 'CNPM',
+      semKey: semPast2,
+      roundKey: 'HK1-2024-2025_DATN',
+      lecturerId: lnProfile.id,
+      studentIdx: 7,
+      grade: { p1: 9.0, p2: 9.2, def: 9.1, finalNum: 9.1, finalLetter: 'A+' },
+    },
+    // 8. KLTN - CNPM - HK1 24-25
+    {
+      title: 'Nền tảng Đặt xe Công nghệ và Tối ưu Tuyến đường Đón trả Khách cho Xe Điện Du lịch Đà Lạt',
+      titleEn: 'Smart Ride-Hailing and Route Optimization Platform for Dalat Tourist Electric Shuttles',
+      description: 'Giải pháp điều phối xe điện thông minh quanh khu vực Hồ Xuân Hương và các điểm tham quan trung tâm Đà Lạt.\n\nỨng dụng thuật toán tối ưu hóa định tuyến phương tiện (VRP) giúp tiết kiệm điện năng tiêu thụ và rút ngắn thời gian chờ của du khách.',
+      objectives: '- Xây dựng thuật toán gom chuyến và điều phối xe điện linh hoạt theo thời gian thực.\n- Tích hợp bản đồ số OpenStreetMap và hệ thống GPS định vị phương tiện.\n- Phát triển ứng dụng tài xế và ứng dụng hành khách trên thiết bị di động.',
+      expectedOutcomes: '- Bộ ứng dụng di động tài xế và hành khách hoàn chỉnh.\n- Máy chủ trung tâm điều hành trực quan hóa vị trí đội xe theo thời gian thực.\n- Báo cáo phân tích hiệu quả tiết kiệm 20% quãng đường di chuyển rỗng.',
+      techStack: 'React Native, NestJS, Go, PostgreSQL, PostGIS, WebSocket, Docker',
+      majorCode: 'CNPM',
+      semKey: semPast2,
+      roundKey: 'HK1-2024-2025_DATN',
+      lecturerId: abProfile.id,
+      studentIdx: 8,
+      grade: { p1: 8.5, p2: 8.8, def: 8.6, finalNum: 8.6, finalLetter: 'A' },
+    },
+    // 9. ĐACN - CNPM - HK1 24-25
+    {
+      title: 'Ứng dụng Sổ tay Sức khỏe Điện tử và Đặt lịch Tiêm chủng cho Trẻ em',
+      titleEn: 'Digital Child Health Record and Vaccination Scheduling Mobile Application',
+      description: 'Sổ tiêm chủng điện tử giúp phụ huynh quản lý lịch tiêm phòng cho con từ lúc sơ sinh, nhắc lịch tiêm tự động và theo dõi chỉ số tăng trưởng thể chất (chiều cao, cân nặng, BMI) theo chuẩn WHO.',
+      objectives: '- Xây dựng phác đồ tiêm chủng chuẩn quốc gia và thuật toán tính toán ngày tiêm kế tiếp.\n- Thiết kế giao diện sinh động, dễ sử dụng cho các bậc phụ huynh trẻ.\n- Đảm bảo an toàn bảo mật hồ sơ sức khỏe trẻ em.',
+      expectedOutcomes: '- Ứng dụng di động Flutter hỗ trợ chế độ Offline và đồng bộ đám mây.\n- Báo cáo thử nghiệm tại Trung tâm Y tế Dự phòng với đánh giá tích cực.',
+      techStack: 'Flutter, Firebase, Node.js, Express, MongoDB',
+      majorCode: 'CNPM',
+      semKey: semPast2,
+      roundKey: 'HK1-2024-2025_DACN',
+      lecturerId: pbProfile.id,
+      studentIdx: 9,
+      grade: { p1: 9.0, p2: 8.8, def: 8.9, finalNum: 8.9, finalLetter: 'A' },
+    },
+    // 10. ĐACS - CNPM - HK1 24-25
+    {
+      title: 'Xây dựng Phần mềm Quản lý Phòng khám Nha khoa Tư nhân',
+      titleEn: 'Dental Clinic Management Desktop Software with Appointment Scheduling',
+      description: 'Phần mềm quản lý bệnh nhân nha khoa, sơ đồ răng trực quan, lịch hẹn khám, kê đơn thuốc và quản lý thu chi tài chính của phòng khám.',
+      objectives: '- Phân tích nghiệp vụ quản lý hồ sơ nha khoa chuyên khoa.\n- Xây dựng giao diện tương tác sơ đồ 32 răng trực quan.\n- Báo cáo doanh thu và quản lý kho vật tư tiêu hao.',
+      expectedOutcomes: '- Phần mềm cài đặt trên máy tính Windows hoạt động ổn định.\n- Tài liệu đặc tả cơ sở dữ liệu và bản vẽ UML.',
+      techStack: 'C#, .NET Core, SQL Server, WPF, MaterialDesignInXAML',
+      majorCode: 'CNPM',
+      semKey: semPast2,
+      roundKey: 'HK1-2024-2025_DACS',
+      lecturerId: abProfile.id,
+      studentIdx: 10,
+      grade: { p1: 8.0, p2: 8.0, def: 8.0, finalNum: 8.0, finalLetter: 'B+' },
+    },
+    // 11. KLTN - MMT - HK2 24-25
+    {
+      title: 'Nghiên cứu và Xây dựng Hệ thống Phòng thủ Mạng Doanh nghiệp Dựa trên Zero Trust Architecture',
+      titleEn: 'Research and Implementation of Enterprise Network Defense Based on Zero Trust Architecture',
+      description: 'Nghiên cứu và triển khai mô hình kiến trúc không tin cậy (Zero Trust - Never Trust, Always Verify) cho mạng doanh nghiệp phân tán.\n\nHệ thống kết hợp kiểm soát truy cập theo ngữ cảnh, xác thực đa yếu tố (MFA) và phân đoạn vi mô (Micro-segmentation) bằng WireGuard VPN.',
+      objectives: '- Thiết kế kiến trúc phòng thủ mạng Zero Trust tuân thủ chuẩn NIST SP 800-207.\n- Triển khai giải pháp phân đoạn mạng động và xác thực danh tính tập trung Keycloak.\n- Đánh giá khả năng ngăn chặn các đòn tấn công di chuyển ngang (Lateral Movement).',
+      expectedOutcomes: '- Hạ tầng mạng phòng thủ Zero Trust hoàn chỉnh trên môi trường giả lập doanh nghiệp.\n- Bộ chính sách truy cập phân quyền chi tiết cho từng vai trò nhân viên.\n- Báo cáo kiểm thử thâm nhập an toàn thông tin.',
+      techStack: 'WireGuard, Keycloak, FreeIPA, OPNsense, Linux, Ansible, Docker',
+      majorCode: 'MMT',
+      semKey: semPast1,
+      roundKey: 'HK2-2024-2025_DATN',
+      lecturerId: cdProfile.id,
+      studentIdx: 11,
+      grade: { p1: 9.2, p2: 9.4, def: 9.3, finalNum: 9.3, finalLetter: 'A+' },
+    },
+    // 12. KLTN - MMT - HK2 24-25
+    {
+      title: 'Phát hiện và Ngăn chặn Tấn công Botnet IoT Dựa trên Phân tích Lưu lượng Mạng NetFlow',
+      titleEn: 'Detection and Mitigation of IoT Botnet Attacks Using NetFlow Traffic Analysis and Machine Learning',
+      description: 'Các thiết bị thông minh IoT gia đình thường có cấu hình bảo mật yếu, dễ bị tin tặc biến thành mạng máy tính ma (Botnet Mirai, Mozi) phục vụ các cuộc tấn công từ chối dịch vụ phân tán (DDoS).\n\nĐề tài xây dựng giải pháp phân tích mẫu lưu lượng NetFlow/IPFIX bằng học máy để phát hiện sớm các hành vi bất thường và chặn kết nối điều khiển C&C Server.',
+      objectives: '- Thu thập dữ liệu NetFlow lưu lượng tấn công IoT trong phòng thí nghiệm mạng.\n- Huấn luyện mô hình XGBoost đạt độ nhạy phát hiện trên 95% trong vòng 10 giây đầu tiên.\n- Tự động đẩy rule khóa cổng trên thiết bị tường lửa biên khi phát hiện botnet.',
+      expectedOutcomes: '- Module phân tích lưu lượng thời gian thực xử lý được 10.000 flows/giây.\n- Bảng điều khiển giám sát mối đe dọa IoT trực quan trên Kibana.\n- Luận văn tốt nghiệp được hội đồng đánh giá cao.',
+      techStack: 'Python, Suricata, XGBoost, Scikit-learn, Elasticsearch, Kafka, Bash',
+      majorCode: 'MMT',
+      semKey: semPast1,
+      roundKey: 'HK2-2024-2025_DATN',
+      lecturerId: cdProfile.id,
+      studentIdx: 12,
+      grade: { p1: 8.5, p2: 8.8, def: 8.7, finalNum: 8.7, finalLetter: 'A' },
+    },
+    // 13. ĐACN - MMT - HK2 24-25
+    {
+      title: 'Thiết kế và Triển khai Hệ thống Mạng Không dây Doanh nghiệp (Enterprise WLAN) với Xác thực 802.1X',
+      titleEn: 'Design and Implementation of Enterprise Wireless LAN with 802.1X and FreeRADIUS',
+      description: 'Thiết kế hạ tầng mạng WiFi an toàn cho khuôn viên tòa nhà nhiều tầng, ứng dụng chuẩn xác thực EAP-TLS/PEAP kết hợp máy chủ FreeRADIUS và thư mục người dùng Active Directory.',
+      objectives: '- Tính toán vùng phủ sóng RF và tránh can nhiễu kênh truyền 2.4GHz/5GHz.\n- Triển khai chuyển vùng nhanh (Fast BSS Transition 802.11r) không gián đoạn cuộc gọi.\n- Phân quyền băng thông và vùng truy cập theo phòng ban.',
+      expectedOutcomes: '- Bản vẽ thiết kế mạng WiFi doanh nghiệp chi tiết và kịch bản cấu hình phần cứng.\n- Hệ thống xác thực 802.1X hoạt động trơn tru trên thiết bị di động và laptop.',
+      techStack: 'Cisco Packet Tracer, FreeRADIUS, EAP-TLS, MikroTik RouterOS, Active Directory',
+      majorCode: 'MMT',
+      semKey: semPast1,
+      roundKey: 'HK2-2024-2025_DACN',
+      lecturerId: cdProfile.id,
+      studentIdx: 13,
+      grade: { p1: 8.5, p2: 8.5, def: 8.5, finalNum: 8.5, finalLetter: 'A' },
+    },
+    // 14. ĐACN - MMT - HK2 24-25
+    {
+      title: 'Hệ thống Giám sát Cảnh báo Xâm nhập và Rò rỉ Dữ liệu Nhạy cảm (DLP) trong Mạng Nội bộ',
+      titleEn: 'Intrusion Monitoring and Data Loss Prevention (DLP) System in Enterprise Local Network',
+      description: 'Giám sát lưu lượng mạng nội bộ nhằm phát hiện hành vi gửi các tập tin tài liệu mật hoặc thông tin thẻ tín dụng/CCCD ra bên ngoài qua email và giao thức web không mã hóa.',
+      objectives: '- Cấu hình Snort 3 và OpenDLP để quét nội dung các gói tin truyền qua mạng.\n- Phát hiện việc truyền tải các file tài liệu có chứa từ khóa nhạy cảm.\n- Gửi cảnh báo bảo mật thời gian thực đến quản trị viên qua Telegram Bot.',
+      expectedOutcomes: '- Hệ thống DLP hoạt động ổn định trên máy chủ Gateway mạng nội bộ.\n- Báo cáo phân tích các lỗ hổng rò rỉ dữ liệu phổ biến.',
+      techStack: 'Snort 3, OpenDLP, Graylog, Python, Docker, Telegram Bot API',
+      majorCode: 'MMT',
+      semKey: semPast1,
+      roundKey: 'HK2-2024-2025_DACN',
+      lecturerId: cdProfile.id,
+      studentIdx: 14,
+      grade: { p1: 8.0, p2: 8.2, def: 8.1, finalNum: 8.1, finalLetter: 'B+' },
+    },
+    // 15. ĐACS - MMT - HK2 24-25
+    {
+      title: 'Thiết kế Mô hình Mạng LAN Đa Chi nhánh Cho Trường Đại học Đà Lạt Ứng dụng Kỹ thuật VLAN và OSPF',
+      titleEn: 'Multi-branch Campus LAN Network Design for Dalat University Using VLANs and OSPF',
+      description: 'Thiết kế sơ đồ mạng hoàn chỉnh kết nối các khu giảng đường A, B, C và khu nhà hiệu bộ Đại học Đà Lạt, chia các phân đoạn mạng ảo VLAN và định tuyến động OSPF.',
+      objectives: '- Phân chia dải địa chỉ IP khoa học theo kỹ thuật VLSM.\n- Cấu hình Trunking 802.1Q, Inter-VLAN Routing và định tuyến OSPF vùng đơn.\n- Triển khai danh sách kiểm soát truy cập (ACL) giới hạn sinh viên truy cập máy chủ tài chính.',
+      expectedOutcomes: '- File đồ án mô phỏng mạng hoạt động đầy đủ trên Cisco Packet Tracer/GNS3.\n- Báo cáo thuyết minh thiết kế đạt loại Giỏi.',
+      techStack: 'GNS3, Cisco Packet Tracer, Wireshark, Linux DHCP/DNS, IOS',
+      majorCode: 'MMT',
+      semKey: semPast1,
+      roundKey: 'HK2-2024-2025_DACS',
+      lecturerId: cdProfile.id,
+      studentIdx: 15,
+      grade: { p1: 8.2, p2: 8.4, def: 8.3, finalNum: 8.3, finalLetter: 'B+' },
+    },
+    // 16. KLTN - MMT - HK1 24-25
+    {
+      title: 'Xây dựng Hệ thống Giám sát Hạ tầng Máy chủ Phân tán Ứng dụng Prometheus, Grafana và Ansible',
+      titleEn: 'Distributed Infrastructure Monitoring System Using Prometheus, Grafana, and Ansible',
+      description: 'Giải pháp tự động hóa triển khai và giám sát tập trung tình trạng tải CPU, RAM, Disk I/O và băng thông mạng của hàng trăm máy chủ trong trung tâm dữ liệu.',
+      objectives: '- Tự động hóa cài đặt các exporter giám sát lên máy chủ Linux/Windows bằng Ansible Playbook.\n- Cấu hình Alertmanager gửi cảnh báo sự cố máy chủ qua kênh Slack/Telegram.\n- Xây dựng bảng điều khiển Grafana tùy biến theo dõi toàn diện hạ tầng.',
+      expectedOutcomes: '- Hệ thống giám sát vận hành trơn tru trên cụm 20 máy chủ ảo.\n- Thời gian phản hồi cảnh báo sự cố giảm xuống dưới 30 giây.',
+      techStack: 'Ansible, Prometheus, Grafana, Node Exporter, Docker Swarm, Python',
+      majorCode: 'MMT',
+      semKey: semPast2,
+      roundKey: 'HK1-2024-2025_DATN',
+      lecturerId: cdProfile.id,
+      studentIdx: 16,
+      grade: { p1: 9.0, p2: 9.0, def: 9.0, finalNum: 9.0, finalLetter: 'A' },
+    },
+    // 17. KLTN - MMT - HK1 24-25
+    {
+      title: 'Nghiên cứu Kỹ thuật Tấn công và Biện pháp Phòng thủ Mã độc Tống tiền (Ransomware) trên Windows Active Directory',
+      titleEn: 'Analysis of Ransomware Attacks and Defense Strategies on Windows Active Directory Networks',
+      description: 'Mô phỏng các chuỗi tấn công mã độc tống tiền lợi dụng lỗ hổng cấu hình Active Directory (Kerberoasting, DCSync) và xây dựng hệ thống phòng ngự nhiều lớp (Defense-in-Depth).',
+      objectives: '- Thiết lập môi trường lab giả lập miền Active Directory có máy trạm và máy chủ thành viên.\n- Triển khai công cụ EDR Wazuh và cấu hình Sysmon bắt vết hành vi mã hóa tập tin bất thường.\n- Xây dựng quy trình sao lưu dữ liệu bất biến (Immutable Backup) chống ransomware.',
+      expectedOutcomes: '- Báo cáo chi tiết về kỹ thuật tấn công và bản đồ ma trận MITRE ATT&CK.\n- Bộ quy tắc Sysmon/Wazuh giúp phát hiện 100% các biến thể ransomware thử nghiệm.',
+      techStack: 'Windows Server 2022, Active Directory, Wazuh EDR, Sysmon, PowerShell, Proxmox',
+      majorCode: 'MMT',
+      semKey: semPast2,
+      roundKey: 'HK1-2024-2025_DATN',
+      lecturerId: cdProfile.id,
+      studentIdx: 17,
+      grade: { p1: 8.8, p2: 8.8, def: 8.8, finalNum: 8.8, finalLetter: 'A' },
+    },
+    // 18. ĐACN - MMT - HK1 24-25
+    {
+      title: 'Xây dựng Hệ thống Tường lửa Ứng dụng Web (WAF) Mã nguồn mở Bảo vệ Máy chủ Dịch vụ Web',
+      titleEn: 'Open Source Web Application Firewall (WAF) Implementation Protecting Web Services',
+      description: 'Triển khai tường lửa ứng dụng ModSecurity kết hợp bộ quy tắc OWASP Core Rule Set đứng trước hệ thống Web Server để ngăn chặn các cuộc tấn công SQL Injection, XSS và RCE.',
+      objectives: '- Tích hợp ModSecurity vào Nginx Reverse Proxy làm cổng vào cho toàn bộ hệ thống web.\n- Tối ưu hóa bộ rule tránh hiện tượng chặn nhầm các truy vấn hợp lệ của người dùng (False Positive).\n- Kết hợp Fail2ban tự động khóa địa chỉ IP có hành vi quét cổng hoặc dò tìm lỗ hổng.',
+      expectedOutcomes: '- Máy chủ WAF bảo vệ thành công các trang web thử nghiệm trước các công cụ kiểm thử như SQLmap và Nikto.\n- Báo cáo thống kê lưu lượng và tỷ lệ phát hiện tấn công đạt 98%.',
+      techStack: 'ModSecurity, Nginx, OWASP Core Rule Set, Fail2ban, Linux, Docker',
+      majorCode: 'MMT',
+      semKey: semPast2,
+      roundKey: 'HK1-2024-2025_DACN',
+      lecturerId: cdProfile.id,
+      studentIdx: 18,
+      grade: { p1: 8.5, p2: 8.6, def: 8.6, finalNum: 8.6, finalLetter: 'A' },
+    },
+    // 19. KLTN - CNPM - HK2 23-24
+    {
+      title: 'Nền tảng Đấu giá Trực tuyến Thời gian thực Ứng dụng WebSocket và Kiến trúc Hướng Sự kiện (Event-Driven)',
+      titleEn: 'Real-time Online Bidding Platform Using WebSocket and Event-Driven Architecture',
+      description: 'Nền tảng đấu giá tài sản và vật phẩm sưu tầm với cơ chế đẩy giá thầu theo mili-giây, xử lý tranh chấp phiên đấu giá đồng thời và thanh toán tự động khi kết thúc phiên.',
+      objectives: '- Thiết kế cơ chế khóa phân tán (Distributed Lock với Redis) để tránh xung đột bước giá.\n- Duy trì kết nối WebSocket ổn định cho hàng nghìn người cùng xem một phiên đấu giá.\n- Tự động hoàn tiền cọc cho những người trả giá không thành công.',
+      expectedOutcomes: '- Website đấu giá trực tuyến hoạt động trơn tru với độ trễ cập nhật giá thầu dưới 100ms.\n- Báo cáo kiểm thử tải với công cụ k6 đạt 500 yêu cầu trả giá mỗi giây.',
+      techStack: 'Next.js, Node.js, Redis Pub/Sub, Kafka, PostgreSQL, Docker',
+      majorCode: 'CNPM',
+      semKey: semPast3,
+      roundKey: 'HK2-2023-2024_DATN',
+      lecturerId: pbProfile.id,
+      studentIdx: 19,
+      grade: { p1: 8.5, p2: 8.8, def: 8.7, finalNum: 8.7, finalLetter: 'A' },
+    },
+    // 20. KLTN - MMT - HK2 23-24
+    {
+      title: 'Triển khai Mạng Riêng Ảo Đa Điểm (DMVPN) và Tối ưu Hóa Định tuyến BGP Cho Doanh nghiệp Nhiều Chi nhánh',
+      titleEn: 'DMVPN Implementation and BGP Routing Optimization for Multi-Branch Enterprises',
+      description: 'Giải pháp kết nối mạng bảo mật diện rộng cho tập đoàn có trụ sở chính tại TP.HCM và hàng chục chi nhánh tại các tỉnh Tây Nguyên.\n\nMô hình DMVPN Phase 3 cho phép các chi nhánh thiết lập đường hầm VPN trực tiếp với nhau (Spoke-to-Spoke) mà không cần đi vòng qua trụ sở (Hub), giảm tối đa độ trễ mạng.',
+      objectives: '- Thiết kế sơ đồ mạng DMVPN Dual-Hub Dual-DMVPN tăng tính sẵn sàng cao (High Availability).\n- Cấu hình định tuyến BGP và tối ưu hóa thời gian hội tụ mạng khi xảy ra sự cố đứt cáp.\n- Đo lường hiệu năng truyền tải dữ liệu và độ trễ gói tin VoIP qua đường hầm mã hóa IPsec.',
+      expectedOutcomes: '- Mô hình mạng DMVPN hoàn chỉnh chạy thực nghiệm ổn định trên thiết bị Cisco IOS.\n- Luận văn tốt nghiệp được đánh giá cao về tính khả thi ứng dụng thực tiễn.',
+      techStack: 'Cisco Router IOS, IPsec, GRE, NHRP, BGP, Wireshark, GNS3',
+      majorCode: 'MMT',
+      semKey: semPast3,
+      roundKey: 'HK2-2023-2024_DATN',
+      lecturerId: cdProfile.id,
+      studentIdx: 20,
+      grade: { p1: 8.8, p2: 9.0, def: 8.9, finalNum: 8.9, finalLetter: 'A' },
+    },
+  ];
+
+  for (let i = 0; i < ARCHIVED_TOPICS.length; i++) {
+    const item = ARCHIVED_TOPICS[i];
+    const round = pastRoundsMap.get(item.roundKey);
+    if (!round) continue;
+
+    const topic = await prisma.topic.create({
+      data: {
+        title: item.title,
+        titleEn: item.titleEn,
+        description: item.description,
+        objectives: item.objectives,
+        expectedOutcomes: item.expectedOutcomes,
+        techStack: item.techStack,
+        maxStudents: 2,
+        status: 'COMPLETED',
+        semesterId: item.semKey.id,
+        roundId: round.id,
+        lecturerId: item.lecturerId,
+        majorId: majorIdByCode.get(item.majorCode)!,
+      },
+    });
+
+    const studentProfile = pastStudentProfiles[item.studentIdx];
+    if (studentProfile) {
+      const group = await prisma.registrationGroup.create({
+        data: {
+          topicId: topic.id,
+          semesterId: item.semKey.id,
+          leaderId: studentProfile.id,
+          name: `Nhóm ${String(i + 1).padStart(2, '0')} - ${round.targetCohort || 'Lưu trữ'}`,
+          status: 'APPROVED',
+          openForJoin: false,
+          declaredSize: 1,
+          joinCode: `DLU-ARCHIVE-${i + 1}`,
+        },
+      });
+
+      await prisma.registrationGroupMember.create({
+        data: {
+          groupId: group.id,
+          semesterId: item.semKey.id,
+          studentId: studentProfile.id,
+          status: 'ACCEPTED',
+          joinSource: 'SELF',
+          mentorGrade: item.grade.p1,
+          mentorComment: 'Hoàn thành xuất sắc đồ án, đạt chất lượng nghiệm thu lưu trữ.',
+        },
+      });
+
+      await prisma.studentGrade.create({
+        data: {
+          groupId: group.id,
+          studentId: studentProfile.id,
+          progress1Grade: item.grade.p1,
+          progress2Grade: item.grade.p2,
+          defenseGrade: item.grade.def,
+          finalGradeNum: item.grade.finalNum,
+          finalGradeLetter: item.grade.finalLetter,
+          isLocked: true,
+          note: 'Đã hoàn thành bảo vệ trước Hội đồng chấm điểm và nộp lưu trữ hồ sơ.',
+        },
+      });
+    }
+  }
+
+  console.log(`[✓] 13. Kho lưu trữ: Đã tạo 20 đề tài hoàn chỉnh (status COMPLETED, đợt FINALIZED) cho các học kỳ trước kèm sinh viên và điểm số`);
+
   console.log('\n============================================================');
   console.log('🎉 SEED DỮ LIỆU ĐẦY ĐỦ CHO TẤT CẢ CÁC BẢNG THÀNH CÔNG RỰC RỠ!');
   console.log('============================================================');

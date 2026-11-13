@@ -76,12 +76,12 @@ export function RoundLecturerProgressTab({
   function handleOpenQuotaDialog() {
     if (!capacity) return;
     setEditMaxStudents(capacity.round.maxStudentsPerTopic || 2);
-    setEditMinTopics(
+    const initialMinTopics =
       capacity.round.minTopicsPerLecturer !== null &&
-        capacity.round.minTopicsPerLecturer !== undefined
-        ? String(capacity.round.minTopicsPerLecturer)
-        : '',
-    );
+      capacity.round.minTopicsPerLecturer !== undefined
+        ? capacity.round.minTopicsPerLecturer
+        : capacity.targetQuota || 1;
+    setEditMinTopics(String(initialMinTopics));
     setQuotaDialogOpen(true);
   }
 
@@ -89,10 +89,7 @@ export function RoundLecturerProgressTab({
     e.preventDefault();
     if (!effectiveRoundId) return;
 
-    const parsedMinTopics =
-      editMinTopics.trim() === ''
-        ? null
-        : Math.max(1, Number(editMinTopics) || 1);
+    const parsedMinTopics = Math.max(1, Number(editMinTopics) || 1);
 
     try {
       await updateRound.mutateAsync({
@@ -455,10 +452,10 @@ export function RoundLecturerProgressTab({
                 type="number"
                 min={1}
                 max={50}
-                placeholder="Để trống = tự động"
+                required
                 value={editMinTopics}
                 onChange={(e) => setEditMinTopics(e.target.value)}
-                className="h-9 text-xs rounded-lg bg-slate-100/80 dark:bg-[#1e1e1e] border-slate-300 dark:border-neutral-700/80 text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500"
+                className="h-9 text-xs rounded-lg bg-slate-100/80 dark:bg-[#1e1e1e] border-slate-300 dark:border-neutral-700/80 text-slate-900 dark:text-neutral-100"
               />
             </div>
 

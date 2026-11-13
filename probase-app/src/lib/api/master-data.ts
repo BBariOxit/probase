@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 import type {
+  Major,
   ProjectType,
   ProjectTypeDetail,
   RegistrationRound,
@@ -26,6 +27,14 @@ export function useProjectTypes() {
   return useQuery({
     queryKey: ['project-types'],
     queryFn: () => api<ProjectType[]>('/project-types'),
+    staleTime: MASTER_DATA_STALE_TIME,
+  });
+}
+
+export function useMajors() {
+  return useQuery({
+    queryKey: ['majors'],
+    queryFn: () => api<Major[]>('/majors'),
     staleTime: MASTER_DATA_STALE_TIME,
   });
 }

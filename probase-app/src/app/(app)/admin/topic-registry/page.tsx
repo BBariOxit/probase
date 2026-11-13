@@ -287,10 +287,32 @@ export default function AdminTopicRegistryPage() {
 
   return (
     <TooltipProvider delay={200}>
-      <div className="w-full min-w-0 space-y-4">
+      <Tabs
+        value={activeTab}
+        onValueChange={(val) => setActiveTab(val as 'topics' | 'progress')}
+        className="w-full min-w-0 space-y-4"
+      >
         {/* ── Header ── */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-lg font-semibold">Quản lý đề tài</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-lg font-semibold tracking-tight">Quản lý đề tài</h1>
+            <div className="hidden h-4 w-px bg-slate-300 dark:bg-neutral-700 sm:block" />
+            <TabsList className="h-9 p-1 rounded-lg bg-slate-100 dark:bg-[#141414] border border-slate-200 dark:border-neutral-800">
+              <TabsTrigger value="topics" className="h-7 px-2.5 py-1 text-xs gap-1.5 rounded-md font-medium">
+                <BookMarked className="size-3.5" />
+                <span>Sổ đề tài</span>
+                {data && (
+                  <span className="ml-1 rounded-full bg-slate-200 dark:bg-neutral-800 px-1.5 py-0.2 text-[10px] font-mono text-slate-700 dark:text-neutral-300">
+                    {data.total}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="progress" className="h-7 px-2.5 py-1 text-xs gap-1.5 rounded-md font-medium">
+                <Users className="size-3.5" />
+                <span>Tiến độ nộp đề tài</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {activeTab === 'topics' && (
             <div className="flex flex-wrap items-center gap-2">
@@ -324,29 +346,7 @@ export default function AdminTopicRegistryPage() {
           )}
         </div>
 
-        {/* ── Tabs Chuyển đổi: Sổ đề tài & Tiến độ nộp đề tài ── */}
-        <Tabs
-          value={activeTab}
-          onValueChange={(val) => setActiveTab(val as 'topics' | 'progress')}
-          className="space-y-4"
-        >
-          <TabsList className="bg-slate-100 dark:bg-[#141414] border border-slate-200 dark:border-neutral-800">
-            <TabsTrigger value="topics" className="gap-1.5 text-xs font-medium">
-              <BookMarked className="size-4" />
-              <span>Sổ đề tài</span>
-              {data && (
-                <span className="ml-1 rounded-full bg-slate-200 dark:bg-neutral-800 px-1.5 py-0.2 text-[10px] font-mono text-slate-700 dark:text-neutral-300">
-                  {data.total}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="progress" className="gap-1.5 text-xs font-medium">
-              <Users className="size-4" />
-              <span>Tiến độ nộp đề tài</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="topics" className="space-y-4">
+        <TabsContent value="topics" className="space-y-4">
 
         {/* ── Filters ── */}
         <div className="flex flex-wrap items-center gap-2">
@@ -555,7 +555,6 @@ export default function AdminTopicRegistryPage() {
               }}
             />
           </TabsContent>
-        </Tabs>
 
         {/* ── Bulk open dialog ── */}
         <BulkOpenDialog
@@ -565,7 +564,7 @@ export default function AdminTopicRegistryPage() {
           semesterId={activeSemesterId}
           semesterName={activeSemester?.name ?? 'Học kỳ hiện tại'}
         />
-      </div>
+      </Tabs>
     </TooltipProvider>
   );
 }

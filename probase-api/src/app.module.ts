@@ -5,6 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ArchivesModule } from './modules/archives/archives.module';
 import { AuditModule } from './core/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CloudinaryModule } from './core/cloudinary/cloudinary.module';
@@ -83,6 +84,7 @@ import { UsersModule } from './modules/users/users.module';
     CouncilsModule,
     UsersModule,
     MailModule,
+    ArchivesModule,
   ],
   controllers: [AppController],
   providers: [

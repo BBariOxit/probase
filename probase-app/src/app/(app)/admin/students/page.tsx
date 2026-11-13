@@ -32,6 +32,7 @@ import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
 import { AddEligibleStudentDialog } from '@/components/admin/add-eligible-student-dialog';
 import { EligibleStudentsImportDialog } from '@/components/admin/eligible-students-import-dialog';
+import { AdvancedFilterPopover } from '@/components/shared/advanced-filter-popover';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
@@ -217,201 +218,138 @@ export default function StudentRosterPage() {
               )}
             </div>
 
-            {/* 2. Nút "Bộ lọc" gộp với Popover chứa các filter thứ cấp */}
-            <Popover
+            {/* 2. Nút "Bộ lọc" gộp với AdvancedFilterPopover dùng chung */}
+            <AdvancedFilterPopover
               open={filterPopoverOpen}
-              onOpenChange={(nextOpen, eventDetails) => {
-                if (!nextOpen && eventDetails?.reason === 'outside-press') {
-                  const target = eventDetails?.event?.target as HTMLElement | null;
-                  if (
-                    target?.closest?.('[data-combobox-content]') ||
-                    target?.closest?.('[data-combobox-trigger]')
-                  ) {
-                    return;
-                  }
-                }
-                setFilterPopoverOpen(nextOpen);
+              onOpenChange={setFilterPopoverOpen}
+              activeCount={activeSecondaryCount}
+              onReset={() => {
+                setClassCode('');
+                setRoundId(ANY);
+                setMajorId(ANY);
+                setLecturerId(ANY);
+                setGroupState('ALL');
+                setPage(1);
               }}
             >
-              <PopoverTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    className={`h-9.5 px-3.5 rounded-lg border-[1.5px] transition-all cursor-pointer shadow-2xs ${activeSecondaryCount > 0
-                        ? 'border-primary/50 bg-primary/8 text-primary font-semibold hover:bg-primary/12'
-                        : 'border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200'
-                      }`}
-                  />
-                }
-              >
-                <SlidersHorizontal className="size-4 shrink-0" />
-                <span>Bộ lọc</span>
-                {activeSecondaryCount > 0 && (
-                  <span className="flex size-5 items-center justify-center rounded-full bg-primary text-white text-[11px] font-bold">
-                    {activeSecondaryCount}
-                  </span>
-                )}
-              </PopoverTrigger>
+              {/* Lọc theo lớp sinh hoạt */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                  Mã lớp
+                </Label>
+                <Input
+                  value={classCode}
+                  onChange={(e) =>
+                    refilter(() => setClassCode(e.target.value))
+                  }
+                  placeholder="Nhập mã lớp..."
+                  className="h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700"
+                />
+              </div>
 
-              <PopoverContent
-                align="start"
-                sideOffset={8}
-                className="w-88 p-4 space-y-4 shadow-xl border border-[#d1d5e0] dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] rounded-xl"
-              >
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
-                  <div className="flex items-center gap-1.5 font-semibold text-sm text-slate-900 dark:text-neutral-100">
-                    <SlidersHorizontal className="size-4 text-primary" />
-                    <span>Bộ lọc nâng cao</span>
-                  </div>
-                  {activeSecondaryCount > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setClassCode('');
-                        setRoundId(ANY);
-                        setMajorId(ANY);
-                        setLecturerId(ANY);
-                        setGroupState('ALL');
-                        setPage(1);
-                      }}
-                      className="text-xs text-primary hover:underline font-medium cursor-pointer"
-                    >
-                      Đặt lại
-                    </button>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  {/* Lọc theo lớp sinh hoạt */}
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
-                      Mã lớp
-                    </Label>
-                    <Input
-                      value={classCode}
-                      onChange={(e) =>
-                        refilter(() => setClassCode(e.target.value))
+              {/* Lọc theo tình trạng đề tài */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                  Tình trạng đề tài
+                </Label>
+                <Select
+                  value={groupState}
+                  onValueChange={(val) =>
+                    refilter(() => setGroupState(val as string))
+                  }
+                >
+                  <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
+                    <SelectValue>
+                      {(v) =>
+                        GROUP_FILTERS.find((opt) => opt.value === v)?.label
                       }
-                      placeholder="Nhập mã lớp..."
-                      className="h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700"
-                    />
-                  </div>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-64">
+                    {GROUP_FILTERS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                  {/* Lọc theo tình trạng đề tài */}
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
-                      Tình trạng đề tài
-                    </Label>
-                    <Select
-                      value={groupState}
-                      onValueChange={(val) =>
-                        refilter(() => setGroupState(val as string))
+              {/* Lọc theo đợt đồ án */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                  Đợt đăng ký
+                </Label>
+                <Select
+                  value={roundId}
+                  onValueChange={(val) =>
+                    refilter(() => setRoundId(val as number))
+                  }
+                >
+                  <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
+                    <SelectValue>
+                      {(v) =>
+                        v === ANY
+                          ? 'Mọi đợt'
+                          : (rounds?.find((r) => r.id === v)?.projectType
+                            .name ?? 'Mọi đợt')
                       }
-                    >
-                      <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
-                        <SelectValue>
-                          {(v) =>
-                            GROUP_FILTERS.find((opt) => opt.value === v)?.label
-                          }
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent className="max-h-64">
-                        {GROUP_FILTERS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-64">
+                    <SelectItem value={ANY}>Mọi đợt</SelectItem>
+                    {rounds?.map((round) => (
+                      <SelectItem key={round.id} value={round.id}>
+                        <span className="flex flex-col items-start">
+                          <span>{round.projectType.name}</span>
+                          <span className="text-[11px] text-muted-foreground">
+                            Khóa {round.cohorts.join(', ')}
+                          </span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                  {/* Lọc theo đợt đồ án */}
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
-                      Đợt đăng ký
-                    </Label>
-                    <Select
-                      value={roundId}
-                      onValueChange={(val) =>
-                        refilter(() => setRoundId(val as number))
-                      }
-                    >
-                      <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
-                        <SelectValue>
-                          {(v) =>
-                            v === ANY
-                              ? 'Mọi đợt'
-                              : (rounds?.find((r) => r.id === v)?.projectType
-                                .name ?? 'Mọi đợt')
-                          }
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent className="max-h-64">
-                        <SelectItem value={ANY}>Mọi đợt</SelectItem>
-                        {rounds?.map((round) => (
-                          <SelectItem key={round.id} value={round.id}>
-                            <span className="flex flex-col items-start">
-                              <span>{round.projectType.name}</span>
-                              <span className="text-[11px] text-muted-foreground">
-                                Khóa {round.cohorts.join(', ')}
-                              </span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+              {/* Lọc theo chuyên ngành */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                  Chuyên ngành
+                </Label>
+                <Combobox
+                  options={majorOptions}
+                  value={String(majorId)}
+                  onChange={(val) =>
+                    refilter(() => setMajorId(Number(val) || ANY))
+                  }
+                  allLabel="Mọi chuyên ngành"
+                  allValue={String(ANY)}
+                  placeholder="Chọn chuyên ngành..."
+                  searchPlaceholder="Tìm chuyên ngành..."
+                  emptyText="Không tìm thấy chuyên ngành nào."
+                />
+              </div>
 
-                  {/* Lọc theo chuyên ngành */}
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
-                      Chuyên ngành
-                    </Label>
-                    <Combobox
-                      options={majorOptions}
-                      value={String(majorId)}
-                      onChange={(val) =>
-                        refilter(() => setMajorId(Number(val) || ANY))
-                      }
-                      allLabel="Mọi chuyên ngành"
-                      allValue={String(ANY)}
-                      placeholder="Chọn chuyên ngành..."
-                      searchPlaceholder="Tìm chuyên ngành..."
-                      emptyText="Không tìm thấy chuyên ngành nào."
-                    />
-                  </div>
-
-                  {/* Lọc theo giảng viên hướng dẫn */}
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
-                      Giảng viên hướng dẫn
-                    </Label>
-                    <Combobox
-                      options={lecturerOptions}
-                      value={String(lecturerId)}
-                      onChange={(val) =>
-                        refilter(() => setLecturerId(Number(val) || ANY))
-                      }
-                      allLabel="Mọi giảng viên"
-                      allValue={String(ANY)}
-                      placeholder="Chọn giảng viên..."
-                      searchPlaceholder="Tìm theo tên giảng viên..."
-                      emptyText="Không tìm thấy giảng viên nào."
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 dark:border-neutral-800 flex justify-end">
-                  <Button
-                    size="sm"
-                    className="w-full h-8 text-xs bg-primary text-white hover:bg-primary/90 font-medium cursor-pointer"
-                    onClick={() => setFilterPopoverOpen(false)}
-                  >
-                    Xem kết quả
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
+              {/* Lọc theo giảng viên hướng dẫn */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                  Giảng viên hướng dẫn
+                </Label>
+                <Combobox
+                  options={lecturerOptions}
+                  value={String(lecturerId)}
+                  onChange={(val) =>
+                    refilter(() => setLecturerId(Number(val) || ANY))
+                  }
+                  allLabel="Mọi giảng viên"
+                  allValue={String(ANY)}
+                  placeholder="Chọn giảng viên..."
+                  searchPlaceholder="Tìm theo tên giảng viên..."
+                  emptyText="Không tìm thấy giảng viên nào."
+                />
+              </div>
+            </AdvancedFilterPopover>
           </div>
 
           {/* Các nút hành động bên phải: Tổng số SV + Import + Xuất Excel */}
