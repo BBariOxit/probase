@@ -85,27 +85,14 @@ export function TopicDetailView({
     <article className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] shadow-xs overflow-hidden min-w-0 max-w-full break-words">
       {/* Header đề tài */}
       <div className="p-6 sm:p-8 space-y-4">
-        {/* Hàng trạng thái & nút thao tác nhanh ở trên */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs">
-            <TopicStatusBadge status={topic.status} variant="text" />
-            <span className="text-muted-foreground">•</span>
-            <span className="font-medium text-muted-foreground">
-              {topic.projectType.name}
-              {topic.major ? ` • ${topic.major.name}` : ''}
-            </span>
-          </div>
-
-          {canStudentRegister && (
-            <div className="flex items-center gap-2.5">
-              <TopicRegisterButton
-                topic={topic}
-                size="default"
-                buttonClassName="h-9 px-4 text-xs sm:text-sm bg-primary text-white hover:bg-primary/90 font-semibold rounded-lg shadow-xs cursor-pointer gap-1.5"
-                label={topic.canRegister ? 'Đăng ký đề tài' : 'Tham gia nhóm'}
-              />
-            </div>
-          )}
+        {/* Hàng trạng thái ở trên */}
+        <div className="flex items-center gap-2 text-xs">
+          <TopicStatusBadge status={topic.status} variant="text" />
+          <span className="text-muted-foreground">•</span>
+          <span className="font-medium text-muted-foreground">
+            {topic.projectType.name}
+            {topic.major ? ` • ${topic.major.name}` : ''}
+          </span>
         </div>
 
         {/* Tiêu đề đề tài */}

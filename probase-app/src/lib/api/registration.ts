@@ -3,11 +3,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 import { topicKeys } from '@/lib/api/topics';
-import type { JoinPreview, RegistrationGroup } from '@/lib/api/types';
+import type { GroupInvitation, JoinPreview, RegistrationGroup } from '@/lib/api/types';
 
 export const groupKeys = {
   all: ['registration-groups'] as const,
   mine: () => [...groupKeys.all, 'mine'] as const,
+  invitations: () => [...groupKeys.all, 'invitations'] as const,
   supervised: (semesterId?: number) =>
     [...groupKeys.all, 'supervised', semesterId] as const,
   detail: (id: number) => [...groupKeys.all, 'detail', id] as const,
@@ -228,5 +229,42 @@ export function useSwitchTopic(id: number) {
       queryClient.setQueryData(groupKeys.detail(id), updated);
       return invalidate();
     },
+  });
+}
+
+export function useMyInvitations(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: groupKeys.invitations(),
+    queryFn: () => api<GroupInvitation[]>('/registration-groups/my-invitations'),
+    staleTime: 30_000,
+    ...options,
+  });
+}
+
+export function useAcceptInvitation() {
+  const queryClient = useQueryClient();
+  const invalidate = useInvalidateRegistration();
+
+  return useMutation({
+    mutationFn: (groupId: number) =>
+      api<RegistrationGroup>(`/registration-groups/${groupId}/accept-invitation`, {
+        method: 'POST',
+      }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(groupKeys.mine(), data);
+      return invalidate();
+    },
+  });
+}
+
+export function useDeclineInvitation() {
+  const invalidate = useInvalidateRegistration();
+
+  return useMutation({
+    mutationFn: (groupId: number) =>
+      api<{ message: string }>(`/registration-groups/${groupId}/decline-invitation`, {
+        method: 'POST',
+      }),
+    onSuccess: () => invalidate(),
   });
 }

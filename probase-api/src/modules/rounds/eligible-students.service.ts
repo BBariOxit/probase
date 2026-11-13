@@ -34,6 +34,7 @@ import {
   EligibleImportMappingRequestDto,
   ReanalyzeEligibleImportDto,
 } from './dto/eligible-import.dto';
+import { AddEligibleStudentDto } from './dto/add-eligible-student.dto';
 import { QueryEligibleStudentsDto } from './dto/query-eligible-students.dto';
 import {
   analyzeSheetRows,
@@ -1459,6 +1460,173 @@ export class EligibleStudentsService {
       page: query.page,
       limit: query.limit,
       totalPages: Math.ceil(filtered.length / query.limit) || 1,
+    };
+  }
+
+  /**
+   * Adds a single student to a round's eligible list.
+   * If the student/profile doesn't exist, it creates them.
+   * If they already exist, it associates them with the round and updates profile info.
+   */
+  async addEligible(
+    roundId: number,
+    dto: AddEligibleStudentDto,
+    actorId?: number,
+  ) {
+    const round = await this.prisma.registrationRound.findUnique({
+      where: { id: roundId },
+      include: { semester: true, projectType: true },
+    });
+    if (!round) {
+      throw new NotFoundException('Không tìm thấy đợt đăng ký');
+    }
+
+    if (dto.majorId) {
+      const major = await this.prisma.major.findUnique({
+        where: { id: dto.majorId },
+      });
+      if (!major) {
+        throw new BadRequestException('Chuyên ngành không hợp lệ');
+      }
+    }
+
+    const { profile, createdAccount } = await this.prisma.$transaction(
+      async (tx) => {
+        let studentProfile = await tx.studentProfile.findUnique({
+          where: { studentCode: dto.studentCode },
+          include: { user: true },
+        });
+
+        let isNewAccount = false;
+
+        if (studentProfile) {
+          const existingEligibility =
+            await tx.roundStudentEligibility.findUnique({
+              where: {
+                roundId_studentId: {
+                  roundId,
+                  studentId: studentProfile.id,
+                },
+              },
+            });
+
+          if (existingEligibility) {
+            throw new ConflictException(
+              `Sinh viên ${studentProfile.fullName} (${studentProfile.studentCode}) đã có trong danh sách đủ điều kiện của đợt này`,
+            );
+          }
+
+          studentProfile = await tx.studentProfile.update({
+            where: { id: studentProfile.id },
+            data: {
+              fullName: dto.fullName || studentProfile.fullName,
+              ...(dto.class ? { class: dto.class } : {}),
+              ...(dto.majorId !== undefined && dto.majorId !== null
+                ? { majorId: dto.majorId }
+                : {}),
+              ...(dto.note ? { note: dto.note } : {}),
+            },
+            include: { user: true },
+          });
+        } else {
+          const existingUser = await tx.user.findUnique({
+            where: { email: dto.email },
+          });
+
+          if (existingUser) {
+            if (existingUser.role !== Role.STUDENT) {
+              throw new ConflictException(
+                `Email ${dto.email} đã được sử dụng cho tài khoản ${existingUser.role}`,
+              );
+            }
+
+            studentProfile = await tx.studentProfile.create({
+              data: {
+                userId: existingUser.id,
+                studentCode: dto.studentCode,
+                fullName: dto.fullName,
+                class: dto.class || null,
+                cohort: dto.cohort,
+                majorId: dto.majorId || null,
+                note: dto.note || null,
+              },
+              include: { user: true },
+            });
+          } else {
+            const unguessableSecret = randomBytes(32).toString('base64url');
+            const passwordHash = await bcrypt.hash(unguessableSecret, 10);
+
+            const createdUser = await tx.user.create({
+              data: {
+                email: dto.email,
+                password: passwordHash,
+                role: Role.STUDENT,
+                mustChangePassword: false,
+                studentProfile: {
+                  create: {
+                    studentCode: dto.studentCode,
+                    fullName: dto.fullName,
+                    class: dto.class || null,
+                    cohort: dto.cohort,
+                    majorId: dto.majorId || null,
+                    note: dto.note || null,
+                  },
+                },
+              },
+              include: { studentProfile: { include: { user: true } } },
+            });
+
+            studentProfile = createdUser.studentProfile!;
+            isNewAccount = true;
+          }
+        }
+
+        await tx.roundStudentEligibility.create({
+          data: {
+            roundId,
+            studentId: studentProfile.id,
+            note: dto.note || null,
+          },
+        });
+
+        return { profile: studentProfile, createdAccount: isNewAccount };
+      },
+    );
+
+    if (actorId) {
+      await recordAudit(this.prisma, {
+        userId: actorId,
+        action: 'ELIGIBLE_STUDENT_ADDED',
+        targetTable: 'round_student_eligibilities',
+        targetId: roundId,
+        newValue: {
+          studentId: profile.id,
+          studentCode: dto.studentCode,
+          roundId,
+          createdAccount,
+        },
+      }).catch(() => undefined);
+    }
+
+    if (profile.userId) {
+      await this.notifications.notify([
+        {
+          userId: profile.userId,
+          type: NotificationType.STUDENT_ELIGIBILITY_CONFIRMED,
+          title: 'Đủ điều kiện làm đồ án',
+          content: `Tài khoản của bạn đã được xác nhận đủ điều kiện tham gia đợt đồ án ${round.projectType.name} (${round.semester.name}).`,
+          targetId: round.id,
+          dedupeKey: `STUDENT_ELIGIBILITY_CONFIRMED:round=${round.id}:user=${profile.userId}`,
+        },
+      ]);
+    }
+
+    return {
+      success: true,
+      studentId: profile.id,
+      studentCode: profile.studentCode,
+      fullName: profile.fullName,
+      createdAccount,
     };
   }
 

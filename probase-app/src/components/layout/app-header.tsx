@@ -16,7 +16,7 @@ export function AppHeader({
   onSignOut: () => void;
 }) {
   return (
-    <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card/95 backdrop-blur-md px-4 sm:px-6 shadow-2xs">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card/95 backdrop-blur-md px-4 sm:px-6 shadow-2xs">
       <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground cursor-pointer" />
       <Separator orientation="vertical" className="mr-1 !h-4" />
 

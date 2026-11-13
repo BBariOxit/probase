@@ -361,7 +361,7 @@ export default function AdminTopicRegistryPage() {
             }}
             size="default"
             className="w-48 sm:w-52 shrink-0"
-            triggerClassName="dark:bg-[#141416] dark:hover:bg-[#1a1a1d] dark:focus:bg-[#0f0f11]"
+            triggerClassName="bg-white hover:bg-slate-50 dark:bg-[#1e1e1e] dark:hover:bg-[#252528] dark:focus:bg-[#1e1e1e]"
             aria-label="Lọc theo giảng viên"
           />
 

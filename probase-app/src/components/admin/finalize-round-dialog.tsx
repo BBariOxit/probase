@@ -60,12 +60,12 @@ export function FinalizeRoundDialog({
   return (
     <>
       <Button
-        variant="outline"
-        className="ml-auto"
+        variant="default"
+        className="h-9.5 px-4 bg-primary text-white hover:bg-primary/90 font-semibold shadow-xs gap-2 cursor-pointer"
         onClick={() => setOpen(true)}
       >
-        <Lock />
-        Chốt phân bổ
+        <Lock className="size-4" />
+        <span>Chốt phân bổ</span>
       </Button>
 
       <Dialog

@@ -25,12 +25,19 @@ function Table({
   );
 }
 
-function TableHeader({ className, ...props }: React.ComponentProps<'thead'>) {
+function TableHeader({
+  className,
+  sticky = false,
+  ...props
+}: React.ComponentProps<'thead'> & {
+  sticky?: boolean;
+}) {
   return (
     <thead
       data-slot="table-header"
       className={cn(
-        'sticky top-0 z-20 bg-slate-900 text-slate-100 dark:bg-neutral-100 dark:text-neutral-900 border-b border-slate-800 dark:border-neutral-300 shadow-2xs [&_tr]:border-b-0 [&_tr]:hover:bg-transparent [&_tr]:bg-transparent',
+        sticky && 'sticky top-0 z-10',
+        'bg-slate-900 text-slate-100 dark:bg-neutral-100 dark:text-neutral-900 border-b border-slate-800 dark:border-neutral-300 shadow-2xs [&_tr]:border-b-0 [&_tr]:hover:bg-transparent [&_tr]:bg-transparent',
         className,
       )}
       {...props}

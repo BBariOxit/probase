@@ -145,10 +145,33 @@ function getNotificationAction(
         icon: Users,
       };
     }
+    if (
+      notice.title.toLowerCase().includes('lời mời') ||
+      notice.content.toLowerCase().includes('lời mời tham gia nhóm')
+    ) {
+      return {
+        label: 'Xem và phản hồi lời mời',
+        url: '/student/groups',
+        icon: Users,
+      };
+    }
     return {
       label: 'Xem nhóm đồ án của tôi',
       url: '/student/groups',
       icon: Users,
+    };
+  }
+
+  // 4b. Bị đưa ra khỏi nhóm hoặc nhóm giải tán -> Điều hướng ra danh sách đề tài để chọn lại
+  if (
+    notice.type === 'GROUP_MEMBER_REMOVED' ||
+    notice.type === 'GROUP_DISBANDED' ||
+    notice.title.toLowerCase().includes('đưa ra khỏi nhóm')
+  ) {
+    return {
+      label: 'Xem danh sách đề tài',
+      url: '/student',
+      icon: ExternalLink,
     };
   }
 

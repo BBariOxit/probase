@@ -11,6 +11,7 @@ import {
   Search,
   SlidersHorizontal,
   Trash2,
+  UserPlus,
   Users,
   X,
 } from 'lucide-react';
@@ -26,6 +27,7 @@ import { useTopicLecturers } from '@/lib/api/topics';
 import type { StudentRosterRow } from '@/lib/api/types';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
+import { AddEligibleStudentDialog } from '@/components/admin/add-eligible-student-dialog';
 import { EligibleStudentsImportDialog } from '@/components/admin/eligible-students-import-dialog';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -112,6 +114,7 @@ export default function StudentRosterPage() {
   const [lecturerId, setLecturerId] = useState(ANY);
   const [groupState, setGroupState] = useState('ALL');
   const [importOpen, setImportOpen] = useState(false);
+  const [addStudentOpen, setAddStudentOpen] = useState(false);
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
   const [studentToRemove, setStudentToRemove] = useState<StudentRosterRow | null>(null);
 
@@ -196,7 +199,7 @@ export default function StudentRosterPage() {
                   refilter(() => setSearch(event.target.value))
                 }
                 placeholder="Tìm theo tên hoặc mã sinh viên…"
-                className="pl-9 h-9.5 text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#141414] focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
+                className="pl-9 h-9.5 text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
                 aria-label="Tìm sinh viên"
               />
               {search && (
@@ -231,11 +234,10 @@ export default function StudentRosterPage() {
                 render={
                   <Button
                     variant="outline"
-                    className={`h-9.5 px-3.5 rounded-lg border-[1.5px] transition-all cursor-pointer shadow-2xs ${
-                      activeSecondaryCount > 0
+                    className={`h-9.5 px-3.5 rounded-lg border-[1.5px] transition-all cursor-pointer shadow-2xs ${activeSecondaryCount > 0
                         ? 'border-primary/50 bg-primary/8 text-primary font-semibold hover:bg-primary/12'
-                        : 'border-slate-300 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200'
-                    }`}
+                        : 'border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200'
+                      }`}
                   />
                 }
               >
@@ -337,7 +339,7 @@ export default function StudentRosterPage() {
                             v === ANY
                               ? 'Mọi đợt'
                               : (rounds?.find((r) => r.id === v)?.projectType
-                                  .name ?? 'Mọi đợt')
+                                .name ?? 'Mọi đợt')
                           }
                         </SelectValue>
                       </SelectTrigger>
@@ -419,6 +421,21 @@ export default function StudentRosterPage() {
                 sinh viên
               </span>
             )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="size-9.5 border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200 cursor-pointer shadow-2xs shrink-0"
+                  onClick={() => setAddStudentOpen(true)}
+                  aria-label="Thêm sinh viên"
+                >
+                  <UserPlus className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Thêm sinh viên</TooltipContent>
+            </Tooltip>
             <Button
               variant="default"
               className="gap-1.5 h-9.5 px-3.5 bg-primary text-white hover:bg-primary/90 font-semibold shadow-xs cursor-pointer"
@@ -429,7 +446,7 @@ export default function StudentRosterPage() {
             </Button>
             <Button
               variant="outline"
-              className="gap-1.5 h-9.5 px-3.5 border-[1.5px] border-slate-300 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200 cursor-pointer shadow-2xs"
+              className="gap-1.5 h-9.5 px-3.5 border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200 cursor-pointer shadow-2xs"
               disabled={exportRoster.isPending}
               onClick={() => exportRoster.mutate(query)}
             >
@@ -588,7 +605,7 @@ export default function StudentRosterPage() {
         <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs overflow-hidden">
           <div className="flex-auto min-h-0 overflow-auto">
             <Table containerClassName="overflow-visible" className="relative w-full min-w-[960px] text-left text-sm">
-              <TableHeader>
+              <TableHeader sticky>
                 <TableRow>
                   <TableHead className="min-w-44 px-5">
                     Sinh viên
@@ -670,6 +687,12 @@ export default function StudentRosterPage() {
             onPageSizeChange={setPageSize}
           />
         </div>
+
+        <AddEligibleStudentDialog
+          open={addStudentOpen}
+          onOpenChange={setAddStudentOpen}
+          defaultRoundId={roundId !== ANY ? roundId : undefined}
+        />
 
         <EligibleStudentsImportDialog
           open={importOpen}
@@ -789,9 +812,9 @@ function StudentRow({
       <TableCell className="w-44 px-4 py-3.5 text-slate-700 dark:text-neutral-300 font-medium align-middle whitespace-nowrap">
         {student.group
           ? sanitizeLecturerName(
-              student.group.topic.lecturer.fullName,
-              student.group.topic.lecturer.academicTitle,
-            ).displayName
+            student.group.topic.lecturer.fullName,
+            student.group.topic.lecturer.academicTitle,
+          ).displayName
           : '—'}
       </TableCell>
 

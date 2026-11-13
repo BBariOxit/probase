@@ -18,6 +18,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
+  confirmVariant = 'destructive',
   onConfirm,
 }: {
   open: boolean;
@@ -25,6 +26,7 @@ export function ConfirmDialog({
   title: string;
   description: React.ReactNode;
   confirmLabel: string;
+  confirmVariant?: 'default' | 'destructive';
   onConfirm: () => Promise<unknown>;
 }) {
   const [pending, setPending] = useState(false);
@@ -53,7 +55,10 @@ export function ConfirmDialog({
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="break-words [overflow-wrap:anywhere]">{title}</DialogTitle>
-          <DialogDescription className="pt-2 pb-4 text-sm leading-relaxed break-words [overflow-wrap:anywhere]">
+          <DialogDescription
+            render={<div />}
+            className="pt-2 pb-4 text-sm leading-relaxed break-words [overflow-wrap:anywhere]"
+          >
             {description}
           </DialogDescription>
         </DialogHeader>
@@ -69,7 +74,7 @@ export function ConfirmDialog({
             Huỷ
           </Button>
           <Button
-            variant="destructive"
+            variant={confirmVariant}
             disabled={pending}
             onClick={handleConfirm}
           >

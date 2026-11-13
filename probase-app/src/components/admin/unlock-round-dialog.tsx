@@ -55,11 +55,11 @@ export function UnlockRoundDialog({
     <>
       <Button
         variant="outline"
-        className="ml-auto"
+        className="h-9.5 px-4 border-[1.5px] border-amber-300 dark:border-amber-700/60 bg-amber-50/50 hover:bg-amber-100/60 dark:bg-amber-950/20 dark:hover:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-semibold shadow-2xs gap-2 cursor-pointer"
         onClick={() => setOpen(true)}
       >
-        <LockOpen />
-        Mở khoá đợt
+        <LockOpen className="size-4" />
+        <span>Mở khoá đợt</span>
       </Button>
 
       <Dialog

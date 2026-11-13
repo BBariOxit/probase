@@ -206,3 +206,37 @@ export function useMyEligibilityStatus() {
     staleTime: 60 * 1000,
   });
 }
+
+export interface AddEligibleStudentInput {
+  roundId: number;
+  studentCode: string;
+  fullName: string;
+  class?: string | null;
+  email?: string | null;
+  majorId?: number | null;
+  note?: string | null;
+}
+
+export function useAddEligibleStudent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ roundId, ...body }: AddEligibleStudentInput) => {
+      return api<{
+        success: boolean;
+        studentId: number;
+        studentCode: string;
+        fullName: string;
+        createdAccount: boolean;
+      }>(`/rounds/${roundId}/eligible-students`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+    },
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: ['eligible-students', variables.roundId] });
+      qc.invalidateQueries({ queryKey: ['students'] });
+      qc.invalidateQueries({ queryKey: ['rounds'] });
+      qc.invalidateQueries({ queryKey: ['my-eligibility-status'] });
+    },
+  });
+}

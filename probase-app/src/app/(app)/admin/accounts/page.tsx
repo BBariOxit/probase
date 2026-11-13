@@ -225,7 +225,7 @@ export default function AccountsPage() {
       <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs overflow-hidden">
         <div className="flex-auto min-h-0 overflow-auto">
           <Table containerClassName="overflow-visible">
-            <TableHeader>
+            <TableHeader sticky>
               <TableRow>
                 <TableHead className="min-w-56">Người dùng</TableHead>
                 <TableHead className="w-32">Mã</TableHead>

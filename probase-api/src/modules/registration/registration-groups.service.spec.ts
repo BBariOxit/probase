@@ -25,7 +25,12 @@ interface MockPrisma {
   };
   registrationGroupMember: {
     findFirst: jest.Mock;
+    findUnique: jest.Mock;
+    findMany: jest.Mock;
     create: jest.Mock;
+    update: jest.Mock;
+    updateMany: jest.Mock;
+    upsert: jest.Mock;
     count: jest.Mock;
   };
   topic: {
@@ -128,7 +133,12 @@ describe('RegistrationGroupsService', () => {
       },
       registrationGroupMember: {
         findFirst: jest.fn(),
+        findUnique: jest.fn(),
+        findMany: jest.fn(),
         create: jest.fn(),
+        update: jest.fn(),
+        updateMany: jest.fn(),
+        upsert: jest.fn(),
         count: jest.fn().mockResolvedValue(2),
       },
       topic: {
@@ -292,6 +302,67 @@ describe('RegistrationGroupsService', () => {
       ][];
       expect(mailCalls[0][0]).toMatchObject({ to: '2212346@dlu.edu.vn' });
       expect(res.members).toHaveLength(2);
+    });
+
+    it('sends an invitation without occupying seats when student already has a group', async () => {
+      const initialGroup = makeGroupRow();
+      prisma.studentProfile.findUnique
+        .mockResolvedValueOnce({
+          id: 1,
+          cohort: '2022',
+          fullName: 'Trưởng Nhóm',
+        })
+        .mockResolvedValueOnce({
+          id: 2,
+          fullName: 'Sinh Viên Đã Có Nhóm',
+          cohort: '2022',
+          studentCode: '2212347',
+          user: { id: 102, email: '2212347@dlu.edu.vn', isActive: true },
+        });
+
+      prisma.registrationGroup.findUnique
+        .mockResolvedValueOnce(initialGroup)
+        .mockResolvedValueOnce(initialGroup);
+
+      prisma.topic.findUnique.mockResolvedValue(makeTopicRow({ id: 10 }));
+
+      // Target student already has an accepted group in this semester (groupId: 999)
+      prisma.registrationGroupMember.findFirst.mockResolvedValue({
+        id: 50,
+        groupId: 999,
+      });
+
+      const res = await service.inviteByStudentCode(100, '2212347', 101);
+
+      expect(prisma.registrationGroupMember.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            groupId_studentId: {
+              groupId: 100,
+              studentId: 2,
+            },
+          },
+          create: expect.objectContaining({
+            groupId: 100,
+            studentId: 2,
+            status: GroupMemberStatus.INVITED,
+          }),
+        }),
+      );
+
+      expect(prisma.registrationGroupMember.create).not.toHaveBeenCalled();
+      expect(res).toMatchObject({
+        inviteAction: 'INVITED',
+        inviteMessage:
+          'Sinh viên đã có nhóm. Hệ thống đã gửi lời mời đổi nhóm tới sinh viên này.',
+      });
+
+      expect(notifications.notify).toHaveBeenCalledWith([
+        expect.objectContaining({
+          userId: 102,
+          title: 'Lời mời tham gia nhóm đề tài',
+        }),
+      ]);
     });
   });
 

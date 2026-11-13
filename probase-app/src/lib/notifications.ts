@@ -139,13 +139,11 @@ export function notificationHref(
     case 'SUBMISSION_DUE_SOON':
       return '/student/submissions';
 
-    // The group is gone in both of these, so the topic is what is left to look
-    // at — and `targetId` is the topic for exactly that reason.
+    // The group is gone in both of these, so the student needs to find another
+    // topic to register.
     case 'GROUP_MEMBER_REMOVED':
     case 'GROUP_DISBANDED':
-      return notice.targetId
-        ? `/student/topics/${notice.targetId}`
-        : '/student';
+      return '/student';
 
     /*
       Both say there is still time to choose, so both lead to the list of
