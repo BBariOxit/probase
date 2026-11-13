@@ -683,6 +683,10 @@ export default function ArchivesPage() {
                                 const stGrade = grades.find(
                                   (g) => g.studentId === m.student.id,
                                 );
+                                const hasGrade =
+                                  stGrade?.finalGradeNum !== null &&
+                                  stGrade?.finalGradeNum !== undefined;
+
                                 return (
                                   <div
                                     key={m.id}
@@ -700,9 +704,8 @@ export default function ArchivesPage() {
                                         )
                                       </span>
                                     </div>
-                                    <div className="shrink-0 text-right ml-1">
-                                      {stGrade?.finalGradeNum !== null &&
-                                      stGrade?.finalGradeNum !== undefined ? (
+                                    {hasGrade && (
+                                      <div className="shrink-0 text-right ml-1">
                                         <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                                           {stGrade.finalGradeNum}
                                           {stGrade.finalGradeLetter && (
@@ -711,10 +714,8 @@ export default function ArchivesPage() {
                                             </span>
                                           )}
                                         </span>
-                                      ) : (
-                                        <span className="text-muted-foreground">—</span>
-                                      )}
-                                    </div>
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
