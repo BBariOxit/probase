@@ -71,8 +71,7 @@ export function RoundLecturerProgressTab({
   // Default to first round once loaded
   const effectiveRoundId = selectedRoundId ?? rounds?.[0]?.id;
 
-  const { data: capacity, isPending: isCapacityPending } =
-    useRoundCapacity(effectiveRoundId);
+  const { data: capacity } = useRoundCapacity(effectiveRoundId);
 
   function handleOpenQuotaDialog() {
     if (!capacity) return;
@@ -203,73 +202,35 @@ export function RoundLecturerProgressTab({
         </div>
 
         {capacity && (
-          <div className="text-xs text-slate-600 dark:text-neutral-400">
-            Chỉ tiêu: <strong className="text-slate-900 dark:text-neutral-100 font-semibold">{capacity.targetQuota} đề tài</strong> / GV
-            {' • '}
-            Đạt chỉ tiêu: <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">{capacity.lecturersMetQuotaCount}</strong>/{capacity.lecturersCount} GV
-          </div>
-        )}
-      </div>
-
-      {/* ── Băng tổng quan chỉ tiêu & Cân đối đợt (Thanh mảnh, tập trung số liệu) ── */}
-      {isCapacityPending ? (
-        <div className="flex justify-center py-6">
-          <Loader2 className="size-5 animate-spin text-primary" />
-        </div>
-      ) : capacity ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] px-4 py-2.5 shadow-2xs">
-          <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-slate-700 dark:text-neutral-300">
-            <span className="font-semibold text-slate-900 dark:text-neutral-100">
-              {capacity.round.projectTypeName}:
-            </span>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-neutral-400">
             <span>
+              Chỉ tiêu:{' '}
               <strong className="text-slate-900 dark:text-neutral-100 font-semibold">
-                {capacity.eligibleStudentCount}
+                {capacity.targetQuota} đề tài
               </strong>{' '}
-              SV đủ ĐK ({capacity.round.maxStudentsPerTopic} SV/đề tài)
+              / GV
             </span>
             <span className="text-slate-300 dark:text-neutral-700">•</span>
             <span>
-              Mục tiêu:{' '}
-              <strong className="text-slate-900 dark:text-neutral-100 font-semibold">
-                ~{capacity.estimatedGroupsNeeded} nhóm
-              </strong>{' '}
-              ({capacity.estimatedGroupsNeeded} - {capacity.targetTopicsWithBuffer} đề tài)
+              Đạt chỉ tiêu:{' '}
+              <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                {capacity.lecturersMetQuotaCount}
+              </strong>
+              /{capacity.lecturersCount} GV
             </span>
             <span className="text-slate-300 dark:text-neutral-700">•</span>
-            <span>
-              Đã nộp:{' '}
-              <strong className="text-slate-900 dark:text-neutral-100 font-semibold">
-                {capacity.totalTopicsSubmitted} đề tài
-              </strong>{' '}
-              ({capacity.approvedTopicsCount} đã duyệt
-              {capacity.pendingTopicsCount > 0
-                ? `, ${capacity.pendingTopicsCount} chờ duyệt`
-                : ''}
-              {capacity.draftTopicsCount > 0
-                ? `, ${capacity.draftTopicsCount} nháp`
-                : ''}
-              )
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3 text-xs">
             {capacity.deficit > 0 ? (
               <span className="font-semibold text-amber-600 dark:text-amber-400">
-                Còn thiếu {capacity.deficit} đề tài
+                Thiếu {capacity.deficit} đề tài
               </span>
             ) : (
               <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                 Đủ đáp ứng ({capacity.approvedTopicsCount}/{capacity.estimatedGroupsNeeded})
               </span>
             )}
-            <span className="text-slate-300 dark:text-neutral-700">•</span>
-            <span className="text-slate-500 dark:text-neutral-400">
-              {capacity.assignedStudentsCount}/{capacity.eligibleStudentCount} SV đã có nhóm
-            </span>
           </div>
-        </div>
-      ) : null}
+        )}
+      </div>
 
       {/* ── Bảng tiến độ nộp đề tài của từng Giảng viên ── */}
       <div className="space-y-3 pt-1">
