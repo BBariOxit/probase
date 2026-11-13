@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/sheet';
 import { Loader2 } from 'lucide-react';
 import React from 'react';
+import { cn } from '@/lib/utils';
 
 interface DetailSheetProps {
   open: boolean;
@@ -19,6 +20,7 @@ interface DetailSheetProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   descriptionAria?: string;
+  className?: string;
 }
 
 /**
@@ -35,10 +37,11 @@ export function DetailSheet({
   children,
   footer,
   descriptionAria = 'Xem chi tiết',
+  className,
 }: DetailSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-full flex-col p-0 sm:max-w-md">
+      <SheetContent className={cn('flex w-full flex-col p-0 sm:max-w-md', className)}>
         {loading ? (
           <div className="flex flex-1 items-center justify-center">
             <Loader2 className="size-6 animate-spin text-muted-foreground/50" />

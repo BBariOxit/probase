@@ -4,40 +4,39 @@ import { useState } from 'react';
 import Link from 'next/link';
 import {
   Archive,
-  CheckCircle2,
-  Code,
+  BookOpen,
   Download,
   ExternalLink,
   Eye,
-  FileCheck2,
-  FileText,
+  GraduationCap,
+  Layers,
   Loader2,
   MoreHorizontal,
   RotateCcw,
   Search,
+  Users,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { usePagination } from '@/hooks/use-pagination';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
-import { useMajors, useRoundsForSemester, useSemesters } from '@/lib/api/master-data';
+import { useMajors, useProjectTypes, useRoundsForSemester, useSemesters } from '@/lib/api/master-data';
 import {
   useArchives,
   useExportArchives,
-  useVerifyArchive,
 } from '@/lib/api/archives';
 import { AdvancedFilterPopover } from '@/components/shared/advanced-filter-popover';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
-import { StatusPill } from '@/components/shared/status-pill';
-import { TopicDetailSheet } from '@/components/topics/topic-detail-sheet';
+import { TextSection } from '@/components/shared/text-section';
+import { DetailSheet } from '@/components/shared/detail-sheet';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -63,12 +62,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-
-const VERIFIED_FILTER_OPTIONS: { value: 'all' | 'true' | 'false'; label: string }[] = [
-  { value: 'all', label: 'Mọi tình trạng' },
-  { value: 'true', label: 'Đã nghiệm thu' },
-  { value: 'false', label: 'Chưa nghiệm thu' },
-];
 
 /** Rút gọn tên học kỳ: "Học kỳ 1 năm học 2026–2027" -> "HKI 2026-2027" */
 function formatSemesterAbbr(semester: { name: string; code: string }): string {
@@ -118,12 +111,11 @@ export default function ArchivesPage() {
   const [selectedSemesterId, setSelectedSemesterId] = useState<string>('all');
   const [selectedRoundId, setSelectedRoundId] = useState<string>('all');
   const [selectedMajorId, setSelectedMajorId] = useState<string>('all');
-  const [selectedVerified, setSelectedVerified] = useState<'all' | 'true' | 'false'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const { page, setPage, pageSize, setPageSize } = usePagination();
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
 
-  // Selected topic id for shared TopicDetailSheet
+  // Selected topic id for shared DetailSheet
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
 
   const debouncedSearch = useDebouncedValue(searchQuery, 400);
@@ -134,10 +126,11 @@ export default function ArchivesPage() {
     selectedSemesterId === 'all' ? undefined : Number(selectedSemesterId);
 
   const { data: rounds = [] } = useRoundsForSemester(numericSemesterId);
+  const { data: projectTypes = [] } = useProjectTypes();
   const { data: majors = [] } = useMajors();
 
-  const selectedRound = rounds.find((r) => String(r.id) === selectedRoundId);
-  const projectTypeId = selectedRound?.projectTypeId;
+  const projectTypeId =
+    selectedRoundId === 'all' ? undefined : Number(selectedRoundId);
 
   // Main archives query
   const {
@@ -147,16 +140,15 @@ export default function ArchivesPage() {
     semesterId: numericSemesterId,
     projectTypeId,
     majorId: selectedMajorId === 'all' ? undefined : Number(selectedMajorId),
-    verified: selectedVerified,
     q: debouncedSearch || undefined,
     page,
     limit: pageSize,
   });
 
   const exportMutation = useExportArchives();
-  const verifyMutation = useVerifyArchive();
 
   const topics = archiveData?.items || [];
+  const selectedTopic = topics.find((t) => t.id === selectedTopicId);
   const total = archiveData?.total || 0;
   const totalPages = archiveData?.totalPages || 1;
 
@@ -164,8 +156,7 @@ export default function ArchivesPage() {
   const activeSecondaryCount =
     (selectedSemesterId !== 'all' ? 1 : 0) +
     (selectedRoundId !== 'all' ? 1 : 0) +
-    (selectedMajorId !== 'all' ? 1 : 0) +
-    (selectedVerified !== 'all' ? 1 : 0);
+    (selectedMajorId !== 'all' ? 1 : 0);
 
   const hasAnyFilter = Boolean(debouncedSearch.trim()) || activeSecondaryCount > 0;
 
@@ -173,7 +164,6 @@ export default function ArchivesPage() {
     setSelectedSemesterId('all');
     setSelectedRoundId('all');
     setSelectedMajorId('all');
-    setSelectedVerified('all');
     setPage(1);
   };
 
@@ -188,7 +178,6 @@ export default function ArchivesPage() {
         semesterId: numericSemesterId,
         projectTypeId,
         majorId: selectedMajorId === 'all' ? undefined : Number(selectedMajorId),
-        verified: selectedVerified,
         q: debouncedSearch || undefined,
       });
       toast.success('Đã tải xuống file sổ lưu trữ đồ án Excel');
@@ -198,22 +187,6 @@ export default function ArchivesPage() {
           ? err.message
           : 'Không thể xuất danh sách. Vui lòng thử lại.',
       );
-    }
-  };
-
-  const handleToggleVerify = async (archiveId: number, currentVerified: boolean) => {
-    try {
-      await verifyMutation.mutateAsync({
-        archiveId,
-        isVerified: !currentVerified,
-      });
-      toast.success(
-        !currentVerified
-          ? 'Đã xác nhận nghiệm thu hồ sơ đồ án.'
-          : 'Đã hủy nghiệm thu hồ sơ đồ án.',
-      );
-    } catch {
-      toast.error('Có lỗi xảy ra khi cập nhật nghiệm thu');
     }
   };
 
@@ -311,24 +284,31 @@ export default function ArchivesPage() {
                     setSelectedRoundId(val);
                     setPage(1);
                   }}
-                  disabled={selectedSemesterId === 'all'}
                 >
                   <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
                     <SelectValue>
                       {(val) => {
                         if (!val || val === 'all') return 'Mọi đợt';
-                        const r = rounds.find((item) => String(item.id) === val);
-                        return r?.projectType?.name ?? 'Mọi đợt';
+                        const foundName =
+                          rounds.find((r) => String(r.projectTypeId) === val)?.projectType.name ||
+                          projectTypes.find((pt) => String(pt.id) === val)?.name;
+                        return foundName ?? 'Mọi đợt';
                       }}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="max-h-64">
                     <SelectItem value="all">Mọi đợt</SelectItem>
-                    {rounds.map((r) => (
-                      <SelectItem key={r.id} value={String(r.id)}>
-                        {r.projectType?.name || `Đợt ${r.id}`}
-                      </SelectItem>
-                    ))}
+                    {selectedSemesterId !== 'all' && rounds.length > 0
+                      ? rounds.map((r) => (
+                          <SelectItem key={r.id} value={String(r.projectTypeId)}>
+                            {r.projectType?.name || `Đợt ${r.id}`}
+                          </SelectItem>
+                        ))
+                      : projectTypes.map((pt) => (
+                          <SelectItem key={pt.id} value={String(pt.id)}>
+                            {pt.name}
+                          </SelectItem>
+                        ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -359,36 +339,6 @@ export default function ArchivesPage() {
                     {majors.map((m) => (
                       <SelectItem key={m.id} value={String(m.id)}>
                         {m.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Lọc theo tình trạng nghiệm thu */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
-                  Tình trạng nghiệm thu
-                </Label>
-                <Select
-                  value={selectedVerified}
-                  onValueChange={(val: 'all' | 'true' | 'false') => {
-                    setSelectedVerified(val);
-                    setPage(1);
-                  }}
-                >
-                  <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
-                    <SelectValue>
-                      {(val) =>
-                        VERIFIED_FILTER_OPTIONS.find((opt) => opt.value === val)?.label ??
-                        'Mọi tình trạng'
-                      }
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="max-h-64">
-                    {VERIFIED_FILTER_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -469,7 +419,9 @@ export default function ArchivesPage() {
             {selectedRoundId !== 'all' && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30">
                 <span>
-                  Đợt: {rounds.find((r) => String(r.id) === selectedRoundId)?.projectType.name}
+                  Đợt:{' '}
+                  {rounds.find((r) => String(r.projectTypeId) === selectedRoundId)?.projectType.name ||
+                    projectTypes.find((pt) => String(pt.id) === selectedRoundId)?.name}
                 </span>
                 <button
                   type="button"
@@ -498,23 +450,6 @@ export default function ArchivesPage() {
               </span>
             )}
 
-            {selectedVerified !== 'all' && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30">
-                <span>
-                  Nghiệm thu:{' '}
-                  {selectedVerified === 'true' ? 'Đã nghiệm thu' : 'Chưa nghiệm thu'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedVerified('all')}
-                  className="rounded-full p-0.5 hover:bg-blue-200/60 dark:hover:bg-blue-500/30 transition text-blue-700 dark:text-blue-300 cursor-pointer"
-                  title="Bỏ lọc nghiệm thu"
-                >
-                  <X className="size-3" />
-                </button>
-              </span>
-            )}
-
             <button
               type="button"
               onClick={handleResetAll}
@@ -531,7 +466,7 @@ export default function ArchivesPage() {
           <div className="flex-auto min-h-0 overflow-auto">
             <Table
               containerClassName="overflow-visible"
-              className="relative w-full min-w-[1040px] text-left text-sm"
+              className="relative w-full min-w-[960px] text-left text-sm"
             >
               <TableHeader sticky>
                 <TableRow>
@@ -553,12 +488,6 @@ export default function ArchivesPage() {
                   <TableHead className="w-44 px-3 whitespace-nowrap">
                     GV hướng dẫn
                   </TableHead>
-                  <TableHead className="w-52 px-3 whitespace-nowrap">
-                    Sinh viên & Điểm
-                  </TableHead>
-                  <TableHead className="w-32 px-3 text-center whitespace-nowrap">
-                    Nghiệm thu
-                  </TableHead>
                   <TableHead className="w-20 px-3 text-center whitespace-nowrap">
                     Thao tác
                   </TableHead>
@@ -567,7 +496,7 @@ export default function ArchivesPage() {
               <TableBody>
                 {isLoadingArchives ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="h-48 text-center">
+                    <TableCell colSpan={7} className="h-48 text-center">
                       <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                         <Loader2 className="size-5 animate-spin text-primary" />
                         <span className="text-xs">Đang tải kho lưu trữ…</span>
@@ -576,7 +505,7 @@ export default function ArchivesPage() {
                   </TableRow>
                 ) : topics.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="h-64 text-center">
+                    <TableCell colSpan={7} className="h-64 text-center">
                       <EmptyState
                         icon={Archive}
                         title="Không có đề tài lưu trữ"
@@ -586,13 +515,6 @@ export default function ArchivesPage() {
                   </TableRow>
                 ) : (
                   topics.map((topic, index) => {
-                    const group = topic.registrationGroups[0];
-                    const archive = group?.archive;
-                    const outline = group?.outline;
-                    const grades = group?.studentGrades || [];
-                    const members = group?.members || [];
-                    const isAcademicVerified = archive?.isVerifiedByAcademic ?? false;
-
                     const topicTitle = topic.titleVi || topic.title;
                     const projectTypeInfo = getProjectTypeAbbr(topic.round?.projectType);
                     const stt = (page - 1) * pageSize + index + 1;
@@ -600,7 +522,11 @@ export default function ArchivesPage() {
                     return (
                       <TableRow
                         key={topic.id}
-                        className="hover:bg-slate-50/70 dark:hover:bg-white/4 transition-colors"
+                        className={cn(
+                          'cursor-pointer transition-colors hover:bg-slate-50/80 dark:hover:bg-white/5',
+                          selectedTopicId === topic.id && 'bg-primary/8 dark:bg-primary/12 font-medium',
+                        )}
+                        onClick={() => setSelectedTopicId(topic.id)}
                       >
                         {/* 1. STT */}
                         <TableCell className="w-14 px-3 py-3.5 text-center font-mono text-xs text-muted-foreground align-middle">
@@ -665,88 +591,13 @@ export default function ArchivesPage() {
                             )}
                             {topic.lecturer?.fullName}
                           </div>
-                          {group?.councilTopic?.reviewer && (
-                            <div className="mt-0.5 text-[11px] text-muted-foreground leading-tight truncate">
-                              PB: {group.councilTopic.reviewer.fullName}
-                            </div>
-                          )}
                         </TableCell>
 
-                        {/* 7. Sinh viên & Điểm */}
-                        <TableCell className="w-52 px-3 py-3.5 align-middle whitespace-nowrap">
-                          {members.length === 0 ? (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          ) : (
-                            <div className="space-y-1">
-                              {members.map((m) => {
-                                const stGrade = grades.find(
-                                  (g) => g.studentId === m.student.id,
-                                );
-                                const hasGrade =
-                                  stGrade?.finalGradeNum !== null &&
-                                  stGrade?.finalGradeNum !== undefined;
-
-                                return (
-                                  <div
-                                    key={m.id}
-                                    className="flex items-center justify-between text-xs gap-1.5"
-                                  >
-                                    <div className="truncate">
-                                      <span className="font-medium text-slate-800 dark:text-neutral-200">
-                                        {m.student.fullName}
-                                      </span>
-                                      <span className="ml-1 text-[11px]">
-                                        (
-                                        <span className="font-mono text-primary font-semibold">
-                                          {m.student.studentCode}
-                                        </span>
-                                        )
-                                      </span>
-                                    </div>
-                                    {hasGrade && (
-                                      <div className="shrink-0 text-right ml-1">
-                                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                                          {stGrade.finalGradeNum}
-                                          {stGrade.finalGradeLetter && (
-                                            <span className="text-[10px] text-muted-foreground font-normal ml-0.5">
-                                              ({stGrade.finalGradeLetter})
-                                            </span>
-                                          )}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </TableCell>
-
-                        {/* 8. Nghiệm thu */}
-                        <TableCell className="w-32 px-3 py-3.5 text-center align-middle whitespace-nowrap">
-                          {isAcademicVerified ? (
-                            <StatusPill
-                              label="Đã nghiệm thu"
-                              tone="success"
-                              variant="tag"
-                            />
-                          ) : archive ? (
-                            <StatusPill
-                              label="Chờ nghiệm thu"
-                              tone="waiting"
-                              variant="tag"
-                            />
-                          ) : (
-                            <StatusPill
-                              label="Chưa nộp"
-                              tone="idle"
-                              variant="tag"
-                            />
-                          )}
-                        </TableCell>
-
-                        {/* 9. Thao tác 3 chấm (Đủ w-20 không bao giờ bị cắt chữ THAO TÁC) */}
-                        <TableCell className="w-20 px-3 py-3.5 text-center align-middle whitespace-nowrap">
+                        {/* 7. Thao tác 3 chấm (Đủ w-20 không bao giờ bị cắt chữ THAO TÁC) */}
+                        <TableCell
+                          className="w-20 px-3 py-3.5 text-center align-middle whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <DropdownMenu>
                             <DropdownMenuTrigger
                               render={
@@ -760,12 +611,12 @@ export default function ArchivesPage() {
                                 </Button>
                               }
                             />
-                            <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuContent align="end" className="w-44">
                               <DropdownMenuItem
                                 onClick={() => setSelectedTopicId(topic.id)}
                               >
                                 <Eye className="size-4 mr-2" />
-                                <span>Xem nhanh (Sheet)</span>
+                                <span>Xem chi tiết</span>
                               </DropdownMenuItem>
 
                               <DropdownMenuItem
@@ -778,82 +629,6 @@ export default function ArchivesPage() {
                                 <ExternalLink className="size-4 mr-2" />
                                 <span>Mở trang đề tài</span>
                               </DropdownMenuItem>
-
-                              {archive && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleToggleVerify(
-                                        archive.id,
-                                        isAcademicVerified,
-                                      )
-                                    }
-                                  >
-                                    {isAcademicVerified ? (
-                                      <>
-                                        <RotateCcw className="size-4 mr-2 text-muted-foreground" />
-                                        <span>Hủy nghiệm thu</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <CheckCircle2 className="size-4 mr-2 text-emerald-600" />
-                                        <span>Xác nhận nghiệm thu</span>
-                                      </>
-                                    )}
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-
-                              {(archive?.thesisUrl ||
-                                archive?.sourceUrl ||
-                                outline?.attachmentUrl) && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  {archive?.thesisUrl && (
-                                    <DropdownMenuItem
-                                      render={
-                                        <a
-                                          href={archive.thesisUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                        />
-                                      }
-                                    >
-                                      <FileText className="size-4 mr-2 text-rose-500" />
-                                      <span>Mở PDF luận văn</span>
-                                    </DropdownMenuItem>
-                                  )}
-                                  {archive?.sourceUrl && (
-                                    <DropdownMenuItem
-                                      render={
-                                        <a
-                                          href={archive.sourceUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                        />
-                                      }
-                                    >
-                                      <Code className="size-4 mr-2 text-emerald-500" />
-                                      <span>Xem mã nguồn</span>
-                                    </DropdownMenuItem>
-                                  )}
-                                  {outline?.attachmentUrl && (
-                                    <DropdownMenuItem
-                                      render={
-                                        <a
-                                          href={outline.attachmentUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                        />
-                                      }
-                                    >
-                                      <FileCheck2 className="size-4 mr-2 text-blue-500" />
-                                      <span>Tải đề cương M03</span>
-                                    </DropdownMenuItem>
-                                  )}
-                                </>
-                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -879,12 +654,167 @@ export default function ArchivesPage() {
           />
         </div>
 
-        {/* ── Shared TopicDetailSheet ── */}
-        <TopicDetailSheet
-          topicId={selectedTopicId}
-          onClose={() => setSelectedTopicId(null)}
-          hideRegisterButton
-        />
+        {/* ── Chi tiết đề tài lưu trữ (Thanh Drawer bên phải - chuẩn giao diện TopicDetailSheet) ── */}
+        {selectedTopic && (() => {
+          const group = selectedTopic.registrationGroups[0];
+          const grades = group?.studentGrades || [];
+          const members = group?.members || [];
+          const projectTypeInfo = getProjectTypeAbbr(selectedTopic.round?.projectType);
+          const supervisorName = selectedTopic.lecturer?.academicTitle
+            ? `${selectedTopic.lecturer.academicTitle} ${selectedTopic.lecturer.fullName}`
+            : selectedTopic.lecturer?.fullName;
+
+          return (
+            <DetailSheet
+              open={!!selectedTopicId}
+              onOpenChange={(open) => !open && setSelectedTopicId(null)}
+              title={
+                <div className="text-base font-semibold leading-snug text-slate-900 dark:text-neutral-100 break-words [overflow-wrap:anywhere]">
+                  {selectedTopic.titleVi || selectedTopic.title}
+                </div>
+              }
+              meta={
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+                  <span className="inline-flex items-center gap-1.5">
+                    <GraduationCap className="size-3.5 shrink-0 text-muted-foreground/70" />
+                    <span>{supervisorName}</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Layers className="size-3.5 shrink-0 text-muted-foreground/70" />
+                    <span className="font-semibold text-primary">{projectTypeInfo.short}</span>
+                    {projectTypeInfo.full && projectTypeInfo.full !== projectTypeInfo.short && (
+                      <span className="text-muted-foreground/80">({projectTypeInfo.full})</span>
+                    )}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <BookOpen className="size-3.5 shrink-0 text-muted-foreground/70" />
+                    <span>{selectedTopic.major?.name ?? '—'}</span>
+                  </span>
+                  <span>•</span>
+                  <span>{formatSemesterAbbr(selectedTopic.semester)}</span>
+                </div>
+              }
+              footer={
+                <div className="flex items-center justify-between w-full">
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedTopicId(null)}>
+                    Đóng
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 font-semibold"
+                    render={<Link href={`/admin/topics/${selectedTopic.id}`} />}
+                  >
+                    <ExternalLink className="size-3.5" />
+                    <span>Xem trang đề tài</span>
+                  </Button>
+                </div>
+              }
+            >
+              <div className="space-y-5 text-sm">
+                {/* 1. Mô tả */}
+                <TextSection
+                  title="Mô tả"
+                  body={selectedTopic.description}
+                  bodyClassName="text-justify text-xs leading-relaxed"
+                />
+
+                {/* 2. Mục tiêu đề tài */}
+                {selectedTopic.objectives && (
+                  <TextSection
+                    title="Mục tiêu đề tài"
+                    body={selectedTopic.objectives}
+                    bodyClassName="text-justify text-xs leading-relaxed"
+                  />
+                )}
+
+                {/* 3. Yêu cầu đầu ra */}
+                {selectedTopic.expectedOutcomes && (
+                  <TextSection
+                    title="Yêu cầu đầu ra"
+                    body={selectedTopic.expectedOutcomes}
+                    bodyClassName="text-justify text-xs leading-relaxed"
+                  />
+                )}
+
+                {/* 4. Công nghệ & công cụ đề xuất */}
+                {selectedTopic.techStack && (
+                  <div className="space-y-1.5">
+                    <h4 className="text-xs font-semibold text-slate-900 dark:text-neutral-100">
+                      Công nghệ & Công cụ đề xuất
+                    </h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedTopic.techStack.split(',').map((tech, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-neutral-800 dark:text-neutral-300"
+                        >
+                          {tech.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 5. Sinh viên thực hiện & Điểm tổng kết (Tập trung nghiệp vụ, không kể lể) */}
+                <div className="space-y-2 pt-1 border-t border-slate-200 dark:border-neutral-800">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-semibold text-slate-900 dark:text-neutral-100">
+                      Sinh viên thực hiện
+                    </h4>
+                    <span className="text-[11px] text-muted-foreground">
+                      {members.length} sinh viên
+                    </span>
+                  </div>
+
+                  {members.length === 0 ? (
+                    <p className="text-xs text-muted-foreground italic py-1">
+                      Chưa có dữ liệu sinh viên thực hiện đề tài này.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {members.map((m) => {
+                        const stGrade = grades.find((g) => g.studentId === m.student.id);
+                        return (
+                          <div
+                            key={m.id}
+                            className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-neutral-800 bg-slate-50/60 dark:bg-white/[0.02]"
+                          >
+                            <div className="space-y-0.5">
+                              <div className="text-xs font-semibold text-slate-900 dark:text-neutral-100">
+                                {m.student.fullName}
+                              </div>
+                              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                                <span className="font-mono font-medium text-primary">
+                                  {m.student.studentCode}
+                                </span>
+                                {m.student.class && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{m.student.class}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="text-right">
+                              <div className="text-sm font-bold font-mono text-slate-900 dark:text-neutral-100">
+                                {stGrade?.finalGradeNum != null ? stGrade.finalGradeNum.toFixed(1) : '—'}
+                              </div>
+                              <div className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                {stGrade?.finalGradeLetter ? `Loại ${stGrade.finalGradeLetter}` : '—'}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </DetailSheet>
+          );
+        })()}
       </div>
     </TooltipProvider>
   );

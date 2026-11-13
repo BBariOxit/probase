@@ -28,6 +28,15 @@ export class ArchivesService {
 
     if (status && status !== 'ALL') {
       andConditions.push({ status: status as TopicStatus });
+    } else if (!status) {
+      // Mặc định kho lưu trữ chỉ hiển thị đề tài đã hoàn thành hoặc thuộc các đợt/học kỳ đã kết thúc
+      andConditions.push({
+        OR: [
+          { status: TopicStatus.COMPLETED },
+          { round: { phase: 'FINALIZED' } },
+          { semester: { isActive: false } },
+        ],
+      });
     }
 
     if (verified !== undefined) {
