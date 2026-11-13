@@ -104,7 +104,9 @@ export async function request(
           ? undefined
           : multipart
             ? (body as FormData)
-            : JSON.stringify(body),
+            : typeof body === 'string'
+              ? body
+              : JSON.stringify(body),
     });
 
   const token = anonymous ? null : useSession.getState().accessToken;

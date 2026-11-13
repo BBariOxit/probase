@@ -229,7 +229,7 @@ export function useAddEligibleStudent() {
         createdAccount: boolean;
       }>(`/rounds/${roundId}/eligible-students`, {
         method: 'POST',
-        body: JSON.stringify(body),
+        body,
       });
     },
     onSuccess: (_data, variables) => {

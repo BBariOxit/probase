@@ -79,7 +79,7 @@ export function useCreateWeeklyLog() {
     mutationFn: (input: CreateWeeklyLogInput) =>
       api<WeeklyLogItem>('/progress/weekly-logs', {
         method: 'POST',
-        body: JSON.stringify(input),
+        body: input,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: progressKeys.all });
@@ -94,7 +94,7 @@ export function useUpdateWeeklyLog() {
     mutationFn: ({ id, ...input }: UpdateWeeklyLogInput & { id: number }) =>
       api<WeeklyLogItem>(`/progress/weekly-logs/${id}`, {
         method: 'PATCH',
-        body: JSON.stringify(input),
+        body: input,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: progressKeys.all });
@@ -134,7 +134,7 @@ export function useSubmitProgressReport() {
 
       return api<ProgressReportItem>(`/progress/reports/${stage}`, {
         method: 'POST',
-        body: JSON.stringify(input),
+        body: input,
       });
     },
     onSuccess: () => {
@@ -183,7 +183,7 @@ export function useFeedbackWeeklyLog() {
     mutationFn: ({ logId, ...input }: FeedbackWeeklyLogInput) =>
       api<WeeklyLogItem>(`/progress/lecturer/weekly-logs/${logId}/feedback`, {
         method: 'PATCH',
-        body: JSON.stringify(input),
+        body: input,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: progressKeys.all });
@@ -200,7 +200,7 @@ export function useGradeProgressReport() {
         `/progress/lecturer/groups/${groupId}/reports/${stage}/grade`,
         {
           method: 'PATCH',
-          body: JSON.stringify(input),
+          body: input,
         },
       ),
     onSuccess: () => {
