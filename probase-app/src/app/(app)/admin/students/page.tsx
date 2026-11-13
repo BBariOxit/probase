@@ -11,6 +11,7 @@ import {
   Search,
   SlidersHorizontal,
   Trash2,
+  UserPlus,
   Users,
   X,
 } from 'lucide-react';
@@ -26,6 +27,7 @@ import { useTopicLecturers } from '@/lib/api/topics';
 import type { StudentRosterRow } from '@/lib/api/types';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
+import { AddEligibleStudentDialog } from '@/components/admin/add-eligible-student-dialog';
 import { EligibleStudentsImportDialog } from '@/components/admin/eligible-students-import-dialog';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -112,6 +114,7 @@ export default function StudentRosterPage() {
   const [lecturerId, setLecturerId] = useState(ANY);
   const [groupState, setGroupState] = useState('ALL');
   const [importOpen, setImportOpen] = useState(false);
+  const [addStudentOpen, setAddStudentOpen] = useState(false);
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
   const [studentToRemove, setStudentToRemove] = useState<StudentRosterRow | null>(null);
 
@@ -419,6 +422,21 @@ export default function StudentRosterPage() {
                 sinh viên
               </span>
             )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="size-9.5 border-[1.5px] border-slate-300 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200 cursor-pointer shadow-2xs shrink-0"
+                  onClick={() => setAddStudentOpen(true)}
+                  aria-label="Thêm sinh viên"
+                >
+                  <UserPlus className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Thêm sinh viên</TooltipContent>
+            </Tooltip>
             <Button
               variant="default"
               className="gap-1.5 h-9.5 px-3.5 bg-primary text-white hover:bg-primary/90 font-semibold shadow-xs cursor-pointer"
@@ -670,6 +688,12 @@ export default function StudentRosterPage() {
             onPageSizeChange={setPageSize}
           />
         </div>
+
+        <AddEligibleStudentDialog
+          open={addStudentOpen}
+          onOpenChange={setAddStudentOpen}
+          defaultRoundId={roundId !== ANY ? roundId : undefined}
+        />
 
         <EligibleStudentsImportDialog
           open={importOpen}

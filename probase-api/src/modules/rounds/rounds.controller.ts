@@ -26,6 +26,7 @@ import {
   EligibleImportMappingRequestDto,
   ReanalyzeEligibleImportDto,
 } from './dto/eligible-import.dto';
+import { AddEligibleStudentDto } from './dto/add-eligible-student.dto';
 import { ExtendRoundDto } from './dto/extend-round.dto';
 import { QueryEligibleStudentsDto } from './dto/query-eligible-students.dto';
 import { QueryRoundsDto } from './dto/query-rounds.dto';
@@ -188,6 +189,16 @@ export class RoundsController {
     @GetUser('id') userId: number,
   ) {
     return this.eligibleStudents.commitImport(id, dto, userId);
+  }
+
+  @Roles('ADMIN')
+  @Post(':id/eligible-students')
+  addEligibleStudent(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: AddEligibleStudentDto,
+    @GetUser('id') userId: number,
+  ) {
+    return this.eligibleStudents.addEligible(id, dto, userId);
   }
 
   @Roles('ADMIN')
