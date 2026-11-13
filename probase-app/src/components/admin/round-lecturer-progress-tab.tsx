@@ -103,7 +103,7 @@ export function RoundLecturerProgressTab({
           minTopicsPerLecturer: parsedMinTopics,
         },
       });
-      toast.success('Đã cập nhật chỉ tiêu đợt đồ án');
+      toast.success('Đã cập nhật chỉ tiêu đợt');
       setQuotaDialogOpen(false);
     } catch {
       toast.error('Không thể cập nhật chỉ tiêu. Vui lòng thử lại.');
@@ -211,7 +211,7 @@ export function RoundLecturerProgressTab({
         )}
       </div>
 
-      {/* ── Băng tổng quan chỉ tiêu & Cân đối đợt (Gọn gàng, thanh mảnh, không tốn diện tích) ── */}
+      {/* ── Băng tổng quan chỉ tiêu & Cân đối đợt (Thanh mảnh, tập trung số liệu) ── */}
       {isCapacityPending ? (
         <div className="flex justify-center py-6">
           <Loader2 className="size-5 animate-spin text-primary" />
@@ -220,7 +220,7 @@ export function RoundLecturerProgressTab({
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] px-4 py-2.5 shadow-2xs">
           <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-slate-700 dark:text-neutral-300">
             <span className="font-semibold text-slate-900 dark:text-neutral-100">
-              🎓 {capacity.round.projectTypeName}:
+              {capacity.round.projectTypeName}:
             </span>
             <span>
               <strong className="text-slate-900 dark:text-neutral-100 font-semibold">
@@ -456,24 +456,22 @@ export function RoundLecturerProgressTab({
 
       {/* ── Dialog Cài đặt chỉ tiêu đợt đồ án ── */}
       <Dialog open={quotaDialogOpen} onOpenChange={setQuotaDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        {/* Nền form: dùng màu đen sâu (#141414) theo đúng yêu cầu */}
+        <DialogContent className="sm:max-w-md bg-white dark:bg-[#141414] border border-slate-300 dark:border-neutral-800 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base font-semibold">
+            <DialogTitle className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-neutral-100">
               <SlidersHorizontal className="size-4 text-primary" />
-              Cài đặt chỉ tiêu đợt đồ án
+              <span>Chỉ tiêu đợt — {capacity?.round.projectTypeName}</span>
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-500 dark:text-neutral-400">
-              Điều chỉnh số sinh viên tối đa một nhóm và chỉ tiêu đề tài mỗi giảng viên cho đợt{' '}
-              <strong className="text-slate-900 dark:text-neutral-100 font-semibold">
-                {capacity?.round.projectTypeName}
-              </strong>.
+            <DialogDescription className="sr-only">
+              Cài đặt chỉ tiêu đợt đồ án
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSaveQuota} className="space-y-4 pt-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="quota-max-students" className="text-xs font-medium">
-                Số sinh viên tối đa / đề tài (nhóm)
+          <form onSubmit={handleSaveQuota} className="space-y-3.5 pt-1">
+            <div className="space-y-1">
+              <Label htmlFor="quota-max-students" className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                Sĩ số tối đa / đề tài
               </Label>
               <Input
                 id="quota-max-students"
@@ -483,52 +481,55 @@ export function RoundLecturerProgressTab({
                 required
                 value={editMaxStudents}
                 onChange={(e) => setEditMaxStudents(Number(e.target.value) || 1)}
-                className="h-9 text-xs rounded-lg"
+                className="h-9 text-xs rounded-lg bg-slate-100/80 dark:bg-[#1e1e1e] border-slate-300 dark:border-neutral-700/80 text-slate-900 dark:text-neutral-100"
               />
-              <p className="text-[11px] text-slate-500 dark:text-neutral-400">
-                Quy định sĩ số nhóm (KLTN: 1 SV, ĐACN / ĐACS: 2 SV). Dùng để tính toán số đề tài cần thiết và tự động áp dụng khi tạo đề tài.
-              </p>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="quota-min-topics" className="text-xs font-medium">
-                Chỉ tiêu đề tài tối thiểu mỗi giảng viên
+            <div className="space-y-1">
+              <Label htmlFor="quota-min-topics" className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                Chỉ tiêu đề tài / giảng viên
               </Label>
               <Input
                 id="quota-min-topics"
                 type="number"
                 min={1}
                 max={50}
-                placeholder="Tự động tính nếu để trống (VD: 2)"
+                placeholder="Để trống = tự động"
                 value={editMinTopics}
                 onChange={(e) => setEditMinTopics(e.target.value)}
-                className="h-9 text-xs rounded-lg"
+                className="h-9 text-xs rounded-lg bg-slate-100/80 dark:bg-[#1e1e1e] border-slate-300 dark:border-neutral-700/80 text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500"
               />
-              <p className="text-[11px] text-slate-500 dark:text-neutral-400">
-                Số lượng đề tài tối thiểu mỗi giảng viên cơ hữu cần đưa ra để Khoa theo dõi tiến độ nộp.
-              </p>
             </div>
 
-            {/* Khung tính toán thực tế tham khảo */}
+            {/* Ô Cung - Cầu: Nền xám nổi (#1e1e1e) trên nền đen form (#141414), gọn gàng & thuần số liệu */}
             {capacity && (
-              <div className="rounded-lg border border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-[#161616] p-3 text-xs space-y-1 text-slate-700 dark:text-neutral-300">
-                <p className="font-semibold text-slate-900 dark:text-neutral-100">
-                  Dự tính cung - cầu theo cài đặt:
-                </p>
-                <p>
-                  • Số SV đủ điều kiện:{' '}
-                  <strong className="text-slate-900 dark:text-neutral-100">{capacity.eligibleStudentCount} SV</strong>
-                </p>
-                <p>
-                  • Nhu cầu tối thiểu:{' '}
-                  <strong className="text-slate-900 dark:text-neutral-100">~{calculatedGroupsNeeded} đề tài</strong>{' '}
-                  (chia theo {currentMax} SV/nhóm)
-                </p>
-                <p>
-                  • Cung từ {capacity.lecturersCount} GV:{' '}
-                  <strong className="text-slate-900 dark:text-neutral-100">~{totalFromLecturers} đề tài</strong>{' '}
-                  ({parsedMin} đề tài / GV)
-                </p>
+              <div className="rounded-lg border border-slate-300 dark:border-neutral-800 bg-slate-100/80 dark:bg-[#1e1e1e] p-2.5 text-xs">
+                <div className="grid grid-cols-3 gap-2 text-center divide-x divide-slate-200 dark:divide-neutral-800">
+                  <div className="space-y-0.5">
+                    <span className="text-[11px] text-slate-500 dark:text-neutral-400 block">
+                      SV đủ ĐK
+                    </span>
+                    <p className="text-sm font-bold text-slate-900 dark:text-neutral-100">
+                      {capacity.eligibleStudentCount}
+                    </p>
+                  </div>
+                  <div className="space-y-0.5 pl-2">
+                    <span className="text-[11px] text-slate-500 dark:text-neutral-400 block">
+                      Nhu cầu
+                    </span>
+                    <p className="text-sm font-bold text-slate-900 dark:text-neutral-100">
+                      ~{calculatedGroupsNeeded} đề tài
+                    </p>
+                  </div>
+                  <div className="space-y-0.5 pl-2">
+                    <span className="text-[11px] text-slate-500 dark:text-neutral-400 block">
+                      Cung ({capacity.lecturersCount} GV)
+                    </span>
+                    <p className="text-sm font-bold text-slate-900 dark:text-neutral-100">
+                      ~{totalFromLecturers} đề tài
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -538,7 +539,7 @@ export function RoundLecturerProgressTab({
                 variant="outline"
                 size="sm"
                 onClick={() => setQuotaDialogOpen(false)}
-                className="h-9 text-xs cursor-pointer"
+                className="h-9 text-xs cursor-pointer border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200"
               >
                 Hủy
               </Button>
@@ -546,7 +547,7 @@ export function RoundLecturerProgressTab({
                 type="submit"
                 size="sm"
                 disabled={updateRound.isPending}
-                className="h-9 text-xs bg-primary text-white hover:bg-primary/90 font-semibold cursor-pointer"
+                className="h-9 text-xs bg-primary text-white hover:bg-primary/90 font-semibold cursor-pointer shadow-xs"
               >
                 {updateRound.isPending && (
                   <Loader2 className="mr-1.5 size-3.5 animate-spin" />
