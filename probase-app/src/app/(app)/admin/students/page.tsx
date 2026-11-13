@@ -422,17 +422,19 @@ export default function StudentRosterPage() {
               </span>
             )}
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="size-9.5 border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200 cursor-pointer shadow-2xs shrink-0"
-                  onClick={() => setAddStudentOpen(true)}
-                  aria-label="Thêm sinh viên"
-                >
-                  <UserPlus className="size-4" />
-                </Button>
+              <TooltipTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="size-9.5 border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200 cursor-pointer shadow-2xs shrink-0"
+                    onClick={() => setAddStudentOpen(true)}
+                    aria-label="Thêm sinh viên"
+                  />
+                }
+              >
+                <UserPlus className="size-4" />
               </TooltipTrigger>
               <TooltipContent>Thêm sinh viên</TooltipContent>
             </Tooltip>
