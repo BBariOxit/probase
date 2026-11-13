@@ -234,7 +234,7 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
                   'shrink-0 h-8 font-semibold gap-1.5 transition-all cursor-pointer shadow-2xs',
                   stillUnplaced && desk.canPlace
                     ? 'bg-primary text-white hover:bg-primary/90'
-                    : 'border-slate-300 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800',
+                    : 'border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800',
                 )}
                 disabled={!desk.canPlace || !stillUnplaced || place.isPending}
                 onClick={() => assign(topic)}

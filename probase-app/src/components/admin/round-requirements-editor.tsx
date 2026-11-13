@@ -216,7 +216,7 @@ export function RoundRequirementsEditor({
                   className={cn(
                     'h-8 shrink-0 text-xs font-medium px-2.5 py-1 transition cursor-pointer select-none rounded-md inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed',
                     row.isRequired
-                      ? 'bg-white dark:bg-neutral-900 text-slate-800 dark:text-neutral-200 border border-slate-300 dark:border-neutral-700 shadow-2xs hover:bg-slate-50 dark:hover:bg-neutral-800'
+                      ? 'bg-white dark:bg-[#1e1e1e] text-slate-800 dark:text-neutral-200 border border-slate-300 dark:border-neutral-700 shadow-2xs hover:bg-slate-50 dark:hover:bg-neutral-800'
                       : 'bg-transparent text-slate-400 dark:text-neutral-500 border border-dashed border-slate-300 dark:border-neutral-700 hover:border-slate-400 hover:text-slate-600 dark:hover:text-neutral-300',
                   )}
                   title="Nhấn để chuyển đổi giữa Bắt buộc và Tùy chọn"

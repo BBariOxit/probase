@@ -215,29 +215,104 @@ export class RegistrationGroupsService {
       );
     }
 
-    // 3. Check joinable conditions (eligibility, round phases, no existing group)
-    await this.assertJoinable(group, targetStudent, { allowHeldSeats: true });
+    // 3. Check joinable conditions (eligibility, round phases)
+    await this.phases.requireCanJoin(group.topic.roundId, targetStudent.id);
+    const topic = await this.requireRegistrableTopic(group.topicId);
+    await this.requireEligible(topic, targetStudent);
 
-    // 4. Add member directly (Mời qua MSSV)
-    const result = await this.addMember(
-      group.id,
-      targetStudent,
-      GroupJoinSource.LINK,
-      { allowHeldSeats: true },
-    );
+    if (!group.openForJoin) {
+      throw new ConflictException('Nhóm đã khóa nhận thành viên mới.');
+    }
 
-    // 5. Send notification to the invited student
+    // 4. Check if target student already has an active group in this semester
+    const existingMembership = await this.prisma.registrationGroupMember.findFirst({
+      where: {
+        studentId: targetStudent.id,
+        semesterId: group.semesterId,
+        status: GroupMemberStatus.ACCEPTED,
+        group: { status: { not: RegistrationGroupStatus.REJECTED } },
+      },
+      select: {
+        id: true,
+        groupId: true,
+      },
+    });
+
+    if (existingMembership && existingMembership.groupId === group.id) {
+      throw new ConflictException('Sinh viên này đã ở trong nhóm của bạn.');
+    }
+
+    // Case 1: Sinh viên CHƯA có nhóm -> Thêm trực tiếp vào nhóm ngay
+    if (!existingMembership) {
+      const result = await this.addMember(
+        group.id,
+        targetStudent,
+        GroupJoinSource.LINK,
+        { allowHeldSeats: true },
+      );
+
+      // Notification
+      await this.notifications.notify([
+        {
+          userId: targetStudent.user.id,
+          type: NotificationType.GROUP_MEMBER_JOINED,
+          title: 'Bạn đã được thêm vào nhóm đề tài',
+          content: `Trưởng nhóm ${leader.fullName} đã thêm bạn vào nhóm đề tài "${group.topic.title}".`,
+          targetId: group.id,
+        },
+      ]);
+
+      // Email
+      if (targetStudent.user?.email) {
+        await this.mail.sendGroupInvitation({
+          to: targetStudent.user.email,
+          studentName: targetStudent.fullName,
+          leaderName: leader.fullName,
+          topicTitle: group.topic.title,
+        });
+      }
+
+      return {
+        ...result,
+        inviteAction: 'ADDED' as const,
+        inviteMessage: `Đã thêm sinh viên ${targetStudent.fullName} (${cleanCode}) vào nhóm thành công!`,
+      };
+    }
+
+    // Case 2: Sinh viên ĐÃ CÓ NHÓM -> Gửi lời mời chuyển nhóm (không giữ chỗ ảo)
+    await this.prisma.registrationGroupMember.upsert({
+      where: {
+        groupId_studentId: {
+          groupId: group.id,
+          studentId: targetStudent.id,
+        },
+      },
+      create: {
+        groupId: group.id,
+        semesterId: group.semesterId,
+        studentId: targetStudent.id,
+        status: GroupMemberStatus.INVITED,
+        joinSource: GroupJoinSource.LINK,
+      },
+      update: {
+        status: GroupMemberStatus.INVITED,
+        joinSource: GroupJoinSource.LINK,
+        createdAt: new Date(),
+      },
+    });
+
+    // Gửi notification cho sinh viên được mời
     await this.notifications.notify([
       {
         userId: targetStudent.user.id,
         type: NotificationType.GROUP_MEMBER_JOINED,
-        title: 'Bạn đã được thêm vào nhóm đề tài',
-        content: `Trưởng nhóm ${leader.fullName} đã thêm bạn vào nhóm đề tài "${group.topic.title}".`,
+        title: 'Lời mời tham gia nhóm đề tài',
+        content: `Bạn nhận được lời mời tham gia nhóm đề tài "${group.topic.title}" từ trưởng nhóm ${leader.fullName}. Nếu chấp nhận, bạn sẽ tự động rời khỏi nhóm hiện tại.`,
         targetId: group.id,
       },
     ]);
 
-    // 6. Send email to the invited student
+    // Gửi email cho sinh viên được mời
     if (targetStudent.user?.email) {
       await this.mail.sendGroupInvitation({
         to: targetStudent.user.email,
@@ -247,7 +322,17 @@ export class RegistrationGroupsService {
       });
     }
 
-    return result;
+    const currentGroup = await this.loadGroup(groupId);
+    return {
+      ...this.render(currentGroup, {
+        studentId: leader.id,
+        lecturerId: null,
+        role: Role.STUDENT,
+      }),
+      inviteAction: 'INVITED' as const,
+      inviteMessage:
+        'Sinh viên đã có nhóm. Hệ thống đã gửi lời mời đổi nhóm tới sinh viên này.',
+    };
   }
 
   // ── register ──────────────────────────────────────────────
@@ -723,6 +808,206 @@ export class RegistrationGroupsService {
     return { message: 'Bạn đã rời nhóm thành công.' };
   }
 
+  // ── group invitation actions ───────────────────────────────
+
+  async findMyInvitations(userId: number) {
+    const student = await this.requireStudent(userId);
+
+    const invitations = await this.prisma.registrationGroupMember.findMany({
+      where: {
+        studentId: student.id,
+        status: GroupMemberStatus.INVITED,
+        group: {
+          status: { not: RegistrationGroupStatus.REJECTED },
+        },
+      },
+      include: {
+        group: {
+          select: GROUP_SELECT,
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return invitations.map((inv) => {
+      const g = inv.group;
+      const seats = seatBreakdown(g);
+      const leaderMember = g.members.find((m) => m.studentId === g.leaderId);
+      return {
+        id: inv.id,
+        groupId: g.id,
+        topicTitle: g.topic.title,
+        leaderName: leaderMember?.student.fullName ?? 'Trưởng nhóm',
+        createdAt: inv.createdAt,
+        capacity: seats.capacity,
+        occupied: seats.occupied,
+        isFull: seats.occupied >= seats.capacity,
+      };
+    });
+  }
+
+  async acceptInvitation(groupId: number, userId: number) {
+    const student = await this.requireStudent(userId);
+
+    const invitation = await this.prisma.registrationGroupMember.findUnique({
+      where: {
+        groupId_studentId: {
+          groupId,
+          studentId: student.id,
+        },
+      },
+      include: {
+        group: {
+          select: GROUP_SELECT,
+        },
+      },
+    });
+
+    if (!invitation || invitation.status !== GroupMemberStatus.INVITED) {
+      throw new NotFoundException('Lời mời không tồn tại hoặc đã được xử lý.');
+    }
+
+    const targetGroup = invitation.group;
+    if (targetGroup.status === RegistrationGroupStatus.REJECTED) {
+      throw new ConflictException('Nhóm này đã giải tán.');
+    }
+
+    await this.phases.requireCanJoin(targetGroup.topic.roundId, student.id);
+    const targetTopic = await this.requireRegistrableTopic(targetGroup.topicId);
+    await this.requireEligible(targetTopic, student);
+
+    const existingMembership = await this.prisma.registrationGroupMember.findFirst({
+      where: {
+        studentId: student.id,
+        semesterId: targetGroup.semesterId,
+        status: GroupMemberStatus.ACCEPTED,
+        group: { status: { not: RegistrationGroupStatus.REJECTED } },
+      },
+      include: {
+        group: {
+          select: GROUP_SELECT,
+        },
+      },
+    });
+
+    if (existingMembership) {
+      await this.phases.requireCanLeave(existingMembership.group.topic.roundId);
+
+      const oldGroup = existingMembership.group;
+      const oldAcceptedMembers = oldGroup.members;
+
+      if (oldGroup.leaderId === student.id && oldAcceptedMembers.length > 1) {
+        throw new BadRequestException(
+          'Bạn đang là nhóm trưởng của nhóm cũ có nhiều thành viên. Vui lòng chuyển quyền nhóm trưởng hoặc giải tán nhóm trước khi chuyển nhóm.',
+        );
+      }
+    }
+
+    const audience = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT 1 FROM "registration_groups" WHERE "id" = ${groupId} FOR UPDATE`;
+
+      const groupRow = await tx.registrationGroup.findUnique({
+        where: { id: groupId },
+        select: GROUP_SELECT,
+      });
+
+      if (!groupRow || groupRow.status === RegistrationGroupStatus.REJECTED) {
+        throw new NotFoundException('Không tìm thấy nhóm đăng ký.');
+      }
+
+      if (!groupRow.openForJoin) {
+        throw new ConflictException('Nhóm đã khóa nhận thành viên mới.');
+      }
+
+      const seats = seatBreakdown(groupRow);
+      if (seats.occupied >= seats.capacity) {
+        throw new ConflictException(
+          'Nhóm đã đủ số lượng thành viên tối đa, không thể tham gia.',
+        );
+      }
+
+      // Rời khỏi nhóm cũ nếu đang có nhóm
+      if (existingMembership) {
+        const oldGroup = existingMembership.group;
+        const oldAcceptedMembers = oldGroup.members;
+
+        if (oldGroup.leaderId === student.id && oldAcceptedMembers.length <= 1) {
+          // Nhóm 1 người -> giải tán nhóm cũ để trả đề tài lại danh sách
+          await tx.registrationGroupMember.updateMany({
+            where: { groupId: oldGroup.id, status: GroupMemberStatus.ACCEPTED },
+            data: { status: GroupMemberStatus.DECLINED },
+          });
+          await tx.registrationGroup.update({
+            where: { id: oldGroup.id },
+            data: { status: RegistrationGroupStatus.REJECTED },
+          });
+        } else {
+          // Là thành viên thường -> rời khỏi nhóm cũ
+          await tx.registrationGroupMember.update({
+            where: { id: existingMembership.id },
+            data: { status: GroupMemberStatus.DECLINED },
+          });
+          await this.syncStatus(tx, oldGroup.id, oldGroup.topic.maxStudents);
+        }
+      }
+
+      // Chấp nhận lời mời vào nhóm mới
+      await tx.registrationGroupMember.update({
+        where: { id: invitation.id },
+        data: {
+          status: GroupMemberStatus.ACCEPTED,
+          joinedAt: new Date(),
+        },
+      });
+
+      await this.syncStatus(tx, groupId, seats.capacity);
+
+      const leaderMember = groupRow.members.find((m) => m.studentId === groupRow.leaderId);
+      return {
+        leaderUserId: leaderMember?.student.user.id ?? null,
+        topicTitle: groupRow.topic.title,
+      };
+    });
+
+    if (audience.leaderUserId) {
+      await this.notifications.notify([
+        {
+          userId: audience.leaderUserId,
+          type: NotificationType.GROUP_MEMBER_JOINED,
+          title: 'Thành viên đã chấp nhận lời mời',
+          content: `${student.fullName} đã chấp nhận lời mời và chính thức tham gia nhóm đề tài "${audience.topicTitle}".`,
+          targetId: groupId,
+        },
+      ]);
+    }
+
+    return this.present(groupId, { studentId: student.id });
+  }
+
+  async declineInvitation(groupId: number, userId: number) {
+    const student = await this.requireStudent(userId);
+
+    const invitation = await this.prisma.registrationGroupMember.findUnique({
+      where: {
+        groupId_studentId: {
+          groupId,
+          studentId: student.id,
+        },
+      },
+    });
+
+    if (!invitation || invitation.status !== GroupMemberStatus.INVITED) {
+      throw new NotFoundException('Lời mời không tồn tại hoặc đã được xử lý.');
+    }
+
+    await this.prisma.registrationGroupMember.update({
+      where: { id: invitation.id },
+      data: { status: GroupMemberStatus.DECLINED },
+    });
+
+    return { message: 'Đã từ chối lời mời.' };
+  }
+
   // ── internals ─────────────────────────────────────────────
 
   private async syncStatus(
@@ -949,7 +1234,7 @@ export class RegistrationGroupsService {
 
     if (existing) {
       throw new ConflictException(
-        `Sinh viên hiện đã tham gia nhóm đề tài "${existing.group.topic.title}" trong học kỳ này.`,
+        'Sinh viên này hiện đã có nhóm đề tài trong học kỳ này.',
       );
     }
   }

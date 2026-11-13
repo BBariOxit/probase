@@ -68,7 +68,7 @@ export function TopicExportMenu({
           <Button
             variant="outline"
             disabled={triggerDisabled}
-            className="gap-1.5 border-[1.5px] border-slate-300 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200 cursor-pointer shadow-2xs"
+            className="gap-1.5 border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200 cursor-pointer shadow-2xs"
           >
             {isBusy ? (
               <Loader2 className="size-4 animate-spin text-primary" />

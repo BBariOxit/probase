@@ -145,6 +145,16 @@ function getNotificationAction(
         icon: Users,
       };
     }
+    if (
+      notice.title.toLowerCase().includes('lời mời') ||
+      notice.content.toLowerCase().includes('lời mời tham gia nhóm')
+    ) {
+      return {
+        label: 'Xem và phản hồi lời mời',
+        url: '/student/groups',
+        icon: Users,
+      };
+    }
     return {
       label: 'Xem nhóm đồ án của tôi',
       url: '/student/groups',

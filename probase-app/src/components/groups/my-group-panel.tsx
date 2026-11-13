@@ -52,8 +52,17 @@ export function MyGroupPanel({
     }
     setInviteError(null);
     try {
-      await invite.mutateAsync(code);
-      toast.success(`Đã thêm sinh viên ${code} vào nhóm thành công!`);
+      const res = await invite.mutateAsync(code);
+      if (res?.inviteAction === 'INVITED') {
+        toast.info(
+          res.inviteMessage ||
+            'Sinh viên đã có nhóm. Hệ thống đã gửi lời mời đổi nhóm tới sinh viên này.',
+        );
+      } else {
+        toast.success(
+          res?.inviteMessage || `Đã thêm sinh viên ${code} vào nhóm thành công!`,
+        );
+      }
       setStudentCode('');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Không thể mời sinh viên';

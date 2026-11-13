@@ -7,6 +7,7 @@ import { useMyGroup } from '@/lib/api/registration';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { EmptyState } from '@/components/shared/empty-state';
 import { MyGroupPanel } from '@/components/groups/my-group-panel';
+import { PendingInvitationsBanner } from '@/components/groups/pending-invitations-banner';
 import { Button } from '@/components/ui/button';
 
 export default function StudentGroupPage() {
@@ -33,7 +34,8 @@ export default function StudentGroupPage() {
 
   if (!group) {
     return (
-      <div className="max-w-4xl">
+      <div className="max-w-4xl space-y-6">
+        <PendingInvitationsBanner hasCurrentGroup={false} />
         <div className="rounded-2xl border border-[#b8c0d0] dark:border-[#333338] bg-white dark:bg-[#1e1e1e]">
           <EmptyState
             icon={Users}
@@ -51,6 +53,7 @@ export default function StudentGroupPage() {
 
   return (
     <div className="max-w-4xl space-y-6">
+      <PendingInvitationsBanner hasCurrentGroup={true} />
       <MyGroupPanel group={group} canEdit={round?.phase === 'OPEN'} />
     </div>
   );

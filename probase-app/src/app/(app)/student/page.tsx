@@ -253,7 +253,7 @@ function StudentTopicsContent() {
       {isSwitchingTopic && myGroup && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-white">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary dark:bg-primary/20 dark:text-blue-400">
               <RotateCcw className="size-4.5" />
             </div>
             <div>
@@ -261,12 +261,11 @@ function StudentTopicsContent() {
                 Đang đổi đề tài cho nhóm ({myGroup.members.length} thành viên)
               </p>
               <p className="text-xs text-slate-600 dark:text-neutral-400">
-                Đề tài hiện tại: <span className="font-semibold text-slate-800 dark:text-neutral-200">{myGroup.topic.title}</span>. Chọn một đề tài còn trống bên dưới để đổi sang.
+                Đề tài hiện tại: <span className="font-semibold text-slate-800 dark:text-neutral-200">{myGroup.topic.title}</span>
               </p>
             </div>
           </div>
           <Button
-            variant="outline"
             size="sm"
             onClick={() => router.push('/student/groups')}
             className="shrink-0 h-8.5 text-xs font-semibold"
@@ -317,7 +316,7 @@ function StudentTopicsContent() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Tìm tên đề tài…"
-              className="pl-9 h-9 text-xs sm:text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#141414] text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
+              className="pl-9 h-9 text-xs sm:text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
               aria-label="Tìm tên đề tài"
             />
           </div>
@@ -527,7 +526,7 @@ function StudentTopicsContent() {
                             className="h-8 px-3 text-xs font-bold bg-primary hover:bg-primary/90 text-white shadow-xs cursor-pointer"
                             onClick={() => setTopicToSwitch(topic)}
                           >
-                            Đổi sang đề tài này
+                            Đổi
                           </Button>
                         )}
                       </div>
@@ -694,33 +693,27 @@ function StudentTopicsContent() {
       <ConfirmDialog
         open={topicToSwitch !== null}
         onOpenChange={(open) => !open && setTopicToSwitch(null)}
-        title="Đổi sang đề tài mới?"
+        title="Đổi đề tài"
+        confirmVariant="default"
         description={
           myGroup && topicToSwitch ? (
-            <div className="space-y-3 pt-1 text-left">
-              <p className="text-xs text-slate-600 dark:text-neutral-400">
-                Bạn có chắc chắn muốn đổi sang đề tài <strong className="text-slate-900 dark:text-neutral-100 font-bold">&ldquo;{topicToSwitch.title}&rdquo;</strong>?
-              </p>
-              <div className="rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-2.5 text-xs text-amber-800 dark:text-amber-300">
-                ⚠️ Đề tài cũ <strong className="font-semibold">&ldquo;{myGroup.topic.title}&rdquo;</strong> sẽ được nhả ra cho nhóm khác ngay khi đổi.
-              </div>
-              <div className="rounded-lg border border-slate-200 dark:border-neutral-800 p-2.5 space-y-1.5 bg-slate-50 dark:bg-neutral-900">
-                <p className="text-[11px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Giữ nguyên {myGroup.members.length} thành viên nhóm:
+            <div className="space-y-3 pt-1 text-left text-sm">
+              <div>
+                <span className="text-xs text-slate-500 dark:text-neutral-400">Đề tài mới:</span>
+                <p className="font-semibold text-slate-900 dark:text-neutral-100">
+                  {topicToSwitch.title}
                 </p>
-                <div className="space-y-1">
-                  {myGroup.members.map((m) => (
-                    <div key={m.id} className="text-xs flex items-center justify-between text-slate-800 dark:text-neutral-200">
-                      <span>{m.student.fullName}</span>
-                      <span className="font-mono text-primary font-semibold text-[11px]">{m.student.studentCode}</span>
-                    </div>
-                  ))}
-                </div>
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 dark:text-neutral-400">Đề tài hiện tại (sẽ hủy):</span>
+                <p className="text-xs text-slate-600 dark:text-neutral-400">
+                  {myGroup.topic.title}
+                </p>
               </div>
             </div>
           ) : ''
         }
-        confirmLabel={switchTopicMutation.isPending ? 'Đang đổi...' : 'Xác nhận đổi đề tài'}
+        confirmLabel={switchTopicMutation.isPending ? 'Đang đổi...' : 'Đổi đề tài'}
         onConfirm={async () => {
           if (!topicToSwitch) return;
           try {

@@ -40,6 +40,12 @@ export class RegistrationGroupsController {
   }
 
   @Roles('STUDENT')
+  @Get('my-invitations')
+  findMyInvitations(@GetUser('id') userId: number) {
+    return this.groups.findMyInvitations(userId);
+  }
+
+  @Roles('STUDENT')
   @Get('join/:code')
   previewByCode(@Param('code') code: string, @GetUser('id') userId: number) {
     return this.groups.previewByCode(code, userId);
@@ -93,6 +99,24 @@ export class RegistrationGroupsController {
   @Post(':id/leave')
   leave(@Param('id', ParseIntPipe) id: number, @GetUser('id') userId: number) {
     return this.groups.leave(id, userId);
+  }
+
+  @Roles('STUDENT')
+  @Post(':id/accept-invitation')
+  acceptInvitation(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser('id') userId: number,
+  ) {
+    return this.groups.acceptInvitation(id, userId);
+  }
+
+  @Roles('STUDENT')
+  @Post(':id/decline-invitation')
+  declineInvitation(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser('id') userId: number,
+  ) {
+    return this.groups.declineInvitation(id, userId);
   }
 
   @Roles('STUDENT')

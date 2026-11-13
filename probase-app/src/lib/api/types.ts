@@ -333,6 +333,19 @@ export interface RegistrationGroup {
   isLeader: boolean;
 
   joinCode: string | null;
+  inviteAction?: 'ADDED' | 'INVITED';
+  inviteMessage?: string;
+}
+
+export interface GroupInvitation {
+  id: number;
+  groupId: number;
+  topicTitle: string;
+  leaderName: string;
+  createdAt: string;
+  capacity: number;
+  occupied: number;
+  isFull: boolean;
 }
 
 export interface JoinPreview {
