@@ -262,6 +262,12 @@ export class LecturersService {
       throw new NotFoundException('Không tìm thấy thông tin giảng viên.');
     }
 
+    if (targetUser.role === Role.ADMIN) {
+      throw new ForbiddenException(
+        'Không thể thay đổi vai trò hoặc chức vụ của Giáo vụ Khoa.',
+      );
+    }
+
     if (dto.assignedRole === 'TTBM' && !dto.majorId) {
       throw new BadRequestException(
         'Vui lòng chọn Bộ môn khi bổ nhiệm chức vụ Tổ trưởng Bộ môn.',
@@ -283,29 +289,20 @@ export class LecturersService {
 
       // 2. Cập nhật cờ quyền theo vai trò được chọn
       let isHeadOfDepartment = false;
-      let isAcademicAssistant = false;
       let isHomeroomTeacher = false;
-      let targetUserRole: Role = Role.LECTURER;
 
-      if (dto.assignedRole === 'ADMIN') {
-        isAcademicAssistant = true;
-        targetUserRole = Role.ADMIN;
-      } else if (dto.assignedRole === 'TTBM') {
+      if (dto.assignedRole === 'TTBM') {
         isHeadOfDepartment = true;
-        targetUserRole = Role.LECTURER;
       } else if (dto.assignedRole === 'GVCN') {
         isHomeroomTeacher = true;
-        targetUserRole = Role.LECTURER;
-      } else {
-        // LECTURER
-        targetUserRole = Role.LECTURER;
       }
+      // LECTURER: cả 2 cờ đều false
 
       const updatedProfile = await tx.lecturerProfile.update({
         where: { userId: targetUserId },
         data: {
           isHeadOfDepartment,
-          isAcademicAssistant,
+          isAcademicAssistant: false,
           isHomeroomTeacher,
           ...(dto.majorId !== undefined && { majorId: dto.majorId }),
         },
@@ -316,7 +313,7 @@ export class LecturersService {
 
       await tx.user.update({
         where: { id: targetUserId },
-        data: { role: targetUserRole },
+        data: { role: Role.LECTURER },
       });
 
       // 3. Cập nhật quyền tùy biến nếu có truyền lên
@@ -358,9 +355,9 @@ export class LecturersService {
         },
         newValue: {
           assignedRole: dto.assignedRole,
-          role: targetUserRole,
+          role: Role.LECTURER,
           isHeadOfDepartment,
-          isAcademicAssistant,
+          isAcademicAssistant: false,
           isHomeroomTeacher,
           majorId: dto.majorId,
           customPermissions: updatedCustomPermissions,

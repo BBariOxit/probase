@@ -17,6 +17,7 @@ import { useMajors } from '@/lib/api/majors';
 import {
   type AdminLecturerItem,
   type AssignedLecturerRole,
+  type AssignableLecturerRole,
   useAdminLecturers,
   useUpdateLecturerRole,
 } from '@/lib/api/lecturers';
@@ -58,14 +59,13 @@ const ROLE_FILTERS = [
   { value: 'ADMIN', label: 'Giáo vụ' },
 ];
 
-const ROLES: Array<{
-  value: AssignedLecturerRole;
+const ASSIGNABLE_ROLES: Array<{
+  value: AssignableLecturerRole;
   label: string;
 }> = [
   { value: 'LECTURER', label: 'Giảng viên' },
   { value: 'TTBM', label: 'Tổ trưởng Bộ môn' },
   { value: 'GVCN', label: 'Giáo viên chủ nhiệm' },
-  { value: 'ADMIN', label: 'Giáo vụ' },
 ];
 
 const AVAILABLE_CUSTOM_PERMISSIONS = [
@@ -121,8 +121,8 @@ interface LecturerRoleCellProps {
 
 function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
   const [open, setOpen] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<AssignedLecturerRole>(
-    lecturer.assignedRole,
+  const [selectedRole, setSelectedRole] = useState<AssignableLecturerRole>(
+    lecturer.assignedRole === 'ADMIN' ? 'LECTURER' : lecturer.assignedRole,
   );
   const [selectedMajorId, setSelectedMajorId] = useState<string>(
     lecturer.major?.id
@@ -137,7 +137,7 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
 
   const updateMutation = useUpdateLecturerRole();
 
-  if (isSelf) {
+  if (isSelf || lecturer.assignedRole === 'ADMIN') {
     return (
       <div className="inline-flex items-center">
         <RoleText role={lecturer.assignedRole} />
@@ -148,7 +148,9 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
     if (next) {
-      setSelectedRole(lecturer.assignedRole);
+      setSelectedRole(
+        lecturer.assignedRole === 'ADMIN' ? 'LECTURER' : lecturer.assignedRole,
+      );
       setSelectedMajorId(
         lecturer.major?.id
           ? String(lecturer.major.id)
@@ -170,8 +172,8 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
       await updateMutation.mutateAsync({
         userId: lecturer.userId,
         assignedRole: selectedRole,
-        majorId: selectedMajorId ? Number(selectedMajorId) : null,
-        customPermissions: selectedRole === 'ADMIN' ? [] : selectedCustomPerms,
+        majorId: selectedRole === 'TTBM' && selectedMajorId ? Number(selectedMajorId) : null,
+        customPermissions: selectedCustomPerms,
       });
       toast.success(`Đã cập nhật vai trò và quyền hạn cho ${lecturer.fullName}.`);
       setOpen(false);
@@ -221,7 +223,7 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
           <span className="text-[11px] font-medium text-muted-foreground">
             Vai trò chính
           </span>
-          {ROLES.map((r) => {
+          {ASSIGNABLE_ROLES.map((r) => {
             const active = selectedRole === r.value;
             return (
               <button
@@ -271,51 +273,49 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
           </div>
         )}
 
-        {/* Quyền bổ sung cho cá nhân (khi không phải ADMIN) */}
-        {selectedRole !== 'ADMIN' && (
-          <div className="space-y-2 pt-2 border-t border-border/60">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-muted-foreground">
-                Quyền bổ sung cho cá nhân
-              </span>
-              {selectedCustomPerms.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedCustomPerms([])}
-                  className="text-[10px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-                >
-                  Bỏ chọn
-                </button>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              {AVAILABLE_CUSTOM_PERMISSIONS.map((perm) => {
-                const isChecked = selectedCustomPerms.includes(perm.code);
-                return (
-                  <label
-                    key={perm.code}
-                    className="flex items-center gap-2.5 text-xs text-foreground cursor-pointer hover:bg-muted/40 p-1 rounded-md select-none transition-colors"
-                  >
-                    <Checkbox
-                      id={`override-${lecturer.id}-${perm.code}`}
-                      checked={isChecked}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedCustomPerms((prev) => [...prev, perm.code]);
-                        } else {
-                          setSelectedCustomPerms((prev) =>
-                            prev.filter((c) => c !== perm.code),
-                          );
-                        }
-                      }}
-                    />
-                    <span className="truncate">{perm.label}</span>
-                  </label>
-                );
-              })}
-            </div>
+        {/* Quyền bổ sung cho cá nhân */}
+        <div className="space-y-2 pt-2 border-t border-border/60">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-medium text-muted-foreground">
+              Quyền bổ sung cho cá nhân
+            </span>
+            {selectedCustomPerms.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setSelectedCustomPerms([])}
+                className="text-[10px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+              >
+                Bỏ chọn
+              </button>
+            )}
           </div>
-        )}
+          <div className="space-y-1.5">
+            {AVAILABLE_CUSTOM_PERMISSIONS.map((perm) => {
+              const isChecked = selectedCustomPerms.includes(perm.code);
+              return (
+                <label
+                  key={perm.code}
+                  className="flex items-center gap-2.5 text-xs text-foreground cursor-pointer hover:bg-muted/40 p-1 rounded-md select-none transition-colors"
+                >
+                  <Checkbox
+                    id={`override-${lecturer.id}-${perm.code}`}
+                    checked={isChecked}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedCustomPerms((prev) => [...prev, perm.code]);
+                      } else {
+                        setSelectedCustomPerms((prev) =>
+                          prev.filter((c) => c !== perm.code),
+                        );
+                      }
+                    }}
+                  />
+                  <span className="truncate">{perm.label}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Nút hành động */}
         <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/60">

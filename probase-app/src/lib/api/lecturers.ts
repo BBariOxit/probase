@@ -9,6 +9,7 @@ import type {
 } from '@/lib/api/types';
 
 export type AssignedLecturerRole = 'LECTURER' | 'TTBM' | 'GVCN' | 'ADMIN';
+export type AssignableLecturerRole = 'LECTURER' | 'TTBM' | 'GVCN';
 
 export interface AdminLecturerItem {
   id: number;
@@ -38,7 +39,7 @@ export interface QueryAdminLecturersParams {
 }
 
 export interface UpdateLecturerRoleInput {
-  assignedRole: AssignedLecturerRole;
+  assignedRole: AssignableLecturerRole;
   majorId?: number | null;
   customPermissions?: string[];
 }
