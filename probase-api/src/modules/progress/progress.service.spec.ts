@@ -275,8 +275,8 @@ describe('ProgressService', () => {
       ]);
     });
 
-    it('should compute finalGradeNum and finalGradeLetter for DACS when both GVHD and GVPB grade STAGE_2', async () => {
-      prisma.lecturerProfile.findUnique.mockResolvedValue({ id: 8 }); // Reviewer
+    it('should compute finalGradeNum and finalGradeLetter for DACS when GVHD grades STAGE_2', async () => {
+      prisma.lecturerProfile.findUnique.mockResolvedValue({ id: 5 });
       prisma.registrationGroup.findUnique.mockResolvedValue({
         id: 20,
         topic: {
@@ -285,16 +285,10 @@ describe('ProgressService', () => {
             projectType: { code: 'DACS', name: 'Đồ án cơ sở' },
           },
         },
-        assignment: { reviewerId: 8 },
         members: [{ studentId: 10, student: { userId: 201 } }],
       });
-      // Existing report for STAGE_2 already has supervisorGrade = 9.0
       prisma.progressReport.findUnique
-        .mockResolvedValueOnce({
-          supervisorGrade: 9.0,
-          reviewerGrade: null,
-          workloadPercentage: 80,
-        })
+        .mockResolvedValueOnce(null)
         // Mock lookup for STAGE_1 report
         .mockResolvedValueOnce({
           finalStageGrade: 8.0,
@@ -305,30 +299,24 @@ describe('ProgressService', () => {
         id: 2,
         stage: 'STAGE_2',
         supervisorGrade: 9.0,
-        reviewerGrade: 8.0,
-        finalStageGrade: 8.5,
+        finalStageGrade: 9.0,
         workloadPercentage: 80,
         isPassed: true,
       });
 
-      await service.gradeProgressReport(108, 20, 'STAGE_2', {
-        grade: 8.0,
+      await service.gradeProgressReport(100, 20, 'STAGE_2', {
+        grade: 9.0,
         workloadPercentage: 80,
-        feedback: 'Phản biện đánh giá tốt.',
+        feedback: 'Đánh giá tốt.',
       });
 
-      // 0.5 * 8.0 (Stage 1) + 0.5 * 8.5 (Stage 2) = 8.25 -> Letter 'B+'
+      // 0.5 * 8.0 (Stage 1) + 0.5 * 9.0 (Stage 2) = 8.5 -> Letter 'A'
       expect(prisma.studentGrade.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           create: expect.objectContaining({
-            progress2Grade: 8.5,
-            finalGradeNum: 8.25,
-            finalGradeLetter: 'B+',
-          }),
-          update: expect.objectContaining({
-            progress2Grade: 8.5,
-            finalGradeNum: 8.25,
-            finalGradeLetter: 'B+',
+            progress2Grade: 9.0,
+            finalGradeNum: 8.5,
+            finalGradeLetter: 'A',
           }),
         }),
       );

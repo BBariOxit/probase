@@ -9,7 +9,6 @@ import {
   ExternalLink,
   FileEdit,
   FileText,
-  Gavel,
   GitBranch,
   Loader2,
   MapPin,
@@ -98,53 +97,6 @@ export function StudentProgressSection() {
                 </span>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── LỊCH BẢO VỆ CHÍNH THỨC (NẾU ĐÃ ĐƯỢC XẾP HỘI ĐỒNG) ── */}
-      {(group as any)?.councilTopic && (
-        <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <Gavel className="size-4 text-primary" />
-                <h4 className="text-xs font-semibold text-foreground">
-                  Lịch bảo vệ khóa luận
-                </h4>
-                <Badge variant="outline" className="text-[11px] h-5 px-2">
-                  {(group as any).councilTopic.council.name}
-                </Badge>
-              </div>
-              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground pt-0.5">
-                <span className="inline-flex items-center gap-1 text-foreground">
-                  <MapPin className="size-3 text-primary" />
-                  {(group as any).councilTopic.council.location || 'Chưa định phòng'}
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <Calendar className="size-3 text-primary" />
-                  {new Date((group as any).councilTopic.council.defenseDate).toLocaleString('vi-VN')}
-                </span>
-                {(group as any).councilTopic.timeSlot && (
-                  <span className="inline-flex items-center gap-1">
-                    <Clock className="size-3 text-primary" />
-                    Ca: {(group as any).councilTopic.timeSlot}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {(group as any).councilTopic.isLocked ? (
-              <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs gap-1">
-                <CheckCircle2 className="size-3" />
-                Đã bảo vệ
-              </Badge>
-            ) : (
-              <Badge variant="secondary" className="text-xs gap-1">
-                <Clock className="size-3" />
-                Sắp bảo vệ
-              </Badge>
-            )}
           </div>
         </div>
       )}

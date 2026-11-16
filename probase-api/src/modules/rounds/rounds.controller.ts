@@ -22,6 +22,8 @@ import { memoryStorage } from 'multer';
 import { Role } from '../../../generated/prisma/client';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../permissions/require-permissions.decorator';
+import { SystemPermission } from '../permissions/permissions.constants';
 import {
   EligibleImportMappingRequestDto,
   ReanalyzeEligibleImportDto,
@@ -71,13 +73,13 @@ export class RoundsController {
     return this.roundsService.findOne(id);
   }
 
-  @Roles('ADMIN')
+  @RequirePermissions(SystemPermission.TOPIC_REGISTRY)
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRoundDto) {
     return this.roundsService.update(id, dto);
   }
 
-  @Roles('ADMIN')
+  @RequirePermissions(SystemPermission.TOPIC_REGISTRY)
   @Post(':id/extend')
   extend(
     @Param('id', ParseIntPipe) id: number,
@@ -92,7 +94,7 @@ export class RoundsController {
     return this.requirements.findForRound(id);
   }
 
-  @Roles('ADMIN')
+  @RequirePermissions(SystemPermission.TOPIC_REGISTRY)
   @Put(':id/requirements')
   setRequirements(
     @Param('id', ParseIntPipe) id: number,
@@ -102,7 +104,7 @@ export class RoundsController {
     return this.requirements.setForRound(id, dto, userId);
   }
 
-  @Roles('ADMIN')
+  @RequirePermissions(SystemPermission.TOPIC_REGISTRY)
   @Post(':id/unlock')
   unlock(
     @Param('id', ParseIntPipe) id: number,
@@ -114,7 +116,7 @@ export class RoundsController {
 
   // ── Eligible Students Management (BR-02) ───────────────────
 
-  @Roles('ADMIN')
+  @RequirePermissions(SystemPermission.TOPIC_REGISTRY)
   @Get(':id/eligible-students/template')
   @Header(
     'Content-Type',
@@ -129,7 +131,7 @@ export class RoundsController {
     return new StreamableFile(buffer);
   }
 
-  @Roles('ADMIN')
+  @RequirePermissions(SystemPermission.TOPIC_REGISTRY)
   @Post(':id/eligible-students/import')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -146,7 +148,7 @@ export class RoundsController {
     return this.eligibleStudents.importFile(id, file, userId);
   }
 
-  @Roles('ADMIN')
+  @RequirePermissions(SystemPermission.TOPIC_REGISTRY)
   @Post(':id/eligible-students/import/parse')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(
@@ -164,7 +166,7 @@ export class RoundsController {
     return this.eligibleStudents.parseImport(id, file, userId);
   }
 
-  @Roles('ADMIN')
+  @RequirePermissions(SystemPermission.TOPIC_REGISTRY)
   @Post(':id/eligible-students/import/reanalyze')
   @HttpCode(HttpStatus.OK)
   reanalyzeEligibleStudentsImport(
@@ -175,7 +177,7 @@ export class RoundsController {
     return this.eligibleStudents.reanalyzeSession(id, dto, userId);
   }
 
-  @Roles('ADMIN')
+  @RequirePermissions(SystemPermission.TOPIC_REGISTRY)
   @Post(':id/eligible-students/import/preview')
   @HttpCode(HttpStatus.OK)
   previewEligibleStudentsImport(
@@ -186,7 +188,7 @@ export class RoundsController {
     return this.eligibleStudents.previewImport(id, dto, userId);
   }
 
-  @Roles('ADMIN')
+  @RequirePermissions(SystemPermission.TOPIC_REGISTRY)
   @Post(':id/eligible-students/import/commit')
   @HttpCode(HttpStatus.OK)
   commitEligibleStudentsImport(
@@ -197,7 +199,7 @@ export class RoundsController {
     return this.eligibleStudents.commitImport(id, dto, userId);
   }
 
-  @Roles('ADMIN')
+  @RequirePermissions(SystemPermission.TOPIC_REGISTRY)
   @Post(':id/eligible-students')
   addEligibleStudent(
     @Param('id', ParseIntPipe) id: number,
@@ -207,7 +209,7 @@ export class RoundsController {
     return this.eligibleStudents.addEligible(id, dto, userId);
   }
 
-  @Roles('ADMIN')
+  @RequirePermissions(SystemPermission.TOPIC_REGISTRY)
   @Get(':id/eligible-students')
   listEligibleStudents(
     @Param('id', ParseIntPipe) id: number,
@@ -216,7 +218,7 @@ export class RoundsController {
     return this.eligibleStudents.listEligible(id, query);
   }
 
-  @Roles('ADMIN')
+  @RequirePermissions(SystemPermission.TOPIC_REGISTRY)
   @Delete(':id/eligible-students/:studentId')
   removeEligibleStudent(
     @Param('id', ParseIntPipe) id: number,

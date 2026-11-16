@@ -126,30 +126,6 @@ export class ProgressService {
           where: { studentId: student.id },
           take: 1,
         },
-        assignment: {
-          include: {
-            reviewer: {
-              select: {
-                id: true,
-                fullName: true,
-                academicTitle: true,
-                lecturerCode: true,
-              },
-            },
-          },
-        },
-        councilTopic: {
-          include: {
-            council: {
-              select: {
-                id: true,
-                name: true,
-                location: true,
-                defenseDate: true,
-              },
-            },
-          },
-        },
       },
     });
 
@@ -233,7 +209,7 @@ export class ProgressService {
         topic: group.topic,
         leader: group.leader,
         members: group.members,
-        reviewer: group.assignment?.reviewer ?? null,
+        reviewer: null,
       },
       currentPercentage,
       weeklyLogs,
@@ -633,17 +609,12 @@ export class ProgressService {
     }
 
     const isSupervisor = group.topic.lecturerId === lecturer.id;
-    const isReviewer = group.assignment?.reviewerId === lecturer.id;
 
-    if (!isSupervisor && !isReviewer) {
+    if (!isSupervisor) {
       throw new ForbiddenException(
-        'Bạn không phải là Giảng viên hướng dẫn hoặc Phản biện của nhóm này.',
+        'Bạn không phải là Giảng viên hướng dẫn của nhóm này.',
       );
     }
-
-    const projectTypeCode = group.topic?.round?.projectType?.code;
-    const isSubCouncilCourse =
-      projectTypeCode === 'DACS' || projectTypeCode === 'DACN';
 
     // Existing report
     const existing = await this.prisma.progressReport.findUnique({
@@ -656,12 +627,6 @@ export class ProgressService {
     });
 
     if (stage === 'STAGE_1') {
-      if (!isSupervisor) {
-        throw new ForbiddenException(
-          'Chỉ Giảng viên hướng dẫn mới có quyền chấm điểm Tiến độ lần 1.',
-        );
-      }
-
       const updated = await this.prisma.progressReport.upsert({
         where: { groupId_stage: { groupId, stage } },
         create: {
@@ -680,31 +645,24 @@ export class ProgressService {
         },
       });
 
-      // Nếu là ĐACS/ĐACN và đã có điểm Stage 2 của cả 2 GV, tính luôn tổng kết
+      // Nếu đã có điểm Stage 2, tính luôn tổng kết
       let finalGradeNum: number | undefined;
       let finalGradeLetter: string | undefined;
 
-      if (isSubCouncilCourse) {
-        const stage2Report = await this.prisma.progressReport.findUnique({
-          where: { groupId_stage: { groupId, stage: 'STAGE_2' } },
-        });
-        const bothGradedStage2 =
-          stage2Report?.supervisorGrade !== null &&
-          stage2Report?.supervisorGrade !== undefined &&
-          stage2Report?.reviewerGrade !== null &&
-          stage2Report?.reviewerGrade !== undefined &&
-          stage2Report?.finalStageGrade !== null &&
-          stage2Report?.finalStageGrade !== undefined;
-
-        if (bothGradedStage2) {
-          finalGradeNum = Number(
-            (0.5 * dto.grade + 0.5 * stage2Report.finalStageGrade!).toFixed(2),
-          );
-          finalGradeLetter =
-            stage2Report.isPassed === false
-              ? 'F'
-              : calculateLetterGrade(finalGradeNum);
-        }
+      const stage2Report = await this.prisma.progressReport.findUnique({
+        where: { groupId_stage: { groupId, stage: 'STAGE_2' } },
+      });
+      if (
+        stage2Report?.finalStageGrade !== null &&
+        stage2Report?.finalStageGrade !== undefined
+      ) {
+        finalGradeNum = Number(
+          (0.5 * dto.grade + 0.5 * stage2Report.finalStageGrade).toFixed(2),
+        );
+        finalGradeLetter =
+          stage2Report.isPassed === false
+            ? 'F'
+            : calculateLetterGrade(finalGradeNum);
       }
 
       // Sync to StudentGrade (progress1Grade)
@@ -747,31 +705,10 @@ export class ProgressService {
       return updated;
     }
 
-    // STAGE_2: Hội đồng Bộ môn gồm GVHD + GVPB
-    let supervisorGrade = existing?.supervisorGrade;
-    let reviewerGrade = existing?.reviewerGrade;
+    // STAGE_2: Chấm điểm Tiến độ lần 2 bởi GVHD
+    const finalStageGrade = dto.grade;
 
-    if (isSupervisor) {
-      supervisorGrade = dto.grade;
-    }
-    if (isReviewer) {
-      reviewerGrade = dto.grade;
-    }
-
-    // Tính điểm trung bình cộng nếu có cả 2, hoặc lấy điểm hiện tại
-    let finalStageGrade = dto.grade;
-    if (
-      supervisorGrade !== undefined &&
-      supervisorGrade !== null &&
-      reviewerGrade !== undefined &&
-      reviewerGrade !== null
-    ) {
-      finalStageGrade = Number(
-        ((supervisorGrade + reviewerGrade) / 2).toFixed(2),
-      );
-    }
-
-    // Tiêu chí sống còn: Đạt >= 50% khối lượng công việc
+    // Tiêu chí: Đạt >= 50% khối lượng công việc
     const workload = dto.workloadPercentage ?? existing?.workloadPercentage;
     let isPassed = dto.isPassed;
     if (isPassed === undefined && workload !== undefined && workload !== null) {
@@ -783,24 +720,16 @@ export class ProgressService {
       create: {
         groupId,
         stage,
-        supervisorGrade: isSupervisor ? dto.grade : null,
-        supervisorFeedback: isSupervisor ? dto.feedback : null,
-        reviewerGrade: isReviewer ? dto.grade : null,
-        reviewerFeedback: isReviewer ? dto.feedback : null,
+        supervisorGrade: dto.grade,
+        supervisorFeedback: dto.feedback,
         finalStageGrade,
         workloadPercentage: workload,
         isPassed,
         finalisedAt: new Date(),
       },
       update: {
-        ...(isSupervisor && {
-          supervisorGrade: dto.grade,
-          supervisorFeedback: dto.feedback,
-        }),
-        ...(isReviewer && {
-          reviewerGrade: dto.grade,
-          reviewerFeedback: dto.feedback,
-        }),
+        supervisorGrade: dto.grade,
+        supervisorFeedback: dto.feedback,
         finalStageGrade,
         ...(workload !== undefined && { workloadPercentage: workload }),
         ...(isPassed !== undefined && { isPassed }),
@@ -808,34 +737,24 @@ export class ProgressService {
       },
     });
 
-    // Kiểm tra nếu cả 2 GV đã chấm xong cho môn ĐACS/ĐACN (Tiểu ban 2 người kết thúc môn)
-    const bothGraded =
-      supervisorGrade !== undefined &&
-      supervisorGrade !== null &&
-      reviewerGrade !== undefined &&
-      reviewerGrade !== null;
-
     let finalGradeNum: number | undefined;
     let finalGradeLetter: string | undefined;
-    let progress1GradeVal: number | null | undefined;
 
-    if (isSubCouncilCourse && bothGraded) {
-      const stage1Report = await this.prisma.progressReport.findUnique({
-        where: { groupId_stage: { groupId, stage: 'STAGE_1' } },
-      });
-      progress1GradeVal =
-        stage1Report?.finalStageGrade ?? stage1Report?.supervisorGrade;
+    const stage1Report = await this.prisma.progressReport.findUnique({
+      where: { groupId_stage: { groupId, stage: 'STAGE_1' } },
+    });
+    const progress1GradeVal =
+      stage1Report?.finalStageGrade ?? stage1Report?.supervisorGrade;
 
-      if (progress1GradeVal !== null && progress1GradeVal !== undefined) {
-        finalGradeNum = Number(
-          (0.5 * progress1GradeVal + 0.5 * finalStageGrade).toFixed(2),
-        );
-        finalGradeLetter =
-          isPassed === false ? 'F' : calculateLetterGrade(finalGradeNum);
-      }
+    if (progress1GradeVal !== null && progress1GradeVal !== undefined) {
+      finalGradeNum = Number(
+        (0.5 * progress1GradeVal + 0.5 * finalStageGrade).toFixed(2),
+      );
+      finalGradeLetter =
+        isPassed === false ? 'F' : calculateLetterGrade(finalGradeNum);
     }
 
-    // Sync to StudentGrade (progress2Grade & finalGrade for Sub-council)
+    // Sync to StudentGrade (progress2Grade & finalGrade)
     const notices = [];
     for (const member of group.members) {
       await this.prisma.studentGrade.upsert({
@@ -867,21 +786,15 @@ export class ProgressService {
           : `Điểm chốt: ${finalStageGrade}/10`;
 
       let noticeTitle = `Kết quả đánh giá Tiến độ 2 - ${statusText}`;
-      let noticeContent = `Hội đồng đã đánh giá Tiến độ 2 cho nhóm bạn. Điểm: ${finalStageGrade}/10.${
+      let noticeContent = `GVHD đã đánh giá Tiến độ 2 cho nhóm bạn. Điểm: ${finalStageGrade}/10.${
         isPassed === false
-          ? ' Cảnh báo: Khối lượng chưa đạt 50%, có nguy cơ bị đình chỉ bảo vệ!'
-          : ' Chúc mừng bạn đủ điều kiện hoàn thiện quyển để ra bảo vệ.'
+          ? ' Cảnh báo: Khối lượng chưa đạt 50%.'
+          : ' Chúc mừng bạn đã hoàn tất tiến độ 2.'
       }`;
 
-      if (isSubCouncilCourse) {
-        if (bothGraded && finalGradeNum !== undefined) {
-          noticeTitle = `Tổng kết học phần ${projectTypeCode ?? 'Đồ án'}: ${finalGradeNum}/10 (${finalGradeLetter})`;
-          noticeContent = `Tiểu ban 2 Giảng viên (GVHD & GVPB) đã hoàn tất đánh giá kết thúc môn ${projectTypeCode ?? 'Đồ án'}. Điểm TĐ1 (50%): ${progress1GradeVal}/10, Điểm Tiểu ban (50%): ${finalStageGrade}/10. Điểm tổng kết: ${finalGradeNum}/10 (${finalGradeLetter}).`;
-        } else {
-          const roleText = isSupervisor ? 'GVHD' : 'GVPB';
-          noticeTitle = `${roleText} đã chấm điểm Tiến độ 2 / Tiểu ban (${dto.grade}/10)`;
-          noticeContent = `${roleText} đã hoàn tất chấm điểm cho nhóm bạn (${dto.grade}/10). Điểm tổng kết môn học sẽ được chốt sau khi cả GVHD và GVPB hoàn tất đánh giá.`;
-        }
+      if (finalGradeNum !== undefined) {
+        noticeTitle = `Tổng kết đồ án: ${finalGradeNum}/10 (${finalGradeLetter})`;
+        noticeContent = `GVHD đã hoàn tất đánh giá Tiến độ 1 & 2. Điểm TĐ1 (50%): ${progress1GradeVal}/10, Điểm TĐ2 (50%): ${finalStageGrade}/10. Điểm tổng kết: ${finalGradeNum}/10 (${finalGradeLetter}).`;
       }
 
       notices.push({
@@ -916,10 +829,7 @@ export class ProgressService {
     }
 
     const whereClause: Prisma.RegistrationGroupWhereInput = {
-      OR: [
-        { topic: { lecturerId: lecturer.id } },
-        { assignment: { reviewerId: lecturer.id } },
-      ],
+      topic: { lecturerId: lecturer.id },
       ...(query.semesterId && { semesterId: query.semesterId }),
       ...(query.roundId && { topic: { roundId: query.roundId } }),
     };
@@ -962,24 +872,13 @@ export class ProgressService {
           take: 1, // latest log
         },
         progressReports: true,
-        assignment: {
-          include: {
-            reviewer: {
-              select: {
-                id: true,
-                fullName: true,
-                academicTitle: true,
-              },
-            },
-          },
-        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
     return groups.map((g) => {
-      const isSupervisor = g.topic?.lecturerId === lecturer.id;
-      const isReviewer = g.assignment?.reviewerId === lecturer.id;
+      const isSupervisor = true;
+      const isReviewer = false;
       const latestLog = g.weeklyLogs[0] ?? null;
       const stage1 =
         g.progressReports.find((r) => r.stage === 'STAGE_1') ?? null;
@@ -995,7 +894,7 @@ export class ProgressService {
         members: g.members.map((m) => m.student),
         isSupervisor,
         isReviewer,
-        reviewer: g.assignment?.reviewer ?? null,
+        reviewer: null,
         latestLog: latestLog
           ? {
               id: latestLog.id,
@@ -1021,7 +920,7 @@ export class ProgressService {
               submitted: true,
               submittedAt: stage2.submittedAt,
               supervisorGrade: stage2.supervisorGrade,
-              reviewerGrade: stage2.reviewerGrade,
+              reviewerGrade: null,
               finalGrade: stage2.finalStageGrade,
               workloadPercentage: stage2.workloadPercentage,
               isPassed: stage2.isPassed,
@@ -1098,17 +997,6 @@ export class ProgressService {
             },
           },
         },
-        assignment: {
-          include: {
-            reviewer: {
-              select: {
-                id: true,
-                fullName: true,
-                academicTitle: true,
-              },
-            },
-          },
-        },
       },
     });
 
@@ -1117,9 +1005,8 @@ export class ProgressService {
     }
 
     const isSupervisor = group.topic?.lecturerId === lecturer.id;
-    const isReviewer = group.assignment?.reviewerId === lecturer.id;
 
-    if (!isSupervisor && !isReviewer) {
+    if (!isSupervisor) {
       throw new ForbiddenException(
         'Bạn không có quyền truy cập thông tin nhóm này.',
       );
@@ -1137,10 +1024,10 @@ export class ProgressService {
         topic: group.topic,
         leader: group.leader,
         members: group.members,
-        reviewer: group.assignment?.reviewer ?? null,
+        reviewer: null,
       },
-      isSupervisor,
-      isReviewer,
+      isSupervisor: true,
+      isReviewer: false,
       weeklyLogs: group.weeklyLogs,
       progressReports: {
         stage1,

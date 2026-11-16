@@ -6,6 +6,7 @@ export enum AppActor {
   LECTURER = 'LECTURER',
   TTBM = 'TTBM', // Tổ trưởng Bộ môn (KTPM / MMT)
   TLGV = 'TLGV', // Trợ lý Giáo vụ Khoa
+  GVCN = 'GVCN', // Giáo viên chủ nhiệm
   ADMIN = 'ADMIN', // Quản trị viên
 }
 

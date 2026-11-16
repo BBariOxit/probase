@@ -44,6 +44,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             majorId: true,
             isHeadOfDepartment: true,
             isAcademicAssistant: true,
+            isHomeroomTeacher: true,
           },
         },
         studentProfile: {

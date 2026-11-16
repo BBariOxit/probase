@@ -73,6 +73,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 const ROLE_LABEL: Record<Role, string> = {
   ADMIN: 'Quản trị',
   LECTURER: 'Giảng viên',
+  GVCN: 'GV Chủ nhiệm',
   STUDENT: 'Sinh viên',
 };
 

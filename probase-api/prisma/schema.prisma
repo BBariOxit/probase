@@ -19,6 +19,7 @@ enum Role {
   ADMIN
   LECTURER
   STUDENT
+  GVCN
 }
 
 // Topic allocation mode for a registration round
@@ -161,6 +162,8 @@ model User {
   outlinesSubmitted        TopicOutline[]            @relation("OutlineSubmittedBy")
   weeklyLogsSubmitted      WeeklyLog[]               @relation("WeeklyLogSubmittedBy")
   progressReportsSubmitted ProgressReport[]          @relation("ProgressReportSubmittedBy")
+  customPermissions        UserPermission[]          @relation("UserCustomPermissions")
+  grantedPermissions       UserPermission[]          @relation("GrantedUserPermissions")
 
   @@map("users")
 }
@@ -204,6 +207,7 @@ model LecturerProfile {
   maxMentoringQuota   Int?    // Maximum groups a lecturer can mentor (null = no limit)
   isHeadOfDepartment  Boolean @default(false) // Department Head role
   isAcademicAssistant Boolean @default(false) // Faculty Academic Assistant role
+  isHomeroomTeacher   Boolean @default(false) // Homeroom Teacher (GVCN) role
 
   // Relations
   user                     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -950,3 +954,32 @@ model StudentGrade {
   @@unique([groupId, studentId])
   @@map("student_grades")
 }
+
+// ─────────────────────────────────────────────────────────
+// GROUP 11: PERMISSIONS & ROLE MANAGEMENT
+// ─────────────────────────────────────────────────────────
+
+model RolePermission {
+  id         Int      @id @default(autoincrement())
+  role       String   @db.VarChar(50)
+  permission String   @db.VarChar(100)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([role, permission], map: "uq_role_permission")
+  @@map("role_permissions")
+}
+
+model UserPermission {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  permission  String   @db.VarChar(100)
+  grantedAt   DateTime @default(now()) @map("granted_at")
+  grantedById Int?     @map("granted_by_id")
+
+  user      User  @relation("UserCustomPermissions", fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy User? @relation("GrantedUserPermissions", fields: [grantedById], references: [id], onDelete: SetNull)
+
+  @@unique([userId, permission], map: "uq_user_permission")
+  @@map("user_permissions")
+}
+

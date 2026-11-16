@@ -39,7 +39,7 @@ const DEMO_STAFF = [
   {
     email: 'gvgvk@dlu.edu.vn',
     role: 'ADMIN' as const,
-    lecturerCode: 'GVGVK',
+    lecturerCode: 'GV0001',
     fullName: 'Nguyễn Thị GVK',
     academicTitle: 'ThS.',
     majorCode: 'CNPM',
@@ -50,7 +50,7 @@ const DEMO_STAFF = [
   {
     email: 'gvab@dlu.edu.vn',
     role: 'LECTURER' as const,
-    lecturerCode: 'GVAB',
+    lecturerCode: 'GV0002',
     fullName: 'An Bình',
     academicTitle: 'TS.',
     majorCode: 'CNPM',
@@ -61,7 +61,7 @@ const DEMO_STAFF = [
   {
     email: 'gvcd@dlu.edu.vn',
     role: 'LECTURER' as const,
-    lecturerCode: 'GVCD',
+    lecturerCode: 'GV0003',
     fullName: 'Chu Đình',
     academicTitle: 'ThS.',
     majorCode: 'MMT',
@@ -72,7 +72,7 @@ const DEMO_STAFF = [
   {
     email: 'gvpb@dlu.edu.vn',
     role: 'LECTURER' as const,
-    lecturerCode: 'GVPB',
+    lecturerCode: 'GV0004',
     fullName: 'Phan Bửu',
     academicTitle: 'ThS.',
     majorCode: 'CNPM',
@@ -83,7 +83,7 @@ const DEMO_STAFF = [
   {
     email: 'gvln@dlu.edu.vn',
     role: 'LECTURER' as const,
-    lecturerCode: 'GVLN',
+    lecturerCode: 'GV0005',
     fullName: 'Lê Ngân',
     academicTitle: 'TS.',
     majorCode: 'CNPM',
@@ -1798,6 +1798,32 @@ async function main() {
   }
 
   console.log(`[✓] 13. Kho lưu trữ: Đã tạo 20 đề tài hoàn chỉnh (status COMPLETED, đợt FINALIZED) cho các học kỳ trước kèm sinh viên và điểm số`);
+
+  // 14. SEED ROLE PERMISSIONS
+  const defaultRolePermissions = [
+    { role: 'ADMIN', permission: 'TOPIC_REGISTRY' },
+    { role: 'ADMIN', permission: 'STUDENT_ALLOCATION' },
+    { role: 'ADMIN', permission: 'TOPIC_REVIEW_DEPT' },
+    { role: 'ADMIN', permission: 'TOPIC_SIGN_OFF' },
+    { role: 'ADMIN', permission: 'LECTURER_ROLE_ASSIGN' },
+    { role: 'GVCN', permission: 'TOPIC_REGISTRY' },
+    { role: 'GVCN', permission: 'STUDENT_ALLOCATION' },
+    { role: 'TTBM', permission: 'TOPIC_REVIEW_DEPT' },
+  ];
+
+  for (const rp of defaultRolePermissions) {
+    await prisma.rolePermission.upsert({
+      where: {
+        role_permission: {
+          role: rp.role,
+          permission: rp.permission,
+        },
+      },
+      update: {},
+      create: rp,
+    });
+  }
+  console.log(`[✓] 14. Phân quyền: Đã cấu hình ma trận quyền mặc định cho các vai trò`);
 
   console.log('\n============================================================');
   console.log('🎉 SEED DỮ LIỆU ĐẦY ĐỦ CHO TẤT CẢ CÁC BẢNG THÀNH CÔNG RỰC RỠ!');

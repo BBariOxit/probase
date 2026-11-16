@@ -9,7 +9,6 @@ import {
   ClipboardPen,
   FileCheck2,
   FileUp,
-  Gavel,
   GraduationCap,
   Inbox,
   Layers,
@@ -17,10 +16,9 @@ import {
   Lightbulb,
   MessageSquareText,
   ScrollText,
-  ShieldCheck,
   Shuffle,
   TrendingUp,
-  UserCheck,
+  UserCog,
   Users,
   type LucideIcon,
 } from 'lucide-react';
@@ -70,12 +68,6 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           icon: TrendingUp,
           ready: true,
         },
-        {
-          href: '/student/defense',
-          label: 'Bảo vệ',
-          icon: ShieldCheck,
-          ready: true,
-        },
       ],
     },
   ],
@@ -118,12 +110,6 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           ready: true,
         },
         {
-          href: '/lecturer/reviews',
-          label: 'Đề tài phản biện',
-          icon: Building2,
-          ready: true,
-        },
-        {
           href: '/lecturer/reports',
           label: 'Báo cáo & nhận xét',
           icon: MessageSquareText,
@@ -150,12 +136,38 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
       ],
     },
     {
-      label: 'Hội đồng',
+      label: 'Chủ nhiệm',
       items: [
         {
-          href: '/lecturer/councils',
-          label: 'Hội đồng của tôi',
-          icon: Gavel,
+          href: '/admin/topic-registry',
+          label: 'Quản lý đề tài',
+          icon: LibraryBig,
+          ready: true,
+        },
+        {
+          href: '/admin/allocations',
+          label: 'Phân bổ đề tài',
+          icon: Shuffle,
+          ready: true,
+        },
+      ],
+    },
+  ],
+
+  GVCN: [
+    {
+      label: 'Vận hành',
+      items: [
+        {
+          href: '/admin/topic-registry',
+          label: 'Quản lý đề tài',
+          icon: LibraryBig,
+          ready: true,
+        },
+        {
+          href: '/admin/allocations',
+          label: 'Phân bổ đề tài',
+          icon: Shuffle,
           ready: true,
         },
       ],
@@ -196,18 +208,6 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           ready: true,
         },
         {
-          href: '/admin/reviewers',
-          label: 'Phân công GVPB',
-          icon: UserCheck,
-          ready: true,
-        },
-        {
-          href: '/admin/councils',
-          label: 'Hội đồng bảo vệ',
-          icon: Gavel,
-          ready: true,
-        },
-        {
           href: '/admin/archives',
           label: 'Kho lưu trữ',
           icon: Archive,
@@ -217,14 +217,13 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
     },
     {
       label: 'Người dùng',
-      // Importing a roster is a button inside a screen, not a destination: it is
-      // something you do, not somewhere you go.
-      //
-      // Two entries rather than one, because they answer different questions.
-      // Tài khoản is about logins — who may sign in, in which role. Sinh viên is
-      // about the term — who has a topic, under whom, and who is still waiting.
-      // The office opens the second one daily and the first one twice a year.
       items: [
+        {
+          href: '/admin/lecturers',
+          label: 'Phân quyền',
+          icon: UserCog,
+          ready: true,
+        },
         {
           href: '/admin/students',
           label: 'Sinh viên',
@@ -305,6 +304,7 @@ export function topicHref(role: Role, topicId: number): string {
     case 'STUDENT':
       return `/student/topics/${topicId}`;
     case 'LECTURER':
+    case 'GVCN':
       return `/lecturer/topics/${topicId}`;
     case 'ADMIN':
       return `/admin/topics/${topicId}`;

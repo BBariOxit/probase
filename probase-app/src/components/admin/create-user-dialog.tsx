@@ -36,6 +36,7 @@ import {
 const ROLE_LABEL: Record<Role, string> = {
   ADMIN: 'Quản trị viên',
   LECTURER: 'Giảng viên',
+  GVCN: 'GV Chủ nhiệm',
   STUDENT: 'Sinh viên',
 };
 

@@ -9,12 +9,12 @@ import { ArchivesModule } from './modules/archives/archives.module';
 import { AuditModule } from './core/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CloudinaryModule } from './core/cloudinary/cloudinary.module';
-import { CouncilsModule } from './modules/councils/councils.module';
 import { LecturersModule } from './modules/lecturers/lecturers.module';
 import { MeModule } from './modules/me/me.module';
 import { MailModule } from './core/mail/mail.module';
 import { MajorsModule } from './modules/majors/majors.module';
 import { NotificationsModule } from './core/notifications/notifications.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
 import { PrismaModule } from './core/prisma/prisma.module';
 import { OutlinesModule } from './modules/outlines/outlines.module';
 import { ProgressModule } from './modules/progress/progress.module';
@@ -23,8 +23,6 @@ import { ProposalsModule } from './modules/proposals/proposals.module';
 import { RegistrationModule } from './modules/registration/registration.module';
 import { RemindersModule } from './core/reminders/reminders.module';
 import { ReportsModule } from './modules/reports/reports.module';
-import { ReviewersModule } from './modules/reviewers/reviewers.module';
-import { ReviewsModule } from './modules/reviews/reviews.module';
 import { RoundsModule } from './modules/rounds/rounds.module';
 import { SemestersModule } from './modules/semesters/semesters.module';
 import { StudentsModule } from './modules/students/students.module';
@@ -60,6 +58,7 @@ import { UsersModule } from './modules/users/users.module';
     // reader who needs a reminder is the one not opening the app.
     ScheduleModule.forRoot(),
     PrismaModule,
+    PermissionsModule,
     AuditModule,
     AuthModule,
     CloudinaryModule,
@@ -79,9 +78,6 @@ import { UsersModule } from './modules/users/users.module';
     RegistrationModule,
     RemindersModule,
     ReportsModule,
-    ReviewersModule,
-    ReviewsModule,
-    CouncilsModule,
     UsersModule,
     MailModule,
     ArchivesModule,

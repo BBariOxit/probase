@@ -14,7 +14,6 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { FormError } from '@/components/shared/form-error';
 import { toast } from 'sonner';
 import { LecturerProgressEvaluation } from '@/components/progress/lecturer-progress-evaluation';
-import { SupervisorReviewSection } from '@/components/reviews/supervisor-review-section';
 import { SubmissionCard } from '@/components/submissions/submission-card';
 import { SubmissionDeadlines } from '@/components/submissions/submission-deadlines';
 import { UserAvatar } from '@/components/shared/user-avatar';
@@ -203,9 +202,6 @@ export default function LecturerGroupDetailPage({
 
       {/* Tiến độ đồ án (BR-11, BR-12, BR-14) */}
       <LecturerProgressEvaluation groupId={groupId} />
-
-      {/* Phiếu nhận xét GVHD & Thẩm định điều kiện bảo vệ (BR-17) */}
-      <SupervisorReviewSection groupId={groupId} group={group} />
 
       {/* Submissions */}
       <section className="space-y-3">
