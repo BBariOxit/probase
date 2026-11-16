@@ -14,6 +14,7 @@ import { MeModule } from './modules/me/me.module';
 import { MailModule } from './core/mail/mail.module';
 import { MajorsModule } from './modules/majors/majors.module';
 import { NotificationsModule } from './core/notifications/notifications.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
 import { PrismaModule } from './core/prisma/prisma.module';
 import { OutlinesModule } from './modules/outlines/outlines.module';
 import { ProgressModule } from './modules/progress/progress.module';
@@ -57,6 +58,7 @@ import { UsersModule } from './modules/users/users.module';
     // reader who needs a reminder is the one not opening the app.
     ScheduleModule.forRoot(),
     PrismaModule,
+    PermissionsModule,
     AuditModule,
     AuthModule,
     CloudinaryModule,

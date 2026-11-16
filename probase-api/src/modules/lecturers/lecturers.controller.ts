@@ -10,6 +10,8 @@ import {
 import type { Role } from '../../../generated/prisma/client';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../permissions/require-permissions.decorator';
+import { SystemPermission } from '../permissions/permissions.constants';
 import { QueryAdminLecturersDto } from './dto/query-admin-lecturers.dto';
 import { QueryLecturersDto } from './dto/query-lecturers.dto';
 import { UpdateLecturerRoleDto } from './dto/update-lecturer-role.dto';
@@ -25,7 +27,7 @@ export class LecturersController {
     return this.lecturersService.findAdminRoster(query);
   }
 
-  @Roles('ADMIN')
+  @RequirePermissions(SystemPermission.LECTURER_ROLE_ASSIGN)
   @Patch('admin/:userId/role')
   updateRole(
     @Param('userId', ParseIntPipe) targetUserId: number,

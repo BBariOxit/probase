@@ -9,10 +9,12 @@ import {
 } from '@nestjs/common';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../permissions/require-permissions.decorator';
+import { SystemPermission } from '../permissions/permissions.constants';
 import { AllocationService } from './allocation.service';
 import { FinalizeRoundDto, PlaceStudentDto } from './dto/allocation.dto';
 
-@Roles('ADMIN', 'GVCN')
+@RequirePermissions(SystemPermission.STUDENT_ALLOCATION)
 @Controller('rounds/:roundId/allocation')
 export class AllocationController {
   constructor(private readonly allocation: AllocationService) {}

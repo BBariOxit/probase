@@ -12,6 +12,8 @@ import {
 import { Role } from '../../../generated/prisma/client';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../permissions/require-permissions.decorator';
+import { SystemPermission } from '../permissions/permissions.constants';
 import { SetSemesterRoundsDto } from '../rounds/dto/set-semester-rounds.dto';
 import { RoundsService } from '../rounds/rounds.service';
 import { SemestersService } from './semesters.service';
@@ -85,7 +87,7 @@ export class SemestersController {
     return this.roundsService.findForSemester(id);
   }
 
-  @Roles('ADMIN')
+  @RequirePermissions(SystemPermission.TOPIC_REGISTRY)
   @Put(':id/rounds')
   setRounds(
     @Param('id', ParseIntPipe) id: number,

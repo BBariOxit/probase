@@ -177,6 +177,9 @@ export class LecturersService {
               role: true,
               isActive: true,
               avatarUrl: true,
+              customPermissions: {
+                select: { permission: true },
+              },
             },
           },
         },
@@ -219,6 +222,7 @@ export class LecturersService {
           isHeadOfDepartment: r.isHeadOfDepartment,
           isAcademicAssistant: r.isAcademicAssistant,
           isHomeroomTeacher: r.isHomeroomTeacher,
+          customPermissions: r.user.customPermissions.map((cp) => cp.permission),
         };
       }),
       total,
@@ -305,6 +309,31 @@ export class LecturersService {
         data: { role: targetUserRole },
       });
 
+      // 3. Cập nhật quyền tùy biến nếu có truyền lên
+      let updatedCustomPermissions: string[] = [];
+      if (dto.customPermissions !== undefined) {
+        await tx.userPermission.deleteMany({
+          where: { userId: targetUserId },
+        });
+
+        if (dto.customPermissions.length > 0) {
+          await tx.userPermission.createMany({
+            data: dto.customPermissions.map((permission) => ({
+              userId: targetUserId,
+              permission,
+              grantedById: currentAdminId,
+            })),
+          });
+        }
+        updatedCustomPermissions = dto.customPermissions;
+      } else {
+        const existing = await tx.userPermission.findMany({
+          where: { userId: targetUserId },
+          select: { permission: true },
+        });
+        updatedCustomPermissions = existing.map((e) => e.permission);
+      }
+
       await recordAudit(tx, {
         userId: currentAdminId,
         action: 'UPDATE_LECTURER_ROLE',
@@ -324,6 +353,7 @@ export class LecturersService {
           isAcademicAssistant,
           isHomeroomTeacher,
           majorId: dto.majorId,
+          customPermissions: updatedCustomPermissions,
         },
       });
 
@@ -331,6 +361,7 @@ export class LecturersService {
         success: true,
         assignedRole: dto.assignedRole,
         major: updatedProfile.major,
+        customPermissions: updatedCustomPermissions,
       };
     });
   }

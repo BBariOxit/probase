@@ -834,12 +834,16 @@ export class TopicsService {
       } | null;
     },
   ) {
+    const hasCustomPerm = (user as any).customPermissions?.some(
+      (cp: any) => cp.permission === 'TOPIC_REVIEW_DEPT',
+    );
     const isHead =
-      user.role === Role.LECTURER &&
-      (user.lecturerProfile?.isHeadOfDepartment ?? false);
+      user.role === Role.ADMIN ||
+      (user.role === Role.LECTURER &&
+        ((user.lecturerProfile?.isHeadOfDepartment ?? false) || hasCustomPerm));
     if (!isHead) {
       throw new ForbiddenException(
-        'Chỉ Tổ trưởng Bộ môn (TTBM) mới có quyền thẩm định đề tài.',
+        'Bạn không có quyền thẩm định đề tài cấp Bộ môn.',
       );
     }
 

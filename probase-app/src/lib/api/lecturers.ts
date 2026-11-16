@@ -26,6 +26,7 @@ export interface AdminLecturerItem {
   isHeadOfDepartment: boolean;
   isAcademicAssistant: boolean;
   isHomeroomTeacher: boolean;
+  customPermissions?: string[];
 }
 
 export interface QueryAdminLecturersParams {
@@ -39,6 +40,7 @@ export interface QueryAdminLecturersParams {
 export interface UpdateLecturerRoleInput {
   assignedRole: AssignedLecturerRole;
   majorId?: number | null;
+  customPermissions?: string[];
 }
 
 export function useAdminLecturers(query: QueryAdminLecturersParams = {}) {
