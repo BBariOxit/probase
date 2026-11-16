@@ -35,6 +35,26 @@ const CONFIGURABLE_ROLES: Array<{
   { code: 'LECTURER', label: 'Giảng viên' },
 ];
 
+function getMajorAbbreviation(major?: {
+  name?: string | null;
+  code?: string | null;
+} | null): string {
+  if (!major) return '';
+  const code = major.code?.toUpperCase();
+  if (code === 'CNPM' || code === 'KTPM' || code === 'PM') return 'KTPM';
+  if (code === 'MMT') return 'MMT';
+  if (code === 'HTTT') return 'HTTT';
+  if (code === 'KHMT') return 'KHMT';
+  if (code) return code;
+
+  const name = major.name ?? '';
+  if (/phần mềm/i.test(name)) return 'KTPM';
+  if (/mạng/i.test(name)) return 'MMT';
+  if (/hệ thống/i.test(name)) return 'HTTT';
+  if (/khoa học/i.test(name)) return 'KHMT';
+  return name;
+}
+
 export function RolePermissionMatrix() {
   const { data, isPending } = usePermissionMatrix();
   const updateRoleMutation = useUpdateRolePermissions();
@@ -53,11 +73,15 @@ export function RolePermissionMatrix() {
   }, [allLecturers]);
 
   const lecturerComboboxOptions: ComboboxOption[] = useMemo(() => {
-    return eligibleLecturers.map((l) => ({
-      value: String(l.userId),
-      label: l.fullName,
-      subLabel: l.major?.name || undefined,
-    }));
+    return eligibleLecturers.map((l) => {
+      const abbr = getMajorAbbreviation(l.major);
+      const label = abbr ? `${l.fullName} (${abbr})` : l.fullName;
+      return {
+        value: String(l.userId),
+        label,
+        keywords: l.major?.name || undefined,
+      };
+    });
   }, [eligibleLecturers]);
 
   const [matrixState, setMatrixState] = useState<Record<string, string[]>>({});
@@ -456,7 +480,6 @@ export function RolePermissionMatrix() {
                 searchPlaceholder="Tìm theo tên hoặc bộ môn..."
                 emptyText="Không tìm thấy giảng viên nào."
                 size="default"
-                showSubLabelBadge={true}
                 className="w-full"
               />
             </div>

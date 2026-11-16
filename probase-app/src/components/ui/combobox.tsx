@@ -9,6 +9,7 @@ export interface ComboboxOption {
   value: string;
   label: string;
   subLabel?: string;
+  keywords?: string;
   disabled?: boolean;
 }
 
@@ -85,7 +86,12 @@ export function Combobox({
     return allOptions.filter((opt) => {
       const normLabel = normalizeVietnamese(opt.label);
       const normSub = opt.subLabel ? normalizeVietnamese(opt.subLabel) : '';
-      return normLabel.includes(query) || normSub.includes(query);
+      const normKey = opt.keywords ? normalizeVietnamese(opt.keywords) : '';
+      return (
+        normLabel.includes(query) ||
+        normSub.includes(query) ||
+        normKey.includes(query)
+      );
     });
   }, [allOptions, searchQuery]);
 
