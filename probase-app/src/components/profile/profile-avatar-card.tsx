@@ -10,6 +10,7 @@ import { UserAvatar } from '@/components/shared/user-avatar';
 const ROLE_LABELS: Record<MyProfile['role'], string> = {
   ADMIN: 'Quản trị viên',
   LECTURER: 'Giảng viên',
+  GVCN: 'GV Chủ nhiệm',
   STUDENT: 'Sinh viên',
 };
 

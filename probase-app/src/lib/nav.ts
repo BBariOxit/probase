@@ -304,6 +304,7 @@ export function topicHref(role: Role, topicId: number): string {
     case 'STUDENT':
       return `/student/topics/${topicId}`;
     case 'LECTURER':
+    case 'GVCN':
       return `/lecturer/topics/${topicId}`;
     case 'ADMIN':
       return `/admin/topics/${topicId}`;

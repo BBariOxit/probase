@@ -50,11 +50,11 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 
 const ROLE_FILTERS = [
-  { value: 'ALL', label: 'Mọi vai trò' },
+  { value: 'ALL', label: 'Tất cả vai trò' },
   { value: 'LECTURER', label: 'Giảng viên' },
   { value: 'TTBM', label: 'Tổ trưởng Bộ môn' },
   { value: 'GVCN', label: 'GV Chủ nhiệm' },
-  { value: 'ADMIN', label: 'Giáo vụ (Quản trị)' },
+  { value: 'ADMIN', label: 'Giáo vụ' },
 ];
 
 function RoleText({ role, majorCode }: { role: AssignedLecturerRole; majorCode?: string | null }) {
@@ -123,17 +123,17 @@ export default function AdminLecturersRolePage() {
       </div>
 
       {/* Thanh bộ lọc */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-52 flex-1 sm:max-w-xs">
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Tìm theo tên, mã giảng viên hoặc email..."
+            placeholder="Tìm theo tên, email, mã GV…"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="pl-9 text-xs h-9"
+            className="pl-8 text-xs h-9"
           />
         </div>
 
@@ -141,12 +141,14 @@ export default function AdminLecturersRolePage() {
         <Select
           value={selectedRole}
           onValueChange={(val) => {
-            setSelectedRole(val ?? 'ALL');
+            setSelectedRole((val as string) ?? 'ALL');
             setPage(1);
           }}
         >
-          <SelectTrigger className="w-full sm:w-48 text-xs h-9">
-            <SelectValue placeholder="Vai trò" />
+          <SelectTrigger className="w-44 h-9 text-xs font-medium" aria-label="Lọc theo vai trò">
+            <SelectValue>
+              {(val) => ROLE_FILTERS.find((opt) => opt.value === val)?.label ?? 'Tất cả vai trò'}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {ROLE_FILTERS.map((r) => (
@@ -161,16 +163,22 @@ export default function AdminLecturersRolePage() {
         <Select
           value={selectedMajorId}
           onValueChange={(val) => {
-            setSelectedMajorId(val ?? 'ALL');
+            setSelectedMajorId((val as string) ?? 'ALL');
             setPage(1);
           }}
         >
-          <SelectTrigger className="w-full sm:w-48 text-xs h-9">
-            <SelectValue placeholder="Bộ môn" />
+          <SelectTrigger className="w-48 h-9 text-xs font-medium" aria-label="Lọc theo bộ môn">
+            <SelectValue>
+              {(val) => {
+                if (!val || val === 'ALL') return 'Tất cả bộ môn';
+                const found = majors?.find((m) => String(m.id) === String(val));
+                return found ? `${found.name} (${found.code})` : 'Tất cả bộ môn';
+              }}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL" className="text-xs">
-              Mọi bộ môn
+              Tất cả bộ môn
             </SelectItem>
             {majors?.map((m) => (
               <SelectItem key={m.id} value={String(m.id)} className="text-xs">
@@ -190,6 +198,12 @@ export default function AdminLecturersRolePage() {
             <RotateCcw className="mr-1.5 size-3.5" />
             Đặt lại
           </Button>
+        )}
+
+        {data && (
+          <div className="ml-auto text-xs font-medium text-slate-600 dark:text-neutral-400 select-none">
+            Tổng cộng: <strong className="font-semibold text-foreground">{data.total}</strong> giảng viên
+          </div>
         )}
       </div>
 
@@ -322,16 +336,18 @@ export default function AdminLecturersRolePage() {
                     {/* Dấu 3 chấm để thao tác */}
                     <TableCell className="text-right">
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-8 p-0"
-                            aria-label="Thao tác"
-                          >
-                            <MoreHorizontal className="size-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
+                        <DropdownMenuTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 p-0"
+                              aria-label="Thao tác"
+                            >
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          }
+                        />
                         <DropdownMenuContent align="end" className="text-xs">
                           {isSelf ? (
                             <DropdownMenuItem disabled className="text-xs text-muted-foreground">

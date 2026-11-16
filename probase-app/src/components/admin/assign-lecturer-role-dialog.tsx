@@ -172,9 +172,17 @@ export function AssignLecturerRoleDialog({
               <Label className="text-xs font-medium">
                 Bộ môn trực thuộc {selectedRole === 'TTBM' && <span className="text-destructive">*</span>}
               </Label>
-              <Select value={selectedMajorId} onValueChange={setSelectedMajorId}>
+              <Select
+                value={selectedMajorId}
+                onValueChange={(val) => setSelectedMajorId((val as string) ?? '')}
+              >
                 <SelectTrigger className="w-full text-xs h-9">
-                  <SelectValue placeholder="Chọn bộ môn..." />
+                  <SelectValue>
+                    {(val) => {
+                      const found = majors?.find((m) => String(m.id) === String(val));
+                      return found ? `${found.name} (${found.code})` : 'Chọn bộ môn…';
+                    }}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {majors?.map((m) => (
