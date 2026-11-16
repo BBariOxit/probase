@@ -8,3 +8,4 @@ export const RevokePermissionSchema = z.object({
 });
 
 export class RevokePermissionDto extends createZodDto(RevokePermissionSchema) {}
+
