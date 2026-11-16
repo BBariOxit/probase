@@ -287,7 +287,7 @@ export function Combobox({
                               : 'text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800/60',
                         )}
                       >
-                        <div className="flex flex-col min-w-0 pr-2">
+                        <div className="flex flex-col min-w-0 flex-1 pr-2">
                           <span className="truncate leading-snug">{option.label}</span>
                           {option.subLabel && (
                             <span className="text-xs text-muted-foreground truncate">
