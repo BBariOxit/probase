@@ -220,7 +220,7 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
       items: [
         {
           href: '/admin/lecturers',
-          label: 'Phân quyền giảng viên',
+          label: 'Phân quyền',
           icon: UserCog,
           ready: true,
         },

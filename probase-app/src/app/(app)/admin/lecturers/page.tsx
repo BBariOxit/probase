@@ -117,14 +117,9 @@ export default function AdminLecturersRolePage() {
     <div className="space-y-6">
       {/* Tiêu đề trang */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
-            Phân quyền giảng viên
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Quản lý vai trò, bổ nhiệm Tổ trưởng Bộ môn, Giáo viên chủ nhiệm và Giáo vụ.
-          </p>
-        </div>
+        <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
+          Phân quyền
+        </h1>
       </div>
 
       {/* Thanh bộ lọc */}

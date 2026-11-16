@@ -105,9 +105,9 @@ export function AssignLecturerRoleDialog({
     <Dialog open={!!lecturer} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Phân quyền giảng viên</DialogTitle>
-          <DialogDescription>
-            Thiết lập vai trò và chức vụ phụ trách cho giảng viên.
+          <DialogTitle>Phân quyền</DialogTitle>
+          <DialogDescription className="sr-only">
+            Thiết lập vai trò cho giảng viên
           </DialogDescription>
         </DialogHeader>
 
