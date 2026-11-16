@@ -102,7 +102,7 @@ export class RoundsController {
     return this.requirements.setForRound(id, dto, userId);
   }
 
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'GVCN')
   @Post(':id/unlock')
   unlock(
     @Param('id', ParseIntPipe) id: number,

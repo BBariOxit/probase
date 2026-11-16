@@ -12,7 +12,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { AllocationService } from './allocation.service';
 import { FinalizeRoundDto, PlaceStudentDto } from './dto/allocation.dto';
 
-@Roles('ADMIN')
+@Roles('ADMIN', 'GVCN')
 @Controller('rounds/:roundId/allocation')
 export class AllocationController {
   constructor(private readonly allocation: AllocationService) {}

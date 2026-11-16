@@ -210,7 +210,7 @@ function TopicActionsDropdown({ topic }: { topic: TopicListItem }) {
 }
 
 export default function AdminTopicRegistryPage() {
-  const allowed = useRequireRole('ADMIN');
+  const allowed = useRequireRole(['ADMIN', 'GVCN', 'LECTURER']);
 
   const [activeTab, setActiveTab] = useState<'topics' | 'progress'>('topics');
   const [page, setPage] = useState(1);

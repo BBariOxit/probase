@@ -57,7 +57,7 @@ export class TopicsController {
 
   // Literal routes must be declared before wildcard :id routes so NestJS does
   // not treat 'export' as an id parameter.
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'GVCN')
   @Throttle(TOPIC_EXPORT_RATE_LIMIT)
   @Get('export')
   async export(
@@ -98,7 +98,7 @@ export class TopicsController {
 
   // Literal routes must be declared before wildcard :id routes so NestJS does
   // not swallow 'bulk-open' as a param value and send it to ParseIntPipe.
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'GVCN')
   @Patch('bulk-open')
   bulkOpen(@Body() dto: BulkOpenTopicsDto) {
     return this.topicsService.bulkOpen(dto.semesterId);
@@ -131,7 +131,7 @@ export class TopicsController {
     return this.topicsService.remove(id, userId, role);
   }
 
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'GVCN')
   @Patch(':id/open')
   open(
     @Param('id', ParseIntPipe) id: number,
@@ -157,7 +157,7 @@ export class TopicsController {
     return this.topicsService.withdraw(id, userId, role);
   }
 
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'GVCN')
   @Patch(':id/close')
   close(
     @Param('id', ParseIntPipe) id: number,

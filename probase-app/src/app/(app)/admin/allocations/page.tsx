@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/select';
 
 export default function AllocationDeskPage() {
-  const allowed = useRequireRole('ADMIN');
+  const allowed = useRequireRole(['ADMIN', 'GVCN', 'LECTURER']);
   const semester = useActiveSemester();
   const { data: rounds } = useRoundsForSemester(semester?.id);
   const [picked, setPicked] = useState<number | null>(null);

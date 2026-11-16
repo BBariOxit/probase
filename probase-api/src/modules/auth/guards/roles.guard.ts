@@ -20,6 +20,7 @@ export interface RequestLecturerProfile {
   majorId?: number | null;
   isHeadOfDepartment: boolean;
   isAcademicAssistant: boolean;
+  isHomeroomTeacher?: boolean;
 }
 
 export interface RequestStudentProfile {
@@ -75,6 +76,16 @@ export class RolesGuard implements CanActivate {
 
       if (reqRole === 'STUDENT' || reqRole === Role.STUDENT) {
         return user.role === Role.STUDENT;
+      }
+
+      if (reqRole === 'GVCN' || reqRole === (Role as any).GVCN || reqRole === AppActor.GVCN) {
+        return (
+          user.role === Role.ADMIN ||
+          (user.role as string) === 'GVCN' ||
+          (user.role === Role.LECTURER &&
+            (!!user.lecturerProfile?.isHomeroomTeacher ||
+              !!user.lecturerProfile?.isAcademicAssistant))
+        );
       }
 
       // 2. Kiểm tra các chức vụ kiêm nhiệm Khoa CNTT - DLU

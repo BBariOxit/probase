@@ -986,7 +986,7 @@ export class TopicsService {
   private async requireOwnTopic(id: number, userId: number, role: Role) {
     const topic = await this.requireTopic(id);
 
-    if (role === Role.ADMIN) return topic;
+    if (role === Role.ADMIN || (role as any) === 'GVCN') return topic;
 
     const lecturerId = await this.requireLecturerProfileId(userId);
 

@@ -134,6 +134,43 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
         },
       ],
     },
+    {
+      label: 'Chủ nhiệm',
+      items: [
+        {
+          href: '/admin/topic-registry',
+          label: 'Quản lý đề tài',
+          icon: LibraryBig,
+          ready: true,
+        },
+        {
+          href: '/admin/allocations',
+          label: 'Phân bổ đề tài',
+          icon: Shuffle,
+          ready: true,
+        },
+      ],
+    },
+  ],
+
+  GVCN: [
+    {
+      label: 'Vận hành',
+      items: [
+        {
+          href: '/admin/topic-registry',
+          label: 'Quản lý đề tài',
+          icon: LibraryBig,
+          ready: true,
+        },
+        {
+          href: '/admin/allocations',
+          label: 'Phân bổ đề tài',
+          icon: Shuffle,
+          ready: true,
+        },
+      ],
+    },
   ],
 
   // Eight destinations across four unrelated concerns — this is the role that
