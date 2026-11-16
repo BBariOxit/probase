@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Lock } from 'lucide-react';
@@ -20,6 +21,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
+const DEFAULT_ROLES: SystemRoleInfo[] = [
+  { code: 'ADMIN', label: 'Giáo vụ', isLocked: true },
+  { code: 'TTBM', label: 'Tổ trưởng Bộ môn', isLocked: false },
+  { code: 'GVCN', label: 'GV Chủ nhiệm', isLocked: false },
+  { code: 'LECTURER', label: 'Giảng viên', isLocked: false },
+];
+
 export function RolePermissionMatrix() {
   const { data, isPending } = usePermissionMatrix();
   const updateMutation = useUpdateRolePermissions();
@@ -31,6 +39,10 @@ export function RolePermissionMatrix() {
       setMatrixState(data.matrix);
     }
   }, [data]);
+
+  const roles =
+    data?.roles && data.roles.length > 0 ? data.roles : DEFAULT_ROLES;
+  const permissions = data?.permissions ?? [];
 
   const handleToggle = (
     role: SystemRoleInfo,
@@ -72,19 +84,42 @@ export function RolePermissionMatrix() {
 
   if (isPending) {
     return (
-      <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs overflow-hidden p-6 space-y-4">
-        <Skeleton className="h-6 w-48" />
-        <div className="space-y-3 pt-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-10 w-full" />
-          ))}
-        </div>
+      <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs overflow-hidden">
+        <Table className="w-full text-left text-xs">
+          <TableHeader sticky>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[40%] text-xs font-semibold">
+                Tính năng & Nghiệp vụ
+              </TableHead>
+              {roles.map((r) => (
+                <TableHead
+                  key={r.code}
+                  className="w-[15%] text-center text-xs font-semibold"
+                >
+                  {r.label}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <TableRow key={i}>
+                <TableCell className="py-3 px-4">
+                  <Skeleton className="h-4 w-48 mb-1" />
+                  <Skeleton className="h-3 w-64" />
+                </TableCell>
+                {roles.map((r) => (
+                  <TableCell key={r.code} className="py-3 px-2 text-center">
+                    <Skeleton className="size-4 mx-auto" />
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     );
   }
-
-  const permissions = data?.permissions ?? [];
-  const roles = data?.roles ?? [];
 
   // Gom nhóm quyền theo category
   const categories = Array.from(new Set(permissions.map((p) => p.category)));
@@ -92,19 +127,16 @@ export function RolePermissionMatrix() {
   return (
     <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs overflow-hidden">
       <div className="flex-auto min-h-0 overflow-auto">
-        <Table
-          containerClassName="overflow-visible"
-          className="relative w-full min-w-[760px] text-left text-xs"
-        >
+        <Table className="w-full text-left text-xs">
           <TableHeader sticky>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-[42%] text-xs font-semibold">
+              <TableHead className="w-[40%] text-xs font-semibold">
                 Tính năng & Nghiệp vụ
               </TableHead>
               {roles.map((r) => (
                 <TableHead
                   key={r.code}
-                  className="w-[14.5%] text-center text-xs font-semibold"
+                  className="w-[15%] text-center text-xs font-semibold"
                 >
                   <div className="inline-flex items-center justify-center gap-1">
                     <span>{r.label}</span>
@@ -123,7 +155,7 @@ export function RolePermissionMatrix() {
               );
 
               return (
-                <tbody key={category} className="group/section">
+                <React.Fragment key={category}>
                   {/* Category Banner Row */}
                   <TableRow className="bg-slate-50/80 dark:bg-neutral-800/40 hover:bg-slate-50/80 dark:hover:bg-neutral-800/40 border-y border-border/60">
                     <TableCell
@@ -136,7 +168,10 @@ export function RolePermissionMatrix() {
 
                   {/* Rows for each permission in this category */}
                   {categoryPerms.map((perm) => (
-                    <TableRow key={perm.code} className="text-xs hover:bg-muted/40">
+                    <TableRow
+                      key={perm.code}
+                      className="text-xs hover:bg-muted/40"
+                    >
                       <TableCell className="py-3 px-4">
                         <div className="space-y-0.5">
                           <div className="font-semibold text-foreground">
@@ -174,7 +209,7 @@ export function RolePermissionMatrix() {
                       })}
                     </TableRow>
                   ))}
-                </tbody>
+                </React.Fragment>
               );
             })}
           </TableBody>

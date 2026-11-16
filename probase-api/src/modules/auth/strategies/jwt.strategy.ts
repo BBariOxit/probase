@@ -47,11 +47,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             isHomeroomTeacher: true,
           },
         },
-        customPermissions: {
-          select: {
-            permission: true,
-          },
-        },
         studentProfile: {
           select: {
             id: true,

@@ -104,3 +104,4 @@ export function useMyPermissions() {
     staleTime: 60_000,
   });
 }
+

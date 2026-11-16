@@ -119,12 +119,6 @@ export class PermissionsService {
             isHomeroomTeacher: true,
           },
         },
-        customPermissions: {
-          select: {
-            permission: true,
-            grantedAt: true,
-          },
-        },
       },
     });
 
@@ -132,13 +126,19 @@ export class PermissionsService {
       throw new NotFoundException('Không tìm thấy người dùng');
     }
 
-    const effective = await this.getUserEffectivePermissions(userId);
+    const [userPerms, effective] = await Promise.all([
+      this.prisma.userPermission.findMany({
+        where: { userId },
+        select: { permission: true, grantedAt: true },
+      }),
+      this.getUserEffectivePermissions(userId),
+    ]);
 
     return {
       userId: user.id,
       email: user.email,
       fullName: user.lecturerProfile?.fullName ?? '',
-      customPermissions: user.customPermissions.map((cp) => cp.permission),
+      customPermissions: userPerms.map((cp) => cp.permission),
       effectivePermissions: effective,
     };
   }
@@ -205,11 +205,6 @@ export class PermissionsService {
             isHomeroomTeacher: true,
           },
         },
-        customPermissions: {
-          select: {
-            permission: true,
-          },
-        },
       },
     });
 
@@ -229,19 +224,26 @@ export class PermissionsService {
       roles.push('GVCN');
     }
 
-    const rolePerms = await this.prisma.rolePermission.findMany({
-      where: { role: { in: roles } },
-      select: { permission: true },
-    });
+    const [rolePerms, userPerms] = await Promise.all([
+      this.prisma.rolePermission.findMany({
+        where: { role: { in: roles } },
+        select: { permission: true },
+      }),
+      this.prisma.userPermission.findMany({
+        where: { userId },
+        select: { permission: true },
+      }),
+    ]);
 
     const permissionSet = new Set<string>();
     for (const rp of rolePerms) {
       permissionSet.add(rp.permission);
     }
-    for (const cp of user.customPermissions) {
+    for (const cp of userPerms) {
       permissionSet.add(cp.permission);
     }
 
     return Array.from(permissionSet);
   }
 }
+

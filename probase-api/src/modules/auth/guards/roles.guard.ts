@@ -108,9 +108,11 @@ export class RolesGuard implements CanActivate {
 
     // 1. Kiểm tra Granular Permissions nếu route yêu cầu
     if (requiredPermissions && requiredPermissions.length > 0) {
-      const userCustomPerms = new Set(
-        user.customPermissions?.map((cp) => cp.permission) ?? [],
-      );
+      const userPerms = await this.prisma.userPermission.findMany({
+        where: { userId: user.id },
+        select: { permission: true },
+      });
+      const userCustomPerms = new Set(userPerms.map((cp) => cp.permission));
 
       // 1.1. Khớp quyền tùy biến riêng cấp cho tài khoản
       const hasCustom = requiredPermissions.some((p) =>

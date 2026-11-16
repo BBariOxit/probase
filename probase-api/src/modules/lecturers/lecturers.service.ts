@@ -177,9 +177,6 @@ export class LecturersService {
               role: true,
               isActive: true,
               avatarUrl: true,
-              customPermissions: {
-                select: { permission: true },
-              },
             },
           },
         },
@@ -194,6 +191,19 @@ export class LecturersService {
       }),
       this.prisma.lecturerProfile.count({ where }),
     ]);
+
+    const userIds = rows.map((r) => r.userId);
+    const userPerms = await this.prisma.userPermission.findMany({
+      where: { userId: { in: userIds } },
+      select: { userId: true, permission: true },
+    });
+    const permMap = new Map<number, string[]>();
+    for (const up of userPerms) {
+      if (!permMap.has(up.userId)) {
+        permMap.set(up.userId, []);
+      }
+      permMap.get(up.userId)!.push(up.permission);
+    }
 
     return {
       items: rows.map((r) => {
@@ -222,7 +232,7 @@ export class LecturersService {
           isHeadOfDepartment: r.isHeadOfDepartment,
           isAcademicAssistant: r.isAcademicAssistant,
           isHomeroomTeacher: r.isHomeroomTeacher,
-          customPermissions: r.user.customPermissions.map((cp) => cp.permission),
+          customPermissions: permMap.get(r.userId) ?? [],
         };
       }),
       total,

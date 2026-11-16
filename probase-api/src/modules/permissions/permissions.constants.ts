@@ -55,3 +55,4 @@ export const ROLE_LABELS: Record<SystemRole, string> = {
   GVCN: 'Giáo viên chủ nhiệm',
   LECTURER: 'Giảng viên',
 };
+

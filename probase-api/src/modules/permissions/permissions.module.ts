@@ -8,3 +8,4 @@ import { PermissionsService } from './permissions.service';
   exports: [PermissionsService],
 })
 export class PermissionsModule {}
+
