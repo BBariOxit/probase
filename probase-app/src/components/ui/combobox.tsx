@@ -9,6 +9,7 @@ export interface ComboboxOption {
   value: string;
   label: string;
   subLabel?: string;
+  keywords?: string;
   disabled?: boolean;
 }
 
@@ -29,6 +30,7 @@ export interface ComboboxProps {
   size?: 'sm' | 'default';
   id?: string;
   'aria-label'?: string;
+  showSubLabelBadge?: boolean;
 }
 
 /**
@@ -61,6 +63,7 @@ export function Combobox({
   size = 'sm',
   id,
   'aria-label': ariaLabel,
+  showSubLabelBadge = false,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -83,7 +86,12 @@ export function Combobox({
     return allOptions.filter((opt) => {
       const normLabel = normalizeVietnamese(opt.label);
       const normSub = opt.subLabel ? normalizeVietnamese(opt.subLabel) : '';
-      return normLabel.includes(query) || normSub.includes(query);
+      const normKey = opt.keywords ? normalizeVietnamese(opt.keywords) : '';
+      return (
+        normLabel.includes(query) ||
+        normSub.includes(query) ||
+        normKey.includes(query)
+      );
     });
   }, [allOptions, searchQuery]);
 
@@ -171,20 +179,27 @@ export function Combobox({
           role="combobox"
           className={cn(
             'flex w-full items-center justify-between gap-1.5 rounded-lg border border-slate-300 dark:border-neutral-700 hover:border-slate-400 dark:hover:border-neutral-600 bg-white hover:bg-slate-50 focus:bg-white dark:bg-[#1e1e1e] dark:hover:bg-[#252525] dark:focus:bg-[#1e1e1e] py-1.5 pr-2 pl-2.5 text-left text-slate-900 dark:text-neutral-100 transition-colors outline-none select-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-2xs',
-            size === 'sm' ? 'h-8.5 text-xs' : 'h-10 text-sm',
+            size === 'sm' ? 'h-9 text-sm' : 'h-10 text-sm',
             triggerClassName,
           )}
         >
-          <span
-            className={cn(
-              'block truncate flex-1',
-              isAllSelected
-                ? 'text-slate-700 dark:text-neutral-300 font-normal'
-                : 'text-slate-900 dark:text-neutral-100 font-medium',
+          <div className="flex items-center gap-2 truncate flex-1 min-w-0">
+            <span
+              className={cn(
+                'truncate',
+                isAllSelected
+                  ? 'text-slate-700 dark:text-neutral-300 font-normal'
+                  : 'text-slate-900 dark:text-neutral-100 font-medium',
+              )}
+            >
+              {displayLabel}
+            </span>
+            {showSubLabelBadge && selectedOption?.subLabel && !isAllSelected && (
+              <span className="shrink-0 rounded-md bg-slate-100 dark:bg-neutral-800 px-2 py-0.5 text-xs text-muted-foreground font-normal border border-slate-200/60 dark:border-neutral-700/60">
+                {selectedOption.subLabel}
+              </span>
             )}
-          >
-            {displayLabel}
-          </span>
+          </div>
           <ChevronDown
             className={cn(
               'pointer-events-none size-4 shrink-0 text-muted-foreground transition-transform duration-200',
@@ -204,13 +219,13 @@ export function Combobox({
               data-slot="combobox-content"
               data-combobox-content="true"
               className={cn(
-                'z-[70] w-(--anchor-width) min-w-[200px] max-w-sm rounded-lg border border-slate-200 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] p-0 text-popover-foreground shadow-xl duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 overflow-hidden',
+                'z-[70] w-(--anchor-width) min-w-[220px] rounded-lg border border-slate-200 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] p-0 text-popover-foreground shadow-xl duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 overflow-hidden',
                 popupClassName,
               )}
             >
               {/* Ô tìm kiếm sticky ở đầu danh sách */}
-              <div className="flex items-center gap-2 px-2.5 py-2 border-b border-slate-100 dark:border-neutral-800 bg-slate-50/70 dark:bg-neutral-900/50">
-                <Search className="size-3.5 text-muted-foreground shrink-0" />
+              <div className="flex items-center gap-2.5 px-3 py-2 border-b border-slate-100 dark:border-neutral-800 bg-slate-50/70 dark:bg-neutral-900/50">
+                <Search className="size-4 text-muted-foreground shrink-0" />
                 <input
                   ref={inputRef}
                   type="text"
@@ -218,7 +233,7 @@ export function Combobox({
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleInputKeyDown}
                   placeholder={searchPlaceholder}
-                  className="flex-1 bg-transparent text-xs text-slate-900 dark:text-neutral-100 placeholder:text-muted-foreground focus:outline-none"
+                  className="flex-1 bg-transparent text-sm text-slate-900 dark:text-neutral-100 placeholder:text-muted-foreground focus:outline-none"
                 />
                 {searchQuery && (
                   <button
@@ -230,7 +245,7 @@ export function Combobox({
                     className="text-muted-foreground hover:text-primary p-0.5 rounded-sm transition-colors cursor-pointer"
                     aria-label="Xóa ô tìm kiếm"
                   >
-                    <X className="size-3" />
+                    <X className="size-3.5" />
                   </button>
                 )}
               </div>
@@ -242,13 +257,13 @@ export function Combobox({
                 tabIndex={-1}
                 onWheel={(e) => e.stopPropagation()}
                 className={cn(
-                  'max-h-[180px] overflow-y-auto p-1 text-xs space-y-0.5',
+                  'max-h-[220px] overflow-y-auto p-1.5 text-sm space-y-0.5',
                   '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-400 dark:hover:[&::-webkit-scrollbar-thumb]:bg-neutral-600',
                   listClassName,
                 )}
               >
                 {filteredOptions.length === 0 ? (
-                  <div className="py-6 text-center text-xs text-muted-foreground">
+                  <div className="py-6 text-center text-sm text-muted-foreground">
                     {emptyText}
                   </div>
                 ) : (
@@ -270,7 +285,7 @@ export function Combobox({
                         onClick={() => handleSelect(option.value)}
                         onMouseEnter={() => setHighlightedIndex(index)}
                         className={cn(
-                          'relative flex items-center justify-between gap-2 px-2.5 py-2 rounded-md cursor-pointer select-none transition-colors text-xs',
+                          'relative flex items-center justify-between gap-2.5 px-3 py-2 rounded-md cursor-pointer select-none transition-colors text-sm',
                           isSelected
                             ? 'bg-primary/10 text-primary font-medium dark:bg-primary/20'
                             : isHighlighted
@@ -278,16 +293,16 @@ export function Combobox({
                               : 'text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800/60',
                         )}
                       >
-                        <div className="flex flex-col min-w-0 pr-2">
-                          <span className="truncate">{option.label}</span>
+                        <div className="flex flex-col min-w-0 flex-1 pr-2">
+                          <span className="truncate leading-snug">{option.label}</span>
                           {option.subLabel && (
-                            <span className="text-[10px] text-muted-foreground truncate">
+                            <span className="text-xs text-muted-foreground truncate">
                               {option.subLabel}
                             </span>
                           )}
                         </div>
                         {isSelected && (
-                          <Check className="size-3.5 text-primary shrink-0 stroke-[2.5]" />
+                          <Check className="size-4 text-primary shrink-0 stroke-[2.5]" />
                         )}
                       </div>
                     );

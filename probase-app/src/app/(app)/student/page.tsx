@@ -369,8 +369,8 @@ function StudentTopicsContent() {
             lecturers={lecturers ?? []}
             value={lecturerId}
             onChange={setLecturerId}
-            className="w-48 sm:w-52 shrink-0"
-            triggerClassName="h-9 w-full text-xs sm:text-sm font-medium rounded-lg border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] text-slate-800 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
+            className="w-48 sm:w-56 shrink-0"
+            triggerClassName="h-9 w-full text-sm font-medium rounded-lg border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] text-slate-800 dark:text-neutral-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
           />
 
           {/* 4. Còn trống 🔘 (Toggle switch with solid primary background when ON) */}

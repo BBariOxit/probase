@@ -172,7 +172,9 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
       await updateMutation.mutateAsync({
         userId: lecturer.userId,
         assignedRole: selectedRole,
-        majorId: selectedRole === 'TTBM' && selectedMajorId ? Number(selectedMajorId) : null,
+        majorId: selectedMajorId
+          ? Number(selectedMajorId)
+          : (lecturer.major?.id ?? null),
         customPermissions: selectedCustomPerms,
       });
       toast.success(`Đã cập nhật vai trò và quyền hạn cho ${lecturer.fullName}.`);
@@ -190,7 +192,7 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
         render={
           <button
             type="button"
-            className="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 -ml-2 text-xs font-semibold transition-colors hover:bg-slate-100 dark:hover:bg-neutral-800/80 cursor-pointer"
+            className="group inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 -ml-2 text-sm font-semibold transition-colors hover:bg-slate-100 dark:hover:bg-neutral-800/80 cursor-pointer"
             aria-label={`Đổi vai trò cho ${lecturer.fullName}`}
           />
         }
@@ -198,29 +200,29 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
         <div className="inline-flex items-center">
           <RoleText role={lecturer.assignedRole} />
           {customCount > 0 && (
-            <span className="text-[11px] font-normal text-muted-foreground ml-1.5">
+            <span className="text-xs font-normal text-muted-foreground ml-1.5">
               (+{customCount} quyền)
             </span>
           )}
         </div>
-        <ChevronDown className="size-3 text-muted-foreground/60 transition-transform group-hover:text-foreground shrink-0" />
+        <ChevronDown className="size-3.5 text-muted-foreground/60 transition-transform group-hover:text-foreground shrink-0" />
       </PopoverTrigger>
 
       <PopoverContent
         align="start"
         side="bottom"
-        className="w-72 p-3.5 rounded-xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] shadow-xl text-xs space-y-3"
+        className="w-80 sm:w-[350px] p-4 rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] shadow-2xl space-y-3.5"
       >
-        <div className="flex items-center justify-between pb-2 border-b border-border/60">
-          <span className="font-semibold text-foreground">Phân quyền vai trò</span>
-          <span className="text-[11px] text-muted-foreground truncate max-w-32">
+        <div className="flex items-center justify-between pb-2.5 border-b border-border/60">
+          <span className="text-sm font-bold text-foreground">Phân quyền vai trò</span>
+          <span className="text-xs font-medium text-muted-foreground bg-muted/70 px-2 py-0.5 rounded-md truncate max-w-44">
             {lecturer.fullName}
           </span>
         </div>
 
         {/* Danh sách vai trò chính */}
-        <div className="space-y-1">
-          <span className="text-[11px] font-medium text-muted-foreground">
+        <div className="space-y-1.5">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Vai trò chính
           </span>
           {ASSIGNABLE_ROLES.map((r) => {
@@ -231,71 +233,75 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
                 type="button"
                 onClick={() => setSelectedRole(r.value)}
                 className={cn(
-                  'flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors text-left cursor-pointer',
+                  'flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors text-left cursor-pointer',
                   active
                     ? 'bg-primary/10 text-primary font-semibold dark:bg-primary/20'
                     : 'text-foreground hover:bg-muted/60',
                 )}
               >
                 <span>{r.label}</span>
-                {active && <Check className="size-3.5 text-primary shrink-0" />}
+                {active && <Check className="size-4 text-primary shrink-0" />}
               </button>
             );
           })}
         </div>
 
-        {/* Nếu là TTBM -> chọn bộ môn */}
-        {selectedRole === 'TTBM' && (
-          <div className="space-y-1.5 pt-2 border-t border-border/60">
-            <span className="text-[11px] font-medium text-muted-foreground">
-              Bộ môn phụ trách <span className="text-destructive">*</span>
-            </span>
-            <Select
-              value={selectedMajorId}
-              onValueChange={(val) => setSelectedMajorId((val as string) ?? '')}
-            >
-              <SelectTrigger className="w-full h-8 text-xs">
-                <SelectValue>
-                  {(val) =>
-                    majors?.find((m) => String(m.id) === String(val))?.name ??
-                    'Chọn bộ môn…'
-                  }
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {majors?.map((m) => (
-                  <SelectItem key={m.id} value={String(m.id)} className="text-xs">
-                    {m.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+        {/* Chọn bộ môn trực thuộc / phụ trách */}
+        <div className="space-y-1.5 pt-2.5 border-t border-border/60">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {selectedRole === 'TTBM' ? (
+              <>
+                Bộ môn phụ trách (Tổ trưởng) <span className="text-destructive">*</span>
+              </>
+            ) : (
+              <>Bộ môn trực thuộc</>
+            )}
+          </span>
+          <Select
+            value={selectedMajorId}
+            onValueChange={(val) => setSelectedMajorId((val as string) ?? '')}
+          >
+            <SelectTrigger className="w-full h-9.5 text-sm">
+              <SelectValue>
+                {(val) =>
+                  majors?.find((m) => String(m.id) === String(val))?.name ??
+                  'Chọn bộ môn…'
+                }
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {majors?.map((m) => (
+                <SelectItem key={m.id} value={String(m.id)} className="text-sm">
+                  {m.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Quyền bổ sung cho cá nhân */}
-        <div className="space-y-2 pt-2 border-t border-border/60">
+        <div className="space-y-2 pt-2.5 border-t border-border/60">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-medium text-muted-foreground">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Quyền bổ sung cho cá nhân
             </span>
             {selectedCustomPerms.length > 0 && (
               <button
                 type="button"
                 onClick={() => setSelectedCustomPerms([])}
-                className="text-[10px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                className="text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
               >
                 Bỏ chọn
               </button>
             )}
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {AVAILABLE_CUSTOM_PERMISSIONS.map((perm) => {
               const isChecked = selectedCustomPerms.includes(perm.code);
               return (
                 <label
                   key={perm.code}
-                  className="flex items-center gap-2.5 text-xs text-foreground cursor-pointer hover:bg-muted/40 p-1 rounded-md select-none transition-colors"
+                  className="flex items-center gap-3 text-sm text-foreground cursor-pointer hover:bg-muted/50 py-1.5 px-2 rounded-lg select-none transition-colors"
                 >
                   <Checkbox
                     id={`override-${lecturer.id}-${perm.code}`}
@@ -310,7 +316,7 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
                       }
                     }}
                   />
-                  <span className="truncate">{perm.label}</span>
+                  <span className="truncate font-medium">{perm.label}</span>
                 </label>
               );
             })}
@@ -318,14 +324,14 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
         </div>
 
         {/* Nút hành động */}
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
+        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border/60">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={() => setOpen(false)}
             disabled={updateMutation.isPending}
-            className="h-7 px-2.5 text-xs"
+            className="h-8.5 px-3 text-sm font-medium"
           >
             Hủy
           </Button>
@@ -334,10 +340,10 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
             size="sm"
             onClick={handleSave}
             disabled={updateMutation.isPending}
-            className="h-7 px-3 text-xs"
+            className="h-8.5 px-4 text-sm font-semibold shadow-xs"
           >
             {updateMutation.isPending ? (
-              <Loader2 className="size-3 animate-spin" />
+              <Loader2 className="size-3.5 animate-spin" />
             ) : (
               'Lưu'
             )}
@@ -424,8 +430,8 @@ export default function AdminLecturersRolePage() {
         <>
           {/* Thanh bộ lọc */}
           <div className="flex flex-wrap items-center gap-3">
-            <div className="relative min-w-52 flex-1 sm:max-w-xs">
-              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="relative min-w-56 flex-1 sm:max-w-xs">
+              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Tìm theo tên hoặc email…"
                 value={search}
@@ -433,7 +439,7 @@ export default function AdminLecturersRolePage() {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                className="pl-8 text-xs h-9"
+                className="pl-9 text-sm h-9.5 rounded-lg border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e]"
               />
             </div>
 
@@ -446,7 +452,7 @@ export default function AdminLecturersRolePage() {
               }}
             >
               <SelectTrigger
-                className="w-44 h-9 text-xs font-medium"
+                className="w-48 h-9.5 text-sm font-medium"
                 aria-label="Lọc theo vai trò"
               >
                 <SelectValue>
@@ -458,7 +464,7 @@ export default function AdminLecturersRolePage() {
               </SelectTrigger>
               <SelectContent>
                 {ROLE_FILTERS.map((r) => (
-                  <SelectItem key={r.value} value={r.value} className="text-xs">
+                  <SelectItem key={r.value} value={r.value} className="text-sm">
                     {r.label}
                   </SelectItem>
                 ))}
@@ -474,7 +480,7 @@ export default function AdminLecturersRolePage() {
               }}
             >
               <SelectTrigger
-                className="w-48 h-9 text-xs font-medium"
+                className="w-52 h-9.5 text-sm font-medium"
                 aria-label="Lọc theo bộ môn"
               >
                 <SelectValue>
@@ -488,14 +494,14 @@ export default function AdminLecturersRolePage() {
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL" className="text-xs">
+                <SelectItem value="ALL" className="text-sm">
                   Tất cả bộ môn
                 </SelectItem>
                 {majors?.map((m) => (
                   <SelectItem
                     key={m.id}
                     value={String(m.id)}
-                    className="text-xs"
+                    className="text-sm"
                   >
                     {m.name}
                   </SelectItem>
@@ -508,15 +514,15 @@ export default function AdminLecturersRolePage() {
                 variant="ghost"
                 size="sm"
                 onClick={handleResetFilters}
-                className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                className="h-9.5 px-3 text-sm text-muted-foreground hover:text-foreground cursor-pointer font-medium"
               >
-                <RotateCcw className="mr-1.5 size-3.5" />
+                <RotateCcw className="mr-1.5 size-4" />
                 Đặt lại
               </Button>
             )}
 
             {data && (
-              <div className="ml-auto text-xs font-medium text-slate-600 dark:text-neutral-400 select-none">
+              <div className="ml-auto text-sm font-medium text-slate-600 dark:text-neutral-400 select-none">
                 Tổng cộng:{' '}
                 <strong className="font-semibold text-foreground">
                   {data.total}
@@ -531,41 +537,49 @@ export default function AdminLecturersRolePage() {
             <div className="flex-auto min-h-0 overflow-auto">
               <Table
                 containerClassName="overflow-visible"
-                className="relative w-full min-w-[700px] text-left text-xs"
+                className="relative w-full min-w-[700px] text-left text-sm"
               >
                 <TableHeader sticky>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-12 text-center text-xs">
+                    <TableHead className="w-14 px-3 text-center text-xs font-bold tracking-wider uppercase">
                       STT
                     </TableHead>
-                    <TableHead className="text-xs">Giảng viên</TableHead>
-                    <TableHead className="text-xs">Email & SĐT</TableHead>
-                    <TableHead className="text-xs">Bộ môn</TableHead>
-                    <TableHead className="text-xs">Vai trò / Chức vụ</TableHead>
+                    <TableHead className="px-4 text-xs font-bold tracking-wider uppercase">
+                      Giảng viên
+                    </TableHead>
+                    <TableHead className="px-4 text-xs font-bold tracking-wider uppercase">
+                      Email & SĐT
+                    </TableHead>
+                    <TableHead className="px-4 text-xs font-bold tracking-wider uppercase">
+                      Bộ môn
+                    </TableHead>
+                    <TableHead className="px-4 text-xs font-bold tracking-wider uppercase">
+                      Vai trò / Chức vụ
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isPending ? (
                     Array.from({ length: 5 }).map((_, i) => (
-                      <TableRow key={i} className="text-xs">
-                        <TableCell className="text-center">
+                      <TableRow key={i} className="text-sm">
+                        <TableCell className="px-3 py-3 text-center">
                           <Skeleton className="mx-auto size-4" />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <Skeleton className="size-8 rounded-full" />
+                            <Skeleton className="size-9 rounded-full" />
                             <div className="space-y-1">
                               <Skeleton className="h-4 w-32" />
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-4 py-3">
                           <Skeleton className="h-4 w-40" />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-4 py-3">
                           <Skeleton className="h-4 w-24" />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-4 py-3">
                           <Skeleton className="h-4 w-28" />
                         </TableCell>
                       </TableRow>
@@ -589,20 +603,20 @@ export default function AdminLecturersRolePage() {
                       const isSelf = currentUserId === lecturer.userId;
 
                       return (
-                        <TableRow key={lecturer.id} className="text-xs">
-                          <TableCell className="text-center font-mono text-muted-foreground">
+                        <TableRow key={lecturer.id} className="text-sm hover:bg-slate-50/80 dark:hover:bg-[#252528] transition-colors">
+                          <TableCell className="px-3 py-3 text-center font-mono text-sm text-muted-foreground">
                             {stt}
                           </TableCell>
 
                           {/* Giảng viên */}
-                          <TableCell>
+                          <TableCell className="px-4 py-3">
                             <div className="flex items-center gap-3">
                               <UserAvatar
                                 name={lecturer.fullName}
                                 src={lecturer.avatarUrl}
-                                className="size-8 text-xs font-semibold"
+                                className="size-9 text-sm font-semibold"
                               />
-                              <div className="font-semibold text-foreground">
+                              <div className="font-semibold text-foreground text-sm">
                                 {lecturer.academicTitle
                                   ? `${lecturer.academicTitle} `
                                   : ''}
@@ -612,13 +626,13 @@ export default function AdminLecturersRolePage() {
                           </TableCell>
 
                           {/* Email & Phone */}
-                          <TableCell>
+                          <TableCell className="px-4 py-3">
                             <div className="space-y-0.5">
-                              <div className="text-foreground">
+                              <div className="text-sm text-foreground">
                                 {lecturer.email}
                               </div>
                               {lecturer.phone && (
-                                <div className="font-mono text-[11px] text-muted-foreground">
+                                <div className="font-mono text-xs text-muted-foreground">
                                   {lecturer.phone}
                                 </div>
                               )}
@@ -626,20 +640,20 @@ export default function AdminLecturersRolePage() {
                           </TableCell>
 
                           {/* Bộ môn */}
-                          <TableCell>
+                          <TableCell className="px-4 py-3">
                             {lecturer.major ? (
-                              <span className="text-foreground">
+                              <span className="text-sm text-foreground font-medium">
                                 {lecturer.major.name}
                               </span>
                             ) : (
-                              <span className="text-muted-foreground italic">
+                              <span className="text-sm text-muted-foreground italic">
                                 Chưa phân
                               </span>
                             )}
                           </TableCell>
 
                           {/* Vai trò / Chức vụ - Click mở Popover đổi nhanh tại chỗ */}
-                          <TableCell>
+                          <TableCell className="px-4 py-3">
                             <LecturerRoleCell
                               lecturer={lecturer}
                               isSelf={isSelf}

@@ -15,13 +15,7 @@ import {
 import { useAdminLecturers } from '@/lib/api/lecturers';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +35,26 @@ const CONFIGURABLE_ROLES: Array<{
   { code: 'LECTURER', label: 'Giảng viên' },
 ];
 
+function getMajorAbbreviation(major?: {
+  name?: string | null;
+  code?: string | null;
+} | null): string {
+  if (!major) return '';
+  const code = major.code?.toUpperCase();
+  if (code === 'CNPM' || code === 'KTPM' || code === 'PM') return 'KTPM';
+  if (code === 'MMT') return 'MMT';
+  if (code === 'HTTT') return 'HTTT';
+  if (code === 'KHMT') return 'KHMT';
+  if (code) return code;
+
+  const name = major.name ?? '';
+  if (/phần mềm/i.test(name)) return 'KTPM';
+  if (/mạng/i.test(name)) return 'MMT';
+  if (/hệ thống/i.test(name)) return 'HTTT';
+  if (/khoa học/i.test(name)) return 'KHMT';
+  return name;
+}
+
 export function RolePermissionMatrix() {
   const { data, isPending } = usePermissionMatrix();
   const updateRoleMutation = useUpdateRolePermissions();
@@ -57,6 +71,18 @@ export function RolePermissionMatrix() {
       (l) => l.userRole !== 'ADMIN' && l.assignedRole !== 'ADMIN',
     );
   }, [allLecturers]);
+
+  const lecturerComboboxOptions: ComboboxOption[] = useMemo(() => {
+    return eligibleLecturers.map((l) => {
+      const abbr = getMajorAbbreviation(l.major);
+      const label = abbr ? `${l.fullName} (${abbr})` : l.fullName;
+      return {
+        value: String(l.userId),
+        label,
+        keywords: l.major?.name || undefined,
+      };
+    });
+  }, [eligibleLecturers]);
 
   const [matrixState, setMatrixState] = useState<Record<string, string[]>>({});
 
@@ -438,10 +464,10 @@ export function RolePermissionMatrix() {
               <label className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
                 Giảng viên <span className="text-destructive">*</span>
               </label>
-              <Select
+              <Combobox
+                options={lecturerComboboxOptions}
                 value={modalUserId}
-                onValueChange={(val) => {
-                  const uid = (val as string) ?? '';
+                onChange={(uid) => {
                   setModalUserId(uid);
                   const existing = groupedDelegations.find(
                     (g) => String(g.userId) === uid,
@@ -450,32 +476,12 @@ export function RolePermissionMatrix() {
                     existing ? existing.permissions.map((p) => p.code) : [],
                   );
                 }}
-              >
-                <SelectTrigger className="w-full h-10 text-sm">
-                  <SelectValue>
-                    {(val) => {
-                      if (!val) return 'Chọn giảng viên…';
-                      const found = eligibleLecturers.find(
-                        (l) => String(l.userId) === String(val),
-                      );
-                      return found
-                        ? `${found.fullName} ${found.major?.name ? `(${found.major.name})` : ''}`
-                        : 'Chọn giảng viên…';
-                    }}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="max-h-56">
-                  {eligibleLecturers.map((l) => (
-                    <SelectItem
-                      key={l.userId}
-                      value={String(l.userId)}
-                      className="text-sm"
-                    >
-                      {l.fullName} {l.major?.name ? `(${l.major.name})` : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Chọn giảng viên..."
+                searchPlaceholder="Tìm theo tên hoặc bộ môn..."
+                emptyText="Không tìm thấy giảng viên nào."
+                size="default"
+                className="w-full"
+              />
             </div>
 
             {/* Chọn quyền */}
