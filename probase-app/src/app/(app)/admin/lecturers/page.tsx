@@ -398,7 +398,7 @@ export default function AdminLecturersRolePage() {
           className={cn(
             'group inline-flex items-center gap-2 pb-0.5 text-xl font-bold tracking-tight transition-colors cursor-pointer relative',
             activeTab === 'roster'
-              ? 'text-foreground after:absolute after:-bottom-3.5 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
+              ? 'text-foreground after:absolute after:-bottom-3.5 after:left-0 after:right-0 after:h-[3px] after:rounded-full after:bg-primary'
               : 'text-muted-foreground hover:text-foreground',
           )}
         >
@@ -410,7 +410,7 @@ export default function AdminLecturersRolePage() {
           className={cn(
             'group inline-flex items-center gap-2 pb-0.5 text-xl font-bold tracking-tight transition-colors cursor-pointer relative',
             activeTab === 'matrix'
-              ? 'text-foreground after:absolute after:-bottom-3.5 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
+              ? 'text-foreground after:absolute after:-bottom-3.5 after:left-0 after:right-0 after:h-[3px] after:rounded-full after:bg-primary'
               : 'text-muted-foreground hover:text-foreground',
           )}
         >
