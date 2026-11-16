@@ -48,7 +48,7 @@ docker compose exec api npx prisma db seed
 | Service | Endpoint | Description |
 | :--- | :--- | :--- |
 | **Nginx (Main Gateway)** | `http://localhost` | Unified gateway (`/` -> Frontend, `/api/` -> Backend), WebSocket enabled |
-| **Frontend (Next.js)** | `http://localhost:3000` | User interface (Direct access) |
+| **Frontend (Next.js)** | `http://localhost:3002` | User interface (Direct access) |
 | **Backend API (NestJS)** | `http://localhost:3001` | REST API & Socket.io (Direct access) |
 | **PostgreSQL** | `localhost:5432` | Accessible via GUI tools (DBeaver, TablePlus, DataGrip) |
 | **Redis** | `localhost:6379` | Accessible via RedisInsight or redis-cli |

@@ -35,7 +35,7 @@ export function LecturerCombobox({
   placeholder = 'Chọn giảng viên...',
   searchPlaceholder = 'Tìm theo tên giảng viên...',
   emptyText = 'Không tìm thấy giảng viên nào.',
-  className = 'w-52 shrink-0',
+  className = 'w-52 sm:w-56 shrink-0',
   triggerClassName,
   listClassName,
   disabled,

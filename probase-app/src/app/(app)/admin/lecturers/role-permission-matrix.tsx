@@ -15,13 +15,7 @@ import {
 import { useAdminLecturers } from '@/lib/api/lecturers';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
 import {
   Dialog,
   DialogContent,
@@ -57,6 +51,14 @@ export function RolePermissionMatrix() {
       (l) => l.userRole !== 'ADMIN' && l.assignedRole !== 'ADMIN',
     );
   }, [allLecturers]);
+
+  const lecturerComboboxOptions: ComboboxOption[] = useMemo(() => {
+    return eligibleLecturers.map((l) => ({
+      value: String(l.userId),
+      label: l.fullName,
+      subLabel: l.major?.name || undefined,
+    }));
+  }, [eligibleLecturers]);
 
   const [matrixState, setMatrixState] = useState<Record<string, string[]>>({});
 
@@ -438,10 +440,10 @@ export function RolePermissionMatrix() {
               <label className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
                 Giảng viên <span className="text-destructive">*</span>
               </label>
-              <Select
+              <Combobox
+                options={lecturerComboboxOptions}
                 value={modalUserId}
-                onValueChange={(val) => {
-                  const uid = (val as string) ?? '';
+                onChange={(uid) => {
                   setModalUserId(uid);
                   const existing = groupedDelegations.find(
                     (g) => String(g.userId) === uid,
@@ -450,32 +452,13 @@ export function RolePermissionMatrix() {
                     existing ? existing.permissions.map((p) => p.code) : [],
                   );
                 }}
-              >
-                <SelectTrigger className="w-full h-10 text-sm">
-                  <SelectValue>
-                    {(val) => {
-                      if (!val) return 'Chọn giảng viên…';
-                      const found = eligibleLecturers.find(
-                        (l) => String(l.userId) === String(val),
-                      );
-                      return found
-                        ? `${found.fullName} ${found.major?.name ? `(${found.major.name})` : ''}`
-                        : 'Chọn giảng viên…';
-                    }}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="max-h-56">
-                  {eligibleLecturers.map((l) => (
-                    <SelectItem
-                      key={l.userId}
-                      value={String(l.userId)}
-                      className="text-sm"
-                    >
-                      {l.fullName} {l.major?.name ? `(${l.major.name})` : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Chọn giảng viên..."
+                searchPlaceholder="Tìm theo tên hoặc bộ môn..."
+                emptyText="Không tìm thấy giảng viên nào."
+                size="default"
+                showSubLabelBadge={true}
+                className="w-full"
+              />
             </div>
 
             {/* Chọn quyền */}
