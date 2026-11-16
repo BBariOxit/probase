@@ -208,182 +208,183 @@ export default function AdminLecturersRolePage() {
       </div>
 
       {/* Bảng danh sách */}
-      <div className="rounded-xl border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="w-12 text-center text-xs">STT</TableHead>
-              <TableHead className="text-xs">Giảng viên</TableHead>
-              <TableHead className="text-xs">Email & SĐT</TableHead>
-              <TableHead className="text-xs">Bộ môn</TableHead>
-              <TableHead className="text-xs">Vai trò / Chức vụ</TableHead>
-              <TableHead className="w-16 text-right text-xs">Thao tác</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isPending ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell className="text-center">
-                    <Skeleton className="mx-auto size-4" />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="size-8 rounded-full" />
-                      <div className="space-y-1">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-3 w-20" />
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-40" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-28" />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Skeleton className="ml-auto size-8 rounded-md" />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : lecturers.length === 0 ? (
+      <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs overflow-hidden">
+        <div className="flex-auto min-h-0 overflow-auto">
+          <Table containerClassName="overflow-visible" className="relative w-full min-w-[850px] text-left text-sm">
+            <TableHeader sticky>
               <TableRow>
-                <TableCell colSpan={6} className="h-48 text-center">
-                  <EmptyState
-                    icon={UserCheck}
-                    title={
-                      isFiltered
-                        ? 'Không tìm thấy giảng viên nào phù hợp bộ lọc.'
-                        : 'Chưa có dữ liệu giảng viên.'
-                    }
-                  />
-                </TableCell>
+                <TableHead className="w-14 px-3 text-center">STT</TableHead>
+                <TableHead className="min-w-56 px-4">Giảng viên</TableHead>
+                <TableHead className="min-w-44 px-4">Email & SĐT</TableHead>
+                <TableHead className="min-w-40 px-4">Bộ môn</TableHead>
+                <TableHead className="w-44 px-4">Vai trò / Chức vụ</TableHead>
+                <TableHead className="w-16 px-4 text-right">Thao tác</TableHead>
               </TableRow>
-            ) : (
-              lecturers.map((lecturer, index) => {
-                const stt = (page - 1) * pageSize + index + 1;
-                const isSelf = currentUserId === lecturer.userId;
-
-                return (
-                  <TableRow key={lecturer.id} className="text-xs">
-                    <TableCell className="text-center font-mono text-muted-foreground">
-                      {stt}
+            </TableHeader>
+            <TableBody>
+              {isPending ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="text-center px-3">
+                      <Skeleton className="mx-auto size-4" />
                     </TableCell>
-
-                    {/* Giảng viên */}
-                    <TableCell>
+                    <TableCell className="px-4">
                       <div className="flex items-center gap-3">
-                        <UserAvatar
-                          name={lecturer.fullName}
-                          src={lecturer.avatarUrl}
-                          className="size-8 text-xs font-semibold"
-                        />
-                        <div className="space-y-0.5">
-                          <div className="font-semibold text-foreground">
-                            {lecturer.academicTitle ? `${lecturer.academicTitle} ` : ''}
-                            {lecturer.fullName}
-                            {isSelf && (
-                              <span className="ml-2 text-[11px] font-normal text-muted-foreground">
-                                (Bạn)
-                              </span>
-                            )}
-                          </div>
-                          <div className="font-mono text-[11px] text-muted-foreground">
-                            {lecturer.lecturerCode}
-                          </div>
+                        <Skeleton className="size-8 rounded-full" />
+                        <div className="space-y-1">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-20" />
                         </div>
                       </div>
                     </TableCell>
-
-                    {/* Email & Phone */}
-                    <TableCell>
-                      <div className="space-y-0.5">
-                        <div className="text-foreground">{lecturer.email}</div>
-                        {lecturer.phone && (
-                          <div className="font-mono text-[11px] text-muted-foreground">
-                            {lecturer.phone}
-                          </div>
-                        )}
-                      </div>
+                    <TableCell className="px-4">
+                      <Skeleton className="h-4 w-40" />
                     </TableCell>
-
-                    {/* Bộ môn */}
-                    <TableCell>
-                      {lecturer.major ? (
-                        <span className="text-foreground">
-                          {lecturer.major.name}{' '}
-                          <span className="text-muted-foreground font-mono">
-                            ({lecturer.major.code})
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground italic">Chưa phân</span>
-                      )}
+                    <TableCell className="px-4">
+                      <Skeleton className="h-4 w-24" />
                     </TableCell>
-
-                    {/* Chữ có màu ở role để biết (ko dùng badge màu) */}
-                    <TableCell>
-                      <RoleText
-                        role={lecturer.assignedRole}
-                        majorCode={lecturer.major?.code}
-                      />
+                    <TableCell className="px-4">
+                      <Skeleton className="h-4 w-28" />
                     </TableCell>
-
-                    {/* Dấu 3 chấm để thao tác */}
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger
-                          render={
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 p-0"
-                              aria-label="Thao tác"
-                            >
-                              <MoreHorizontal className="size-4" />
-                            </Button>
-                          }
-                        />
-                        <DropdownMenuContent align="end" className="text-xs">
-                          {isSelf ? (
-                            <DropdownMenuItem disabled className="text-xs text-muted-foreground">
-                              Không thể tự đổi vai trò của bạn
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem
-                              onClick={() => setAssigningLecturer(lecturer)}
-                              className="text-xs cursor-pointer"
-                            >
-                              <UserCog className="mr-2 size-3.5" />
-                              Phân quyền vai trò
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <TableCell className="text-right px-4">
+                      <Skeleton className="ml-auto size-8 rounded-md" />
                     </TableCell>
                   </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
+                ))
+              ) : lecturers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-48 text-center">
+                    <EmptyState
+                      icon={UserCheck}
+                      title={
+                        isFiltered
+                          ? 'Không tìm thấy giảng viên nào phù hợp bộ lọc.'
+                          : 'Chưa có dữ liệu giảng viên.'
+                      }
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : (
+                lecturers.map((lecturer, index) => {
+                  const stt = (page - 1) * pageSize + index + 1;
+                  const isSelf = currentUserId === lecturer.userId;
 
-        {/* Phân trang */}
-        {total > pageSize && (
-          <div className="border-t p-3">
-            <PaginationBar
-              page={page}
-              totalPages={totalPages}
-              total={total}
-              pageSize={pageSize}
-              onPageChange={setPage}
-            />
-          </div>
-        )}
+                  return (
+                    <TableRow key={lecturer.id}>
+                      <TableCell className="text-center px-3 font-mono text-xs text-muted-foreground">
+                        {stt}
+                      </TableCell>
+
+                      {/* Giảng viên */}
+                      <TableCell className="px-4">
+                        <div className="flex items-center gap-3">
+                          <UserAvatar
+                            name={lecturer.fullName}
+                            src={lecturer.avatarUrl}
+                            className="size-8 text-xs font-semibold"
+                          />
+                          <div className="space-y-0.5">
+                            <div className="font-semibold text-foreground">
+                              {lecturer.academicTitle ? `${lecturer.academicTitle} ` : ''}
+                              {lecturer.fullName}
+                              {isSelf && (
+                                <span className="ml-2 text-[11px] font-normal text-muted-foreground">
+                                  (Bạn)
+                                </span>
+                              )}
+                            </div>
+                            <div className="font-mono text-[11px] text-muted-foreground">
+                              {lecturer.lecturerCode}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+
+                      {/* Email & Phone */}
+                      <TableCell className="px-4">
+                        <div className="space-y-0.5">
+                          <div className="text-foreground">{lecturer.email}</div>
+                          {lecturer.phone && (
+                            <div className="font-mono text-[11px] text-muted-foreground">
+                              {lecturer.phone}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      {/* Bộ môn */}
+                      <TableCell className="px-4">
+                        {lecturer.major ? (
+                          <span className="text-foreground">
+                            {lecturer.major.name}{' '}
+                            <span className="text-muted-foreground font-mono">
+                              ({lecturer.major.code})
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground italic">Chưa phân</span>
+                        )}
+                      </TableCell>
+
+                      {/* Chữ có màu ở role để biết (ko dùng badge màu) */}
+                      <TableCell className="px-4">
+                        <RoleText
+                          role={lecturer.assignedRole}
+                          majorCode={lecturer.major?.code}
+                        />
+                      </TableCell>
+
+                      {/* Dấu 3 chấm để thao tác */}
+                      <TableCell className="text-right px-4">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            render={
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 p-0"
+                                aria-label="Thao tác"
+                              >
+                                <MoreHorizontal className="size-4" />
+                              </Button>
+                            }
+                          />
+                          <DropdownMenuContent align="end" className="text-xs">
+                            {isSelf ? (
+                              <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+                                Không thể tự đổi vai trò của bạn
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                onClick={() => setAssigningLecturer(lecturer)}
+                                className="text-xs cursor-pointer"
+                              >
+                                <UserCog className="mr-2 size-3.5" />
+                                Phân quyền vai trò
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      {/* Phân trang */}
+      <div className="shrink-0">
+        <PaginationBar
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          pageSize={pageSize}
+          itemName="giảng viên"
+          onPageChange={setPage}
+        />
       </div>
 
       {/* Dialog phân quyền */}
