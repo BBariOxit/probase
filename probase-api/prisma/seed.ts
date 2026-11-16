@@ -39,7 +39,7 @@ const DEMO_STAFF = [
   {
     email: 'gvgvk@dlu.edu.vn',
     role: 'ADMIN' as const,
-    lecturerCode: 'GVGVK',
+    lecturerCode: 'GV0001',
     fullName: 'Nguyễn Thị GVK',
     academicTitle: 'ThS.',
     majorCode: 'CNPM',
@@ -50,7 +50,7 @@ const DEMO_STAFF = [
   {
     email: 'gvab@dlu.edu.vn',
     role: 'LECTURER' as const,
-    lecturerCode: 'GVAB',
+    lecturerCode: 'GV0002',
     fullName: 'An Bình',
     academicTitle: 'TS.',
     majorCode: 'CNPM',
@@ -61,7 +61,7 @@ const DEMO_STAFF = [
   {
     email: 'gvcd@dlu.edu.vn',
     role: 'LECTURER' as const,
-    lecturerCode: 'GVCD',
+    lecturerCode: 'GV0003',
     fullName: 'Chu Đình',
     academicTitle: 'ThS.',
     majorCode: 'MMT',
@@ -72,7 +72,7 @@ const DEMO_STAFF = [
   {
     email: 'gvpb@dlu.edu.vn',
     role: 'LECTURER' as const,
-    lecturerCode: 'GVPB',
+    lecturerCode: 'GV0004',
     fullName: 'Phan Bửu',
     academicTitle: 'ThS.',
     majorCode: 'CNPM',
@@ -83,7 +83,7 @@ const DEMO_STAFF = [
   {
     email: 'gvln@dlu.edu.vn',
     role: 'LECTURER' as const,
-    lecturerCode: 'GVLN',
+    lecturerCode: 'GV0005',
     fullName: 'Lê Ngân',
     academicTitle: 'TS.',
     majorCode: 'CNPM',
