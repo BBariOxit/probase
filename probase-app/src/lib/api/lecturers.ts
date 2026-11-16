@@ -1,12 +1,86 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 import type {
   LecturerDirectoryEntry,
   Paginated,
   PublicLecturer,
 } from '@/lib/api/types';
+
+export type AssignedLecturerRole = 'LECTURER' | 'TTBM' | 'GVCN' | 'ADMIN';
+
+export interface AdminLecturerItem {
+  id: number;
+  userId: number;
+  lecturerCode: string;
+  fullName: string;
+  academicTitle?: string | null;
+  phone?: string | null;
+  email: string;
+  avatarUrl?: string | null;
+  isActive: boolean;
+  userRole: string;
+  major?: { id: number; name: string; code: string } | null;
+  assignedRole: AssignedLecturerRole;
+  isHeadOfDepartment: boolean;
+  isAcademicAssistant: boolean;
+  isHomeroomTeacher: boolean;
+}
+
+export interface QueryAdminLecturersParams {
+  q?: string;
+  role?: string;
+  majorId?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface UpdateLecturerRoleInput {
+  assignedRole: AssignedLecturerRole;
+  majorId?: number | null;
+}
+
+export function useAdminLecturers(query: QueryAdminLecturersParams = {}) {
+  const params = new URLSearchParams();
+  if (query.q) params.set('q', query.q);
+  if (query.role && query.role !== 'ALL') params.set('role', query.role);
+  if (query.majorId) params.set('majorId', String(query.majorId));
+  if (query.page) params.set('page', String(query.page));
+  if (query.limit) params.set('limit', String(query.limit));
+  const search = params.toString();
+
+  return useQuery({
+    queryKey: ['lecturers', 'admin-roster', query],
+    queryFn: () =>
+      api<Paginated<AdminLecturerItem>>(
+        `/lecturers/admin/roster${search ? `?${search}` : ''}`,
+      ),
+    staleTime: 10_000,
+  });
+}
+
+export function useUpdateLecturerRole() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      userId,
+      ...input
+    }: UpdateLecturerRoleInput & { userId: number }) =>
+      api<{ success: boolean; assignedRole: AssignedLecturerRole }>(
+        `/lecturers/admin/${userId}/role`,
+        {
+          method: 'PATCH',
+          body: input,
+        },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lecturers', 'admin-roster'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+}
 
 export function useLecturer(id: number | undefined) {
   return useQuery({
