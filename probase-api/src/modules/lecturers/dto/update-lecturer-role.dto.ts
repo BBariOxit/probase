@@ -2,12 +2,11 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 export const UpdateLecturerRoleSchema = z.object({
-  assignedRole: z.enum(['LECTURER', 'TTBM', 'GVCN', 'ADMIN'], {
-    required_error: 'Vui lòng chọn vai trò',
-  }),
+  assignedRole: z.enum(['LECTURER', 'TTBM', 'GVCN', 'ADMIN']),
   majorId: z.number().int().positive().optional().nullable(),
 });
 
 export class UpdateLecturerRoleDto extends createZodDto(
   UpdateLecturerRoleSchema,
 ) {}
+

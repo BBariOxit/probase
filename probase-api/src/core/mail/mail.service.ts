@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { BrevoClient } from '@getbrevo/brevo';
 
-export type MailableRole = 'ADMIN' | 'LECTURER' | 'STUDENT';
+export type MailableRole = 'ADMIN' | 'LECTURER' | 'STUDENT' | 'GVCN';
 
 export interface CredentialsEmailPayload {
   to: string;
@@ -14,6 +14,7 @@ export interface CredentialsEmailPayload {
 const ROLE_LABELS: Record<MailableRole, string> = {
   ADMIN: 'Quản trị viên',
   LECTURER: 'Giảng viên',
+  GVCN: 'Giáo viên chủ nhiệm',
   STUDENT: 'Sinh viên',
 };
 

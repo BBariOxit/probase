@@ -309,13 +309,13 @@ export class LecturersService {
         userId: currentAdminId,
         action: 'UPDATE_LECTURER_ROLE',
         targetTable: 'lecturer_profiles',
-        targetId: targetUser.lecturerProfile.id,
+        targetId: updatedProfile.id,
         oldValue: {
           role: targetUser.role,
-          isHeadOfDepartment: targetUser.lecturerProfile.isHeadOfDepartment,
-          isAcademicAssistant: targetUser.lecturerProfile.isAcademicAssistant,
-          isHomeroomTeacher: targetUser.lecturerProfile.isHomeroomTeacher,
-          majorId: targetUser.lecturerProfile.majorId,
+          isHeadOfDepartment: targetUser.lecturerProfile?.isHeadOfDepartment ?? false,
+          isAcademicAssistant: targetUser.lecturerProfile?.isAcademicAssistant ?? false,
+          isHomeroomTeacher: targetUser.lecturerProfile?.isHomeroomTeacher ?? false,
+          majorId: targetUser.lecturerProfile?.majorId ?? null,
         },
         newValue: {
           assignedRole: dto.assignedRole,
