@@ -9,7 +9,6 @@ import {
   ClipboardPen,
   FileCheck2,
   FileUp,
-  Gavel,
   GraduationCap,
   Inbox,
   Layers,
@@ -17,10 +16,8 @@ import {
   Lightbulb,
   MessageSquareText,
   ScrollText,
-  ShieldCheck,
   Shuffle,
   TrendingUp,
-  UserCheck,
   Users,
   type LucideIcon,
 } from 'lucide-react';
@@ -70,12 +67,6 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           icon: TrendingUp,
           ready: true,
         },
-        {
-          href: '/student/defense',
-          label: 'Bảo vệ',
-          icon: ShieldCheck,
-          ready: true,
-        },
       ],
     },
   ],
@@ -118,12 +109,6 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           ready: true,
         },
         {
-          href: '/lecturer/reviews',
-          label: 'Đề tài phản biện',
-          icon: Building2,
-          ready: true,
-        },
-        {
           href: '/lecturer/reports',
           label: 'Báo cáo & nhận xét',
           icon: MessageSquareText,
@@ -145,17 +130,6 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           href: '/lecturer/topic-reviews',
           label: 'Duyệt đề tài',
           icon: ClipboardCheck,
-          ready: true,
-        },
-      ],
-    },
-    {
-      label: 'Hội đồng',
-      items: [
-        {
-          href: '/lecturer/councils',
-          label: 'Hội đồng của tôi',
-          icon: Gavel,
           ready: true,
         },
       ],
@@ -193,18 +167,6 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           href: '/admin/outlines',
           label: 'Đề cương M03',
           icon: FileCheck2,
-          ready: true,
-        },
-        {
-          href: '/admin/reviewers',
-          label: 'Phân công GVPB',
-          icon: UserCheck,
-          ready: true,
-        },
-        {
-          href: '/admin/councils',
-          label: 'Hội đồng bảo vệ',
-          icon: Gavel,
           ready: true,
         },
         {

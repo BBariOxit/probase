@@ -9,6 +9,10 @@ export interface ArchiveTopicItem {
   titleVi?: string | null;
   titleEn?: string | null;
   description: string;
+  objectives?: string | null;
+  requirements?: string | null;
+  expectedOutcomes?: string | null;
+  techStack?: string | null;
   status: string;
   maxStudents: number;
   major?: { id: number; name: string; code: string } | null;

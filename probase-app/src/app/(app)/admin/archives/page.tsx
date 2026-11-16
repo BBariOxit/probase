@@ -248,7 +248,7 @@ export default function ArchivesPage() {
                 <Select
                   value={selectedSemesterId}
                   onValueChange={(val) => {
-                    setSelectedSemesterId(val);
+                    setSelectedSemesterId(val ?? 'all');
                     setSelectedRoundId('all');
                     setPage(1);
                   }}
@@ -281,7 +281,7 @@ export default function ArchivesPage() {
                 <Select
                   value={selectedRoundId}
                   onValueChange={(val) => {
-                    setSelectedRoundId(val);
+                    setSelectedRoundId(val ?? 'all');
                     setPage(1);
                   }}
                 >
@@ -321,7 +321,7 @@ export default function ArchivesPage() {
                 <Select
                   value={selectedMajorId}
                   onValueChange={(val) => {
-                    setSelectedMajorId(val);
+                    setSelectedMajorId(val ?? 'all');
                     setPage(1);
                   }}
                 >
@@ -508,8 +508,7 @@ export default function ArchivesPage() {
                     <TableCell colSpan={7} className="h-64 text-center">
                       <EmptyState
                         icon={Archive}
-                        title="Không có đề tài lưu trữ"
-                        description="Chưa có đề tài nào phù hợp với bộ lọc."
+                        title="Không có đề tài lưu trữ phù hợp với bộ lọc."
                       />
                     </TableCell>
                   </TableRow>

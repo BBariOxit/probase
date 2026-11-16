@@ -66,7 +66,7 @@ export function LecturerProgressEvaluation({
 
   if (error || !data) return null;
 
-  const { weeklyLogs, progressReports, isSupervisor, isReviewer, group } = data;
+  const { weeklyLogs, progressReports, isSupervisor, group } = data;
   const stage1 = progressReports?.stage1;
   const stage2 = progressReports?.stage2;
 
@@ -76,9 +76,7 @@ export function LecturerProgressEvaluation({
 
   const bothGradedStage2 =
     stage2?.supervisorGrade !== null &&
-    stage2?.supervisorGrade !== undefined &&
-    stage2?.reviewerGrade !== null &&
-    stage2?.reviewerGrade !== undefined;
+    stage2?.supervisorGrade !== undefined;
 
   const getLetterGrade = (score: number) => {
     if (score >= 8.5) return 'A';
@@ -118,13 +116,8 @@ export function LecturerProgressEvaluation({
       setGrade(stage1?.supervisorGrade ?? 8);
       setGradeFeedback(stage1?.supervisorFeedback ?? '');
     } else {
-      const currentGrade = isSupervisor
-        ? stage2?.supervisorGrade
-        : stage2?.reviewerGrade;
-      setGrade(currentGrade ?? 8);
-      setGradeFeedback(
-        (isSupervisor ? stage2?.supervisorFeedback : stage2?.reviewerFeedback) ?? '',
-      );
+      setGrade(stage2?.supervisorGrade ?? 8);
+      setGradeFeedback(stage2?.supervisorFeedback ?? '');
       setWorkload(stage2?.workloadPercentage ?? 60);
     }
   };
@@ -293,22 +286,16 @@ export function LecturerProgressEvaluation({
                     </div>
                   )}
 
-                  {/* Chi tiết 2 GV */}
+                  {/* Điểm GVHD */}
                   <div className="flex items-center justify-between rounded bg-muted/30 p-1.5 text-[11px]">
                     <span>
-                      GVHD:{' '}
+                      Điểm chốt:{' '}
                       <strong className="text-foreground">
-                        {stage2.supervisorGrade !== null && stage2.supervisorGrade !== undefined
-                          ? `${stage2.supervisorGrade}/10`
-                          : 'Chưa chấm'}
-                      </strong>
-                    </span>
-                    <span>
-                      GVPB:{' '}
-                      <strong className="text-foreground">
-                        {stage2.reviewerGrade !== null && stage2.reviewerGrade !== undefined
-                          ? `${stage2.reviewerGrade}/10`
-                          : 'Chưa chấm'}
+                        {stage2.finalStageGrade !== null && stage2.finalStageGrade !== undefined
+                          ? `${stage2.finalStageGrade}/10`
+                          : stage2.supervisorGrade !== null && stage2.supervisorGrade !== undefined
+                            ? `${stage2.supervisorGrade}/10`
+                            : 'Chưa chấm'}
                       </strong>
                     </span>
                   </div>
@@ -325,7 +312,7 @@ export function LecturerProgressEvaluation({
               )}
             </div>
 
-            {(isSupervisor || isReviewer) && (
+            {isSupervisor && (
               <div className="mt-3 pt-2 border-t">
                 <Button
                   size="sm"
