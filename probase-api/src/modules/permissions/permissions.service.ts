@@ -18,15 +18,39 @@ export class PermissionsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Lấy ma trận quyền theo vai trò (Role Permission Matrix)
+   * Lấy ma trận quyền theo vai trò (Role Permission Matrix) kèm danh sách phân quyền đặc biệt
    */
   async getMatrix() {
-    const rolePerms = await this.prisma.rolePermission.findMany({
-      select: {
-        role: true,
-        permission: true,
-      },
-    });
+    const [rolePerms, userPerms] = await Promise.all([
+      this.prisma.rolePermission.findMany({
+        select: {
+          role: true,
+          permission: true,
+        },
+      }),
+      this.prisma.userPermission.findMany({
+        select: {
+          id: true,
+          userId: true,
+          permission: true,
+          grantedAt: true,
+          user: {
+            select: {
+              email: true,
+              role: true,
+              lecturerProfile: {
+                select: {
+                  fullName: true,
+                  lecturerCode: true,
+                  major: { select: { name: true, code: true } },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { grantedAt: 'asc' },
+      }),
+    ]);
 
     const matrix: Record<string, string[]> = {
       ADMIN: Object.values(SystemPermission),
@@ -50,11 +74,71 @@ export class PermissionsService {
       isLocked: role === 'ADMIN',
     }));
 
+    const customAssignments = userPerms.map((up) => ({
+      id: up.id,
+      userId: up.userId,
+      permission: up.permission,
+      fullName: up.user.lecturerProfile?.fullName ?? up.user.email,
+      email: up.user.email,
+      lecturerCode: up.user.lecturerProfile?.lecturerCode ?? '',
+      majorName: up.user.lecturerProfile?.major?.name ?? '',
+    }));
+
     return {
       permissions: PERMISSION_DEFINITIONS,
       roles,
       matrix,
+      customAssignments,
     };
+  }
+
+  /**
+   * Cấp một quyền đặc biệt cho giảng viên cụ thể
+   */
+  async grantPermission(
+    userId: number,
+    permission: SystemPermission,
+    actorId: number,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Không tìm thấy người dùng');
+    }
+
+    await this.prisma.userPermission.upsert({
+      where: {
+        userId_permission: {
+          userId,
+          permission,
+        },
+      },
+      update: {},
+      create: {
+        userId,
+        permission,
+        grantedById: actorId,
+      },
+    });
+
+    return { success: true, userId, permission };
+  }
+
+  /**
+   * Thu hồi một quyền đặc biệt từ giảng viên
+   */
+  async revokePermission(userId: number, permission: SystemPermission) {
+    await this.prisma.userPermission.deleteMany({
+      where: {
+        userId,
+        permission,
+      },
+    });
+
+    return { success: true, userId, permission };
   }
 
   /**

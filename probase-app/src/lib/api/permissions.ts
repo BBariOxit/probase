@@ -16,10 +16,21 @@ export interface SystemRoleInfo {
   isLocked: boolean;
 }
 
+export interface CustomAssignmentItem {
+  id: number;
+  userId: number;
+  permission: string;
+  fullName: string;
+  email: string;
+  lecturerCode: string;
+  majorName?: string;
+}
+
 export interface PermissionMatrixResponse {
   permissions: PermissionDefinition[];
   roles: SystemRoleInfo[];
   matrix: Record<string, string[]>;
+  customAssignments?: CustomAssignmentItem[];
 }
 
 export interface UserPermissionsResponse {
@@ -93,6 +104,56 @@ export function useUpdateUserPermissions() {
       queryClient.invalidateQueries({
         queryKey: ['lecturers', 'admin-roster'],
       });
+    },
+  });
+}
+
+export function useGrantPermission() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      userId,
+      permission,
+    }: {
+      userId: number;
+      permission: string;
+    }) =>
+      api<{ success: boolean; userId: number; permission: string }>(
+        '/permissions/grant',
+        {
+          method: 'POST',
+          body: { userId, permission },
+        },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['permissions', 'matrix'] });
+      queryClient.invalidateQueries({ queryKey: ['lecturers', 'admin-roster'] });
+    },
+  });
+}
+
+export function useRevokePermission() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      userId,
+      permission,
+    }: {
+      userId: number;
+      permission: string;
+    }) =>
+      api<{ success: boolean; userId: number; permission: string }>(
+        '/permissions/revoke',
+        {
+          method: 'POST',
+          body: { userId, permission },
+        },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['permissions', 'matrix'] });
+      queryClient.invalidateQueries({ queryKey: ['lecturers', 'admin-roster'] });
     },
   });
 }

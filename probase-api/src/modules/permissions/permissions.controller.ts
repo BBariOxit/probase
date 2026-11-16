@@ -4,10 +4,13 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Post,
   Put,
 } from '@nestjs/common';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { GrantPermissionDto } from './dto/grant-permission.dto';
+import { RevokePermissionDto } from './dto/revoke-permission.dto';
 import { UpdateRolePermissionsDto } from './dto/update-role-permissions.dto';
 import { UpdateUserPermissionsDto } from './dto/update-user-permissions.dto';
 import { PermissionsService } from './permissions.service';
@@ -74,6 +77,31 @@ export class PermissionsController {
   @Get('my-permissions')
   getMyPermissions(@GetUser('id') userId: number) {
     return this.permissionsService.getUserEffectivePermissions(userId);
+  }
+
+  /**
+   * Cấp một quyền đặc biệt cho giảng viên
+   */
+  @Roles('ADMIN')
+  @Post('grant')
+  grantPermission(
+    @Body() dto: GrantPermissionDto,
+    @GetUser('id') actorId: number,
+  ) {
+    return this.permissionsService.grantPermission(
+      dto.userId,
+      dto.permission,
+      actorId,
+    );
+  }
+
+  /**
+   * Thu hồi một quyền đặc biệt từ giảng viên
+   */
+  @Roles('ADMIN')
+  @Post('revoke')
+  revokePermission(@Body() dto: RevokePermissionDto) {
+    return this.permissionsService.revokePermission(dto.userId, dto.permission);
   }
 }
 
