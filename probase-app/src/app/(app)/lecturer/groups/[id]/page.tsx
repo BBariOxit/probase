@@ -31,7 +31,7 @@ export default function LecturerGroupDetailPage({
 }) {
   const { id } = use(params);
   const groupId = Number(id);
-  const allowed = useRequireRole('LECTURER');
+  const allowed = useRequireRole(['LECTURER', 'GVCN']);
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
 
   const { data: group, isPending, error } = useGroup(groupId);

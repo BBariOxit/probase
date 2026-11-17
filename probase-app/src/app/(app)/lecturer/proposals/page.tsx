@@ -31,7 +31,7 @@ import { PROPOSAL_STATUS_FILTERS } from '@/constants/status.constant';
 import { usePagination } from '@/hooks';
 
 function LecturerProposalsContent() {
-  const allowed = useRequireRole('LECTURER');
+  const allowed = useRequireRole(['LECTURER', 'GVCN']);
   const router = useRouter();
   const searchParams = useSearchParams();
   const targetIdParam = searchParams.get('id');

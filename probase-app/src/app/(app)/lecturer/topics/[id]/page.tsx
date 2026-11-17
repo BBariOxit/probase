@@ -26,33 +26,12 @@ import { useBreadcrumbLabel } from '@/lib/breadcrumb-context';
 import { cn, formatSemesterShort, sanitizeLecturerName } from '@/lib/utils';
 import { PageHeading } from '@/components/layout/page-heading';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import {
-  AttachmentUploader,
-  type ExistingAttachment,
-} from '@/components/shared/attachment-uploader';
 import { TopicDetailView } from '@/components/topics/topic-detail-view';
 import { TopicForm } from '@/components/topics/topic-form';
 import { TopicStatusBadge } from '@/components/topics/topic-status-badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-
-type RawTopicAttachment = {
-  id: number | string;
-  fileName?: string;
-  name?: string;
-  fileUrl?: string;
-  url?: string;
-  fileSize?: number;
-  size?: number;
-  fileType?: string;
-  type?: string;
-};
-
-type TopicWithAttachments = {
-  attachments?: RawTopicAttachment[];
-  sourceProposal?: { attachments?: RawTopicAttachment[] };
-};
 
 function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
   const searchParams = useSearchParams();
@@ -83,10 +62,6 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
     'APPROVE' | 'REQUEST_REVISION' | 'REJECT' | null
   >(null);
   const feedbackRef = useRef<HTMLTextAreaElement>(null);
-  const [files, setFiles] = useState<File[]>([]);
-  const [deletedFileIds, setDeletedFileIds] = useState<Array<number | string>>(
-    [],
-  );
 
   const feedback = draftFeedback.topicId === topicId ? draftFeedback.text : '';
   const feedbackError =
@@ -136,21 +111,6 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
     );
   }
 
-  const topicWithAttachments = topic as unknown as TopicWithAttachments;
-  const rawAttachments =
-    topicWithAttachments.attachments ??
-    topicWithAttachments.sourceProposal?.attachments ??
-    [];
-  const existingFiles: ExistingAttachment[] = rawAttachments
-    .filter((att) => !deletedFileIds.includes(att.id))
-    .map((att) => ({
-      id: att.id,
-      name: att.fileName ?? att.name ?? 'Tệp đính kèm',
-      url: att.fileUrl ?? att.url,
-      size: att.fileSize ?? att.size,
-      type: att.fileType ?? att.type,
-    }));
-
   const isOwner =
     profile?.lecturer?.id !== undefined &&
     profile.lecturer.id === topic.lecturer.id;
@@ -180,11 +140,7 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
       maxStudents: values.maxStudents,
       ...(status && { status }),
     });
-    if (files.length > 0) {
-      toast.success(
-        `Đã cập nhật đề tài và lưu ${files.length} tệp đính kèm mới!`,
-      );
-    } else if (isApproved) {
+    if (isApproved) {
       toast.success(
         'Đã lưu thay đổi. Đề tài đã chuyển về Chờ duyệt lại để TTBM xác nhận.',
       );
@@ -296,17 +252,7 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
             onCancel={() => {
               router.replace(`/lecturer/topics/${topicId}`);
             }}
-          >
-            <AttachmentUploader
-              files={files}
-              onChange={setFiles}
-              existingFiles={existingFiles}
-              onDeleteExisting={(fileId) => {
-                setDeletedFileIds((prev) => [...prev, fileId]);
-                toast.success('Đã xoá tệp đính kèm.');
-              }}
-            />
-          </TopicForm>
+          />
         </div>
 
         <ConfirmDialog
@@ -530,36 +476,6 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
                 </Button>
               )}
 
-              {isOwner && topic.status === 'DRAFT' && (
-                <Button
-                  variant="default"
-                  disabled={transition.isPending}
-                  onClick={async () => {
-                    try {
-                      const res = await transition.mutateAsync({
-                        id: topic.id,
-                        to: 'submit',
-                      });
-                      toast.success(
-                        res.status === 'APPROVED'
-                          ? 'Đề tài đã được phê duyệt tự động (TTBM).'
-                          : 'Đã gửi đề tài lên Bộ môn thẩm định.',
-                      );
-                    } catch {
-                      toast.error('Không thể gửi duyệt đề tài.');
-                    }
-                  }}
-                  className="gap-1.5 font-semibold bg-primary text-white hover:bg-primary/90 cursor-pointer shadow-xs"
-                >
-                  {transition.isPending ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <Send className="size-4" />
-                  )}
-                  <span>Gửi duyệt</span>
-                </Button>
-              )}
-
               {isOwner && isPendingReview && (
                 <>
                   <Button
@@ -646,7 +562,7 @@ export default function LecturerTopicDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const allowed = useRequireRole(['LECTURER', 'ADMIN']);
+  const allowed = useRequireRole(['LECTURER', 'GVCN', 'ADMIN']);
 
   if (!allowed) return null;
 

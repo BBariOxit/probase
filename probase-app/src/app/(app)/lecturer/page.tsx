@@ -16,7 +16,7 @@ import { TopicArchiveTab } from '@/components/lecturer/topics/topic-archive-tab'
 import { ColleagueTopicsTab } from '@/components/lecturer/topics/colleague-topics-tab';
 
 export default function LecturerTopicsPage() {
-  const allowed = useRequireRole('LECTURER');
+  const allowed = useRequireRole(['LECTURER', 'GVCN']);
   const { data: profile } = useMyProfile({ enabled: allowed });
 
   const activeSemester = useActiveSemester();
@@ -84,7 +84,7 @@ export default function LecturerTopicsPage() {
               : 'text-muted-foreground hover:text-foreground',
           )}
         >
-          <span>Kho đề tài cũ</span>
+          <span>Đề tài kỳ trước</span>
         </button>
 
         <button
@@ -97,7 +97,7 @@ export default function LecturerTopicsPage() {
               : 'text-muted-foreground hover:text-foreground',
           )}
         >
-          <span>Đề tài đồng nghiệp</span>
+          <span>Giảng viên khác</span>
           {colleagueTopicsData?.total !== undefined && (
             <span className="ml-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-primary/10 text-primary">
               {colleagueTopicsData.total}

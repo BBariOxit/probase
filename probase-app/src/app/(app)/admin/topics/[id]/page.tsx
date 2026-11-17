@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2, Lock, LockOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTopic, useTopicTransition } from '@/lib/api/topics';
-import { useRequireRole } from '@/lib/auth/use-require-role';
+import { useRequireGvcnOrAdmin } from '@/lib/auth/use-require-role';
 import { useBreadcrumbLabel } from '@/lib/breadcrumb-context';
 import { TopicDetailView } from '@/components/topics/topic-detail-view';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ export default function AdminTopicDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const allowed = useRequireRole('ADMIN');
+  const { allowed } = useRequireGvcnOrAdmin('TOPIC_REGISTRY');
   const { data: topic, isPending, error } = useTopic(Number(id));
   const transition = useTopicTransition();
 

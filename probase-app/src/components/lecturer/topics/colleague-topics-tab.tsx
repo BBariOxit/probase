@@ -140,7 +140,7 @@ export function ColleagueTopicsTab({
 
       {error && (
         <p className="text-sm text-destructive">
-          Không tải được danh sách đề tài đồng nghiệp.
+          Không tải được danh sách đề tài giảng viên khác.
         </p>
       )}
 

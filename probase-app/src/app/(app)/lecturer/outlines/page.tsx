@@ -99,7 +99,7 @@ function OutlineStatusBadge({ status }: { status?: OutlineStatus | null }) {
 }
 
 export default function LecturerOutlinesPage() {
-  const allowed = useRequireRole('LECTURER');
+  const allowed = useRequireRole(['LECTURER', 'GVCN']);
   const activeSemester = useActiveSemester();
   const { data: semesters } = useSemesters();
 

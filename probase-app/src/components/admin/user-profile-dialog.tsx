@@ -64,7 +64,7 @@ export function UserProfileDialog({
             profile={data.studentProfile}
             onClose={onClose}
           />
-        ) : data.role === 'LECTURER' ? (
+        ) : data.role === 'LECTURER' || data.role === 'GVCN' ? (
           <LecturerForm
             userId={user.id}
             profile={data.lecturerProfile}

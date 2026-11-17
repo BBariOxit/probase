@@ -134,14 +134,16 @@ export default function StudentSubmissionsPage() {
                 icon={FileUp}
                 title="Nhóm bạn chưa nộp bài báo cáo nào."
                 action={
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSubmitting(true)}
-                  >
-                    <Upload />
-                    Nộp bài đầu tiên
-                  </Button>
+                  group.requirements.length > 0 ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSubmitting(true)}
+                    >
+                      <Upload />
+                      Nộp bài đầu tiên
+                    </Button>
+                  ) : undefined
                 }
               />
             </div>
@@ -175,7 +177,7 @@ function SubmitDialog({
   onClose: () => void;
 }) {
   const create = useCreateSubmission();
-  const [requirementId, setRequirementId] = useState(requirements[0].id);
+  const [requirementId, setRequirementId] = useState(requirements[0]?.id ?? 0);
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);

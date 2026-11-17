@@ -40,7 +40,7 @@ export default function LecturerProposalDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const allowed = useRequireRole('LECTURER');
+  const allowed = useRequireRole(['LECTURER', 'GVCN']);
   const router = useRouter();
   const proposalId = Number(id);
   const { data: proposal, isPending, error } = useProposal(proposalId);

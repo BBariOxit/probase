@@ -16,7 +16,7 @@ export default function StudentTopicDetailPage({
 }) {
   const { id } = use(params);
   // Cho phép sinh viên, giảng viên và quản trị viên xem chi tiết đề tài
-  const allowed = useRequireRole(['STUDENT', 'LECTURER', 'ADMIN']);
+  const allowed = useRequireRole(['STUDENT', 'LECTURER', 'GVCN', 'ADMIN']);
   const { data: topic, isPending, error } = useTopic(Number(id));
 
   // Cập nhật tiêu đề đề tài lên breadcrumb

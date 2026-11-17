@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { useMyProfile } from '@/lib/api/me';
+import { useMyPermissions } from '@/lib/api/permissions';
 import { useTopics } from '@/lib/api/topics';
 import { useSemesters } from '@/lib/api/master-data';
 import { useRequireRole } from '@/lib/auth/use-require-role';
@@ -48,13 +49,17 @@ const dateFormat = new Intl.DateTimeFormat('vi-VN', {
 });
 
 export default function LecturerTopicReviewsPage() {
-  const allowed = useRequireRole('LECTURER');
+  const allowed = useRequireRole(['LECTURER', 'GVCN']);
   const { data: profile, isPending: isProfilePending } = useMyProfile({
     enabled: allowed,
   });
+  const { data: myPermissions, isPending: isPermsPending } = useMyPermissions();
 
   const lecturer = profile?.lecturer;
   const isHeadOfDepartment = lecturer?.isHeadOfDepartment ?? false;
+  const canReviewDept =
+    isHeadOfDepartment ||
+    (myPermissions?.includes('TOPIC_REVIEW_DEPT') ?? false);
 
   const [activeTab, setActiveTab] = useState<'reviews' | 'progress'>('reviews');
   const [filterStatus, setFilterStatus] = useState<
@@ -75,22 +80,23 @@ export default function LecturerTopicReviewsPage() {
 
   const { data, isPending, error } = useTopics(
     {
-      reviewStage: 'DEPARTMENT',
+      reviewStage: filterStatus === 'ALL' ? 'ALL' : 'DEPARTMENT',
       ...(lecturer?.major?.id ? { majorId: lecturer.major.id } : {}),
-      ...(filterStatus !== 'ALL'
-        ? { status: filterStatus as any }
-        : { status: 'ALL' as any }),
+      ...(filterStatus === 'APPROVED' ? { status: 'APPROVED' } : {}),
       ...(filterLecturerId ? { lecturerId: filterLecturerId } : {}),
       page,
       limit: TOPIC_PAGE_SIZE,
       q: debouncedSearch || undefined,
     },
-    { enabled: allowed && !isProfilePending && isHeadOfDepartment },
+    {
+      enabled:
+        allowed && !isProfilePending && !isPermsPending && canReviewDept,
+    },
   );
 
   if (!allowed) return null;
 
-  if (isProfilePending) {
+  if (isProfilePending || isPermsPending) {
     return (
       <div className="flex justify-center py-14">
         <Loader2 className="size-5 animate-spin text-muted-foreground" />
@@ -98,7 +104,7 @@ export default function LecturerTopicReviewsPage() {
     );
   }
 
-  if (!isHeadOfDepartment) {
+  if (!canReviewDept) {
     return (
       <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
         <EmptyState

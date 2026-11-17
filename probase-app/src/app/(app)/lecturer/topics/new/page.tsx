@@ -1,27 +1,23 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { useActiveSemester } from '@/lib/api/master-data';
 import { useMyProfile } from '@/lib/api/me';
-import { useCreateTopic, useSubmitDraftTopics } from '@/lib/api/topics';
+import { useCreateTopic } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { PageHeading } from '@/components/layout/page-heading';
-import { AttachmentUploader } from '@/components/shared/attachment-uploader';
 import { TopicForm } from '@/components/topics/topic-form';
 import { Button } from '@/components/ui/button';
 
 export default function NewTopicPage() {
-  const allowed = useRequireRole('LECTURER');
+  const allowed = useRequireRole(['LECTURER', 'GVCN']);
   const router = useRouter();
   const activeSemester = useActiveSemester();
   const { data: profile } = useMyProfile({ enabled: allowed });
   const create = useCreateTopic();
-  const submitDrafts = useSubmitDraftTopics();
-  const [files, setFiles] = useState<File[]>([]);
 
   if (!allowed) return null;
 
@@ -46,10 +42,7 @@ export default function NewTopicPage() {
       </div>
 
       <div className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] p-6 sm:p-8 shadow-xs space-y-6">
-        <PageHeading
-          title="Tạo đề tài"
-          description="Điền thông tin đề tài cho học kỳ hiện tại để gửi Bộ môn thẩm định hoặc lưu bản nháp."
-        />
+        <PageHeading title="Tạo đề tài" />
         <TopicForm
           defaultValues={{ semesterId: activeSemester.id }}
           semesterInfo={activeSemester}
@@ -59,24 +52,24 @@ export default function NewTopicPage() {
           }
           draftLabel="Lưu bản nháp"
           onSaveDraft={async (values) => {
-            await create.mutateAsync(values);
+            await create.mutateAsync({ ...values, status: 'DRAFT' });
             toast.success('Đã lưu bản nháp đề tài thành công!');
             router.push('/lecturer');
           }}
           onSubmit={async (values) => {
-            const created = await create.mutateAsync(values);
-            try {
-              const res = await submitDrafts.mutateAsync([created.id]);
-              toast.success(res.message);
-            } catch {
-              toast.success('Đã lưu đề tài dưới dạng bản nháp!');
-            }
+            const created = await create.mutateAsync({
+              ...values,
+              status: 'PENDING_DEPARTMENT',
+            });
+            toast.success(
+              created.status === 'APPROVED'
+                ? 'Đề tài đã được tự động phê duyệt (TTBM), sẵn sàng chờ Giáo vụ mở đăng ký.'
+                : 'Đã gửi đề tài lên Bộ môn thẩm định.',
+            );
             router.push('/lecturer');
           }}
           onCancel={() => router.push('/lecturer')}
-        >
-          <AttachmentUploader files={files} onChange={setFiles} />
-        </TopicForm>
+        />
       </div>
     </div>
   );
