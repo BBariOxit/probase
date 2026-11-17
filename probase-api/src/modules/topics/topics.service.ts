@@ -19,6 +19,7 @@ import { NotificationsService } from '../../core/notifications/notifications.ser
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { RoundPhaseService } from '../rounds/round-phase.service';
 import { RoundsService } from '../rounds/rounds.service';
+import { CloneTopicDto } from './dto/clone-topic.dto';
 import { CreateTopicDto } from './dto/create-topic.dto';
 import { QueryTopicsDto } from './dto/query-topics.dto';
 import { UpdateTopicDto } from './dto/update-topic.dto';
@@ -251,7 +252,11 @@ export class TopicsService {
     const where: Prisma.TopicWhereInput = {};
     const andConditions: Prisma.TopicWhereInput[] = [];
 
-    if (query.semesterId) where.semesterId = query.semesterId;
+    if (query.semesterId) {
+      where.semesterId = query.semesterId;
+    } else if (query.excludeSemesterId) {
+      where.semesterId = { not: query.excludeSemesterId };
+    }
     // Still asked for by kind of project, which is what a reader picks from a
     // menu — the round it implies is this layer's problem, not theirs.
     if (query.projectTypeId) {
@@ -326,8 +331,14 @@ export class TopicsService {
     } else {
       if (query.lecturerId) {
         where.lecturerId = query.lecturerId;
+      } else if (query.excludeLecturerId) {
+        where.lecturerId = { not: query.excludeLecturerId };
       }
-      where.status = visibleStatusFilter(role, query.status);
+      if (query.includeDrafts && (role === Role.LECTURER || role === Role.ADMIN)) {
+        where.status = query.status ? query.status : undefined;
+      } else {
+        where.status = visibleStatusFilter(role, query.status);
+      }
     }
 
     if (query.forMyCohort) {
@@ -482,22 +493,6 @@ export class TopicsService {
       if (role !== Role.LECTURER && role !== Role.ADMIN) {
         throw new NotFoundException('Không tìm thấy đề tài.');
       }
-      if (role === Role.LECTURER) {
-        const lecturerId = await this.requireLecturerProfileId(userId);
-        if (topic.lecturerId !== lecturerId) {
-          const profile = await this.prisma.lecturerProfile.findUnique({
-            where: { id: lecturerId },
-            select: { isHeadOfDepartment: true, majorId: true },
-          });
-          const effectiveMajorId = topic.majorId ?? (topic.lecturer as any).majorId;
-          const isDeptHead =
-            profile?.isHeadOfDepartment &&
-            (!profile.majorId || profile.majorId === effectiveMajorId);
-          if (!isDeptHead) {
-            throw new NotFoundException('Không tìm thấy đề tài.');
-          }
-        }
-      }
     } else if (!canSee(topic.status, role)) {
       throw new NotFoundException('Không tìm thấy đề tài.');
     }
@@ -573,6 +568,69 @@ export class TopicsService {
     }
 
     return this.presentDetail(topic);
+  }
+
+  async clone(id: number, dto: CloneTopicDto, userId: number) {
+    const source = await this.prisma.topic.findUnique({
+      where: { id },
+      include: { round: true },
+    });
+    if (!source) {
+      throw new NotFoundException('Không tìm thấy đề tài nguồn.');
+    }
+
+    const lecturerProfile = await this.prisma.lecturerProfile.findUnique({
+      where: { userId },
+      select: { id: true, majorId: true, isHeadOfDepartment: true },
+    });
+    if (!lecturerProfile) {
+      throw new ForbiddenException('Chỉ giảng viên mới có quyền nhân bản đề tài.');
+    }
+
+    let targetSemesterId = dto.semesterId;
+    if (!targetSemesterId) {
+      const activeSem = await this.prisma.semester.findFirst({
+        where: { isActive: true },
+        select: { id: true },
+      });
+      if (!activeSem) {
+        throw new NotFoundException('Không tìm thấy học kỳ đang kích hoạt.');
+      }
+      targetSemesterId = activeSem.id;
+    }
+
+    const targetProjectTypeId =
+      dto.projectTypeId ?? source.round.projectTypeId;
+    const round = await this.rounds.requireRoundFor(
+      targetSemesterId,
+      targetProjectTypeId,
+    );
+
+    const targetMajorId =
+      dto.majorId !== undefined
+        ? dto.majorId
+        : source.majorId ?? lecturerProfile.majorId ?? null;
+    const targetMaxStudents =
+      dto.maxStudents ?? source.maxStudents ?? round.maxStudentsPerTopic ?? 2;
+
+    const cloned = await this.prisma.topic.create({
+      data: {
+        title: dto.title?.trim() || `${source.title} (Bản sao)`,
+        description: source.description,
+        objectives: source.objectives,
+        expectedOutcomes: source.expectedOutcomes,
+        techStack: source.techStack,
+        semesterId: targetSemesterId,
+        roundId: round.id,
+        lecturerId: lecturerProfile.id,
+        majorId: targetMajorId,
+        maxStudents: targetMaxStudents,
+        status: TopicStatus.DRAFT,
+      },
+      include: DETAIL_INCLUDE,
+    });
+
+    return this.presentDetail(cloned);
   }
 
   async update(id: number, dto: UpdateTopicDto, userId: number, role: Role) {

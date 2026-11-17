@@ -18,6 +18,7 @@ import { GetUser } from '../auth/decorators/get-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RequirePermissions } from '../permissions/require-permissions.decorator';
 import { SystemPermission } from '../permissions/permissions.constants';
+import { CloneTopicDto } from './dto/clone-topic.dto';
 import { CreateTopicDto } from './dto/create-topic.dto';
 import { ExportTopicsDto } from './dto/export-topics.dto';
 import { QueryTopicLecturersDto } from './dto/query-topic-lecturers.dto';
@@ -96,6 +97,16 @@ export class TopicsController {
   @Post()
   create(@Body() dto: CreateTopicDto, @GetUser('id') userId: number) {
     return this.topicsService.create(dto, userId);
+  }
+
+  @Roles('LECTURER')
+  @Post(':id/clone')
+  clone(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CloneTopicDto,
+    @GetUser('id') userId: number,
+  ) {
+    return this.topicsService.clone(id, dto, userId);
   }
 
   // Literal routes must be declared before wildcard :id routes so NestJS does

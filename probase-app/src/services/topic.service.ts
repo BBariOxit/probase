@@ -24,14 +24,17 @@ export interface TopicExportQuery {
 
 export interface TopicQuery {
   semesterId?: number;
+  excludeSemesterId?: number;
   projectTypeId?: number;
   lecturerId?: number;
+  excludeLecturerId?: number;
   majorId?: number;
   status?: TopicStatus;
   reviewStage?: 'DEPARTMENT' | 'ALL';
   q?: string;
   mine?: boolean;
   forMyCohort?: boolean;
+  includeDrafts?: boolean;
   page?: number;
   limit?: number;
 }
@@ -129,6 +132,22 @@ export const topicService = {
     }>('/topics/submit-drafts', {
       method: 'POST',
       body: { topicIds },
+    });
+  },
+
+  clone(
+    id: number,
+    input?: {
+      title?: string;
+      projectTypeId?: number;
+      semesterId?: number;
+      majorId?: number;
+      maxStudents?: number;
+    },
+  ) {
+    return api<TopicDetail>(`/topics/${id}/clone`, {
+      method: 'POST',
+      body: input ?? {},
     });
   },
 
