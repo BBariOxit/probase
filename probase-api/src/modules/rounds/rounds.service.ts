@@ -751,7 +751,7 @@ export class RoundsService {
 
     const lecturers = await this.prisma.lecturerProfile.findMany({
       where: {
-        user: { isActive: true, role: Role.LECTURER },
+        user: { isActive: true, role: { in: [Role.LECTURER, Role.GVCN] } },
         isAcademicAssistant: false,
       },
       select: {

@@ -113,14 +113,9 @@ export class RolesGuard implements CanActivate {
         select: { permission: true },
       });
       const userCustomPerms = new Set(userPerms.map((cp) => cp.permission));
-
-      // 1.1. Khớp quyền tùy biến riêng cấp cho tài khoản
       const hasCustom = requiredPermissions.some((p) =>
         userCustomPerms.has(p),
       );
-      if (hasCustom) {
-        return true;
-      }
 
       // 1.2. Khớp quyền được cấu hình cho vai trò/chức vụ
       const roles: string[] = [user.role];
@@ -130,8 +125,28 @@ export class RolesGuard implements CanActivate {
       if (user.lecturerProfile?.isHomeroomTeacher) {
         roles.push('GVCN');
       }
+      if (user.lecturerProfile?.isAcademicAssistant) {
+        roles.push('TLGV');
+      }
 
       const rolePerms = await this.getRolePermissions();
+      const resolvedPerms = new Set<string>(userCustomPerms);
+      for (const r of roles) {
+        const perms = rolePerms.get(r);
+        if (perms) {
+          for (const p of perms) {
+            resolvedPerms.add(p);
+          }
+        }
+      }
+      user.customPermissions = Array.from(resolvedPerms).map((permission) => ({
+        permission,
+      }));
+
+      if (hasCustom) {
+        return true;
+      }
+
       const hasRolePerm = roles.some((r) => {
         const perms = rolePerms.get(r);
         return perms && requiredPermissions.some((p) => perms.has(p));
@@ -150,7 +165,10 @@ export class RolesGuard implements CanActivate {
         }
 
         if (reqRole === 'LECTURER' || reqRole === Role.LECTURER) {
-          return user.role === Role.LECTURER;
+          return (
+            user.role === Role.LECTURER ||
+            (user.role as string) === 'GVCN'
+          );
         }
 
         if (reqRole === 'STUDENT' || reqRole === Role.STUDENT) {
@@ -173,7 +191,8 @@ export class RolesGuard implements CanActivate {
 
         if (reqRole === AppActor.TTBM || reqRole === 'TTBM') {
           return (
-            user.role === Role.LECTURER &&
+            (user.role === Role.LECTURER ||
+              (user.role as string) === 'GVCN') &&
             !!user.lecturerProfile?.isHeadOfDepartment
           );
         }
@@ -181,7 +200,8 @@ export class RolesGuard implements CanActivate {
         if (reqRole === AppActor.TLGV || reqRole === 'TLGV') {
           return (
             user.role === Role.ADMIN ||
-            (user.role === Role.LECTURER &&
+            ((user.role === Role.LECTURER ||
+              (user.role as string) === 'GVCN') &&
               !!user.lecturerProfile?.isAcademicAssistant)
           );
         }

@@ -93,8 +93,13 @@ export class OutlinesService {
       where: {
         studentId: student.id,
         status: GroupMemberStatus.ACCEPTED,
+        group: {
+          status: { not: RegistrationGroupStatus.REJECTED },
+          semester: { isActive: true },
+        },
       },
       select: { groupId: true },
+      orderBy: { id: 'desc' },
     });
 
     if (!membership) {
@@ -177,8 +182,13 @@ export class OutlinesService {
       where: {
         studentId: student.id,
         status: GroupMemberStatus.ACCEPTED,
+        group: {
+          status: { not: RegistrationGroupStatus.REJECTED },
+          semester: { isActive: true },
+        },
       },
       select: { groupId: true },
+      orderBy: { id: 'desc' },
     });
 
     if (!membership) {
@@ -414,7 +424,7 @@ export class OutlinesService {
 
     // Kiểm tra quyền: Chỉ GVHD của đề tài này (hoặc Admin hệ thống) mới được duyệt
     if (
-      user.role === Role.LECTURER &&
+      (user.role === Role.LECTURER || user.role === Role.GVCN) &&
       outline.topic.lecturer.userId !== user.id
     ) {
       throw new ForbiddenException(
@@ -510,7 +520,7 @@ export class OutlinesService {
     query: QueryOutlinesDto,
   ) {
     // Chỉ Admin hoặc GV có cờ kiêm nhiệm (TLGV, TTBM) mới được truy cập
-    if (user.role === Role.LECTURER) {
+    if (user.role === Role.LECTURER || user.role === Role.GVCN) {
       const lecturer = await this.prisma.lecturerProfile.findUnique({
         where: { userId: user.id },
       });

@@ -38,7 +38,7 @@ export class LecturersService {
   async findAll(query: QueryLecturersDto) {
     const where: Prisma.LecturerProfileWhereInput = {
       // Chỉ lấy giảng viên thực thụ tham gia hướng dẫn (loại trừ tài khoản Giáo vụ / ADMIN và tài khoản bị khóa)
-      user: { isActive: true, role: Role.LECTURER },
+      user: { isActive: true, role: { in: [Role.LECTURER, Role.GVCN] } },
       isAcademicAssistant: false,
       ...(query.q && {
         OR: [

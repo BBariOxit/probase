@@ -21,7 +21,7 @@ import { LecturersService } from './lecturers.service';
 export class LecturersController {
   constructor(private readonly lecturersService: LecturersService) {}
 
-  @Roles('ADMIN')
+  @RequirePermissions(SystemPermission.LECTURER_ROLE_ASSIGN)
   @Get('admin/roster')
   findAdminRoster(@Query() query: QueryAdminLecturersDto) {
     return this.lecturersService.findAdminRoster(query);

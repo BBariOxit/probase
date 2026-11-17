@@ -78,6 +78,7 @@ describe('TopicsService', () => {
           q: 'Computer Vision',
           mine: false,
           forMyCohort: false,
+          includeDrafts: false,
           page: 1,
           limit: 10,
         },
@@ -121,6 +122,7 @@ describe('TopicsService', () => {
           reviewStage: 'ALL',
           mine: false,
           forMyCohort: false,
+          includeDrafts: false,
           page: 1,
           limit: 10,
         },
@@ -144,6 +146,7 @@ describe('TopicsService', () => {
             reviewStage: 'DEPARTMENT',
             mine: false,
             forMyCohort: false,
+            includeDrafts: false,
             page: 1,
             limit: 10,
           },
@@ -159,6 +162,7 @@ describe('TopicsService', () => {
           status: TopicStatus.APPROVED,
           mine: false,
           forMyCohort: false,
+          includeDrafts: false,
           page: 1,
           limit: 15,
         },
@@ -191,14 +195,14 @@ describe('TopicsService', () => {
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it('throws ForbiddenException when caller is ADMIN (Giáo vụ cannot review topics)', async () => {
+    it('throws ForbiddenException when caller is STUDENT', async () => {
       await expect(
         service.reviewDepartment(
           38,
           { action: 'APPROVE' },
           {
-            id: 1,
-            role: Role.ADMIN,
+            id: 99,
+            role: Role.STUDENT,
             lecturerProfile: null,
           },
         ),
@@ -228,7 +232,7 @@ describe('TopicsService', () => {
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it('throws ConflictException if topic is not pending department review', async () => {
+    it('throws ConflictException if topic is already approved and action is APPROVE', async () => {
       prisma.topic.findUnique.mockResolvedValue({
         id: 38,
         title: 'CV Topic',
@@ -236,6 +240,7 @@ describe('TopicsService', () => {
         majorId: 1,
         lecturer: { id: 5, userId: 50, fullName: 'Phan Bửu', majorId: 1 },
         major: { id: 1, name: 'Kỹ thuật phần mềm', code: 'CNPM' },
+        _count: { registrationGroups: 0 },
       });
 
       await expect(

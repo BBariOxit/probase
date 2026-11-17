@@ -200,7 +200,7 @@ export class ProposalsService {
 
     if (role === Role.STUDENT) {
       where.studentId = (await this.requireStudent(userId)).id;
-    } else if (role === Role.LECTURER) {
+    } else if (role === Role.LECTURER || role === Role.GVCN) {
       where.requestedLecturerId = (
         await this.requireOwnLecturerProfile(userId)
       ).id;

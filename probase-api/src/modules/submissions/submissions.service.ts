@@ -160,7 +160,7 @@ export class SubmissionsService {
       if (!group) return empty(query);
 
       where.groupId = group.id;
-    } else if (role === Role.LECTURER) {
+    } else if (role === Role.LECTURER || role === Role.GVCN) {
       const lecturer = await this.requireLecturer(userId);
       where.topic = { lecturerId: lecturer.id };
 
@@ -272,7 +272,10 @@ export class SubmissionsService {
       where: {
         studentId,
         status: GroupMemberStatus.ACCEPTED,
-        group: { status: { not: RegistrationGroupStatus.REJECTED } },
+        group: {
+          status: { not: RegistrationGroupStatus.REJECTED },
+          semester: { isActive: true },
+        },
       },
       select: {
         group: {
