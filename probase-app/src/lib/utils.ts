@@ -138,3 +138,57 @@ export function formatSemesterShort(
   return semester.code || name;
 }
 
+/**
+ * Rút gọn loại đồ án: KLTN, ĐACN, ĐACS (tận dụng trường code trong DB)
+ */
+export function formatProjectTypeShort(
+  projectType?: { name?: string; code?: string } | null,
+): { short: string; full: string } {
+  if (!projectType) return { short: '—', full: '' };
+  const code = (projectType.code ?? '').toUpperCase();
+  const name = projectType.name ?? '';
+
+  if (
+    code === 'DATN' ||
+    code === 'KLTN' ||
+    name.toLowerCase().includes('khóa luận') ||
+    name.toLowerCase().includes('tốt nghiệp')
+  ) {
+    return { short: 'KLTN', full: name || 'Khóa luận tốt nghiệp' };
+  }
+  if (code === 'DACN' || name.toLowerCase().includes('chuyên ngành')) {
+    return { short: 'ĐACN', full: name || 'Đồ án chuyên ngành' };
+  }
+  if (code === 'DACS' || name.toLowerCase().includes('cơ sở')) {
+    return { short: 'ĐACS', full: name || 'Đồ án cơ sở' };
+  }
+  return { short: projectType.code || name || '—', full: name };
+}
+
+/**
+ * Rút gọn chuyên ngành: KTPM, MMT (tận dụng trường code trong DB)
+ */
+export function formatMajorShort(
+  major?: { name?: string; code?: string } | null,
+): { short: string; full: string } {
+  if (!major) return { short: 'Chung', full: 'Chung cho khoa' };
+  const code = (major.code ?? '').toUpperCase();
+  const name = major.name ?? '';
+  if (
+    code === 'CNPM' ||
+    code === 'KTPM' ||
+    code === 'PM' ||
+    name.toLowerCase().includes('kỹ thuật phần mềm')
+  ) {
+    return { short: 'KTPM', full: name || 'Kỹ thuật phần mềm' };
+  }
+  if (code === 'MMT' || name.toLowerCase().includes('mạng máy tính')) {
+    return { short: 'MMT', full: name || 'Mạng máy tính' };
+  }
+  return {
+    short: major.code || name || '—',
+    full: name || major.code || '',
+  };
+}
+
+

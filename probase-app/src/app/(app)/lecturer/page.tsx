@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { cn, formatSemesterShort } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useMyProfile } from '@/lib/api/me';
 import {
@@ -104,15 +104,6 @@ export default function LecturerTopicsPage() {
             </span>
           )}
         </button>
-
-        {activeSemester && (
-          <div className="ml-auto text-xs text-muted-foreground font-medium">
-            Học kỳ:{' '}
-            <span className="font-semibold text-foreground">
-              {formatSemesterShort(activeSemester)}
-            </span>
-          </div>
-        )}
       </div>
 
       {/* NỘI DUNG TAB */}

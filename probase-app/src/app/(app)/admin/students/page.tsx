@@ -233,7 +233,7 @@ export default function StudentRosterPage() {
             >
               {/* Lọc theo lớp sinh hoạt */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                <Label className="text-sm font-semibold text-slate-800 dark:text-neutral-200">
                   Mã lớp
                 </Label>
                 <Input
@@ -242,13 +242,13 @@ export default function StudentRosterPage() {
                     refilter(() => setClassCode(e.target.value))
                   }
                   placeholder="Nhập mã lớp..."
-                  className="h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700"
+                  className="h-9.5 text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700"
                 />
               </div>
 
               {/* Lọc theo tình trạng đề tài */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                <Label className="text-sm font-semibold text-slate-800 dark:text-neutral-200">
                   Tình trạng đề tài
                 </Label>
                 <Select
@@ -257,7 +257,7 @@ export default function StudentRosterPage() {
                     refilter(() => setGroupState(val as string))
                   }
                 >
-                  <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
+                  <SelectTrigger className="w-full h-9.5 text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
                     <SelectValue>
                       {(v) =>
                         GROUP_FILTERS.find((opt) => opt.value === v)?.label
@@ -266,7 +266,11 @@ export default function StudentRosterPage() {
                   </SelectTrigger>
                   <SelectContent className="max-h-64">
                     {GROUP_FILTERS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
+                      <SelectItem
+                        key={opt.value}
+                        value={opt.value}
+                        className="text-sm"
+                      >
                         {opt.label}
                       </SelectItem>
                     ))}
@@ -276,7 +280,7 @@ export default function StudentRosterPage() {
 
               {/* Lọc theo đợt đồ án */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                <Label className="text-sm font-semibold text-slate-800 dark:text-neutral-200">
                   Đợt đăng ký
                 </Label>
                 <Select
@@ -285,7 +289,7 @@ export default function StudentRosterPage() {
                     refilter(() => setRoundId(val as number))
                   }
                 >
-                  <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
+                  <SelectTrigger className="w-full h-9.5 text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
                     <SelectValue>
                       {(v) =>
                         v === ANY
@@ -296,12 +300,18 @@ export default function StudentRosterPage() {
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="max-h-64">
-                    <SelectItem value={ANY}>Mọi đợt</SelectItem>
+                    <SelectItem value={ANY} className="text-sm">
+                      Mọi đợt
+                    </SelectItem>
                     {rounds?.map((round) => (
-                      <SelectItem key={round.id} value={round.id}>
+                      <SelectItem
+                        key={round.id}
+                        value={round.id}
+                        className="text-sm"
+                      >
                         <span className="flex flex-col items-start">
                           <span>{round.projectType.name}</span>
-                          <span className="text-[11px] text-muted-foreground">
+                          <span className="text-xs text-muted-foreground">
                             Khóa {round.cohorts.join(', ')}
                           </span>
                         </span>
@@ -313,7 +323,7 @@ export default function StudentRosterPage() {
 
               {/* Lọc theo chuyên ngành */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                <Label className="text-sm font-semibold text-slate-800 dark:text-neutral-200">
                   Chuyên ngành
                 </Label>
                 <Combobox
@@ -327,12 +337,13 @@ export default function StudentRosterPage() {
                   placeholder="Chọn chuyên ngành..."
                   searchPlaceholder="Tìm chuyên ngành..."
                   emptyText="Không tìm thấy chuyên ngành nào."
+                  triggerClassName="w-full h-9.5 text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700"
                 />
               </div>
 
               {/* Lọc theo giảng viên hướng dẫn */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                <Label className="text-sm font-semibold text-slate-800 dark:text-neutral-200">
                   Giảng viên hướng dẫn
                 </Label>
                 <Combobox
@@ -346,6 +357,7 @@ export default function StudentRosterPage() {
                   placeholder="Chọn giảng viên..."
                   searchPlaceholder="Tìm theo tên giảng viên..."
                   emptyText="Không tìm thấy giảng viên nào."
+                  triggerClassName="w-full h-9.5 text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700"
                 />
               </div>
             </AdvancedFilterPopover>

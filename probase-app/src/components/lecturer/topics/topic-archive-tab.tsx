@@ -9,7 +9,11 @@ import type {
   TopicListItem,
   TopicStatus,
 } from '@/lib/api/types';
-import { formatSemesterShort } from '@/lib/utils';
+import {
+  formatMajorShort,
+  formatProjectTypeShort,
+  formatSemesterShort,
+} from '@/lib/utils';
 import { useTopicLecturers, useTopics } from '@/lib/api/topics';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
@@ -77,7 +81,10 @@ export function TopicArchiveTab({
   const debouncedSearch = useDebounce(search);
 
   // Fetch all lecturers for the filter combobox
-  const { data: lecturers = [] } = useTopicLecturers(undefined);
+  const { data: lecturers = [] } = useTopicLecturers(
+    semesterId || undefined,
+    { enabled: true },
+  );
 
   const { data, isPending, error, refetch } = useTopics({
     // If specific past semester is picked, use it; otherwise exclude active semester
@@ -172,13 +179,13 @@ export function TopicArchiveTab({
           <Table className="w-full table-fixed text-left text-sm">
             <TableHeader sticky>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[360px] max-w-[420px] min-w-[260px] px-5 py-3">
+                <TableHead className="w-[380px] max-w-[440px] min-w-[260px] px-5 py-3">
                   Tiêu đề đề tài
                 </TableHead>
                 <TableHead className="w-36 px-4 py-3">Học kỳ</TableHead>
                 <TableHead className="w-48 px-4 py-3">Giảng viên ra đề</TableHead>
-                <TableHead className="w-36 px-4 py-3">Loại đồ án</TableHead>
-                <TableHead className="w-36 px-4 py-3">Chuyên ngành</TableHead>
+                <TableHead className="w-28 px-4 py-3">Loại đồ án</TableHead>
+                <TableHead className="w-28 px-4 py-3">Chuyên ngành</TableHead>
                 <TableHead className="w-32 px-4 py-3">Trạng thái</TableHead>
                 <TableHead className="w-16 px-3 py-3 text-right" />
               </TableRow>
@@ -189,7 +196,7 @@ export function TopicArchiveTab({
                   key={topic.id}
                   className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                 >
-                  <TableCell className="w-[360px] max-w-[420px] min-w-[260px] px-5 py-3.5 align-middle whitespace-normal">
+                  <TableCell className="w-[380px] max-w-[440px] min-w-[260px] px-5 py-3.5 align-middle whitespace-normal">
                     <button
                       type="button"
                       onClick={() => setPreviewTopicId(topic.id)}
@@ -210,11 +217,15 @@ export function TopicArchiveTab({
                       {topic.lecturer?.fullName}
                     </span>
                   </TableCell>
-                  <TableCell className="w-36 px-4 py-3.5 align-middle whitespace-nowrap text-sm font-medium text-slate-700 dark:text-neutral-300">
-                    {topic.projectType?.name || '—'}
+                  <TableCell className="w-28 px-4 py-3.5 align-middle whitespace-nowrap text-sm font-semibold text-slate-700 dark:text-neutral-300">
+                    <span title={formatProjectTypeShort(topic.projectType).full}>
+                      {formatProjectTypeShort(topic.projectType).short}
+                    </span>
                   </TableCell>
-                  <TableCell className="w-36 px-4 py-3.5 align-middle whitespace-nowrap text-sm text-slate-600 dark:text-neutral-400">
-                    {topic.major?.name || 'Chung cho khoa'}
+                  <TableCell className="w-28 px-4 py-3.5 align-middle whitespace-nowrap text-sm font-medium text-slate-600 dark:text-neutral-400">
+                    <span title={formatMajorShort(topic.major).full}>
+                      {formatMajorShort(topic.major).short}
+                    </span>
                   </TableCell>
                   <TableCell className="w-32 px-4 py-3.5 align-middle whitespace-nowrap">
                     <TopicStatusBadge status={topic.status} variant="text" />
@@ -236,16 +247,16 @@ export function TopicArchiveTab({
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
                           onClick={() => setPreviewTopicId(topic.id)}
-                          className="cursor-pointer text-xs"
+                          className="cursor-pointer"
                         >
-                          <Eye className="size-4 mr-2" />
+                          <Eye className="size-4" />
                           <span>Xem chi tiết</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleOpenClone(topic)}
-                          className="cursor-pointer text-xs"
+                          className="cursor-pointer"
                         >
-                          <Copy className="size-4 mr-2 text-primary" />
+                          <Copy className="size-4 text-primary" />
                           <span>Nhân bản sang kỳ này</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>

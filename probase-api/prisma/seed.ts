@@ -1,4 +1,4 @@
-import 'dotenv/config';
+﻿import 'dotenv/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
@@ -22,7 +22,7 @@ const daysFromNow = (n: number) => new Date(Date.now() + n * DAY_MS);
 // 1. DANH MỤC CHUYÊN NGÀNH CHUẨN KHOA CNTT - DLU
 // ─────────────────────────────────────────────────────────
 const MAJORS = [
-  { code: 'CNPM', name: 'Kỹ thuật phần mềm' },
+  { code: 'KTPM', name: 'Kỹ thuật phần mềm' },
   { code: 'MMT', name: 'Mạng máy tính' },
 ];
 
@@ -42,7 +42,7 @@ const DEMO_STAFF = [
     lecturerCode: 'GV0001',
     fullName: 'Nguyễn Thị GVK',
     academicTitle: 'ThS.',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
     researchInterests: 'Quản lý đào tạo, Cơ sở dữ liệu và Hệ thống thông tin',
     isAcademicAssistant: true, // Trợ lý Giáo vụ Khoa (TLGV)
     isHeadOfDepartment: false,
@@ -54,7 +54,7 @@ const DEMO_STAFF = [
     lecturerCode: 'GV0002',
     fullName: 'An Bình',
     academicTitle: 'TS.',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
     researchInterests: 'Kỹ thuật phần mềm, Kiến trúc hệ thống phân tán, Microservices',
     isAcademicAssistant: false,
     isHeadOfDepartment: true, // Tổ trưởng Bộ môn Kỹ thuật phần mềm (TTBM)
@@ -78,7 +78,7 @@ const DEMO_STAFF = [
     lecturerCode: 'GV0004',
     fullName: 'Phan Bửu',
     academicTitle: 'ThS.',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
     researchInterests: 'Kỹ thuật phần mềm, Phát triển ứng dụng Web & Mobile hiện đại',
     isAcademicAssistant: false,
     isHeadOfDepartment: false,
@@ -90,7 +90,7 @@ const DEMO_STAFF = [
     lecturerCode: 'GV0005',
     fullName: 'Lê Ngân',
     academicTitle: 'TS.',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
     researchInterests: 'Thị giác máy tính, Học sâu, Trí tuệ nhân tạo biên (Edge AI)',
     isAcademicAssistant: false,
     isHeadOfDepartment: false,
@@ -102,7 +102,7 @@ const DEMO_STAFF = [
     lecturerCode: 'GV0006',
     fullName: 'Đặng Hải',
     academicTitle: 'ThS.',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
     researchInterests: 'Kỹ thuật phần mềm, Quản lý dự án CNTT, Cố vấn học tập & Chủ nhiệm CTK46',
     isAcademicAssistant: false,
     isHeadOfDepartment: false,
@@ -120,14 +120,14 @@ const DEMO_STUDENTS = [
     email: '2266666@dlu.edu.vn',
     name: 'Nguyễn Văn A',
     class: 'CTK46PM',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
   },
   {
     code: '2277777',
     email: '2277777@dlu.edu.vn',
     name: 'Phạm Thị B',
     class: 'CTK46PM',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
   },
   {
     code: '2288888',
@@ -149,7 +149,7 @@ const DEMO_STUDENTS = [
     email: '2388001@dlu.edu.vn',
     name: 'Trần Thị Mai',
     class: 'CTK47PM',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
   },
   {
     code: '2388002',
@@ -164,14 +164,14 @@ const DEMO_STUDENTS = [
     email: '2499001@dlu.edu.vn',
     name: 'Võ Quốc Huy',
     class: 'CTK48PM',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
   },
   {
     code: '2466002',
     email: '2466002@dlu.edu.vn',
     name: 'Bùi Minh Trí',
     class: 'CTK48PM',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
   },
   // Bổ sung thêm SV KLTN CTK46
   {
@@ -179,14 +179,14 @@ const DEMO_STUDENTS = [
     email: '2266005@dlu.edu.vn',
     name: 'Đặng Khánh Linh',
     class: 'CTK46PM',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
   },
   {
     code: '2266006',
     email: '2266006@dlu.edu.vn',
     name: 'Vũ Hoàng Nam',
     class: 'CTK46PM',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
   },
 ];
 
@@ -207,7 +207,7 @@ async function main() {
     });
     majorIdByCode.set(saved.code, saved.id);
   }
-  console.log(`[✓] 1. Chuyên ngành: ${MAJORS.length} ngành (CNPM, MMT)`);
+  console.log(`[✓] 1. Chuyên ngành: ${MAJORS.length} ngành (KTPM, MMT)`);
 
   // 2. Seed Loại đồ án (Project Types)
   const projectTypeIdByCode = new Map<string, number>();
@@ -553,7 +553,7 @@ async function main() {
       expectedOutcomes: '- Mã nguồn hoàn chỉnh gồm Web Frontend (Next.js 14 App Router, TypeScript, TailwindCSS, Shadcn UI) và Backend API (NestJS, Prisma ORM, PostgreSQL).\n- Hệ thống cơ sở dữ liệu quan hệ được thiết kế chuẩn hóa 3NF với hơn 20 bảng thực thể, xử lý ràng buộc toàn vẹn và giao dịch an toàn (ACID Transactions).\n- Bộ tài liệu đặc tả kiến trúc hệ thống, API Documentation chuẩn OpenAPI/Swagger và tài liệu hướng dẫn triển khai bằng Docker Compose.\n- Quyển báo cáo toàn văn Khóa luận tốt nghiệp định dạng PDF đạt chuẩn quy cách trình bày của Trường Đại học Đà Lạt.',
       techStack: 'Next.js 14, TypeScript, NestJS, Prisma ORM, PostgreSQL, TailwindCSS, Shadcn UI, Docker, Redis',
       lecturerId: pbProfile.id,
-      majorId: majorIdByCode.get('CNPM'),
+      majorId: majorIdByCode.get('KTPM'),
       roundId: datnRound.id,
       maxStudents: 3,
       status: 'IN_PROGRESS' as const,
@@ -566,7 +566,7 @@ async function main() {
       expectedOutcomes: '- Ứng dụng di động hoàn chỉnh đa nền tảng (Flutter / React Native) chạy mượt mà trên cả iOS và Android.\n- Hệ thống máy chủ Backend RESTful API & WebSocket hỗ trợ xác thực OAuth2, đồng bộ tiến độ học và tích hợp RAG pipeline.\n- Báo cáo kết quả thử nghiệm thực tế trên nhóm 50 sinh viên Khoa CNTT với các chỉ số đánh giá độ chính xác của câu trả lời AI và mức độ gắn kết học tập.',
       techStack: 'Flutter, Dart, Python, FastAPI, PostgreSQL, LangChain, Gemini API, Qdrant Vector DB, Docker',
       lecturerId: abProfile.id,
-      majorId: majorIdByCode.get('CNPM'),
+      majorId: majorIdByCode.get('KTPM'),
       roundId: datnRound.id,
       maxStudents: 3,
       status: 'OPEN' as const,
@@ -605,7 +605,7 @@ async function main() {
       expectedOutcomes: '- Cổng thông tin Web Portal dành cho khách du lịch và Trung tâm điều hành dữ liệu du lịch dành cho nhà quản lý.\n- Mô hình NLP phân loại cảm xúc đánh giá tiếng Việt đạt F1-score trên 89% và công cụ gợi ý lịch trình thông minh.\n- Bộ API RESTful mở cho phép tích hợp dữ liệu với các ứng dụng du lịch bên thứ ba.\n- Báo cáo thuyết minh đồ án và mã nguồn được đóng gói hoàn chỉnh trên Docker Container.',
       techStack: 'React, TypeScript, Python FastAPI, PhoBERT, PyTorch, MongoDB, Redis, Docker, TailwindCSS',
       lecturerId: pbProfile.id,
-      majorId: majorIdByCode.get('CNPM'),
+      majorId: majorIdByCode.get('KTPM'),
       roundId: dacnRound?.id ?? datnRound.id,
       maxStudents: 2,
       status: 'IN_PROGRESS' as const,
@@ -618,7 +618,7 @@ async function main() {
       expectedOutcomes: '- Ứng dụng web hoàn chỉnh chạy trên nền Node.js / React với giao diện thân thiện, hiện đại.\n- Module đọc tài liệu số PDF tích hợp giải pháp ngăn chặn tải về trái phép (Watermarking & DRM cơ bản).\n- Tài liệu phân tích thiết kế hệ thống (Use Case, Class Diagram, ERD, Sequence Diagram) và hướng dẫn sử dụng chi tiết.',
       techStack: 'React, Vite, Node.js, Express, PostgreSQL, Prisma ORM, TailwindCSS, PDF.js',
       lecturerId: pbProfile.id,
-      majorId: majorIdByCode.get('CNPM'),
+      majorId: majorIdByCode.get('KTPM'),
       roundId: dacsRound?.id ?? datnRound.id,
       maxStudents: 2,
       status: 'IN_PROGRESS' as const,
@@ -631,7 +631,7 @@ async function main() {
       expectedOutcomes: '- Ứng dụng web cho bác sĩ và ứng dụng di động cho bệnh nhân (React / React Native).\n- Máy chủ truyền phát âm thanh/hình ảnh thời gian thực Mediasoup SFU có chức năng ghi hình phiên khám có sự đồng ý của bệnh nhân.\n- Báo cáo đánh giá bảo mật hệ thống (Penetration Testing) và độ trễ truyền thông WebRTC dưới các kịch bản mạng mô phỏng Packet Loss.',
       techStack: 'Next.js 14, React Native, Node.js, Mediasoup, WebRTC, PostgreSQL, Redis, Docker, AES-256',
       lecturerId: pbProfile.id,
-      majorId: majorIdByCode.get('CNPM'),
+      majorId: majorIdByCode.get('KTPM'),
       roundId: datnRound.id,
       maxStudents: 3,
       status: 'IN_PROGRESS' as const,
@@ -644,7 +644,7 @@ async function main() {
       expectedOutcomes: '- Mô hình Deep Learning nhận diện bệnh cà phê đạt mAP@0.5 trên 91% và thời gian suy luận dưới 150ms trên thiết bị di động.\n- Ứng dụng di động Flutter chạy trơn tru chế độ Offline, hỗ trợ nông dân tra cứu cẩm nang chăm sóc và phòng trừ sâu bệnh sinh học.\n- Bộ dữ liệu ảnh sâu bệnh cà phê Tây Nguyên mở đóng góp cho cộng đồng nghiên cứu AI nông nghiệp Việt Nam.',
       techStack: 'PyTorch, YOLOv8, OpenCV, TensorFlow Lite, Flutter, Python FastAPI, PostgreSQL, Roboflow',
       lecturerId: abProfile.id,
-      majorId: majorIdByCode.get('CNPM'),
+      majorId: majorIdByCode.get('KTPM'),
       roundId: datnRound.id,
       maxStudents: 3,
       status: 'OPEN' as const,
@@ -670,7 +670,7 @@ async function main() {
       expectedOutcomes: '- Bộ Smart Contracts được kiểm thử toàn diện trên môi trường Testnet, đạt chuẩn an toàn không có lỗ hổng Reentrancy hay Overflow.\n- Ứng dụng Web DApp (Next.js, Ethers.js, Wagmi) kết nối ví tiền điện tử Web3 (MetaMask) phục vụ sàn đấu thầu nông sản.\n- Cổng thông tin quét mã QR công khai hiển thị chi tiết dòng thời gian chuỗi cung ứng từ nông trại đến bàn ăn.',
       techStack: 'Solidity, Hardhat, Polygon L2, IPFS, Next.js 14, Ethers.js, Wagmi, TailwindCSS, PostgreSQL',
       lecturerId: lnProfile.id,
-      majorId: majorIdByCode.get('CNPM'),
+      majorId: majorIdByCode.get('KTPM'),
       roundId: datnRound.id,
       maxStudents: 3,
       status: 'OPEN' as const,
@@ -704,7 +704,7 @@ async function main() {
             techStack:
               'React, Next.js, Node.js, PostgreSQL, TailwindCSS, Chart.js',
             lecturerId: cnProfile.id,
-            majorId: majorIdByCode.get('CNPM'),
+            majorId: majorIdByCode.get('KTPM'),
             roundId: datnRound.id,
             maxStudents: 3,
             status: 'OPEN' as const,
@@ -878,7 +878,7 @@ async function main() {
     const council = await prisma.council.create({
       data: {
         semesterId: semester.id,
-        majorId: majorIdByCode.get('CNPM'),
+        majorId: majorIdByCode.get('KTPM'),
         name: 'Hội đồng 01 - Chuyên ngành Kỹ thuật phần mềm (KLTN CTK46)',
         location: 'Phòng Hội thảo Khoa CNTT - Giảng đường A31.204',
         defenseDate: daysFromNow(95),
@@ -1654,17 +1654,17 @@ async function main() {
 
   // D. Danh sách sinh viên hoàn thành các khóa trước (Mã 5 số sau từ 66000 đến 99999 để tránh email thật)
   const PAST_STUDENTS_DATA = [
-    { code: '2088001', name: 'Trần Văn Hải', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
-    { code: '2088002', name: 'Nguyễn Thị Lan', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
-    { code: '2088003', name: 'Đặng Quốc Tuấn', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
-    { code: '2088004', name: 'Lê Thu Trang', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
-    { code: '2188005', name: 'Võ Minh Trí', class: 'CTK45PM', majorCode: 'CNPM', cohort: '2022' },
-    { code: '2188006', name: 'Phạm Đức Nam', class: 'CTK45PM', majorCode: 'CNPM', cohort: '2022' },
-    { code: '2288007', name: 'Bùi Hoàng Long', class: 'CTK46PM', majorCode: 'CNPM', cohort: '2023' },
-    { code: '2088008', name: 'Huỳnh Nhật Quang', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
-    { code: '2088009', name: 'Hoàng Gia Huy', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
-    { code: '2188010', name: 'Đỗ Quỳnh Anh', class: 'CTK45PM', majorCode: 'CNPM', cohort: '2022' },
-    { code: '2288011', name: 'Mai Trọng Nghĩa', class: 'CTK46PM', majorCode: 'CNPM', cohort: '2023' },
+    { code: '2088001', name: 'Trần Văn Hải', class: 'CTK44PM', majorCode: 'KTPM', cohort: '2021' },
+    { code: '2088002', name: 'Nguyễn Thị Lan', class: 'CTK44PM', majorCode: 'KTPM', cohort: '2021' },
+    { code: '2088003', name: 'Đặng Quốc Tuấn', class: 'CTK44PM', majorCode: 'KTPM', cohort: '2021' },
+    { code: '2088004', name: 'Lê Thu Trang', class: 'CTK44PM', majorCode: 'KTPM', cohort: '2021' },
+    { code: '2188005', name: 'Võ Minh Trí', class: 'CTK45PM', majorCode: 'KTPM', cohort: '2022' },
+    { code: '2188006', name: 'Phạm Đức Nam', class: 'CTK45PM', majorCode: 'KTPM', cohort: '2022' },
+    { code: '2288007', name: 'Bùi Hoàng Long', class: 'CTK46PM', majorCode: 'KTPM', cohort: '2023' },
+    { code: '2088008', name: 'Huỳnh Nhật Quang', class: 'CTK44PM', majorCode: 'KTPM', cohort: '2021' },
+    { code: '2088009', name: 'Hoàng Gia Huy', class: 'CTK44PM', majorCode: 'KTPM', cohort: '2021' },
+    { code: '2188010', name: 'Đỗ Quỳnh Anh', class: 'CTK45PM', majorCode: 'KTPM', cohort: '2022' },
+    { code: '2288011', name: 'Mai Trọng Nghĩa', class: 'CTK46PM', majorCode: 'KTPM', cohort: '2023' },
     { code: '2099012', name: 'Nguyễn Tuấn Anh', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
     { code: '2099013', name: 'Phan Thế Anh', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
     { code: '2199014', name: 'Đặng Thành Công', class: 'CTK45MMT', majorCode: 'MMT', cohort: '2022' },
@@ -1673,10 +1673,10 @@ async function main() {
     { code: '2077017', name: 'Vũ Hoàng Lâm', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
     { code: '2077018', name: 'Cao Đình Khang', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
     { code: '2177019', name: 'Hà Tiến Đạt', class: 'CTK45MMT', majorCode: 'MMT', cohort: '2022' },
-    { code: '1977020', name: 'Nguyễn Quang Sáng', class: 'CTK43PM', majorCode: 'CNPM', cohort: '2020' },
+    { code: '1977020', name: 'Nguyễn Quang Sáng', class: 'CTK43PM', majorCode: 'KTPM', cohort: '2020' },
     { code: '1966021', name: 'Trương Quốc Toàn', class: 'CTK43MMT', majorCode: 'MMT', cohort: '2020' },
-    { code: '2066022', name: 'Dương Mỹ Linh', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
-    { code: '2166023', name: 'Tạ Minh Khang', class: 'CTK45PM', majorCode: 'CNPM', cohort: '2022' },
+    { code: '2066022', name: 'Dương Mỹ Linh', class: 'CTK44PM', majorCode: 'KTPM', cohort: '2021' },
+    { code: '2166023', name: 'Tạ Minh Khang', class: 'CTK45PM', majorCode: 'KTPM', cohort: '2022' },
     { code: '2066024', name: 'Lâm Hải Đăng', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
   ];
 
@@ -1713,9 +1713,9 @@ async function main() {
     pastStudentProfiles.push(profile);
   }
 
-  // E. 20 Đề tài lưu trữ hoàn chỉnh (10 CNPM, 10 MMT, đủ KLTN, ĐACN, ĐACS)
+  // E. 20 Đề tài lưu trữ hoàn chỉnh (10 KTPM, 10 MMT, đủ KLTN, ĐACN, ĐACS)
   const ARCHIVED_TOPICS = [
-    // 1. KLTN - CNPM - HK2 24-25
+    // 1. KLTN - KTPM - HK2 24-25
     {
       title: 'Xây dựng Hệ thống Quản trị Học tập Trực tuyến (LMS) Hỗ trợ Đào tạo Theo Tín chỉ cho Đại học Đà Lạt',
       titleEn: 'Development of Credit-based Online Learning Management System (LMS) for Dalat University',
@@ -1723,14 +1723,14 @@ async function main() {
       objectives: '- Phân tích và xây dựng hệ thống LMS theo chuẩn tín chỉ Đại học Đà Lạt.\n- Triển khai máy chủ đánh giá mã nguồn tự động an toàn trong Sandbox Docker.\n- Tối ưu hóa hiệu năng chịu tải trên 1000 người dùng trực tuyến.',
       expectedOutcomes: '- Cổng thông tin web LMS hoàn chỉnh gồm phân hệ sinh viên, giảng viên và quản trị viên.\n- Hệ thống tự động chấm bài tập lập trình (Auto-grader) cho môn C/C++, Java và Python.\n- Báo cáo kết quả thử nghiệm hiệu năng và độ ổn định hệ thống.',
       techStack: 'Next.js 14, NestJS, PostgreSQL, Redis, Docker, RabbitMQ',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast1,
       roundKey: 'HK2-2024-2025_DATN',
       lecturerId: pbProfile.id,
       studentIdx: 0,
       grade: { p1: 8.5, p2: 9.0, def: 8.8, finalNum: 8.8, finalLetter: 'A' },
     },
-    // 2. KLTN - CNPM - HK2 24-25
+    // 2. KLTN - KTPM - HK2 24-25
     {
       title: 'Ứng dụng Mô hình Thị giác Máy tính YOLOv8 trong Giám sát An toàn Lao động tại Công trường Xây dựng',
       titleEn: 'Application of YOLOv8 Computer Vision in Construction Site Safety Monitoring',
@@ -1738,14 +1738,14 @@ async function main() {
       objectives: '- Xây dựng tập dữ liệu hơn 8.000 hình ảnh trang thiết bị bảo hộ lao động thực tế tại Đà Lạt.\n- Huấn luyện mô hình YOLOv8 đạt độ chính xác phát hiện mAP@0.5 trên 92%.\n- Đóng gói ứng dụng giám sát video thời gian thực từ các camera IP RTSP.',
       expectedOutcomes: '- Mô hình học sâu nhận diện vi phạm an toàn lao động với độ trễ dưới 50ms.\n- Dashboard quản lý các sự kiện vi phạm an toàn và xuất báo cáo hàng tuần.\n- Luận văn tốt nghiệp và video demo hoạt động thực tế.',
       techStack: 'Python, PyTorch, YOLOv8, OpenCV, FastAPI, React, Docker',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast1,
       roundKey: 'HK2-2024-2025_DATN',
       lecturerId: lnProfile.id,
       studentIdx: 1,
       grade: { p1: 9.0, p2: 9.5, def: 9.2, finalNum: 9.3, finalLetter: 'A+' },
     },
-    // 3. KLTN - CNPM - HK2 24-25
+    // 3. KLTN - KTPM - HK2 24-25
     {
       title: 'Nền tảng Hỗ trợ Khởi nghiệp Đổi mới Sáng tạo và Kết nối Vốn Đầu tư Thiên thần (StartupHub)',
       titleEn: 'StartupHub - Innovation Support and Angel Investor Matching Platform',
@@ -1753,14 +1753,14 @@ async function main() {
       objectives: '- Xây dựng thuật toán matching dự án dựa trên lĩnh vực, giai đoạn gọi vốn và khẩu vị đầu tư.\n- Bảo mật dữ liệu tài chính của startup bằng mã hóa và phân quyền truy cập chặt chẽ.\n- Tích hợp phòng họp trực tuyến và chia sẻ tài liệu thuyết trình bảo mật.',
       expectedOutcomes: '- Nền tảng web StartupHub tương thích hoàn hảo mọi thiết bị di động.\n- Module phân tích chỉ số tài chính (Burn rate, Runway, CAC/LTV) trực quan.\n- Tài liệu đặc tả kiến trúc hệ thống và hướng dẫn sử dụng.',
       techStack: 'React, Node.js, GraphQL, PostgreSQL, TailwindCSS, WebRTC',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast1,
       roundKey: 'HK2-2024-2025_DATN',
       lecturerId: abProfile.id,
       studentIdx: 2,
       grade: { p1: 8.5, p2: 8.8, def: 8.6, finalNum: 8.6, finalLetter: 'A' },
     },
-    // 4. ĐACN - CNPM - HK2 24-25
+    // 4. ĐACN - KTPM - HK2 24-25
     {
       title: 'Ứng dụng Quản lý Tour Du lịch Trải nghiệm Sinh thái và Đặt Phòng Homestay Đà Lạt',
       titleEn: 'Mobile Application for Eco-tourism Experience Tour and Homestay Booking in Dalat',
@@ -1768,14 +1768,14 @@ async function main() {
       objectives: '- Thiết kế giao diện di động thân thiện, tối ưu trải nghiệm khám phá địa điểm du lịch.\n- Xây dựng hệ thống quản lý phòng trống (Availability Calendar) đồng bộ tức thì.\n- Tích hợp bản đồ dẫn đường tương tác đến các địa điểm ngoại ô Đà Lạt.',
       expectedOutcomes: '- Ứng dụng di động chạy tốt trên Android và iOS.\n- Hệ thống Backend API RESTful quản lý đặt chỗ và thanh toán.\n- Báo cáo kiểm thử người dùng thực tế với 30 tình nguyện viên.',
       techStack: 'Flutter, Dart, Node.js, Express, MongoDB, VNPay SDK',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast1,
       roundKey: 'HK2-2024-2025_DACN',
       lecturerId: pbProfile.id,
       studentIdx: 4,
       grade: { p1: 8.0, p2: 8.5, def: 8.5, finalNum: 8.4, finalLetter: 'B+' },
     },
-    // 5. ĐACN - CNPM - HK2 24-25
+    // 5. ĐACN - KTPM - HK2 24-25
     {
       title: 'Hệ thống Quản lý và Tự động Hóa Quy trình Đăng ký Đề tài Nghiên cứu Khoa học Sinh viên',
       titleEn: 'Automated Student Scientific Research Project Management System',
@@ -1783,14 +1783,14 @@ async function main() {
       objectives: '- Số hóa quy trình xét duyệt đề tài NCKH theo quy định hiện hành của Bộ GD&ĐT.\n- Xây dựng luồng phê duyệt đa cấp (Giảng viên hướng dẫn -> Bộ môn -> Phòng QLKH).\n- Tự động sinh biên bản nghiệm thu và chứng nhận NCKH dạng PDF.',
       expectedOutcomes: '- Website ứng dụng Next.js giao diện chuyên nghiệp chuẩn nhận diện thương hiệu Nhà trường.\n- Module sinh file PDF biên bản tự động bằng thư viện Puppeteer/React-PDF.\n- Sổ tay hướng dẫn quản trị viên và sinh viên thực hiện.',
       techStack: 'Next.js 14, TypeScript, Prisma, PostgreSQL, TailwindCSS',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast1,
       roundKey: 'HK2-2024-2025_DACN',
       lecturerId: abProfile.id,
       studentIdx: 5,
       grade: { p1: 9.0, p2: 9.0, def: 9.0, finalNum: 9.0, finalLetter: 'A' },
     },
-    // 6. ĐACS - CNPM - HK2 24-25
+    // 6. ĐACS - KTPM - HK2 24-25
     {
       title: 'Xây dựng Website Bán Nông sản Sạch và Hoa Tươi Đà Lạt Ứng dụng Kiến trúc Hướng Dịch vụ',
       titleEn: 'Clean Agricultural Products and Fresh Flowers E-commerce Website for Dalat',
@@ -1798,14 +1798,14 @@ async function main() {
       objectives: '- Phân tích và thiết kế cơ sở dữ liệu quan hệ cho sàn thương mại điện tử nông sản.\n- Áp dụng mô hình MVC và các nguyên lý lập trình hướng đối tượng (OOP).\n- Đảm bảo tính bảo mật trong lưu trữ mật khẩu người dùng và giỏ hàng.',
       expectedOutcomes: '- Website bán hàng chạy mượt mà trên môi trường Web Responsive.\n- Trang quản trị (Admin Dashboard) quản lý sản phẩm, đơn hàng và doanh thu.\n- Báo cáo đồ án cơ sở đạt loại Khá giỏi.',
       techStack: 'React, Express.js, MySQL, TailwindCSS, Axios',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast1,
       roundKey: 'HK2-2024-2025_DACS',
       lecturerId: pbProfile.id,
       studentIdx: 6,
       grade: { p1: 8.0, p2: 8.2, def: 8.3, finalNum: 8.2, finalLetter: 'B+' },
     },
-    // 7. KLTN - CNPM - HK1 24-25
+    // 7. KLTN - KTPM - HK1 24-25
     {
       title: 'Hệ thống Phân tích Sắc thái Cảm xúc Đánh giá Khách hàng trên Sàn Thương mại Điện tử Shopee',
       titleEn: 'Customer Review Sentiment Analysis System on Shopee E-Commerce Platform Using PhoBERT',
@@ -1813,14 +1813,14 @@ async function main() {
       objectives: '- Thu thập và gán nhãn tập dữ liệu hơn 50.000 đánh giá sản phẩm Shopee thực tế.\n- Huấn luyện mô hình PhoBERT với kỹ thuật Data Augmentation đạt F1-score trên 91%.\n- Xây dựng Dashboard trực quan hóa xu hướng hài lòng của khách hàng theo thời gian.',
       expectedOutcomes: '- Đường ống thu thập dữ liệu (Scraper) hoạt động ổn định và an toàn.\n- API phân loại cảm xúc thời gian thực cho các hệ thống CRM bên thứ ba.\n- Luận văn tốt nghiệp đạt kết quả xuất sắc.',
       techStack: 'Python, PhoBERT, PyTorch, FastAPI, Next.js, Docker, MongoDB',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast2,
       roundKey: 'HK1-2024-2025_DATN',
       lecturerId: lnProfile.id,
       studentIdx: 7,
       grade: { p1: 9.0, p2: 9.2, def: 9.1, finalNum: 9.1, finalLetter: 'A+' },
     },
-    // 8. KLTN - CNPM - HK1 24-25
+    // 8. KLTN - KTPM - HK1 24-25
     {
       title: 'Nền tảng Đặt xe Công nghệ và Tối ưu Tuyến đường Đón trả Khách cho Xe Điện Du lịch Đà Lạt',
       titleEn: 'Smart Ride-Hailing and Route Optimization Platform for Dalat Tourist Electric Shuttles',
@@ -1828,14 +1828,14 @@ async function main() {
       objectives: '- Xây dựng thuật toán gom chuyến và điều phối xe điện linh hoạt theo thời gian thực.\n- Tích hợp bản đồ số OpenStreetMap và hệ thống GPS định vị phương tiện.\n- Phát triển ứng dụng tài xế và ứng dụng hành khách trên thiết bị di động.',
       expectedOutcomes: '- Bộ ứng dụng di động tài xế và hành khách hoàn chỉnh.\n- Máy chủ trung tâm điều hành trực quan hóa vị trí đội xe theo thời gian thực.\n- Báo cáo phân tích hiệu quả tiết kiệm 20% quãng đường di chuyển rỗng.',
       techStack: 'React Native, NestJS, Go, PostgreSQL, PostGIS, WebSocket, Docker',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast2,
       roundKey: 'HK1-2024-2025_DATN',
       lecturerId: abProfile.id,
       studentIdx: 8,
       grade: { p1: 8.5, p2: 8.8, def: 8.6, finalNum: 8.6, finalLetter: 'A' },
     },
-    // 9. ĐACN - CNPM - HK1 24-25
+    // 9. ĐACN - KTPM - HK1 24-25
     {
       title: 'Ứng dụng Sổ tay Sức khỏe Điện tử và Đặt lịch Tiêm chủng cho Trẻ em',
       titleEn: 'Digital Child Health Record and Vaccination Scheduling Mobile Application',
@@ -1843,14 +1843,14 @@ async function main() {
       objectives: '- Xây dựng phác đồ tiêm chủng chuẩn quốc gia và thuật toán tính toán ngày tiêm kế tiếp.\n- Thiết kế giao diện sinh động, dễ sử dụng cho các bậc phụ huynh trẻ.\n- Đảm bảo an toàn bảo mật hồ sơ sức khỏe trẻ em.',
       expectedOutcomes: '- Ứng dụng di động Flutter hỗ trợ chế độ Offline và đồng bộ đám mây.\n- Báo cáo thử nghiệm tại Trung tâm Y tế Dự phòng với đánh giá tích cực.',
       techStack: 'Flutter, Firebase, Node.js, Express, MongoDB',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast2,
       roundKey: 'HK1-2024-2025_DACN',
       lecturerId: pbProfile.id,
       studentIdx: 9,
       grade: { p1: 9.0, p2: 8.8, def: 8.9, finalNum: 8.9, finalLetter: 'A' },
     },
-    // 10. ĐACS - CNPM - HK1 24-25
+    // 10. ĐACS - KTPM - HK1 24-25
     {
       title: 'Xây dựng Phần mềm Quản lý Phòng khám Nha khoa Tư nhân',
       titleEn: 'Dental Clinic Management Desktop Software with Appointment Scheduling',
@@ -1858,7 +1858,7 @@ async function main() {
       objectives: '- Phân tích nghiệp vụ quản lý hồ sơ nha khoa chuyên khoa.\n- Xây dựng giao diện tương tác sơ đồ 32 răng trực quan.\n- Báo cáo doanh thu và quản lý kho vật tư tiêu hao.',
       expectedOutcomes: '- Phần mềm cài đặt trên máy tính Windows hoạt động ổn định.\n- Tài liệu đặc tả cơ sở dữ liệu và bản vẽ UML.',
       techStack: 'C#, .NET Core, SQL Server, WPF, MaterialDesignInXAML',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast2,
       roundKey: 'HK1-2024-2025_DACS',
       lecturerId: abProfile.id,
@@ -1985,7 +1985,7 @@ async function main() {
       studentIdx: 18,
       grade: { p1: 8.5, p2: 8.6, def: 8.6, finalNum: 8.6, finalLetter: 'A' },
     },
-    // 19. KLTN - CNPM - HK2 23-24
+    // 19. KLTN - KTPM - HK2 23-24
     {
       title: 'Nền tảng Đấu giá Trực tuyến Thời gian thực Ứng dụng WebSocket và Kiến trúc Hướng Sự kiện (Event-Driven)',
       titleEn: 'Real-time Online Bidding Platform Using WebSocket and Event-Driven Architecture',
@@ -1993,7 +1993,7 @@ async function main() {
       objectives: '- Thiết kế cơ chế khóa phân tán (Distributed Lock với Redis) để tránh xung đột bước giá.\n- Duy trì kết nối WebSocket ổn định cho hàng nghìn người cùng xem một phiên đấu giá.\n- Tự động hoàn tiền cọc cho những người trả giá không thành công.',
       expectedOutcomes: '- Website đấu giá trực tuyến hoạt động trơn tru với độ trễ cập nhật giá thầu dưới 100ms.\n- Báo cáo kiểm thử tải với công cụ k6 đạt 500 yêu cầu trả giá mỗi giây.',
       techStack: 'Next.js, Node.js, Redis Pub/Sub, Kafka, PostgreSQL, Docker',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast3,
       roundKey: 'HK2-2023-2024_DATN',
       lecturerId: pbProfile.id,

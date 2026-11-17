@@ -8,6 +8,7 @@ import type {
   Semester,
   TopicStatus,
 } from '@/lib/api/types';
+import { formatMajorShort, formatProjectTypeShort } from '@/lib/utils';
 import { useTopicLecturers, useTopics } from '@/lib/api/topics';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
@@ -153,8 +154,8 @@ export function ColleagueTopicsTab({
                   Tiêu đề đề tài
                 </TableHead>
                 <TableHead className="w-48 px-4 py-3">Giảng viên ra đề</TableHead>
-                <TableHead className="w-40 px-4 py-3">Loại đồ án</TableHead>
-                <TableHead className="w-40 px-4 py-3">Chuyên ngành</TableHead>
+                <TableHead className="w-28 px-4 py-3">Loại đồ án</TableHead>
+                <TableHead className="w-28 px-4 py-3">Chuyên ngành</TableHead>
                 <TableHead className="w-24 px-3 py-3 text-center">Chỗ</TableHead>
                 <TableHead className="w-40 px-4 py-3">Trạng thái</TableHead>
                 <TableHead className="w-16 px-3 py-3 text-right" />
@@ -191,11 +192,15 @@ export function ColleagueTopicsTab({
                         {topic.lecturer?.fullName}
                       </span>
                     </TableCell>
-                    <TableCell className="w-40 px-4 py-3.5 align-middle whitespace-nowrap text-sm font-medium text-slate-700 dark:text-neutral-300">
-                      {topic.projectType?.name || '—'}
+                    <TableCell className="w-28 px-4 py-3.5 align-middle whitespace-nowrap text-sm font-semibold text-slate-700 dark:text-neutral-300">
+                      <span title={formatProjectTypeShort(topic.projectType).full}>
+                        {formatProjectTypeShort(topic.projectType).short}
+                      </span>
                     </TableCell>
-                    <TableCell className="w-40 px-4 py-3.5 align-middle whitespace-nowrap text-sm text-slate-600 dark:text-neutral-400">
-                      {topic.major?.name || 'Chung cho khoa'}
+                    <TableCell className="w-28 px-4 py-3.5 align-middle whitespace-nowrap text-sm font-medium text-slate-600 dark:text-neutral-400">
+                      <span title={formatMajorShort(topic.major).full}>
+                        {formatMajorShort(topic.major).short}
+                      </span>
                     </TableCell>
                     <TableCell className="w-24 px-3 py-3.5 text-center align-middle whitespace-nowrap font-mono font-semibold text-sm text-emerald-600 dark:text-emerald-400">
                       {topic.activeGroup?.occupiedSeats ?? 0}/{topic.maxStudents}
@@ -224,9 +229,9 @@ export function ColleagueTopicsTab({
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
                             onClick={() => setPreviewTopicId(topic.id)}
-                            className="cursor-pointer text-xs"
+                            className="cursor-pointer"
                           >
-                            <Eye className="size-4 mr-2" />
+                            <Eye className="size-4" />
                             <span>Xem chi tiết</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>

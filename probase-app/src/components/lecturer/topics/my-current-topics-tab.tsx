@@ -21,6 +21,7 @@ import type {
   TopicListItem,
   TopicStatus,
 } from '@/lib/api/types';
+import { formatMajorShort, formatProjectTypeShort } from '@/lib/utils';
 import {
   useDeleteTopic,
   useSubmitDraftTopics,
@@ -142,10 +143,10 @@ function RowActions({
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               render={<Link href={`/lecturer/topics/${topic.id}`} />}
-              className="cursor-pointer text-xs"
+              className="cursor-pointer"
             >
-              <Eye className="size-4 mr-2" />
-              Xem chi tiết
+              <Eye className="size-4" />
+              <span>Xem chi tiết</span>
             </DropdownMenuItem>
 
             {topic.status === 'DRAFT' && (
@@ -153,30 +154,30 @@ function RowActions({
                 onClick={() => {
                   void handleSubmitTopic();
                 }}
-                className="cursor-pointer text-xs"
+                className="cursor-pointer"
               >
-                <Send className="size-4 mr-2" />
-                {submitLabel}
+                <Send className="size-4" />
+                <span>{submitLabel}</span>
               </DropdownMenuItem>
             )}
 
             {isPendingReview && (
               <DropdownMenuItem
                 onClick={withdrawDialog.onOpen}
-                className="text-amber-600 focus:text-amber-600 dark:text-amber-500 dark:focus:text-amber-500 cursor-pointer text-xs"
+                className="text-amber-600 focus:text-amber-600 dark:text-amber-500 dark:focus:text-amber-500 cursor-pointer"
               >
-                <Undo2 className="size-4 mr-2" />
-                Thu hồi
+                <Undo2 className="size-4" />
+                <span>Thu hồi</span>
               </DropdownMenuItem>
             )}
 
             {canEdit && (
               <DropdownMenuItem
                 render={<Link href={`/lecturer/topics/${topic.id}?edit=true`} />}
-                className="cursor-pointer text-xs"
+                className="cursor-pointer"
               >
-                <Pencil className="size-4 mr-2" />
-                Sửa
+                <Pencil className="size-4" />
+                <span>Sửa</span>
               </DropdownMenuItem>
             )}
 
@@ -184,10 +185,10 @@ function RowActions({
               <DropdownMenuItem
                 variant="destructive"
                 onClick={deleteDialog.onOpen}
-                className="cursor-pointer text-xs"
+                className="cursor-pointer"
               >
-                <Trash2 className="size-4 mr-2" />
-                Xoá
+                <Trash2 className="size-4" />
+                <span>Xoá</span>
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
@@ -364,8 +365,8 @@ export function MyCurrentTopicsTab({
                 <TableHead className="w-[380px] max-w-[440px] min-w-[260px] px-5 py-3">
                   Tiêu đề đề tài
                 </TableHead>
-                <TableHead className="w-40 px-4 py-3">Loại đồ án</TableHead>
-                <TableHead className="w-40 px-4 py-3">Chuyên ngành</TableHead>
+                <TableHead className="w-28 px-4 py-3">Loại đồ án</TableHead>
+                <TableHead className="w-28 px-4 py-3">Chuyên ngành</TableHead>
                 <TableHead className="w-24 px-3 py-3 text-center">Chỗ</TableHead>
                 <TableHead className="w-40 px-4 py-3">Trạng thái</TableHead>
                 <TableHead className="w-32 px-4 py-3 text-right" />
@@ -401,11 +402,15 @@ export function MyCurrentTopicsTab({
                         )}
                     </div>
                   </TableCell>
-                  <TableCell className="w-40 px-4 py-3.5 align-middle whitespace-nowrap text-sm font-medium text-slate-700 dark:text-neutral-300">
-                    {topic.projectType?.name || '—'}
+                  <TableCell className="w-28 px-4 py-3.5 align-middle whitespace-nowrap text-sm font-semibold text-slate-700 dark:text-neutral-300">
+                    <span title={formatProjectTypeShort(topic.projectType).full}>
+                      {formatProjectTypeShort(topic.projectType).short}
+                    </span>
                   </TableCell>
-                  <TableCell className="w-40 px-4 py-3.5 align-middle whitespace-nowrap text-sm text-slate-600 dark:text-neutral-400">
-                    {topic.major?.name || 'Chung cho khoa'}
+                  <TableCell className="w-28 px-4 py-3.5 align-middle whitespace-nowrap text-sm font-medium text-slate-600 dark:text-neutral-400">
+                    <span title={formatMajorShort(topic.major).full}>
+                      {formatMajorShort(topic.major).short}
+                    </span>
                   </TableCell>
                   <TableCell className="w-24 px-3 py-3.5 text-center align-middle whitespace-nowrap font-mono font-semibold text-sm text-emerald-600 dark:text-emerald-400">
                     {topic.activeGroup?.occupiedSeats ?? 0}/{topic.maxStudents}
