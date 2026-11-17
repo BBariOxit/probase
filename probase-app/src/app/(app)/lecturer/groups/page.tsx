@@ -5,7 +5,6 @@ import Link from 'next/link';
 import {
   Check,
   Copy,
-  ExternalLink,
   Loader2,
   Search,
   Users,
@@ -15,14 +14,8 @@ import { useSupervisedGroups } from '@/lib/api/registration';
 import type { RegistrationGroup } from '@/lib/api/types';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { EmptyState } from '@/components/shared/empty-state';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
-const JOIN_SOURCE_LABEL: Record<string, string> = {
-  SELF: 'Tự đăng ký',
-  LINK: 'Mời qua MSSV',
-  ASSIGNED: 'Khoa phân công',
-};
+import { cn } from '@/lib/utils';
 
 function copyText(text: string, successMessage: string) {
   navigator.clipboard.writeText(text).then(
@@ -31,36 +24,16 @@ function copyText(text: string, successMessage: string) {
   );
 }
 
-function GroupRosterStrip({
+function GroupRosterSection({
   group,
   index,
 }: {
   group: RegistrationGroup;
   index: number;
 }) {
-  const [copiedGroupEmails, setCopiedGroupEmails] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
 
-  const groupEmails = useMemo(
-    () =>
-      group.members
-        .map((m) => m.student.email?.trim())
-        .filter((email): email is string => Boolean(email)),
-    [group.members],
-  );
-
   const isFull = group.occupiedSeats >= group.topic.maxStudents;
-  const remainingSeats = Math.max(0, group.topic.maxStudents - group.occupiedSeats);
-
-  function handleCopyAllEmails() {
-    if (groupEmails.length === 0) return;
-    copyText(
-      groupEmails.join(', '),
-      `Đã sao chép ${groupEmails.length} email của nhóm`,
-    );
-    setCopiedGroupEmails(true);
-    setTimeout(() => setCopiedGroupEmails(false), 2000);
-  }
 
   function handleCopySingleEmail(email: string) {
     copyText(email, `Đã sao chép: ${email}`);
@@ -69,144 +42,116 @@ function GroupRosterStrip({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#18181b] shadow-2xs">
-      {/* Header bar của nhóm */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-neutral-700/80 bg-slate-50/90 dark:bg-neutral-900/80 px-4 py-3">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2.5">
-          <span className="rounded bg-slate-200/80 dark:bg-neutral-800 px-2 py-0.5 font-mono text-xs font-bold text-slate-700 dark:text-neutral-300">
+    <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#18181b] shadow-2xs">
+      {/* Header bar của nhóm: Tên đề tài, loại đồ án, số chỗ */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 dark:border-neutral-800 bg-slate-50/70 dark:bg-neutral-900/60 px-4 py-3 sm:px-5">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <span className="font-mono text-xs font-bold text-slate-400 dark:text-neutral-500 shrink-0">
             #{String(index + 1).padStart(2, '0')}
           </span>
 
           <Link
             href={`/lecturer/topics/${group.topicId}`}
-            className="truncate text-sm font-bold text-slate-900 hover:text-primary dark:text-neutral-100 dark:hover:text-primary transition-colors cursor-pointer"
-            title={group.topic.title}
+            className="font-bold text-sm sm:text-base text-slate-900 hover:text-primary dark:text-neutral-100 dark:hover:text-primary transition-colors leading-snug break-words"
+            title="Bấm để xem chi tiết đề tài"
           >
             {group.topic.title}
           </Link>
+        </div>
 
-          <span className="rounded border border-slate-200 dark:border-neutral-700 bg-white dark:bg-[#202022] px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-neutral-300 whitespace-nowrap">
+        <div className="flex items-center gap-2.5 shrink-0 text-xs">
+          <span className="font-medium text-slate-500 dark:text-neutral-400">
             {group.topic.projectType.name}
           </span>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Trạng thái chỗ ngồi */}
-          {isFull ? (
-            <span className="inline-flex items-center rounded-md border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-              Đã đủ {group.occupiedSeats}/{group.topic.maxStudents} SV
-            </span>
-          ) : (
-            <span className="inline-flex items-center rounded-md border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
-              Còn trống {remainingSeats} chỗ ({group.occupiedSeats}/{group.topic.maxStudents})
-            </span>
-          )}
-
-          {/* Nút sao chép toàn bộ email nhóm */}
-          {groupEmails.length > 0 && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1.5 text-xs font-medium text-slate-700 dark:text-neutral-300 hover:text-primary"
-              onClick={handleCopyAllEmails}
-              title="Sao chép toàn bộ email của nhóm để gửi mail/lên lịch họp"
-            >
-              {copiedGroupEmails ? (
-                <Check className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-              ) : (
-                <Copy className="size-3.5" />
-              )}
-              <span>Sao chép email nhóm</span>
-            </Button>
-          )}
-
-          {/* Chi tiết nhóm */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 text-xs font-medium text-slate-600 dark:text-neutral-400"
-            render={<Link href={`/lecturer/groups/${group.id}`} />}
-            title="Xem chi tiết nhóm"
+          <span className="text-slate-300 dark:text-neutral-700" aria-hidden="true">
+            •
+          </span>
+          <span
+            className={cn(
+              'font-mono font-bold',
+              isFull
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-amber-600 dark:text-amber-400',
+            )}
           >
-            <ExternalLink className="size-3.5" />
-          </Button>
+            {group.occupiedSeats}/{group.topic.maxStudents}
+          </span>
         </div>
       </div>
 
-      {/* Bảng thành viên nhóm */}
-      <div className="overflow-x-auto">
-        {group.members.length === 0 ? (
-          <div className="py-6 text-center text-xs text-muted-foreground">
-            Chưa có sinh viên nào trong nhóm.
-          </div>
-        ) : (
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-neutral-700/80 bg-slate-100/60 dark:bg-neutral-900/40 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-neutral-400 select-none">
-                <th className="w-28 px-4 py-2.5">MSSV</th>
-                <th className="min-w-48 px-4 py-2.5">Họ và tên</th>
-                <th className="w-32 px-4 py-2.5">Lớp</th>
-                <th className="min-w-56 px-4 py-2.5">Email liên hệ</th>
-                <th className="w-32 px-4 py-2.5">Nguồn</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-neutral-800">
-              {group.members.map((member) => (
-                <tr
-                  key={member.id}
-                  className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/30"
-                >
-                  <td className="px-4 py-2.5 font-mono text-xs font-semibold text-slate-800 dark:text-neutral-200">
-                    {member.student.studentCode}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm text-slate-900 dark:text-neutral-100">
-                        {member.student.fullName}
-                      </span>
-                      {member.isLeader && (
-                        <span className="inline-flex items-center rounded border border-blue-200 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700 dark:text-blue-300">
-                          Trưởng nhóm
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-2.5 font-mono text-xs text-slate-600 dark:text-neutral-400">
-                    {member.student.class || '—'}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <div className="flex items-center gap-1.5">
-                      <a
-                        href={`mailto:${member.student.email}`}
-                        className="font-mono text-xs text-slate-600 hover:text-primary dark:text-neutral-400 dark:hover:text-primary transition-colors hover:underline"
-                        title="Gửi email"
-                      >
-                        {member.student.email}
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => handleCopySingleEmail(member.student.email)}
-                        className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 transition-colors"
-                        title="Sao chép email"
-                      >
-                        {copiedEmail === member.student.email ? (
-                          <Check className="size-3 text-emerald-600 dark:text-emerald-400" />
-                        ) : (
-                          <Copy className="size-3" />
-                        )}
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-4 py-2.5 text-xs text-slate-500 dark:text-neutral-400">
-                    {JOIN_SOURCE_LABEL[member.joinSource] || member.joinSource}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      {/* Danh sách thành viên: dạng section gạch ngang từng dòng */}
+      {group.members.length === 0 ? (
+        <div className="px-5 py-4 text-xs text-muted-foreground">
+          Chưa có sinh viên nào trong nhóm.
+        </div>
+      ) : (
+        <div className="divide-y divide-slate-100 dark:divide-neutral-800/80">
+          {group.members.map((member) => (
+            <div
+              key={member.id}
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 py-3 sm:px-5 hover:bg-slate-50/60 dark:hover:bg-neutral-800/30 transition-colors"
+            >
+              {/* Cụm 1: Ký tự đại diện + Họ tên + (Trưởng nhóm) */}
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="size-7 shrink-0 rounded-full bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-neutral-300 flex items-center justify-center text-xs font-bold font-mono">
+                  {member.student.fullName.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                  <span className="font-semibold text-sm text-slate-900 dark:text-neutral-100">
+                    {member.student.fullName}
+                  </span>
+                  {member.isLeader && (
+                    <span className="text-xs font-medium text-primary">
+                      (Trưởng nhóm)
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Cụm 2: MSSV • Lớp • Email liên hệ */}
+              <div className="flex items-center gap-2.5 sm:gap-3 text-xs text-slate-600 dark:text-neutral-400 flex-wrap pl-10 sm:pl-0">
+                <span className="font-mono font-semibold text-slate-800 dark:text-neutral-200">
+                  {member.student.studentCode}
+                </span>
+
+                <span className="text-slate-300 dark:text-neutral-700" aria-hidden="true">
+                  •
+                </span>
+
+                <span className="font-mono text-slate-600 dark:text-neutral-400">
+                  {member.student.class || '—'}
+                </span>
+
+                <span className="text-slate-300 dark:text-neutral-700" aria-hidden="true">
+                  •
+                </span>
+
+                <div className="flex items-center gap-1">
+                  <a
+                    href={`mailto:${member.student.email}`}
+                    className="font-mono text-slate-600 hover:text-primary dark:text-neutral-400 dark:hover:text-primary transition-colors hover:underline"
+                    title="Gửi email"
+                  >
+                    {member.student.email}
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => handleCopySingleEmail(member.student.email)}
+                    className="rounded p-1 text-slate-400 hover:text-slate-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
+                    title="Sao chép email"
+                  >
+                    {copiedEmail === member.student.email ? (
+                      <Check className="size-3 text-emerald-600 dark:text-emerald-400" />
+                    ) : (
+                      <Copy className="size-3" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -215,7 +160,7 @@ export default function LecturerGroupsPage() {
   const allowed = useRequireRole('LECTURER');
   const [search, setSearch] = useState('');
 
-  // Không cần dropdown chọn học kỳ: Luôn lấy danh sách nhóm thuộc học kỳ hiện tại
+  // Tự động lấy danh sách nhóm thuộc học kỳ hiện tại
   const { data: groups, isPending, error } = useSupervisedGroups();
 
   const items = groups ?? [];
@@ -243,16 +188,12 @@ export default function LecturerGroupsPage() {
     () => items.reduce((acc, g) => acc + g.occupiedSeats, 0),
     [items],
   );
-  const fullGroupsCount = useMemo(
-    () => items.filter((g) => g.occupiedSeats >= g.topic.maxStudents).length,
-    [items],
-  );
 
   if (!allowed) return null;
 
   return (
     <div className="space-y-4">
-      {/* Toolbar: Tìm kiếm + Thống kê tinh gọn chuẩn Enterprise */}
+      {/* Toolbar: Ô tìm kiếm + thống kê tinh gọn */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative min-w-64 flex-1 sm:max-w-md">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -265,26 +206,9 @@ export default function LecturerGroupsPage() {
         </div>
 
         {!isPending && !error && items.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#18181b] px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-neutral-300 shadow-2xs">
-              <Users className="size-3.5 text-primary" />
-              <strong className="font-semibold text-slate-900 dark:text-neutral-100">
-                {items.length}
-              </strong>{' '}
-              nhóm hướng dẫn
-            </span>
-
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#18181b] px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-neutral-300 shadow-2xs">
-              <strong className="font-semibold text-slate-900 dark:text-neutral-100">
-                {totalStudents}
-              </strong>{' '}
-              sinh viên
-            </span>
-
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-emerald-950/20 px-3 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-              <strong className="font-semibold">{fullGroupsCount}</strong> nhóm đủ người
-            </span>
-          </div>
+          <span className="text-xs text-slate-500 dark:text-neutral-400 font-medium">
+            Đang hướng dẫn <strong className="text-slate-800 dark:text-neutral-200">{items.length}</strong> nhóm ({totalStudents} sinh viên)
+          </span>
         )}
       </div>
 
@@ -304,7 +228,7 @@ export default function LecturerGroupsPage() {
 
       {/* Empty state */}
       {!isPending && !error && items.length === 0 && (
-        <div className="rounded-xl border border-slate-300 dark:border-neutral-800 bg-white dark:bg-[#18181b]">
+        <div className="rounded-xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#18181b]">
           <EmptyState
             icon={Users}
             title="Học kỳ này chưa có nhóm sinh viên đăng ký đề tài của bạn."
@@ -320,11 +244,11 @@ export default function LecturerGroupsPage() {
         </div>
       )}
 
-      {/* Danh sách các nhóm dạng Roster Strips */}
+      {/* Danh sách các nhóm dạng Section gạch ngang */}
       {!isPending && filteredGroups.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-3.5">
           {filteredGroups.map((group, idx) => (
-            <GroupRosterStrip key={group.id} group={group} index={idx} />
+            <GroupRosterSection key={group.id} group={group} index={idx} />
           ))}
         </div>
       )}
