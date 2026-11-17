@@ -10,7 +10,7 @@ const TOPIC_STATUS: Record<TopicStatus, StatusLabel> = {
   OPEN: { label: 'Đang mở', tone: 'success' },
   ASSIGNED: { label: 'Đã giao nhóm', tone: 'idle' },
   IN_PROGRESS: { label: 'Đang thực hiện', tone: 'active' },
-  COMPLETED: { label: 'Hoàn thành', tone: 'idle' },
+  COMPLETED: { label: 'Hoàn thành', tone: 'active' },
   REJECTED: { label: 'Bị từ chối', tone: 'danger' },
 };
 

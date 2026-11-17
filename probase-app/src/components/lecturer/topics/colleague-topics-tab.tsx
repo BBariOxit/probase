@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Eye, Loader2, Users } from 'lucide-react';
+import { Eye, Loader2, MoreHorizontal, Users } from 'lucide-react';
 import type {
   Major,
   ProjectType,
@@ -14,6 +14,12 @@ import { PaginationBar } from '@/components/shared/pagination-bar';
 import { TopicOwnerBadge } from '@/components/topics/topic-status-badge';
 import { TopicDetailSheet } from '@/components/topics/topic-detail-sheet';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -94,7 +100,7 @@ export function ColleagueTopicsTab({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3.5">
       <TopicFilterBar
         search={search}
         onSearchChange={(val) => {
@@ -132,37 +138,26 @@ export function ColleagueTopicsTab({
       />
 
       {error && (
-        <p className="text-xs text-destructive">
+        <p className="text-sm text-destructive">
           Không tải được danh sách đề tài đồng nghiệp.
         </p>
       )}
 
+      {/* Bảng dữ liệu dùng chuẩn TableHeader của ứng dụng */}
       <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#18181b] shadow-2xs">
         <div className="overflow-x-auto">
           <Table className="w-full table-fixed text-left text-sm">
-            <TableHeader className="bg-slate-50 dark:bg-neutral-900 border-b border-slate-300 dark:border-neutral-700">
-              <TableRow>
-                <TableHead className="w-[360px] max-w-[420px] min-w-[260px] px-5 py-3 text-xs font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
+            <TableHeader sticky>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-[380px] max-w-[440px] min-w-[260px] px-5 py-3">
                   Tiêu đề đề tài
                 </TableHead>
-                <TableHead className="w-48 px-3 py-3 text-xs font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
-                  Giảng viên ra đề
-                </TableHead>
-                <TableHead className="w-36 px-3 py-3 text-xs font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
-                  Loại đồ án
-                </TableHead>
-                <TableHead className="w-36 px-3 py-3 text-xs font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
-                  Chuyên ngành
-                </TableHead>
-                <TableHead className="w-24 px-3 py-3 text-xs font-bold text-slate-800 dark:text-neutral-200 text-center whitespace-nowrap">
-                  Chỗ
-                </TableHead>
-                <TableHead className="w-36 px-3 py-3 text-xs font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
-                  Trạng thái
-                </TableHead>
-                <TableHead className="w-24 px-4 py-3 text-right whitespace-nowrap">
-                  Thao tác
-                </TableHead>
+                <TableHead className="w-48 px-4 py-3">Giảng viên ra đề</TableHead>
+                <TableHead className="w-40 px-4 py-3">Loại đồ án</TableHead>
+                <TableHead className="w-40 px-4 py-3">Chuyên ngành</TableHead>
+                <TableHead className="w-24 px-3 py-3 text-center">Chỗ</TableHead>
+                <TableHead className="w-40 px-4 py-3">Trạng thái</TableHead>
+                <TableHead className="w-16 px-3 py-3 text-right" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -171,9 +166,9 @@ export function ColleagueTopicsTab({
                 return (
                   <TableRow
                     key={topic.id}
-                    className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40 border-b border-slate-200 dark:border-neutral-800/60"
+                    className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                   >
-                    <TableCell className="w-[360px] max-w-[420px] min-w-[260px] px-5 py-3.5 align-middle whitespace-normal">
+                    <TableCell className="w-[380px] max-w-[440px] min-w-[260px] px-5 py-3.5 align-middle whitespace-normal">
                       <button
                         type="button"
                         onClick={() => setPreviewTopicId(topic.id)}
@@ -183,43 +178,59 @@ export function ColleagueTopicsTab({
                         {topic.title}
                       </button>
                       {isDraft && (
-                        <div className="mt-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                        <div className="mt-1 text-xs text-amber-600 dark:text-amber-400 font-medium">
                           Đang soạn thảo (Bản nháp)
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="w-48 px-3 py-3.5 align-middle whitespace-nowrap text-xs font-medium text-slate-800 dark:text-neutral-200">
-                      {topic.lecturer?.academicTitle
-                        ? `${topic.lecturer.academicTitle} `
-                        : ''}
-                      {topic.lecturer?.fullName}
+                    <TableCell className="w-48 px-4 py-3.5 align-middle whitespace-nowrap text-sm text-slate-800 dark:text-neutral-200">
+                      <span className="font-medium">
+                        {topic.lecturer?.academicTitle
+                          ? `${topic.lecturer.academicTitle} `
+                          : ''}
+                        {topic.lecturer?.fullName}
+                      </span>
                     </TableCell>
-                    <TableCell className="w-36 px-3 py-3.5 align-middle whitespace-nowrap text-xs font-medium text-slate-700 dark:text-neutral-300">
+                    <TableCell className="w-40 px-4 py-3.5 align-middle whitespace-nowrap text-sm font-medium text-slate-700 dark:text-neutral-300">
                       {topic.projectType?.name || '—'}
                     </TableCell>
-                    <TableCell className="w-36 px-3 py-3.5 align-middle whitespace-nowrap text-xs text-slate-600 dark:text-neutral-400">
+                    <TableCell className="w-40 px-4 py-3.5 align-middle whitespace-nowrap text-sm text-slate-600 dark:text-neutral-400">
                       {topic.major?.name || 'Chung cho khoa'}
                     </TableCell>
-                    <TableCell className="w-24 px-3 py-3.5 text-center align-middle whitespace-nowrap font-mono font-semibold text-xs text-emerald-600 dark:text-emerald-400">
+                    <TableCell className="w-24 px-3 py-3.5 text-center align-middle whitespace-nowrap font-mono font-semibold text-sm text-emerald-600 dark:text-emerald-400">
                       {topic.activeGroup?.occupiedSeats ?? 0}/{topic.maxStudents}
                     </TableCell>
-                    <TableCell className="w-36 px-3 py-3.5 align-middle whitespace-nowrap">
+                    <TableCell className="w-40 px-4 py-3.5 align-middle whitespace-nowrap">
                       <TopicOwnerBadge
                         status={topic.status}
                         activeGroup={topic.activeGroup}
                         variant="text"
                       />
                     </TableCell>
-                    <TableCell className="w-24 px-4 py-3.5 align-middle text-right whitespace-nowrap">
-                      <Button
-                        size="xs"
-                        variant="ghost"
-                        className="h-7.5 px-2 text-xs font-medium text-slate-600 hover:text-slate-900 dark:text-neutral-300 dark:hover:text-neutral-100 cursor-pointer gap-1"
-                        onClick={() => setPreviewTopicId(topic.id)}
-                      >
-                        <Eye className="size-3.5" />
-                        <span>Chi tiết</span>
-                      </Button>
+                    <TableCell className="w-16 px-3 py-3.5 align-middle text-right whitespace-nowrap">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="size-8"
+                              aria-label="Thao tác"
+                            >
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          }
+                        />
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => setPreviewTopicId(topic.id)}
+                            className="cursor-pointer text-xs"
+                          >
+                            <Eye className="size-4 mr-2" />
+                            <span>Xem chi tiết</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 );

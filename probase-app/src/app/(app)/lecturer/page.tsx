@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Archive, BookOpen, Users } from 'lucide-react';
+import { cn, formatSemesterShort } from '@/lib/utils';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useMyProfile } from '@/lib/api/me';
 import {
@@ -11,7 +11,6 @@ import {
   useSemesters,
 } from '@/lib/api/master-data';
 import { useTopics } from '@/lib/api/topics';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MyCurrentTopicsTab } from '@/components/lecturer/topics/my-current-topics-tab';
 import { TopicArchiveTab } from '@/components/lecturer/topics/topic-archive-tab';
 import { ColleagueTopicsTab } from '@/components/lecturer/topics/colleague-topics-tab';
@@ -25,13 +24,13 @@ export default function LecturerTopicsPage() {
   const { data: projectTypes = [] } = useProjectTypes();
   const { data: majors = [] } = useMajors();
 
-  const [activeTab, setActiveTab] = useState('current');
+  const [activeTab, setActiveTab] = useState<'current' | 'archive' | 'colleagues'>('current');
 
   const currentLecturerId = profile?.lecturer?.id ?? 0;
   const isHeadOfDepartment = profile?.lecturer?.isHeadOfDepartment ?? false;
   const lecturerMajorId = profile?.lecturer?.major?.id;
 
-  // Counter for active tab
+  // Counters for tabs
   const { data: myCurrentTopicsData } = useTopics(
     {
       mine: true,
@@ -54,96 +53,100 @@ export default function LecturerTopicsPage() {
   if (!allowed) return null;
 
   return (
-    <div className="space-y-4">
-      {/* HEADER & TABS NAVIGATION */}
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="space-y-4"
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <TabsList className="h-10 p-1 bg-slate-100 dark:bg-[#18181b] border border-slate-300 dark:border-neutral-700 rounded-lg">
-            <TabsTrigger
-              value="current"
-              className="gap-2 text-xs font-semibold px-3 py-1.5"
-            >
-              <BookOpen className="size-3.5" />
-              <span>Đề tài của tôi</span>
-              {myCurrentTopicsData?.total !== undefined && (
-                <span className="ml-0.5 rounded-full px-1.5 py-0.2 text-[10px] font-bold bg-slate-200/80 text-slate-700 dark:bg-neutral-800 dark:text-neutral-300">
-                  {myCurrentTopicsData.total}
-                </span>
-              )}
-            </TabsTrigger>
-
-            <TabsTrigger
-              value="archive"
-              className="gap-2 text-xs font-semibold px-3 py-1.5"
-            >
-              <Archive className="size-3.5" />
-              <span>Kho đề tài cũ</span>
-            </TabsTrigger>
-
-            <TabsTrigger
-              value="colleagues"
-              className="gap-2 text-xs font-semibold px-3 py-1.5"
-            >
-              <Users className="size-3.5" />
-              <span>Đề tài đồng nghiệp</span>
-              {colleagueTopicsData?.total !== undefined && (
-                <span className="ml-0.5 rounded-full px-1.5 py-0.2 text-[10px] font-bold bg-slate-200/80 text-slate-700 dark:bg-neutral-800 dark:text-neutral-300">
-                  {colleagueTopicsData.total}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
-
-          {activeSemester && (
-            <div className="text-xs text-slate-500 dark:text-neutral-400 font-medium">
-              Học kỳ:{' '}
-              <span className="font-semibold text-slate-800 dark:text-neutral-200">
-                {activeSemester.name}
-              </span>
-            </div>
+    <div className="space-y-6">
+      {/* Tiêu đề trang tích hợp tab điều hướng chuẩn trang phân quyền vai trò */}
+      <div className="flex items-center gap-8 border-b border-border/60 pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveTab('current')}
+          className={cn(
+            'group inline-flex items-center gap-2 pb-0.5 text-xl font-bold tracking-tight transition-colors cursor-pointer relative',
+            activeTab === 'current'
+              ? 'text-foreground after:absolute after:-bottom-3.5 after:left-0 after:right-0 after:h-[3px] after:rounded-full after:bg-primary'
+              : 'text-muted-foreground hover:text-foreground',
           )}
-        </div>
+        >
+          <span>Đề tài của tôi</span>
+          {myCurrentTopicsData?.total !== undefined && (
+            <span className="ml-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-primary/10 text-primary">
+              {myCurrentTopicsData.total}
+            </span>
+          )}
+        </button>
 
-        {/* TAB 1: ĐỀ TÀI CỦA TÔI (KỲ NÀY) */}
-        <TabsContent value="current" className="space-y-4 pt-1">
-          <MyCurrentTopicsTab
-            activeSemester={activeSemester}
-            isHeadOfDepartment={isHeadOfDepartment}
-            lecturerMajorId={lecturerMajorId}
-            projectTypes={projectTypes}
-            majors={majors}
-          />
-        </TabsContent>
+        <button
+          type="button"
+          onClick={() => setActiveTab('archive')}
+          className={cn(
+            'group inline-flex items-center gap-2 pb-0.5 text-xl font-bold tracking-tight transition-colors cursor-pointer relative',
+            activeTab === 'archive'
+              ? 'text-foreground after:absolute after:-bottom-3.5 after:left-0 after:right-0 after:h-[3px] after:rounded-full after:bg-primary'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <span>Kho đề tài cũ</span>
+        </button>
 
-        {/* TAB 2: KHO ĐỀ TÀI CŨ (CÓ TÍNH NĂNG NHÂN BẢN) */}
-        <TabsContent value="archive" className="space-y-4 pt-1">
-          <TopicArchiveTab
-            currentLecturerId={currentLecturerId}
-            activeSemester={activeSemester}
-            allSemesters={allSemesters}
-            projectTypes={projectTypes}
-            majors={majors}
-            onTopicCloned={() => {
-              // Automatically switch to current tab when user clones a topic so they see their new draft
-              setActiveTab('current');
-            }}
-          />
-        </TabsContent>
+        <button
+          type="button"
+          onClick={() => setActiveTab('colleagues')}
+          className={cn(
+            'group inline-flex items-center gap-2 pb-0.5 text-xl font-bold tracking-tight transition-colors cursor-pointer relative',
+            activeTab === 'colleagues'
+              ? 'text-foreground after:absolute after:-bottom-3.5 after:left-0 after:right-0 after:h-[3px] after:rounded-full after:bg-primary'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <span>Đề tài đồng nghiệp</span>
+          {colleagueTopicsData?.total !== undefined && (
+            <span className="ml-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-primary/10 text-primary">
+              {colleagueTopicsData.total}
+            </span>
+          )}
+        </button>
 
-        {/* TAB 3: ĐỀ TÀI ĐỒNG NGHIỆP (KỲ NÀY - HIỆN CẢ DRAFT ĐỂ TRÁNH TRÙNG LẶP) */}
-        <TabsContent value="colleagues" className="space-y-4 pt-1">
-          <ColleagueTopicsTab
-            currentLecturerId={currentLecturerId}
-            activeSemester={activeSemester}
-            projectTypes={projectTypes}
-            majors={majors}
-          />
-        </TabsContent>
-      </Tabs>
+        {activeSemester && (
+          <div className="ml-auto text-xs text-muted-foreground font-medium">
+            Học kỳ:{' '}
+            <span className="font-semibold text-foreground">
+              {formatSemesterShort(activeSemester)}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* NỘI DUNG TAB */}
+      {activeTab === 'current' && (
+        <MyCurrentTopicsTab
+          activeSemester={activeSemester}
+          isHeadOfDepartment={isHeadOfDepartment}
+          lecturerMajorId={lecturerMajorId}
+          projectTypes={projectTypes}
+          majors={majors}
+        />
+      )}
+
+      {activeTab === 'archive' && (
+        <TopicArchiveTab
+          currentLecturerId={currentLecturerId}
+          activeSemester={activeSemester}
+          allSemesters={allSemesters}
+          projectTypes={projectTypes}
+          majors={majors}
+          onTopicCloned={() => {
+            setActiveTab('current');
+          }}
+        />
+      )}
+
+      {activeTab === 'colleagues' && (
+        <ColleagueTopicsTab
+          currentLecturerId={currentLecturerId}
+          activeSemester={activeSemester}
+          projectTypes={projectTypes}
+          majors={majors}
+        />
+      )}
     </div>
   );
 }

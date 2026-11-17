@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Archive, Copy, Eye, Loader2 } from 'lucide-react';
+import { Archive, Copy, Eye, Loader2, MoreHorizontal } from 'lucide-react';
 import type {
   Major,
   ProjectType,
@@ -9,12 +9,19 @@ import type {
   TopicListItem,
   TopicStatus,
 } from '@/lib/api/types';
+import { formatSemesterShort } from '@/lib/utils';
 import { useTopicLecturers, useTopics } from '@/lib/api/topics';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { TopicStatusBadge } from '@/components/topics/topic-status-badge';
 import { TopicDetailSheet } from '@/components/topics/topic-detail-sheet';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -110,7 +117,7 @@ export function TopicArchiveTab({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3.5">
       <TopicFilterBar
         search={search}
         onSearchChange={(val) => {
@@ -154,108 +161,98 @@ export function TopicArchiveTab({
       />
 
       {error && (
-        <p className="text-xs text-destructive">
+        <p className="text-sm text-destructive">
           Không tải được kho đề tài cũ.
         </p>
       )}
 
+      {/* Bảng dữ liệu dùng chuẩn TableHeader của ứng dụng */}
       <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#18181b] shadow-2xs">
         <div className="overflow-x-auto">
           <Table className="w-full table-fixed text-left text-sm">
-            <TableHeader className="bg-slate-50 dark:bg-neutral-900 border-b border-slate-300 dark:border-neutral-700">
-              <TableRow>
-                <TableHead className="w-[340px] max-w-[400px] min-w-[240px] px-5 py-3 text-xs font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
+            <TableHeader sticky>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-[360px] max-w-[420px] min-w-[260px] px-5 py-3">
                   Tiêu đề đề tài
                 </TableHead>
-                <TableHead className="w-32 px-3 py-3 text-xs font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
-                  Học kỳ
-                </TableHead>
-                <TableHead className="w-44 px-3 py-3 text-xs font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
-                  Giảng viên ra đề
-                </TableHead>
-                <TableHead className="w-36 px-3 py-3 text-xs font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
-                  Loại đồ án
-                </TableHead>
-                <TableHead className="w-36 px-3 py-3 text-xs font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
-                  Chuyên ngành
-                </TableHead>
-                <TableHead className="w-28 px-3 py-3 text-xs font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
-                  Trạng thái
-                </TableHead>
-                <TableHead className="w-32 px-4 py-3 text-right whitespace-nowrap">
-                  Thao tác
-                </TableHead>
+                <TableHead className="w-36 px-4 py-3">Học kỳ</TableHead>
+                <TableHead className="w-48 px-4 py-3">Giảng viên ra đề</TableHead>
+                <TableHead className="w-36 px-4 py-3">Loại đồ án</TableHead>
+                <TableHead className="w-36 px-4 py-3">Chuyên ngành</TableHead>
+                <TableHead className="w-32 px-4 py-3">Trạng thái</TableHead>
+                <TableHead className="w-16 px-3 py-3 text-right" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {topics.map((topic) => {
-                const isMyTopic = topic.lecturer?.id === currentLecturerId;
-                return (
-                  <TableRow
-                    key={topic.id}
-                    className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40 border-b border-slate-200 dark:border-neutral-800/60"
-                  >
-                    <TableCell className="w-[340px] max-w-[400px] min-w-[240px] px-5 py-3.5 align-middle whitespace-normal">
-                      <button
-                        type="button"
-                        onClick={() => setPreviewTopicId(topic.id)}
-                        className="text-left font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal line-clamp-2 cursor-pointer text-sm"
-                        title={topic.title}
-                      >
-                        {topic.title}
-                      </button>
-                    </TableCell>
-                    <TableCell className="w-32 px-3 py-3.5 align-middle whitespace-nowrap text-xs text-slate-600 dark:text-neutral-400">
-                      {topic.semester?.name || '—'}
-                    </TableCell>
-                    <TableCell className="w-44 px-3 py-3.5 align-middle whitespace-nowrap text-xs">
-                      <span className="font-medium text-slate-800 dark:text-neutral-200">
-                        {topic.lecturer?.academicTitle
-                          ? `${topic.lecturer.academicTitle} `
-                          : ''}
-                        {topic.lecturer?.fullName}
-                      </span>
-                      {isMyTopic && (
-                        <span className="ml-1.5 text-[10px] font-semibold text-primary">
-                          (Tôi)
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="w-36 px-3 py-3.5 align-middle whitespace-nowrap text-xs font-medium text-slate-700 dark:text-neutral-300">
-                      {topic.projectType?.name || '—'}
-                    </TableCell>
-                    <TableCell className="w-36 px-3 py-3.5 align-middle whitespace-nowrap text-xs text-slate-600 dark:text-neutral-400">
-                      {topic.major?.name || 'Chung cho khoa'}
-                    </TableCell>
-                    <TableCell className="w-28 px-3 py-3.5 align-middle whitespace-nowrap">
-                      <TopicStatusBadge status={topic.status} variant="text" />
-                    </TableCell>
-                    <TableCell className="w-32 px-4 py-3.5 align-middle text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Button
-                          size="xs"
-                          variant="outline"
-                          className="h-7.5 px-2.5 gap-1.5 text-xs font-semibold border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#18181b] hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200 cursor-pointer shadow-2xs"
-                          onClick={() => handleOpenClone(topic)}
-                          title="Tạo bản sao đề tài vào học kỳ hiện tại"
-                        >
-                          <Copy className="size-3 text-primary" />
-                          <span>Nhân bản</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          className="size-7.5 text-slate-500 hover:text-slate-800 dark:hover:text-neutral-200 cursor-pointer"
+              {topics.map((topic) => (
+                <TableRow
+                  key={topic.id}
+                  className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
+                >
+                  <TableCell className="w-[360px] max-w-[420px] min-w-[260px] px-5 py-3.5 align-middle whitespace-normal">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewTopicId(topic.id)}
+                      className="text-left font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal line-clamp-2 cursor-pointer text-sm"
+                      title={topic.title}
+                    >
+                      {topic.title}
+                    </button>
+                  </TableCell>
+                  <TableCell className="w-36 px-4 py-3.5 align-middle whitespace-nowrap text-sm font-medium text-slate-700 dark:text-neutral-300">
+                    {formatSemesterShort(topic.semester)}
+                  </TableCell>
+                  <TableCell className="w-48 px-4 py-3.5 align-middle whitespace-nowrap text-sm text-slate-800 dark:text-neutral-200">
+                    <span className="font-medium">
+                      {topic.lecturer?.academicTitle
+                        ? `${topic.lecturer.academicTitle} `
+                        : ''}
+                      {topic.lecturer?.fullName}
+                    </span>
+                  </TableCell>
+                  <TableCell className="w-36 px-4 py-3.5 align-middle whitespace-nowrap text-sm font-medium text-slate-700 dark:text-neutral-300">
+                    {topic.projectType?.name || '—'}
+                  </TableCell>
+                  <TableCell className="w-36 px-4 py-3.5 align-middle whitespace-nowrap text-sm text-slate-600 dark:text-neutral-400">
+                    {topic.major?.name || 'Chung cho khoa'}
+                  </TableCell>
+                  <TableCell className="w-32 px-4 py-3.5 align-middle whitespace-nowrap">
+                    <TopicStatusBadge status={topic.status} variant="text" />
+                  </TableCell>
+                  <TableCell className="w-16 px-3 py-3.5 align-middle text-right whitespace-nowrap">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="size-8"
+                            aria-label="Thao tác"
+                          >
+                            <MoreHorizontal className="size-4" />
+                          </Button>
+                        }
+                      />
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
                           onClick={() => setPreviewTopicId(topic.id)}
-                          title="Xem chi tiết"
+                          className="cursor-pointer text-xs"
                         >
-                          <Eye className="size-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+                          <Eye className="size-4 mr-2" />
+                          <span>Xem chi tiết</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleOpenClone(topic)}
+                          className="cursor-pointer text-xs"
+                        >
+                          <Copy className="size-4 mr-2 text-primary" />
+                          <span>Nhân bản sang kỳ này</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>

@@ -107,7 +107,7 @@ function RowActions({
           <Button
             size="xs"
             variant="default"
-            className="h-7.5 px-2.5 gap-1.5 text-xs font-semibold shadow-xs cursor-pointer"
+            className="h-8 px-2.5 gap-1.5 text-xs font-semibold shadow-xs cursor-pointer"
             disabled={transition.isPending}
             onClick={(e) => {
               e.stopPropagation();
@@ -125,11 +125,16 @@ function RowActions({
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <Button variant="ghost" size="icon-sm" aria-label="Hành động">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="size-8"
+                aria-label="Hành động"
+              >
                 {transition.isPending && transition.variables?.id === topic.id ? (
-                  <Loader2 className="animate-spin" />
+                  <Loader2 className="size-4 animate-spin" />
                 ) : (
-                  <MoreHorizontal />
+                  <MoreHorizontal className="size-4" />
                 )}
               </Button>
             }
@@ -137,9 +142,9 @@ function RowActions({
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               render={<Link href={`/lecturer/topics/${topic.id}`} />}
-              className="cursor-pointer"
+              className="cursor-pointer text-xs"
             >
-              <Eye className="size-4" />
+              <Eye className="size-4 mr-2" />
               Xem chi tiết
             </DropdownMenuItem>
 
@@ -148,8 +153,9 @@ function RowActions({
                 onClick={() => {
                   void handleSubmitTopic();
                 }}
+                className="cursor-pointer text-xs"
               >
-                <Send className="size-4" />
+                <Send className="size-4 mr-2" />
                 {submitLabel}
               </DropdownMenuItem>
             )}
@@ -157,9 +163,9 @@ function RowActions({
             {isPendingReview && (
               <DropdownMenuItem
                 onClick={withdrawDialog.onOpen}
-                className="text-amber-600 focus:text-amber-600 dark:text-amber-500 dark:focus:text-amber-500 cursor-pointer"
+                className="text-amber-600 focus:text-amber-600 dark:text-amber-500 dark:focus:text-amber-500 cursor-pointer text-xs"
               >
-                <Undo2 className="size-4" />
+                <Undo2 className="size-4 mr-2" />
                 Thu hồi
               </DropdownMenuItem>
             )}
@@ -167,8 +173,9 @@ function RowActions({
             {canEdit && (
               <DropdownMenuItem
                 render={<Link href={`/lecturer/topics/${topic.id}?edit=true`} />}
+                className="cursor-pointer text-xs"
               >
-                <Pencil className="size-4" />
+                <Pencil className="size-4 mr-2" />
                 Sửa
               </DropdownMenuItem>
             )}
@@ -177,8 +184,9 @@ function RowActions({
               <DropdownMenuItem
                 variant="destructive"
                 onClick={deleteDialog.onOpen}
+                className="cursor-pointer text-xs"
               >
-                <Trash2 className="size-4" />
+                <Trash2 className="size-4 mr-2" />
                 Xoá
               </DropdownMenuItem>
             )}
@@ -279,7 +287,7 @@ export function MyCurrentTopicsTab({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3.5">
       <TopicFilterBar
         search={search}
         onSearchChange={(val) => {
@@ -311,7 +319,7 @@ export function MyCurrentTopicsTab({
             {draftCount > 0 && (
               <Button
                 variant="outline"
-                className="gap-1.5 h-9 text-xs font-semibold border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 cursor-pointer"
+                className="gap-1.5 h-9.5 text-xs font-semibold border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 cursor-pointer"
                 disabled={submitDrafts.isPending}
                 onClick={() => {
                   submitDrafts
@@ -331,7 +339,7 @@ export function MyCurrentTopicsTab({
               </Button>
             )}
             <Button
-              className="h-9 text-xs font-semibold gap-1.5 shadow-xs cursor-pointer"
+              className="h-9.5 text-xs font-semibold gap-1.5 shadow-xs cursor-pointer bg-primary text-white hover:bg-primary/90"
               render={<Link href="/lecturer/topics/new" />}
             >
               <Plus className="size-4" />
@@ -342,42 +350,35 @@ export function MyCurrentTopicsTab({
       />
 
       {error && (
-        <p className="text-xs text-destructive">
+        <p className="text-sm text-destructive">
           Không tải được danh sách đề tài.
         </p>
       )}
 
+      {/* Bảng dữ liệu dùng chuẩn TableHeader của ứng dụng */}
       <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#18181b] shadow-2xs">
         <div className="overflow-x-auto">
           <Table className="w-full table-fixed text-left text-sm">
-            <TableHeader className="bg-slate-50 dark:bg-neutral-900 border-b border-slate-300 dark:border-neutral-700">
-              <TableRow>
-                <TableHead className="w-[360px] max-w-[420px] min-w-[260px] px-5 py-3 text-xs font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
+            <TableHeader sticky>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-[380px] max-w-[440px] min-w-[260px] px-5 py-3">
                   Tiêu đề đề tài
                 </TableHead>
-                <TableHead className="w-36 px-3 py-3 text-xs font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
-                  Loại đồ án
-                </TableHead>
-                <TableHead className="w-36 px-3 py-3 text-xs font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
-                  Chuyên ngành
-                </TableHead>
-                <TableHead className="w-24 px-3 py-3 text-xs font-bold text-slate-800 dark:text-neutral-200 text-center whitespace-nowrap">
-                  Chỗ
-                </TableHead>
-                <TableHead className="w-36 px-3 py-3 text-xs font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
-                  Trạng thái
-                </TableHead>
-                <TableHead className="w-28 px-4 py-3 text-right whitespace-nowrap" />
+                <TableHead className="w-40 px-4 py-3">Loại đồ án</TableHead>
+                <TableHead className="w-40 px-4 py-3">Chuyên ngành</TableHead>
+                <TableHead className="w-24 px-3 py-3 text-center">Chỗ</TableHead>
+                <TableHead className="w-40 px-4 py-3">Trạng thái</TableHead>
+                <TableHead className="w-32 px-4 py-3 text-right" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {topics.map((topic) => (
                 <TableRow
                   key={topic.id}
-                  className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40 border-b border-slate-200 dark:border-neutral-800/60"
+                  className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                 >
-                  <TableCell className="w-[360px] max-w-[420px] min-w-[260px] px-5 py-3.5 align-middle whitespace-normal">
-                    <div className="w-full max-w-[420px] whitespace-normal">
+                  <TableCell className="w-[380px] max-w-[440px] min-w-[260px] px-5 py-3.5 align-middle whitespace-normal">
+                    <div className="w-full max-w-[440px] whitespace-normal">
                       <Link
                         href={`/lecturer/topics/${topic.id}`}
                         className="block font-semibold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal line-clamp-2 cursor-pointer text-sm"
@@ -400,23 +401,23 @@ export function MyCurrentTopicsTab({
                         )}
                     </div>
                   </TableCell>
-                  <TableCell className="w-36 px-3 py-3.5 align-middle whitespace-nowrap text-xs font-medium text-slate-700 dark:text-neutral-300">
+                  <TableCell className="w-40 px-4 py-3.5 align-middle whitespace-nowrap text-sm font-medium text-slate-700 dark:text-neutral-300">
                     {topic.projectType?.name || '—'}
                   </TableCell>
-                  <TableCell className="w-36 px-3 py-3.5 align-middle whitespace-nowrap text-xs text-slate-600 dark:text-neutral-400">
+                  <TableCell className="w-40 px-4 py-3.5 align-middle whitespace-nowrap text-sm text-slate-600 dark:text-neutral-400">
                     {topic.major?.name || 'Chung cho khoa'}
                   </TableCell>
-                  <TableCell className="w-24 px-3 py-3.5 text-center align-middle whitespace-nowrap font-mono font-semibold text-xs text-emerald-600 dark:text-emerald-400">
+                  <TableCell className="w-24 px-3 py-3.5 text-center align-middle whitespace-nowrap font-mono font-semibold text-sm text-emerald-600 dark:text-emerald-400">
                     {topic.activeGroup?.occupiedSeats ?? 0}/{topic.maxStudents}
                   </TableCell>
-                  <TableCell className="w-36 px-3 py-3.5 align-middle whitespace-nowrap">
+                  <TableCell className="w-40 px-4 py-3.5 align-middle whitespace-nowrap">
                     <TopicOwnerBadge
                       status={topic.status}
                       activeGroup={topic.activeGroup}
                       variant="text"
                     />
                   </TableCell>
-                  <TableCell className="w-28 px-4 py-3.5 align-middle text-right whitespace-nowrap">
+                  <TableCell className="w-32 px-4 py-3.5 align-middle text-right whitespace-nowrap">
                     <RowActions
                       topic={topic}
                       isHeadOfDepartment={isHeadOfDepartment}

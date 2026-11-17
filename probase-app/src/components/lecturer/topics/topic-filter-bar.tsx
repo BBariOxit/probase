@@ -1,9 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { RotateCcw, Search, X } from 'lucide-react';
 import type { Major, ProjectType, Semester } from '@/lib/api/types';
+import { formatSemesterShort } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -15,10 +17,11 @@ import {
   LecturerCombobox,
   type LecturerLike,
 } from '@/components/shared/lecturer-combobox';
+import { AdvancedFilterPopover } from '@/components/shared/advanced-filter-popover';
 
 export interface FilterOption {
-  value: string;
-  label: string;
+  readonly value: string;
+  readonly label: string;
 }
 
 export interface TopicFilterBarProps {
@@ -77,191 +80,235 @@ export function TopicFilterBar({
   totalCount,
   rightActions,
 }: TopicFilterBarProps) {
-  // Determine whether any filter is actively applied
-  const hasSearch = search.trim().length > 0;
-  const hasProjectType = projectTypeId > 0;
-  const hasMajor = majorId > 0;
+  const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
+
+  // Active filters count for popover badge
   const hasSemester = semesterId > 0;
   const hasLecturer = lecturerId !== defaultLecturerId;
+  const hasProjectType = projectTypeId > 0;
+  const hasMajor = majorId > 0;
   const hasStatus = status !== 'ALL';
+  const hasSearch = search.trim().length > 0;
 
-  const hasAnyFilter =
-    hasSearch ||
-    hasProjectType ||
-    hasMajor ||
-    hasSemester ||
-    hasLecturer ||
-    hasStatus;
+  const activeSecondaryCount =
+    (hasSemester ? 1 : 0) +
+    (hasLecturer ? 1 : 0) +
+    (hasProjectType ? 1 : 0) +
+    (hasMajor ? 1 : 0) +
+    (hasStatus ? 1 : 0);
+
+  const hasAnyFilter = hasSearch || activeSecondaryCount > 0;
 
   // Selected names for chips
+  const selectedSemester = semesters?.find((s) => s.id === semesterId);
+  const selectedLecturer = lecturers?.find((l) => l.id === lecturerId);
   const selectedProjectTypeName = projectTypes?.find(
     (pt) => pt.id === projectTypeId,
   )?.name;
   const selectedMajorName = majors?.find((m) => m.id === majorId)?.name;
-  const selectedSemesterName = semesters?.find(
-    (s) => s.id === semesterId,
-  )?.name;
-  const selectedLecturer = lecturers?.find((l) => l.id === lecturerId);
   const selectedStatusName = statusOptions?.find(
     (opt) => opt.value === status,
   )?.label;
 
   return (
-    <div className="space-y-3">
-      {/* HÀNG BỘ LỌC CHÍNH */}
-      <div className="flex flex-wrap items-center gap-2.5">
-        {/* Tìm kiếm */}
-        <div className="relative min-w-56 flex-1 sm:max-w-xs">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Tìm theo tên đề tài..."
-            className="h-9 pl-8 pr-7 text-xs rounded-lg border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#18181b]"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => onSearchChange('')}
-              className="absolute top-1/2 right-2.5 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-neutral-200 cursor-pointer"
-              title="Xóa tìm kiếm"
-            >
-              <X className="size-3.5" />
-            </button>
-          )}
+    <div className="space-y-2.5">
+      {/* THANH CÔNG CỤ: Ô TÌM KIẾM + BỘ LỌC POPOVER + TỔNG SỐ VÀ NÚT THAO TÁC */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-1 items-center gap-2.5 min-w-[300px]">
+          {/* 1. Ô tìm kiếm theo tên đề tài */}
+          <div className="relative flex-1 max-w-sm">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Tìm theo tên đề tài…"
+              className="pl-9 h-9.5 text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
+              aria-label="Tìm đề tài"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => onSearchChange('')}
+                className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                title="Xóa tìm kiếm"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* 2. Nút "Bộ lọc" gộp với AdvancedFilterPopover chuẩn trang sinh viên */}
+          <AdvancedFilterPopover
+            open={filterPopoverOpen}
+            onOpenChange={setFilterPopoverOpen}
+            activeCount={activeSecondaryCount}
+            onReset={onResetFilters}
+          >
+            {/* Lọc theo học kỳ */}
+            {semesters && onSemesterChange && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                  Học kỳ
+                </Label>
+                <Select
+                  value={String(semesterId)}
+                  onValueChange={(val) => onSemesterChange(Number(val) || 0)}
+                >
+                  <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
+                    <SelectValue>
+                      {(v) =>
+                        v === '0'
+                          ? 'Tất cả học kỳ trước'
+                          : formatSemesterShort(
+                              semesters.find((s) => String(s.id) === v),
+                            )
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    <SelectItem value="0">Tất cả học kỳ trước</SelectItem>
+                    {semesters.map((s) => (
+                      <SelectItem key={s.id} value={String(s.id)}>
+                        {formatSemesterShort(s)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Lọc theo giảng viên */}
+            {lecturers && onLecturerChange && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                  Giảng viên ra đề
+                </Label>
+                <LecturerCombobox
+                  lecturers={lecturers}
+                  value={lecturerId}
+                  onChange={onLecturerChange}
+                  allLabel={allLecturerLabel}
+                  placeholder="Chọn giảng viên..."
+                  searchPlaceholder="Tìm theo tên giảng viên..."
+                  className="w-full"
+                  triggerClassName="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700"
+                />
+              </div>
+            )}
+
+            {/* Lọc theo loại đồ án */}
+            {projectTypes && onProjectTypeChange && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                  Loại đồ án
+                </Label>
+                <Select
+                  value={String(projectTypeId)}
+                  onValueChange={(val) => onProjectTypeChange(Number(val) || 0)}
+                >
+                  <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
+                    <SelectValue>
+                      {(v) =>
+                        v === '0'
+                          ? 'Mọi loại đồ án'
+                          : projectTypes.find((pt) => String(pt.id) === v)
+                              ?.name ?? 'Mọi loại đồ án'
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    <SelectItem value="0">Mọi loại đồ án</SelectItem>
+                    {projectTypes.map((pt) => (
+                      <SelectItem key={pt.id} value={String(pt.id)}>
+                        {pt.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Lọc theo chuyên ngành */}
+            {majors && onMajorChange && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                  Chuyên ngành
+                </Label>
+                <Select
+                  value={String(majorId)}
+                  onValueChange={(val) => onMajorChange(Number(val) || 0)}
+                >
+                  <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
+                    <SelectValue>
+                      {(v) =>
+                        v === '0'
+                          ? 'Mọi chuyên ngành'
+                          : majors.find((m) => String(m.id) === v)?.name ??
+                            'Mọi chuyên ngành'
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    <SelectItem value="0">Mọi chuyên ngành</SelectItem>
+                    {majors.map((m) => (
+                      <SelectItem key={m.id} value={String(m.id)}>
+                        {m.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Lọc theo trạng thái */}
+            {statusOptions && onStatusChange && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                  Trạng thái
+                </Label>
+                <Select
+                  value={status}
+                  onValueChange={(val) =>
+                    onStatusChange((val as string) || 'ALL')
+                  }
+                >
+                  <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
+                    <SelectValue>
+                      {(v) =>
+                        statusOptions.find((opt) => opt.value === v)?.label ??
+                        'Mọi trạng thái'
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {statusOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </AdvancedFilterPopover>
         </div>
 
-        {/* Học kỳ (nếu có) */}
-        {semesters && onSemesterChange && (
-          <Select
-            value={String(semesterId)}
-            onValueChange={(val) => onSemesterChange(Number(val) || 0)}
-          >
-            <SelectTrigger className="w-48 h-9 text-xs rounded-lg border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#18181b]">
-              <SelectValue>
-                {(v) =>
-                  v === '0'
-                    ? 'Tất cả học kỳ trước'
-                    : semesters.find((s) => String(s.id) === v)?.name ??
-                      'Học kỳ'
-                }
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="0">Tất cả học kỳ trước</SelectItem>
-              {semesters.map((s) => (
-                <SelectItem key={s.id} value={String(s.id)}>
-                  {s.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
-        {/* Giảng viên combobox (nếu có) */}
-        {lecturers && onLecturerChange && (
-          <LecturerCombobox
-            lecturers={lecturers}
-            value={lecturerId}
-            onChange={onLecturerChange}
-            allLabel={allLecturerLabel}
-            placeholder="Chọn giảng viên..."
-            searchPlaceholder="Tìm tên giảng viên..."
-            className="w-52 h-9 text-xs shrink-0"
-            triggerClassName="h-9 text-xs rounded-lg border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#18181b]"
-          />
-        )}
-
-        {/* Loại đồ án */}
-        {projectTypes && onProjectTypeChange && (
-          <Select
-            value={String(projectTypeId)}
-            onValueChange={(val) => onProjectTypeChange(Number(val) || 0)}
-          >
-            <SelectTrigger className="w-44 h-9 text-xs rounded-lg border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#18181b]">
-              <SelectValue>
-                {(v) =>
-                  v === '0'
-                    ? 'Mọi loại đồ án'
-                    : projectTypes.find((pt) => String(pt.id) === v)?.name ??
-                      'Mọi loại đồ án'
-                }
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="0">Mọi loại đồ án</SelectItem>
-              {projectTypes.map((pt) => (
-                <SelectItem key={pt.id} value={String(pt.id)}>
-                  {pt.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
-        {/* Chuyên ngành */}
-        {majors && onMajorChange && (
-          <Select
-            value={String(majorId)}
-            onValueChange={(val) => onMajorChange(Number(val) || 0)}
-          >
-            <SelectTrigger className="w-44 h-9 text-xs rounded-lg border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#18181b]">
-              <SelectValue>
-                {(v) =>
-                  v === '0'
-                    ? 'Mọi chuyên ngành'
-                    : majors.find((m) => String(m.id) === v)?.name ??
-                      'Mọi chuyên ngành'
-                }
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="0">Mọi chuyên ngành</SelectItem>
-              {majors.map((m) => (
-                <SelectItem key={m.id} value={String(m.id)}>
-                  {m.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
-        {/* Trạng thái */}
-        {statusOptions && onStatusChange && (
-          <Select
-            value={status}
-            onValueChange={(val) => onStatusChange((val as string) || 'ALL')}
-          >
-            <SelectTrigger className="w-44 h-9 text-xs rounded-lg border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#18181b]">
-              <SelectValue>
-                {(v) =>
-                  statusOptions.find((opt) => opt.value === v)?.label ??
-                  'Trạng thái'
-                }
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
-        {/* Cụm nút phải (Tổng số & Actions) */}
+        {/* Cụm phải: Tổng số và nút thao tác */}
         <div className="ml-auto flex items-center gap-3">
           {totalCount !== undefined && (
-            <span className="text-xs font-medium text-slate-500 dark:text-neutral-400">
-              {totalCount} đề tài
+            <span className="text-sm font-medium text-slate-600 dark:text-neutral-400 select-none">
+              Tổng cộng:{' '}
+              <strong className="font-semibold text-foreground">
+                {totalCount}
+              </strong>{' '}
+              đề tài
             </span>
           )}
           {rightActions}
         </div>
       </div>
 
-      {/* HÀNG ACTIVE FILTER CHIPS (LỌC GỘP THEO STYLE ADMIN/STUDENTS) */}
+      {/* HÀNG ACTIVE FILTER CHIPS (LỌC GỘP CHUẨN TRANG SINH VIÊN) */}
       {hasAnyFilter && (
         <div className="flex flex-wrap items-center gap-2 pt-0.5 pb-0.5 animate-in fade-in-50">
           <span className="text-xs font-semibold text-slate-500 dark:text-neutral-400 select-none">
@@ -282,9 +329,9 @@ export function TopicFilterBar({
             </span>
           )}
 
-          {hasSemester && selectedSemesterName && onSemesterChange && (
+          {hasSemester && selectedSemester && onSemesterChange && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30">
-              <span>Kỳ: {selectedSemesterName}</span>
+              <span>Kỳ: {formatSemesterShort(selectedSemester)}</span>
               <button
                 type="button"
                 onClick={() => onSemesterChange(0)}

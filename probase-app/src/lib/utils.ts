@@ -108,3 +108,33 @@ export function downloadCsvFile(
   document.body.removeChild(link);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+/**
+ * Rút gọn tên học kỳ thành định dạng ngắn gọn: HKII-2023-2024 hoặc HKI-2024-2025
+ */
+export function formatSemesterShort(
+  semester?: { name?: string; code?: string } | null,
+): string {
+  if (!semester) return '—';
+  const name = (semester.name || '').trim();
+  const match = name.match(
+    /Học kỳ\s*([0-9IVX]+)(?:\s*năm học\s*(\d{4})[-–/](\d{4}))?/i,
+  );
+  if (match) {
+    const termNum = match[1].toUpperCase();
+    const roman =
+      termNum === '1' || termNum === 'I'
+        ? 'HKI'
+        : termNum === '2' || termNum === 'II'
+          ? 'HKII'
+          : termNum === '3' || termNum === 'III'
+            ? 'HKIII'
+            : `HK${termNum}`;
+    if (match[2] && match[3]) {
+      return `${roman}-${match[2]}-${match[3]}`;
+    }
+    return roman;
+  }
+  return semester.code || name;
+}
+

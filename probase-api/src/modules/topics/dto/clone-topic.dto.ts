@@ -10,3 +10,4 @@ export const CloneTopicSchema = z.object({
 });
 
 export class CloneTopicDto extends createZodDto(CloneTopicSchema) {}
+
