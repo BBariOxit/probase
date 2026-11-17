@@ -147,14 +147,14 @@ export function TopicFilterBar({
             {/* Lọc theo học kỳ */}
             {semesters && onSemesterChange && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                <Label className="text-sm font-semibold text-slate-800 dark:text-neutral-200">
                   Học kỳ
                 </Label>
                 <Select
                   value={String(semesterId)}
                   onValueChange={(val) => onSemesterChange(Number(val) || 0)}
                 >
-                  <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
+                  <SelectTrigger className="w-full h-9.5 text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
                     <SelectValue>
                       {(v) =>
                         v === '0'
@@ -166,9 +166,15 @@ export function TopicFilterBar({
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
-                    <SelectItem value="0">Tất cả học kỳ trước</SelectItem>
+                    <SelectItem value="0" className="text-sm">
+                      Tất cả học kỳ trước
+                    </SelectItem>
                     {semesters.map((s) => (
-                      <SelectItem key={s.id} value={String(s.id)}>
+                      <SelectItem
+                        key={s.id}
+                        value={String(s.id)}
+                        className="text-sm"
+                      >
                         {formatSemesterShort(s)}
                       </SelectItem>
                     ))}
@@ -180,7 +186,7 @@ export function TopicFilterBar({
             {/* Lọc theo giảng viên */}
             {lecturers && onLecturerChange && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                <Label className="text-sm font-semibold text-slate-800 dark:text-neutral-200">
                   Giảng viên ra đề
                 </Label>
                 <LecturerCombobox
@@ -190,8 +196,9 @@ export function TopicFilterBar({
                   allLabel={allLecturerLabel}
                   placeholder="Chọn giảng viên..."
                   searchPlaceholder="Tìm theo tên giảng viên..."
+                  size="default"
                   className="w-full"
-                  triggerClassName="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700"
+                  triggerClassName="w-full h-9.5 text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700"
                 />
               </div>
             )}
@@ -199,14 +206,14 @@ export function TopicFilterBar({
             {/* Lọc theo loại đồ án */}
             {projectTypes && onProjectTypeChange && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                <Label className="text-sm font-semibold text-slate-800 dark:text-neutral-200">
                   Loại đồ án
                 </Label>
                 <Select
                   value={String(projectTypeId)}
                   onValueChange={(val) => onProjectTypeChange(Number(val) || 0)}
                 >
-                  <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
+                  <SelectTrigger className="w-full h-9.5 text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
                     <SelectValue>
                       {(v) =>
                         v === '0'
@@ -217,9 +224,15 @@ export function TopicFilterBar({
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
-                    <SelectItem value="0">Mọi loại đồ án</SelectItem>
+                    <SelectItem value="0" className="text-sm">
+                      Mọi loại đồ án
+                    </SelectItem>
                     {projectTypes.map((pt) => (
-                      <SelectItem key={pt.id} value={String(pt.id)}>
+                      <SelectItem
+                        key={pt.id}
+                        value={String(pt.id)}
+                        className="text-sm"
+                      >
                         {pt.name}
                       </SelectItem>
                     ))}
@@ -231,14 +244,14 @@ export function TopicFilterBar({
             {/* Lọc theo chuyên ngành */}
             {majors && onMajorChange && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                <Label className="text-sm font-semibold text-slate-800 dark:text-neutral-200">
                   Chuyên ngành
                 </Label>
                 <Select
                   value={String(majorId)}
                   onValueChange={(val) => onMajorChange(Number(val) || 0)}
                 >
-                  <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
+                  <SelectTrigger className="w-full h-9.5 text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
                     <SelectValue>
                       {(v) =>
                         v === '0'
@@ -249,9 +262,15 @@ export function TopicFilterBar({
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
-                    <SelectItem value="0">Mọi chuyên ngành</SelectItem>
+                    <SelectItem value="0" className="text-sm">
+                      Mọi chuyên ngành
+                    </SelectItem>
                     {majors.map((m) => (
-                      <SelectItem key={m.id} value={String(m.id)}>
+                      <SelectItem
+                        key={m.id}
+                        value={String(m.id)}
+                        className="text-sm"
+                      >
                         {m.name}
                       </SelectItem>
                     ))}
@@ -263,7 +282,7 @@ export function TopicFilterBar({
             {/* Lọc theo trạng thái */}
             {statusOptions && onStatusChange && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                <Label className="text-sm font-semibold text-slate-800 dark:text-neutral-200">
                   Trạng thái
                 </Label>
                 <Select
@@ -272,7 +291,7 @@ export function TopicFilterBar({
                     onStatusChange((val as string) || 'ALL')
                   }
                 >
-                  <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
+                  <SelectTrigger className="w-full h-9.5 text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
                     <SelectValue>
                       {(v) =>
                         statusOptions.find((opt) => opt.value === v)?.label ??
@@ -282,7 +301,11 @@ export function TopicFilterBar({
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
                     {statusOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
+                      <SelectItem
+                        key={opt.value}
+                        value={opt.value}
+                        className="text-sm"
+                      >
                         {opt.label}
                       </SelectItem>
                     ))}

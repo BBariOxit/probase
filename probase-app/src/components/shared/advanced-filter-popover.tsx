@@ -28,7 +28,7 @@ export function AdvancedFilterPopover({
   activeCount,
   onReset,
   children,
-  contentClassName = 'w-88 p-4 space-y-4 shadow-xl border border-[#d1d5e0] dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] rounded-xl',
+  contentClassName = 'w-96 p-5 space-y-4 shadow-xl border border-[#d1d5e0] dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] rounded-xl',
   triggerClassName,
   title = 'Bộ lọc nâng cao',
   applyLabel = 'Xem kết quả',
@@ -74,28 +74,28 @@ export function AdvancedFilterPopover({
       </PopoverTrigger>
 
       <PopoverContent align="start" sideOffset={8} className={contentClassName}>
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
-          <div className="flex items-center gap-1.5 font-semibold text-sm text-slate-900 dark:text-neutral-100">
-            <SlidersHorizontal className="size-4 text-primary" />
+        <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-neutral-800">
+          <div className="flex items-center gap-2 font-bold text-base text-slate-900 dark:text-neutral-100">
+            <SlidersHorizontal className="size-4.5 text-primary" />
             <span>{title}</span>
           </div>
           {activeCount > 0 && (
             <button
               type="button"
               onClick={onReset}
-              className="text-xs text-primary hover:underline font-medium cursor-pointer"
+              className="text-xs text-primary hover:underline font-semibold cursor-pointer"
             >
               Đặt lại
             </button>
           )}
         </div>
 
-        <div className="space-y-3">{children}</div>
+        <div className="space-y-3.5">{children}</div>
 
-        <div className="pt-2 border-t border-slate-100 dark:border-neutral-800 flex justify-end">
+        <div className="pt-2.5 border-t border-slate-100 dark:border-neutral-800 flex justify-end">
           <Button
             size="sm"
-            className="w-full h-8 text-xs bg-primary text-white hover:bg-primary/90 font-medium cursor-pointer"
+            className="w-full h-9.5 text-sm bg-primary text-white hover:bg-primary/90 font-semibold cursor-pointer shadow-xs"
             onClick={() => {
               onApply?.();
               onOpenChange(false);
