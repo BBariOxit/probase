@@ -46,6 +46,7 @@ const DEMO_STAFF = [
     researchInterests: 'Quản lý đào tạo, Cơ sở dữ liệu và Hệ thống thông tin',
     isAcademicAssistant: true, // Trợ lý Giáo vụ Khoa (TLGV)
     isHeadOfDepartment: false,
+    isHomeroomTeacher: false,
   },
   {
     email: 'gvab@dlu.edu.vn',
@@ -57,6 +58,7 @@ const DEMO_STAFF = [
     researchInterests: 'Kỹ thuật phần mềm, Kiến trúc hệ thống phân tán, Microservices',
     isAcademicAssistant: false,
     isHeadOfDepartment: true, // Tổ trưởng Bộ môn Kỹ thuật phần mềm (TTBM)
+    isHomeroomTeacher: false,
   },
   {
     email: 'gvcd@dlu.edu.vn',
@@ -68,6 +70,7 @@ const DEMO_STAFF = [
     researchInterests: 'Mạng máy tính, An toàn và Bảo mật thông tin, Mạng cảm biến IoT',
     isAcademicAssistant: false,
     isHeadOfDepartment: true, // Tổ trưởng Bộ môn Mạng máy tính (TTBM)
+    isHomeroomTeacher: false,
   },
   {
     email: 'gvpb@dlu.edu.vn',
@@ -79,6 +82,7 @@ const DEMO_STAFF = [
     researchInterests: 'Kỹ thuật phần mềm, Phát triển ứng dụng Web & Mobile hiện đại',
     isAcademicAssistant: false,
     isHeadOfDepartment: false,
+    isHomeroomTeacher: false,
   },
   {
     email: 'gvln@dlu.edu.vn',
@@ -90,6 +94,19 @@ const DEMO_STAFF = [
     researchInterests: 'Thị giác máy tính, Học sâu, Trí tuệ nhân tạo biên (Edge AI)',
     isAcademicAssistant: false,
     isHeadOfDepartment: false,
+    isHomeroomTeacher: false,
+  },
+  {
+    email: process.env.SEED_GVCN_EMAIL || 'gvcn@dlu.edu.vn',
+    role: 'LECTURER' as const,
+    lecturerCode: 'GV0006',
+    fullName: 'Đặng Hải',
+    academicTitle: 'ThS.',
+    majorCode: 'CNPM',
+    researchInterests: 'Kỹ thuật phần mềm, Quản lý dự án CNTT, Cố vấn học tập & Chủ nhiệm CTK46',
+    isAcademicAssistant: false,
+    isHeadOfDepartment: false,
+    isHomeroomTeacher: true, // Giáo viên chủ nhiệm (GVCN)
   },
 ];
 
@@ -357,7 +374,18 @@ async function main() {
   // 6. Seed Giảng viên & Cán bộ Khoa CNTT - DLU
   const staffProfileByEmail = new Map<string, any>();
   for (const staff of DEMO_STAFF) {
-    const { email, role, lecturerCode, fullName, academicTitle, majorCode, researchInterests, isAcademicAssistant, isHeadOfDepartment } = staff;
+    const {
+      email,
+      role,
+      lecturerCode,
+      fullName,
+      academicTitle,
+      majorCode,
+      researchInterests,
+      isAcademicAssistant,
+      isHeadOfDepartment,
+      isHomeroomTeacher,
+    } = staff;
     const majorId = majorCode ? majorIdByCode.get(majorCode) : null;
 
     const user = await prisma.user.upsert({
@@ -386,6 +414,7 @@ async function main() {
         researchInterests,
         isAcademicAssistant,
         isHeadOfDepartment,
+        isHomeroomTeacher: isHomeroomTeacher ?? false,
         maxMentoringQuota: 5,
       },
       update: {
@@ -396,6 +425,7 @@ async function main() {
         researchInterests,
         isAcademicAssistant,
         isHeadOfDepartment,
+        isHomeroomTeacher: isHomeroomTeacher ?? false,
       },
     });
 
@@ -470,6 +500,8 @@ async function main() {
   const abProfile = staffProfileByEmail.get('gvab@dlu.edu.vn')?.profile;
   const cdProfile = staffProfileByEmail.get('gvcd@dlu.edu.vn')?.profile;
   const lnProfile = staffProfileByEmail.get('gvln@dlu.edu.vn')?.profile;
+  const gvcnEmail = process.env.SEED_GVCN_EMAIL || 'gvcn@dlu.edu.vn';
+  const cnProfile = staffProfileByEmail.get(gvcnEmail)?.profile;
 
   const dacnRound = roundByCode.get('DACN');
   const dacsRound = roundByCode.get('DACS');
@@ -634,6 +666,29 @@ async function main() {
       maxStudents: 2,
       status: 'OPEN' as const,
     },
+    ...(cnProfile
+      ? [
+          {
+            title:
+              'Hệ thống Quản lý và Giám sát Hoạt động Cố vấn Học tập & Sinh viên Chủ nhiệm',
+            titleEn:
+              'Academic Advising and Homeroom Student Management System',
+            description:
+              'Hệ thống hỗ trợ Giảng viên chủ nhiệm và Cố vấn học tập theo dõi tiến độ tích lũy tín chỉ, cảnh báo học vụ sớm, quản lý đăng ký đồ án và kết nối thông tin trực tiếp giữa Nhà trường, Khoa và Sinh viên.\n\nĐề tài xây dựng nền tảng kết nối số giữa GVCN và các lớp sinh viên chuyên ngành, tích hợp kênh trao đổi thông tin, đăng ký nguyện vọng và hỗ trợ sinh viên kịp thời.',
+            objectives:
+              '- Xây dựng kênh liên lạc và dashboard tổng quan tiến độ học tập cho GVCN.\n- Tự động thống kê sinh viên đủ/chưa đủ điều kiện nhận đồ án tốt nghiệp.',
+            expectedOutcomes:
+              '- Cổng thông tin hỗ trợ sinh viên và GVCN vận hành thông suốt.\n- Báo cáo phân tích dữ liệu học vụ định dạng chuẩn.',
+            techStack:
+              'React, Next.js, Node.js, PostgreSQL, TailwindCSS, Chart.js',
+            lecturerId: cnProfile.id,
+            majorId: majorIdByCode.get('CNPM'),
+            roundId: datnRound.id,
+            maxStudents: 3,
+            status: 'OPEN' as const,
+          },
+        ]
+      : []),
   ];
 
   const createdTopics: any[] = [];
@@ -1799,7 +1854,30 @@ async function main() {
 
   console.log(`[✓] 13. Kho lưu trữ: Đã tạo 20 đề tài hoàn chỉnh (status COMPLETED, đợt FINALIZED) cho các học kỳ trước kèm sinh viên và điểm số`);
 
-  // 14. SEED ROLE PERMISSIONS
+  // 14. SEED CHỈ TIÊU RIÊNG & MIỄN TRỪ ĐỀ TÀI THEO ĐỢT (RoundLecturerQuota)
+  if (datnRound && lnProfile) {
+    await prisma.roundLecturerQuota.upsert({
+      where: {
+        roundId_lecturerId: {
+          roundId: datnRound.id,
+          lecturerId: lnProfile.id,
+        },
+      },
+      create: {
+        roundId: datnRound.id,
+        lecturerId: lnProfile.id,
+        targetQuota: 3,
+        isExempt: false,
+      },
+      update: {
+        targetQuota: 3,
+        isExempt: false,
+      },
+    });
+  }
+  console.log(`[✓] 14. Chỉ tiêu giảng viên theo đợt: Đã thiết lập chỉ tiêu tùy biến cho đợt`);
+
+  // 15. SEED ROLE PERMISSIONS
   const defaultRolePermissions = [
     { role: 'ADMIN', permission: 'TOPIC_REGISTRY' },
     { role: 'ADMIN', permission: 'STUDENT_ALLOCATION' },
@@ -1823,7 +1901,47 @@ async function main() {
       create: rp,
     });
   }
-  console.log(`[✓] 14. Phân quyền: Đã cấu hình ma trận quyền mặc định cho các vai trò`);
+  console.log(`[✓] 15. Phân quyền: Đã cấu hình ma trận quyền mặc định cho các vai trò`);
+
+  // 16. SEED USER PERMISSIONS (Phân quyền đặc biệt cho giảng viên)
+  const gvkUser = staffProfileByEmail.get('gvgvk@dlu.edu.vn')?.user;
+  const lnUser = staffProfileByEmail.get('gvln@dlu.edu.vn')?.user;
+  const cdUser = staffProfileByEmail.get('gvcd@dlu.edu.vn')?.user;
+
+  if (lnUser && gvkUser) {
+    await prisma.userPermission.upsert({
+      where: {
+        userId_permission: {
+          userId: lnUser.id,
+          permission: 'TOPIC_REGISTRY',
+        },
+      },
+      create: {
+        userId: lnUser.id,
+        permission: 'TOPIC_REGISTRY',
+        grantedById: gvkUser.id,
+      },
+      update: {},
+    });
+  }
+
+  if (cdUser && gvkUser) {
+    await prisma.userPermission.upsert({
+      where: {
+        userId_permission: {
+          userId: cdUser.id,
+          permission: 'TOPIC_REVIEW_DEPT',
+        },
+      },
+      create: {
+        userId: cdUser.id,
+        permission: 'TOPIC_REVIEW_DEPT',
+        grantedById: gvkUser.id,
+      },
+      update: {},
+    });
+  }
+  console.log(`[✓] 16. Quyền đặc biệt: Đã cấu hình danh sách giảng viên được cấp quyền riêng biệt`);
 
   console.log('\n============================================================');
   console.log('🎉 SEED DỮ LIỆU ĐẦY ĐỦ CHO TẤT CẢ CÁC BẢNG THÀNH CÔNG RỰC RỠ!');
@@ -1835,9 +1953,10 @@ async function main() {
   console.log('  3. TTBM Mạng máy tính   : gvcd@dlu.edu.vn');
   console.log('  4. Giảng viên HD & PB   : gvpb@dlu.edu.vn');
   console.log('  5. Giảng viên (GVLN)    : gvln@dlu.edu.vn');
-  console.log('  6. Sinh viên trưởng nhóm: 2266666@dlu.edu.vn (Nhóm 1 làm KLTN)');
-  console.log('  7. Sinh viên thành viên : 2277777@dlu.edu.vn (Nhóm 1)');
-  console.log('  8. Sinh viên Mạng MT    : 2288888@dlu.edu.vn (Nhóm 2)');
+  console.log(`  6. GV Chủ nhiệm (GVCN)  : ${gvcnEmail}`);
+  console.log('  7. Sinh viên trưởng nhóm: 2266666@dlu.edu.vn (Nhóm 1 làm KLTN)');
+  console.log('  8. Sinh viên thành viên : 2277777@dlu.edu.vn (Nhóm 1)');
+  console.log('  9. Sinh viên Mạng MT    : 2288888@dlu.edu.vn (Nhóm 2)');
   console.log('============================================================\n');
 }
 
