@@ -79,8 +79,10 @@ export function useUpdateLecturerRole() {
         },
       ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lecturers', 'admin-roster'] });
+      queryClient.invalidateQueries({ queryKey: ['lecturers'] });
+      queryClient.invalidateQueries({ queryKey: ['permissions'] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
     },
   });
 }

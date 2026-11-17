@@ -1,442 +1,141 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import {
-  BookOpen,
-  Eye,
-  Loader2,
-  MoreHorizontal,
-  Pencil,
-  Plus,
-  Search,
-  Send,
-  Trash2,
-  Undo2,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import type { TopicListItem, TopicStatus } from '@/lib/api/types';
+import { cn } from '@/lib/utils';
+import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useMyProfile } from '@/lib/api/me';
 import {
-  useDeleteTopic,
-  useSubmitDraftTopics,
-  useTopicTransition,
-  useTopics,
-} from '@/lib/api/topics';
-import { useRequireRole } from '@/lib/auth/use-require-role';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { EmptyState } from '@/components/shared/empty-state';
-import { PaginationBar } from '@/components/shared/pagination-bar';
-import { TopicOwnerBadge } from '@/components/topics/topic-status-badge';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { TOPIC_PAGE_SIZE } from '@/constants/pagination.constant';
-import { TOPIC_STATUS_FILTERS } from '@/constants/status.constant';
-import { useDebounce, useDisclosure, usePagination } from '@/hooks';
-
-function RowActions({
-  topic,
-  isHeadOfDepartment,
-  lecturerMajorId,
-}: {
-  topic: TopicListItem;
-  isHeadOfDepartment: boolean;
-  lecturerMajorId?: number;
-}) {
-  const transition = useTopicTransition();
-  const remove = useDeleteTopic();
-  const deleteDialog = useDisclosure();
-  const withdrawDialog = useDisclosure();
-
-  const isPendingReview =
-    topic.status === 'PENDING_DEPARTMENT' || topic.status === 'PENDING';
-  const topicMajorId = topic.majorId ?? topic.major?.id;
-  const willAutoApprove =
-    isHeadOfDepartment &&
-    (!lecturerMajorId || !topicMajorId || topicMajorId === lecturerMajorId);
-  const submitLabel = willAutoApprove ? 'Gửi & duyệt' : 'Gửi duyệt';
-  const canEdit =
-    !isPendingReview &&
-    topic.status !== 'REJECTED' &&
-    topic.status !== 'IN_PROGRESS' &&
-    topic.status !== 'COMPLETED';
-  const canDelete =
-    topic.activeGroup === null &&
-    topic.status !== 'IN_PROGRESS' &&
-    topic.status !== 'COMPLETED';
-
-  function handleSubmitTopic() {
-    return transition
-      .mutateAsync({ id: topic.id, to: 'submit' })
-      .then((updated) =>
-        toast.success(
-          updated.status === 'APPROVED'
-            ? 'Đề tài đã được tự động phê duyệt (TTBM), sẵn sàng chờ Giáo vụ mở đăng ký.'
-            : 'Đã gửi đề tài lên Bộ môn thẩm định.',
-        ),
-      )
-      .catch(() => toast.error('Không thể gửi duyệt đề tài.'));
-  }
-
-  return (
-    <>
-      <div className="flex items-center gap-1.5 justify-end">
-        {topic.status === 'DRAFT' && (
-          <Button
-            size="xs"
-            variant="default"
-            className="h-7.5 px-2.5 gap-1.5 text-xs font-semibold shadow-xs cursor-pointer"
-            disabled={transition.isPending}
-            onClick={(e) => {
-              e.stopPropagation();
-              void handleSubmitTopic();
-            }}
-          >
-            {transition.isPending && transition.variables?.id === topic.id ? (
-              <Loader2 className="size-3 animate-spin" />
-            ) : (
-              <Send className="size-3" />
-            )}
-            <span>{submitLabel}</span>
-          </Button>
-        )}
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button variant="ghost" size="icon-sm" aria-label="Hành động">
-                {transition.isPending && transition.variables?.id === topic.id ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  <MoreHorizontal />
-                )}
-              </Button>
-            }
-          />
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              render={<Link href={`/lecturer/topics/${topic.id}`} />}
-              className="cursor-pointer"
-            >
-              <Eye className="size-4" />
-              Xem chi tiết
-            </DropdownMenuItem>
-
-            {topic.status === 'DRAFT' && (
-              <DropdownMenuItem
-                onClick={() => {
-                  void handleSubmitTopic();
-                }}
-              >
-                <Send className="size-4" />
-                {submitLabel}
-              </DropdownMenuItem>
-            )}
-
-            {isPendingReview && (
-              <DropdownMenuItem
-                onClick={withdrawDialog.onOpen}
-                className="text-amber-600 focus:text-amber-600 dark:text-amber-500 dark:focus:text-amber-500 cursor-pointer"
-              >
-                <Undo2 className="size-4" />
-                Thu hồi
-              </DropdownMenuItem>
-            )}
-
-            {canEdit && (
-              <DropdownMenuItem
-                render={<Link href={`/lecturer/topics/${topic.id}?edit=true`} />}
-              >
-                <Pencil className="size-4" />
-                Sửa
-              </DropdownMenuItem>
-            )}
-
-            {canDelete && (
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={deleteDialog.onOpen}
-              >
-                <Trash2 className="size-4" />
-                Xoá
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      <ConfirmDialog
-        open={withdrawDialog.isOpen}
-        onOpenChange={withdrawDialog.setIsOpen}
-        title="Thu hồi gửi duyệt đề tài?"
-        description={`Đề tài "${topic.title}" sẽ được chuyển về trạng thái Bản nháp để bạn có thể chỉnh sửa và gửi duyệt lại sau.`}
-        confirmLabel="Thu hồi về bản nháp"
-        onConfirm={async () => {
-          try {
-            await transition.mutateAsync({ id: topic.id, to: 'withdraw' });
-            toast.success('Đã thu hồi đề tài về bản nháp thành công.');
-          } catch (err: unknown) {
-            toast.error(
-              err instanceof Error ? err.message : 'Không thể thu hồi đề tài.',
-            );
-          }
-        }}
-      />
-
-      <ConfirmDialog
-        open={deleteDialog.isOpen}
-        onOpenChange={deleteDialog.setIsOpen}
-        title="Xoá đề tài?"
-        description={`"${topic.title}" sẽ bị xoá vĩnh viễn. Không thể hoàn tác.`}
-        confirmLabel="Xoá đề tài"
-        onConfirm={() => remove.mutateAsync(topic.id)}
-      />
-    </>
-  );
-}
+  useActiveSemester,
+  useMajors,
+  useProjectTypes,
+  useSemesters,
+} from '@/lib/api/master-data';
+import { useTopics } from '@/lib/api/topics';
+import { MyCurrentTopicsTab } from '@/components/lecturer/topics/my-current-topics-tab';
+import { TopicArchiveTab } from '@/components/lecturer/topics/topic-archive-tab';
+import { ColleagueTopicsTab } from '@/components/lecturer/topics/colleague-topics-tab';
 
 export default function LecturerTopicsPage() {
   const allowed = useRequireRole('LECTURER');
   const { data: profile } = useMyProfile({ enabled: allowed });
+
+  const activeSemester = useActiveSemester();
+  const { data: allSemesters = [] } = useSemesters();
+  const { data: projectTypes = [] } = useProjectTypes();
+  const { data: majors = [] } = useMajors();
+
+  const [activeTab, setActiveTab] = useState<'current' | 'archive' | 'colleagues'>('current');
+
+  const currentLecturerId = profile?.lecturer?.id ?? 0;
   const isHeadOfDepartment = profile?.lecturer?.isHeadOfDepartment ?? false;
   const lecturerMajorId = profile?.lecturer?.major?.id;
-  const { page, setPage, resetPage } = usePagination({
-    initialPageSize: TOPIC_PAGE_SIZE,
-  });
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('ALL');
-  const debouncedSearch = useDebounce(search);
 
-  const { data, isPending, error } = useTopics({
-    mine: true,
-    page,
-    limit: TOPIC_PAGE_SIZE,
-    q: debouncedSearch || undefined,
-    status: status === 'ALL' ? undefined : (status as TopicStatus),
-  });
+  // Counters for tabs
+  const { data: myCurrentTopicsData } = useTopics(
+    {
+      mine: true,
+      semesterId: activeSemester?.id,
+      limit: 1,
+    },
+    { enabled: allowed && !!activeSemester?.id },
+  );
 
-  const { data: draftsData } = useTopics({
-    mine: true,
-    status: 'DRAFT',
-    limit: 100,
-  });
-  const submitDrafts = useSubmitDraftTopics();
-  const draftCount = draftsData?.total ?? 0;
+  const { data: colleagueTopicsData } = useTopics(
+    {
+      semesterId: activeSemester?.id,
+      includeDrafts: true,
+      excludeLecturerId: currentLecturerId || undefined,
+      limit: 1,
+    },
+    { enabled: allowed && !!activeSemester?.id && currentLecturerId > 0 },
+  );
 
   if (!allowed) return null;
 
-  const topics = data?.items ?? [];
-  const filtering = debouncedSearch !== '' || status !== 'ALL';
-
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-56 flex-1 sm:max-w-xs">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
-              resetPage();
-            }}
-            placeholder="Tìm theo tên đề tài…"
-            className="pl-8"
-            aria-label="Tìm đề tài"
-          />
-        </div>
-
-        <Select
-          value={status}
-          onValueChange={(value) => {
-            setStatus(value as string);
-            resetPage();
-          }}
+    <div className="space-y-6">
+      {/* Tiêu đề trang tích hợp tab điều hướng chuẩn trang phân quyền vai trò */}
+      <div className="flex items-center gap-8 border-b border-border/60 pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveTab('current')}
+          className={cn(
+            'group inline-flex items-center gap-2 pb-0.5 text-xl font-bold tracking-tight transition-colors cursor-pointer relative',
+            activeTab === 'current'
+              ? 'text-foreground after:absolute after:-bottom-3.5 after:left-0 after:right-0 after:h-[3px] after:rounded-full after:bg-primary'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
         >
-          <SelectTrigger className="w-56" aria-label="Lọc theo trạng thái">
-            <SelectValue>
-              {(value) =>
-                TOPIC_STATUS_FILTERS.find((option) => option.value === value)
-                  ?.label
-              }
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {TOPIC_STATUS_FILTERS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <div className="ml-auto flex items-center gap-3">
-          {data && (
-            <span className="text-sm text-muted-foreground">
-              {data.total} đề tài
+          <span>Đề tài của tôi</span>
+          {myCurrentTopicsData?.total !== undefined && (
+            <span className="ml-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-primary/10 text-primary">
+              {myCurrentTopicsData.total}
             </span>
           )}
-          {draftCount > 0 && (
-            <Button
-              variant="outline"
-              className="gap-1.5 border-primary/40 bg-primary/5 text-primary hover:bg-primary/10"
-              disabled={submitDrafts.isPending}
-              onClick={() => {
-                submitDrafts
-                  .mutateAsync(undefined)
-                  .then((res) => toast.success(res.message))
-                  .catch(() => toast.error('Không thể gửi duyệt đề tài'));
-              }}
-            >
-              {submitDrafts.isPending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Send className="size-4" />
-              )}
-              {isHeadOfDepartment
-                ? `Gửi & duyệt (${draftCount})`
-                : `Gửi duyệt cho Bộ môn (${draftCount})`}
-            </Button>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('archive')}
+          className={cn(
+            'group inline-flex items-center gap-2 pb-0.5 text-xl font-bold tracking-tight transition-colors cursor-pointer relative',
+            activeTab === 'archive'
+              ? 'text-foreground after:absolute after:-bottom-3.5 after:left-0 after:right-0 after:h-[3px] after:rounded-full after:bg-primary'
+              : 'text-muted-foreground hover:text-foreground',
           )}
-          <Button render={<Link href="/lecturer/topics/new" />}>
-            <Plus />
-            Tạo đề tài
-          </Button>
-        </div>
+        >
+          <span>Kho đề tài cũ</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('colleagues')}
+          className={cn(
+            'group inline-flex items-center gap-2 pb-0.5 text-xl font-bold tracking-tight transition-colors cursor-pointer relative',
+            activeTab === 'colleagues'
+              ? 'text-foreground after:absolute after:-bottom-3.5 after:left-0 after:right-0 after:h-[3px] after:rounded-full after:bg-primary'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <span>Đề tài đồng nghiệp</span>
+          {colleagueTopicsData?.total !== undefined && (
+            <span className="ml-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-primary/10 text-primary">
+              {colleagueTopicsData.total}
+            </span>
+          )}
+        </button>
       </div>
 
-      {error && (
-        <p className="text-sm text-destructive">
-          Không tải được danh sách đề tài.
-        </p>
+      {/* NỘI DUNG TAB */}
+      {activeTab === 'current' && (
+        <MyCurrentTopicsTab
+          activeSemester={activeSemester}
+          isHeadOfDepartment={isHeadOfDepartment}
+          lecturerMajorId={lecturerMajorId}
+          projectTypes={projectTypes}
+          majors={majors}
+        />
       )}
 
-      <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
-        <div className="overflow-x-auto">
-          <Table className="w-full table-fixed text-left text-sm">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[380px] max-w-[440px] min-w-[280px] px-5 py-3.5 whitespace-nowrap">Tiêu đề</TableHead>
-                <TableHead className="w-40 px-3 py-3.5 whitespace-nowrap">Loại đồ án</TableHead>
-                <TableHead className="w-36 px-3 py-3.5 whitespace-nowrap">Trạng thái</TableHead>
-                <TableHead className="w-24 px-4 py-3.5 text-right whitespace-nowrap" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {topics.map((topic) => (
-                <TableRow
-                  key={topic.id}
-                  className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
-                >
-                  <TableCell className="w-[380px] max-w-[440px] min-w-[280px] px-5 py-3.5 align-middle whitespace-normal">
-                    <div className="w-full max-w-[440px] whitespace-normal">
-                      <Link
-                        href={`/lecturer/topics/${topic.id}`}
-                        className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal line-clamp-2 cursor-pointer"
-                        title={topic.title}
-                      >
-                        {topic.title}
-                      </Link>
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-normal text-muted-foreground">
-                        <span>
-                          {topic.activeGroup
-                            ? `Nhóm ${topic.activeGroup.occupiedSeats}/${topic.maxStudents} sinh viên`
-                            : 'Chưa có nhóm sinh viên'}
-                        </span>
-                        {(topic.status === 'DRAFT' ||
-                          topic.status === 'REJECTED') &&
-                          topic.departmentFeedback?.trim() && (
-                            <>
-                              <span aria-hidden="true">•</span>
-                              <Link
-                                href={`/lecturer/topics/${topic.id}`}
-                                title={topic.departmentFeedback}
-                                className="font-medium text-amber-600 hover:underline dark:text-amber-400"
-                              >
-                                Xem góp ý
-                              </Link>
-                            </>
-                          )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="w-40 px-3 py-3.5 align-middle whitespace-nowrap font-medium text-slate-700 dark:text-neutral-300">
-                    {topic.projectType.name}
-                  </TableCell>
-                  <TableCell className="w-36 px-3 py-3.5 align-middle whitespace-nowrap">
-                    <TopicOwnerBadge
-                      status={topic.status}
-                      activeGroup={topic.activeGroup}
-                      variant="text"
-                    />
-                  </TableCell>
-                  <TableCell className="w-24 px-4 py-3.5 align-middle text-right whitespace-nowrap">
-                    <RowActions
-                      topic={topic}
-                      isHeadOfDepartment={isHeadOfDepartment}
-                      lecturerMajorId={lecturerMajorId}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+      {activeTab === 'archive' && (
+        <TopicArchiveTab
+          currentLecturerId={currentLecturerId}
+          activeSemester={activeSemester}
+          allSemesters={allSemesters}
+          projectTypes={projectTypes}
+          majors={majors}
+          onTopicCloned={() => {
+            setActiveTab('current');
+          }}
+        />
+      )}
 
-        {isPending && (
-          <div className="flex justify-center py-14">
-            <Loader2 className="size-5 animate-spin text-muted-foreground" />
-          </div>
-        )}
-
-        {!isPending && topics.length === 0 && (
-          <EmptyState
-            icon={BookOpen}
-            title={
-              filtering
-                ? 'Không có đề tài nào khớp bộ lọc.'
-                : 'Bạn chưa ra đề tài nào cho học kỳ này.'
-            }
-            action={
-              filtering ? undefined : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  render={<Link href="/lecturer/topics/new" />}
-                >
-                  <Plus />
-                  Tạo đề tài đầu tiên
-                </Button>
-              )
-            }
-          />
-        )}
-      </div>
-
-      {data && (
-        <PaginationBar
-          page={data.page}
-          totalPages={data.totalPages}
-          onPageChange={setPage}
+      {activeTab === 'colleagues' && (
+        <ColleagueTopicsTab
+          currentLecturerId={currentLecturerId}
+          activeSemester={activeSemester}
+          projectTypes={projectTypes}
+          majors={majors}
         />
       )}
     </div>

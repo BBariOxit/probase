@@ -1,4 +1,4 @@
-import 'dotenv/config';
+﻿import 'dotenv/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
@@ -22,7 +22,7 @@ const daysFromNow = (n: number) => new Date(Date.now() + n * DAY_MS);
 // 1. DANH MỤC CHUYÊN NGÀNH CHUẨN KHOA CNTT - DLU
 // ─────────────────────────────────────────────────────────
 const MAJORS = [
-  { code: 'CNPM', name: 'Kỹ thuật phần mềm' },
+  { code: 'KTPM', name: 'Kỹ thuật phần mềm' },
   { code: 'MMT', name: 'Mạng máy tính' },
 ];
 
@@ -42,10 +42,11 @@ const DEMO_STAFF = [
     lecturerCode: 'GV0001',
     fullName: 'Nguyễn Thị GVK',
     academicTitle: 'ThS.',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
     researchInterests: 'Quản lý đào tạo, Cơ sở dữ liệu và Hệ thống thông tin',
     isAcademicAssistant: true, // Trợ lý Giáo vụ Khoa (TLGV)
     isHeadOfDepartment: false,
+    isHomeroomTeacher: false,
   },
   {
     email: 'gvab@dlu.edu.vn',
@@ -53,10 +54,11 @@ const DEMO_STAFF = [
     lecturerCode: 'GV0002',
     fullName: 'An Bình',
     academicTitle: 'TS.',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
     researchInterests: 'Kỹ thuật phần mềm, Kiến trúc hệ thống phân tán, Microservices',
     isAcademicAssistant: false,
     isHeadOfDepartment: true, // Tổ trưởng Bộ môn Kỹ thuật phần mềm (TTBM)
+    isHomeroomTeacher: false,
   },
   {
     email: 'gvcd@dlu.edu.vn',
@@ -68,6 +70,7 @@ const DEMO_STAFF = [
     researchInterests: 'Mạng máy tính, An toàn và Bảo mật thông tin, Mạng cảm biến IoT',
     isAcademicAssistant: false,
     isHeadOfDepartment: true, // Tổ trưởng Bộ môn Mạng máy tính (TTBM)
+    isHomeroomTeacher: false,
   },
   {
     email: 'gvpb@dlu.edu.vn',
@@ -75,10 +78,11 @@ const DEMO_STAFF = [
     lecturerCode: 'GV0004',
     fullName: 'Phan Bửu',
     academicTitle: 'ThS.',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
     researchInterests: 'Kỹ thuật phần mềm, Phát triển ứng dụng Web & Mobile hiện đại',
     isAcademicAssistant: false,
     isHeadOfDepartment: false,
+    isHomeroomTeacher: false,
   },
   {
     email: 'gvln@dlu.edu.vn',
@@ -86,10 +90,23 @@ const DEMO_STAFF = [
     lecturerCode: 'GV0005',
     fullName: 'Lê Ngân',
     academicTitle: 'TS.',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
     researchInterests: 'Thị giác máy tính, Học sâu, Trí tuệ nhân tạo biên (Edge AI)',
     isAcademicAssistant: false,
     isHeadOfDepartment: false,
+    isHomeroomTeacher: false,
+  },
+  {
+    email: process.env.SEED_GVCN_EMAIL || 'gvcn@dlu.edu.vn',
+    role: 'LECTURER' as const,
+    lecturerCode: 'GV0006',
+    fullName: 'Đặng Hải',
+    academicTitle: 'ThS.',
+    majorCode: 'KTPM',
+    researchInterests: 'Kỹ thuật phần mềm, Quản lý dự án CNTT, Cố vấn học tập & Chủ nhiệm CTK46',
+    isAcademicAssistant: false,
+    isHeadOfDepartment: false,
+    isHomeroomTeacher: true, // Giáo viên chủ nhiệm (GVCN)
   },
 ];
 
@@ -103,14 +120,14 @@ const DEMO_STUDENTS = [
     email: '2266666@dlu.edu.vn',
     name: 'Nguyễn Văn A',
     class: 'CTK46PM',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
   },
   {
     code: '2277777',
     email: '2277777@dlu.edu.vn',
     name: 'Phạm Thị B',
     class: 'CTK46PM',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
   },
   {
     code: '2288888',
@@ -128,26 +145,48 @@ const DEMO_STUDENTS = [
   },
   // Khóa 2023 (CTK47 - Năm 3 làm ĐACN)
   {
-    code: '2311111',
-    email: '2311111@dlu.edu.vn',
+    code: '2388001',
+    email: '2388001@dlu.edu.vn',
     name: 'Trần Thị Mai',
     class: 'CTK47PM',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
   },
   {
-    code: '2322222',
-    email: '2322222@dlu.edu.vn',
+    code: '2388002',
+    email: '2388002@dlu.edu.vn',
     name: 'Hoàng Gia Bảo',
     class: 'CTK47MMT',
     majorCode: 'MMT',
   },
   // Khóa 2024 (CTK48 - Năm 2 làm ĐACS)
   {
-    code: '2411111',
-    email: '2411111@dlu.edu.vn',
+    code: '2499001',
+    email: '2499001@dlu.edu.vn',
     name: 'Võ Quốc Huy',
     class: 'CTK48PM',
-    majorCode: 'CNPM',
+    majorCode: 'KTPM',
+  },
+  {
+    code: '2466002',
+    email: '2466002@dlu.edu.vn',
+    name: 'Bùi Minh Trí',
+    class: 'CTK48PM',
+    majorCode: 'KTPM',
+  },
+  // Bổ sung thêm SV KLTN CTK46
+  {
+    code: '2266005',
+    email: '2266005@dlu.edu.vn',
+    name: 'Đặng Khánh Linh',
+    class: 'CTK46PM',
+    majorCode: 'KTPM',
+  },
+  {
+    code: '2266006',
+    email: '2266006@dlu.edu.vn',
+    name: 'Vũ Hoàng Nam',
+    class: 'CTK46PM',
+    majorCode: 'KTPM',
   },
 ];
 
@@ -168,7 +207,7 @@ async function main() {
     });
     majorIdByCode.set(saved.code, saved.id);
   }
-  console.log(`[✓] 1. Chuyên ngành: ${MAJORS.length} ngành (CNPM, MMT)`);
+  console.log(`[✓] 1. Chuyên ngành: ${MAJORS.length} ngành (KTPM, MMT)`);
 
   // 2. Seed Loại đồ án (Project Types)
   const projectTypeIdByCode = new Map<string, number>();
@@ -357,7 +396,18 @@ async function main() {
   // 6. Seed Giảng viên & Cán bộ Khoa CNTT - DLU
   const staffProfileByEmail = new Map<string, any>();
   for (const staff of DEMO_STAFF) {
-    const { email, role, lecturerCode, fullName, academicTitle, majorCode, researchInterests, isAcademicAssistant, isHeadOfDepartment } = staff;
+    const {
+      email,
+      role,
+      lecturerCode,
+      fullName,
+      academicTitle,
+      majorCode,
+      researchInterests,
+      isAcademicAssistant,
+      isHeadOfDepartment,
+      isHomeroomTeacher,
+    } = staff;
     const majorId = majorCode ? majorIdByCode.get(majorCode) : null;
 
     const user = await prisma.user.upsert({
@@ -386,6 +436,7 @@ async function main() {
         researchInterests,
         isAcademicAssistant,
         isHeadOfDepartment,
+        isHomeroomTeacher: isHomeroomTeacher ?? false,
         maxMentoringQuota: 5,
       },
       update: {
@@ -396,6 +447,7 @@ async function main() {
         researchInterests,
         isAcademicAssistant,
         isHeadOfDepartment,
+        isHomeroomTeacher: isHomeroomTeacher ?? false,
       },
     });
 
@@ -470,6 +522,8 @@ async function main() {
   const abProfile = staffProfileByEmail.get('gvab@dlu.edu.vn')?.profile;
   const cdProfile = staffProfileByEmail.get('gvcd@dlu.edu.vn')?.profile;
   const lnProfile = staffProfileByEmail.get('gvln@dlu.edu.vn')?.profile;
+  const gvcnEmail = process.env.SEED_GVCN_EMAIL || 'gvcn@dlu.edu.vn';
+  const cnProfile = staffProfileByEmail.get(gvcnEmail)?.profile;
 
   const dacnRound = roundByCode.get('DACN');
   const dacsRound = roundByCode.get('DACS');
@@ -499,7 +553,7 @@ async function main() {
       expectedOutcomes: '- Mã nguồn hoàn chỉnh gồm Web Frontend (Next.js 14 App Router, TypeScript, TailwindCSS, Shadcn UI) và Backend API (NestJS, Prisma ORM, PostgreSQL).\n- Hệ thống cơ sở dữ liệu quan hệ được thiết kế chuẩn hóa 3NF với hơn 20 bảng thực thể, xử lý ràng buộc toàn vẹn và giao dịch an toàn (ACID Transactions).\n- Bộ tài liệu đặc tả kiến trúc hệ thống, API Documentation chuẩn OpenAPI/Swagger và tài liệu hướng dẫn triển khai bằng Docker Compose.\n- Quyển báo cáo toàn văn Khóa luận tốt nghiệp định dạng PDF đạt chuẩn quy cách trình bày của Trường Đại học Đà Lạt.',
       techStack: 'Next.js 14, TypeScript, NestJS, Prisma ORM, PostgreSQL, TailwindCSS, Shadcn UI, Docker, Redis',
       lecturerId: pbProfile.id,
-      majorId: majorIdByCode.get('CNPM'),
+      majorId: majorIdByCode.get('KTPM'),
       roundId: datnRound.id,
       maxStudents: 3,
       status: 'IN_PROGRESS' as const,
@@ -512,7 +566,7 @@ async function main() {
       expectedOutcomes: '- Ứng dụng di động hoàn chỉnh đa nền tảng (Flutter / React Native) chạy mượt mà trên cả iOS và Android.\n- Hệ thống máy chủ Backend RESTful API & WebSocket hỗ trợ xác thực OAuth2, đồng bộ tiến độ học và tích hợp RAG pipeline.\n- Báo cáo kết quả thử nghiệm thực tế trên nhóm 50 sinh viên Khoa CNTT với các chỉ số đánh giá độ chính xác của câu trả lời AI và mức độ gắn kết học tập.',
       techStack: 'Flutter, Dart, Python, FastAPI, PostgreSQL, LangChain, Gemini API, Qdrant Vector DB, Docker',
       lecturerId: abProfile.id,
-      majorId: majorIdByCode.get('CNPM'),
+      majorId: majorIdByCode.get('KTPM'),
       roundId: datnRound.id,
       maxStudents: 3,
       status: 'OPEN' as const,
@@ -550,11 +604,11 @@ async function main() {
       objectives: '- Xây dựng hệ thống thu thập dữ liệu tự động (Web Scraper) an toàn, tuân thủ robots.txt từ các nguồn thông tin du lịch công khai về Đà Lạt.\n- Tinh chỉnh mô hình học sâu PhoBERT để phân loại cảm xúc tích cực / tiêu cực / trung tính và nhận diện các thực thể có tên (NER) trong các bài đánh giá tiếng Việt.\n- Thiết kế thuật toán tối ưu hóa đa mục tiêu gợi ý lịch trình di chuyển tiết kiệm thời gian và chi phí cho du khách tại thành phố Đà Lạt.',
       expectedOutcomes: '- Cổng thông tin Web Portal dành cho khách du lịch và Trung tâm điều hành dữ liệu du lịch dành cho nhà quản lý.\n- Mô hình NLP phân loại cảm xúc đánh giá tiếng Việt đạt F1-score trên 89% và công cụ gợi ý lịch trình thông minh.\n- Bộ API RESTful mở cho phép tích hợp dữ liệu với các ứng dụng du lịch bên thứ ba.\n- Báo cáo thuyết minh đồ án và mã nguồn được đóng gói hoàn chỉnh trên Docker Container.',
       techStack: 'React, TypeScript, Python FastAPI, PhoBERT, PyTorch, MongoDB, Redis, Docker, TailwindCSS',
-      lecturerId: lnProfile.id,
-      majorId: majorIdByCode.get('CNPM'),
+      lecturerId: pbProfile.id,
+      majorId: majorIdByCode.get('KTPM'),
       roundId: dacnRound?.id ?? datnRound.id,
-      maxStudents: 3,
-      status: 'OPEN' as const,
+      maxStudents: 2,
+      status: 'IN_PROGRESS' as const,
     },
     {
       title: 'Xây dựng Ứng dụng Quản lý Thư viện Số Trường Đại học Đà Lạt',
@@ -564,10 +618,10 @@ async function main() {
       expectedOutcomes: '- Ứng dụng web hoàn chỉnh chạy trên nền Node.js / React với giao diện thân thiện, hiện đại.\n- Module đọc tài liệu số PDF tích hợp giải pháp ngăn chặn tải về trái phép (Watermarking & DRM cơ bản).\n- Tài liệu phân tích thiết kế hệ thống (Use Case, Class Diagram, ERD, Sequence Diagram) và hướng dẫn sử dụng chi tiết.',
       techStack: 'React, Vite, Node.js, Express, PostgreSQL, Prisma ORM, TailwindCSS, PDF.js',
       lecturerId: pbProfile.id,
-      majorId: majorIdByCode.get('CNPM'),
+      majorId: majorIdByCode.get('KTPM'),
       roundId: dacsRound?.id ?? datnRound.id,
       maxStudents: 2,
-      status: 'OPEN' as const,
+      status: 'IN_PROGRESS' as const,
     },
     {
       title: 'Nền tảng Khám và Tư vấn Y tế Từ xa (Telemedicine) Hỗ trợ Y tế Tuyến Cơ sở',
@@ -577,10 +631,10 @@ async function main() {
       expectedOutcomes: '- Ứng dụng web cho bác sĩ và ứng dụng di động cho bệnh nhân (React / React Native).\n- Máy chủ truyền phát âm thanh/hình ảnh thời gian thực Mediasoup SFU có chức năng ghi hình phiên khám có sự đồng ý của bệnh nhân.\n- Báo cáo đánh giá bảo mật hệ thống (Penetration Testing) và độ trễ truyền thông WebRTC dưới các kịch bản mạng mô phỏng Packet Loss.',
       techStack: 'Next.js 14, React Native, Node.js, Mediasoup, WebRTC, PostgreSQL, Redis, Docker, AES-256',
       lecturerId: pbProfile.id,
-      majorId: majorIdByCode.get('CNPM'),
+      majorId: majorIdByCode.get('KTPM'),
       roundId: datnRound.id,
       maxStudents: 3,
-      status: 'OPEN' as const,
+      status: 'IN_PROGRESS' as const,
     },
     {
       title: 'Ứng dụng Thị giác Máy tính và Học sâu trong Phân loại và Phát hiện Sâu bệnh trên Cây Cà phê',
@@ -590,7 +644,7 @@ async function main() {
       expectedOutcomes: '- Mô hình Deep Learning nhận diện bệnh cà phê đạt mAP@0.5 trên 91% và thời gian suy luận dưới 150ms trên thiết bị di động.\n- Ứng dụng di động Flutter chạy trơn tru chế độ Offline, hỗ trợ nông dân tra cứu cẩm nang chăm sóc và phòng trừ sâu bệnh sinh học.\n- Bộ dữ liệu ảnh sâu bệnh cà phê Tây Nguyên mở đóng góp cho cộng đồng nghiên cứu AI nông nghiệp Việt Nam.',
       techStack: 'PyTorch, YOLOv8, OpenCV, TensorFlow Lite, Flutter, Python FastAPI, PostgreSQL, Roboflow',
       lecturerId: abProfile.id,
-      majorId: majorIdByCode.get('CNPM'),
+      majorId: majorIdByCode.get('KTPM'),
       roundId: datnRound.id,
       maxStudents: 3,
       status: 'OPEN' as const,
@@ -616,7 +670,7 @@ async function main() {
       expectedOutcomes: '- Bộ Smart Contracts được kiểm thử toàn diện trên môi trường Testnet, đạt chuẩn an toàn không có lỗ hổng Reentrancy hay Overflow.\n- Ứng dụng Web DApp (Next.js, Ethers.js, Wagmi) kết nối ví tiền điện tử Web3 (MetaMask) phục vụ sàn đấu thầu nông sản.\n- Cổng thông tin quét mã QR công khai hiển thị chi tiết dòng thời gian chuỗi cung ứng từ nông trại đến bàn ăn.',
       techStack: 'Solidity, Hardhat, Polygon L2, IPFS, Next.js 14, Ethers.js, Wagmi, TailwindCSS, PostgreSQL',
       lecturerId: lnProfile.id,
-      majorId: majorIdByCode.get('CNPM'),
+      majorId: majorIdByCode.get('KTPM'),
       roundId: datnRound.id,
       maxStudents: 3,
       status: 'OPEN' as const,
@@ -634,6 +688,29 @@ async function main() {
       maxStudents: 2,
       status: 'OPEN' as const,
     },
+    ...(cnProfile
+      ? [
+          {
+            title:
+              'Hệ thống Quản lý và Giám sát Hoạt động Cố vấn Học tập & Sinh viên Chủ nhiệm',
+            titleEn:
+              'Academic Advising and Homeroom Student Management System',
+            description:
+              'Hệ thống hỗ trợ Giảng viên chủ nhiệm và Cố vấn học tập theo dõi tiến độ tích lũy tín chỉ, cảnh báo học vụ sớm, quản lý đăng ký đồ án và kết nối thông tin trực tiếp giữa Nhà trường, Khoa và Sinh viên.\n\nĐề tài xây dựng nền tảng kết nối số giữa GVCN và các lớp sinh viên chuyên ngành, tích hợp kênh trao đổi thông tin, đăng ký nguyện vọng và hỗ trợ sinh viên kịp thời.',
+            objectives:
+              '- Xây dựng kênh liên lạc và dashboard tổng quan tiến độ học tập cho GVCN.\n- Tự động thống kê sinh viên đủ/chưa đủ điều kiện nhận đồ án tốt nghiệp.',
+            expectedOutcomes:
+              '- Cổng thông tin hỗ trợ sinh viên và GVCN vận hành thông suốt.\n- Báo cáo phân tích dữ liệu học vụ định dạng chuẩn.',
+            techStack:
+              'React, Next.js, Node.js, PostgreSQL, TailwindCSS, Chart.js',
+            lecturerId: cnProfile.id,
+            majorId: majorIdByCode.get('KTPM'),
+            roundId: datnRound.id,
+            maxStudents: 3,
+            status: 'OPEN' as const,
+          },
+        ]
+      : []),
   ];
 
   const createdTopics: any[] = [];
@@ -801,7 +878,7 @@ async function main() {
     const council = await prisma.council.create({
       data: {
         semesterId: semester.id,
-        majorId: majorIdByCode.get('CNPM'),
+        majorId: majorIdByCode.get('KTPM'),
         name: 'Hội đồng 01 - Chuyên ngành Kỹ thuật phần mềm (KLTN CTK46)',
         location: 'Phòng Hội thảo Khoa CNTT - Giảng đường A31.204',
         defenseDate: daysFromNow(95),
@@ -1236,6 +1313,214 @@ async function main() {
     console.log(`[✓] 11. Nhóm 02 (KLTN MMT): Đã tạo nhóm, nộp đề cương M03, bài nộp 5 mốc, phân công GVPB, nhận xét M04/M05 và xếp Hội đồng`);
   }
 
+  // Bổ sung các nhóm bổ sung do TS. Phan Bửu hướng dẫn để hoàn thiện giao diện lưới 2 cột
+  const adminStaff = staffProfileByEmail.get('gvgvk@dlu.edu.vn')?.user;
+
+  // Nhóm 3: SV Đặng Khánh Linh & SV Vũ Hoàng Nam làm Đề tài Telemedicine (DATN - GVHD: TS. Phan Bửu)
+  const topicTelemedicine = createdTopics[6];
+  const studentLinh = studentProfileByEmail.get('2266005@dlu.edu.vn')?.profile;
+  const studentNam = studentProfileByEmail.get('2266006@dlu.edu.vn')?.profile;
+  const userLinh = studentProfileByEmail.get('2266005@dlu.edu.vn')?.user;
+
+  if (topicTelemedicine && studentLinh && studentNam && pbProfile) {
+    const group3 = await prisma.registrationGroup.create({
+      data: {
+        topicId: topicTelemedicine.id,
+        semesterId: semester.id,
+        leaderId: studentLinh.id,
+        name: 'Nhóm 03 - Telemedicine CTK46',
+        status: 'SUBMITTED',
+        openForJoin: false,
+        declaredSize: 2,
+        joinCode: 'DLU-DATN-4603',
+      },
+    });
+
+    await prisma.registrationGroupMember.createMany({
+      data: [
+        {
+          groupId: group3.id,
+          semesterId: semester.id,
+          studentId: studentLinh.id,
+          status: 'ACCEPTED',
+          joinSource: 'SELF',
+          mentorGrade: 8.8,
+          mentorComment: 'Trưởng nhóm năng động, hoàn thành tốt kiến trúc WebRTC và xử lý video luồng dữ liệu.',
+        },
+        {
+          groupId: group3.id,
+          semesterId: semester.id,
+          studentId: studentNam.id,
+          status: 'ACCEPTED',
+          joinSource: 'LINK',
+          mentorGrade: 8.5,
+          mentorComment: 'Thiết kế giao diện bệnh án điện tử trực quan, kiểm thử bảo mật AES-256 cẩn thận.',
+        },
+      ],
+    });
+
+    // Đề cương M03 cho Nhóm 3
+    await prisma.topicOutline.create({
+      data: {
+        groupId: group3.id,
+        topicId: topicTelemedicine.id,
+        fileName: 'M03_De_cuong_chi_tiet_KLTN_Nhom03_Telemedicine.pdf',
+        fileSize: 1048576,
+        attachmentUrl: 'https://storage.dlu.edu.vn/outlines/m03_nhom3.pdf',
+        submittedById: userLinh?.id,
+        submittedAt: daysFromNow(-14),
+        status: 'APPROVED_BY_LECTURER',
+        lecturerFeedback: 'Đề cương đạt yêu cầu về phạm vi và công nghệ WebRTC/E2EE. Đồng ý phê duyệt.',
+        approvedAt: daysFromNow(-11),
+        objectives: 'Xây dựng nền tảng hội chẩn y tế từ xa hỗ trợ y tế cơ sở tỉnh Lâm Đồng.',
+        scopeAndContent: 'Cuộc gọi video WebRTC độ trễ thấp, hồ sơ bệnh án mã hóa AES-256 theo chuẩn FHIR.',
+      },
+    });
+
+    // Phân công GVPB cho Nhóm 3 (TS. Lê Nam phản biện)
+    if (adminStaff && lnProfile) {
+      await prisma.topicAssignment.create({
+        data: {
+          groupId: group3.id,
+          topicId: topicTelemedicine.id,
+          supervisorId: pbProfile.id,
+          reviewerId: lnProfile.id,
+          assignedById: adminStaff.id,
+        },
+      });
+    }
+
+    console.log(`[✓] 11b. Nhóm 03 (KLTN Telemedicine - GVHD TS. Phan Bửu): Đã tạo nhóm và nộp đề cương M03`);
+  }
+
+  // Nhóm 4: SV Võ Quốc Huy & SV Bùi Minh Trí làm Đề tài Thư viện số (DACS - GVHD: TS. Phan Bửu)
+  const topicLibrary = createdTopics[5];
+  const studentHuy = studentProfileByEmail.get('2499001@dlu.edu.vn')?.profile;
+  const studentTri = studentProfileByEmail.get('2466002@dlu.edu.vn')?.profile;
+  const userHuy = studentProfileByEmail.get('2499001@dlu.edu.vn')?.user;
+
+  if (topicLibrary && studentHuy && studentTri && pbProfile) {
+    const group4 = await prisma.registrationGroup.create({
+      data: {
+        topicId: topicLibrary.id,
+        semesterId: semester.id,
+        leaderId: studentHuy.id,
+        name: 'Nhóm 04 - Thư viện số CTK48',
+        status: 'APPROVED',
+        openForJoin: false,
+        declaredSize: 2,
+        joinCode: 'DLU-DACS-4801',
+      },
+    });
+
+    await prisma.registrationGroupMember.createMany({
+      data: [
+        {
+          groupId: group4.id,
+          semesterId: semester.id,
+          studentId: studentHuy.id,
+          status: 'ACCEPTED',
+          joinSource: 'SELF',
+          mentorGrade: 8.5,
+          mentorComment: 'Xây dựng cơ sở dữ liệu thư viện chuẩn 3NF, xử lý tìm kiếm full-text tốt.',
+        },
+        {
+          groupId: group4.id,
+          semesterId: semester.id,
+          studentId: studentTri.id,
+          status: 'ACCEPTED',
+          joinSource: 'LINK',
+          mentorGrade: 8.0,
+          mentorComment: 'Giao diện mượn trả sách dễ sử dụng, tích hợp viewer PDF DRM cơ bản ổn định.',
+        },
+      ],
+    });
+
+    // Đề cương M03 cho Nhóm 4
+    await prisma.topicOutline.create({
+      data: {
+        groupId: group4.id,
+        topicId: topicLibrary.id,
+        fileName: 'M03_De_cuong_chi_tiet_DACS_Nhom04_ThuVienSo.pdf',
+        fileSize: 1048576,
+        attachmentUrl: 'https://storage.dlu.edu.vn/outlines/m03_nhom4.pdf',
+        submittedById: userHuy?.id,
+        submittedAt: daysFromNow(-12),
+        status: 'APPROVED_BY_LECTURER',
+        lecturerFeedback: 'Kế hoạch triển khai ĐACS hợp lý, giao diện và database rõ ràng.',
+        approvedAt: daysFromNow(-10),
+        objectives: 'Xây dựng ứng dụng quản lý thư viện số cho Trường Đại học Đà Lạt.',
+        scopeAndContent: 'Module tra cứu tài liệu học thuật, gia hạn sách và đọc PDF bảo mật trên web.',
+      },
+    });
+
+    console.log(`[✓] 11c. Nhóm 04 (DACS Thư viện số - GVHD TS. Phan Bửu): Đã tạo nhóm và nộp đề cương M03`);
+  }
+
+  // Nhóm 5: SV Trần Thị Mai & SV Hoàng Gia Bảo làm Đề tài Du lịch thông minh (DACN - GVHD: TS. Phan Bửu)
+  const topicTourism = createdTopics[4];
+  const studentMai = studentProfileByEmail.get('2388001@dlu.edu.vn')?.profile;
+  const studentBao = studentProfileByEmail.get('2388002@dlu.edu.vn')?.profile;
+  const userMai = studentProfileByEmail.get('2388001@dlu.edu.vn')?.user;
+
+  if (topicTourism && studentMai && studentBao && pbProfile) {
+    const group5 = await prisma.registrationGroup.create({
+      data: {
+        topicId: topicTourism.id,
+        semesterId: semester.id,
+        leaderId: studentMai.id,
+        name: 'Nhóm 05 - Du lịch số CTK47',
+        status: 'APPROVED',
+        openForJoin: false,
+        declaredSize: 2,
+        joinCode: 'DLU-DACN-4701',
+      },
+    });
+
+    await prisma.registrationGroupMember.createMany({
+      data: [
+        {
+          groupId: group5.id,
+          semesterId: semester.id,
+          studentId: studentMai.id,
+          status: 'ACCEPTED',
+          joinSource: 'SELF',
+          mentorGrade: 9.0,
+          mentorComment: 'Thu thập và tiền xử lý dữ liệu đánh giá du lịch tốt, tinh chỉnh mô hình PhoBERT hiệu quả.',
+        },
+        {
+          groupId: group5.id,
+          semesterId: semester.id,
+          studentId: studentBao.id,
+          status: 'ACCEPTED',
+          joinSource: 'LINK',
+          mentorGrade: 8.7,
+          mentorComment: 'Phát triển backend API và thuật toán tối ưu lịch trình tham quan mượt mà.',
+        },
+      ],
+    });
+
+    // Đề cương M03 cho Nhóm 5
+    await prisma.topicOutline.create({
+      data: {
+        groupId: group5.id,
+        topicId: topicTourism.id,
+        fileName: 'M03_De_cuong_chi_tiet_DACN_Nhom05_DuLichThongMinh.pdf',
+        fileSize: 1048576,
+        attachmentUrl: 'https://storage.dlu.edu.vn/outlines/m03_nhom5.pdf',
+        submittedById: userMai?.id,
+        submittedAt: daysFromNow(-13),
+        status: 'APPROVED_BY_LECTURER',
+        lecturerFeedback: 'Ý tưởng kết hợp PhoBERT phân tích cảm xúc du lịch rất sáng tạo, kế hoạch chi tiết.',
+        approvedAt: daysFromNow(-10),
+        objectives: 'Phát triển nền tảng quản lý và khai thác dữ liệu du lịch thông minh tỉnh Lâm Đồng.',
+        scopeAndContent: 'Thu thập dữ liệu đánh giá du lịch Đà Lạt, mô hình PhoBERT phân loại cảm xúc và gợi ý lịch trình.',
+      },
+    });
+
+    console.log(`[✓] 11d. Nhóm 05 (DACN Du lịch thông minh - GVHD TS. Phan Bửu): Đã tạo nhóm và nộp đề cương M03`);
+  }
+
   // 15. Seed Thông báo (Notifications)
   const notifUsers = [
     studentAProfile?.userId,
@@ -1367,32 +1652,32 @@ async function main() {
   await prisma.registrationGroup.deleteMany({ where: { semesterId: { in: pastSemesterIds } } });
   await prisma.topic.deleteMany({ where: { semesterId: { in: pastSemesterIds } } });
 
-  // D. Danh sách sinh viên hoàn thành các khóa trước
+  // D. Danh sách sinh viên hoàn thành các khóa trước (Mã 5 số sau từ 66000 đến 99999 để tránh email thật)
   const PAST_STUDENTS_DATA = [
-    { code: '2011234', name: 'Trần Văn Hải', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
-    { code: '2011456', name: 'Nguyễn Thị Lan', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
-    { code: '2011789', name: 'Đặng Quốc Tuấn', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
-    { code: '2011890', name: 'Lê Thu Trang', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
-    { code: '2112345', name: 'Võ Minh Trí', class: 'CTK45PM', majorCode: 'CNPM', cohort: '2022' },
-    { code: '2112567', name: 'Phạm Đức Nam', class: 'CTK45PM', majorCode: 'CNPM', cohort: '2022' },
-    { code: '2213456', name: 'Bùi Hoàng Long', class: 'CTK46PM', majorCode: 'CNPM', cohort: '2023' },
-    { code: '2011342', name: 'Huỳnh Nhật Quang', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
-    { code: '2011998', name: 'Hoàng Gia Huy', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
-    { code: '2112458', name: 'Đỗ Quỳnh Anh', class: 'CTK45PM', majorCode: 'CNPM', cohort: '2022' },
-    { code: '2213789', name: 'Mai Trọng Nghĩa', class: 'CTK46PM', majorCode: 'CNPM', cohort: '2023' },
-    { code: '2012111', name: 'Nguyễn Tuấn Anh', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
-    { code: '2012222', name: 'Phan Thế Anh', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
-    { code: '2113111', name: 'Đặng Thành Công', class: 'CTK45MMT', majorCode: 'MMT', cohort: '2022' },
-    { code: '2113222', name: 'Lương Văn Dũng', class: 'CTK45MMT', majorCode: 'MMT', cohort: '2022' },
-    { code: '2214111', name: 'Trịnh Quốc Bảo', class: 'CTK46MMT', majorCode: 'MMT', cohort: '2023' },
-    { code: '2012333', name: 'Vũ Hoàng Lâm', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
-    { code: '2012444', name: 'Cao Đình Khang', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
-    { code: '2113333', name: 'Hà Tiến Đạt', class: 'CTK45MMT', majorCode: 'MMT', cohort: '2022' },
-    { code: '1911555', name: 'Nguyễn Quang Sáng', class: 'CTK43PM', majorCode: 'CNPM', cohort: '2020' },
-    { code: '1912666', name: 'Trương Quốc Toàn', class: 'CTK43MMT', majorCode: 'MMT', cohort: '2020' },
-    { code: '2011666', name: 'Dương Mỹ Linh', class: 'CTK44PM', majorCode: 'CNPM', cohort: '2021' },
-    { code: '2112888', name: 'Tạ Minh Khang', class: 'CTK45PM', majorCode: 'CNPM', cohort: '2022' },
-    { code: '2012777', name: 'Lâm Hải Đăng', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
+    { code: '2088001', name: 'Trần Văn Hải', class: 'CTK44PM', majorCode: 'KTPM', cohort: '2021' },
+    { code: '2088002', name: 'Nguyễn Thị Lan', class: 'CTK44PM', majorCode: 'KTPM', cohort: '2021' },
+    { code: '2088003', name: 'Đặng Quốc Tuấn', class: 'CTK44PM', majorCode: 'KTPM', cohort: '2021' },
+    { code: '2088004', name: 'Lê Thu Trang', class: 'CTK44PM', majorCode: 'KTPM', cohort: '2021' },
+    { code: '2188005', name: 'Võ Minh Trí', class: 'CTK45PM', majorCode: 'KTPM', cohort: '2022' },
+    { code: '2188006', name: 'Phạm Đức Nam', class: 'CTK45PM', majorCode: 'KTPM', cohort: '2022' },
+    { code: '2288007', name: 'Bùi Hoàng Long', class: 'CTK46PM', majorCode: 'KTPM', cohort: '2023' },
+    { code: '2088008', name: 'Huỳnh Nhật Quang', class: 'CTK44PM', majorCode: 'KTPM', cohort: '2021' },
+    { code: '2088009', name: 'Hoàng Gia Huy', class: 'CTK44PM', majorCode: 'KTPM', cohort: '2021' },
+    { code: '2188010', name: 'Đỗ Quỳnh Anh', class: 'CTK45PM', majorCode: 'KTPM', cohort: '2022' },
+    { code: '2288011', name: 'Mai Trọng Nghĩa', class: 'CTK46PM', majorCode: 'KTPM', cohort: '2023' },
+    { code: '2099012', name: 'Nguyễn Tuấn Anh', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
+    { code: '2099013', name: 'Phan Thế Anh', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
+    { code: '2199014', name: 'Đặng Thành Công', class: 'CTK45MMT', majorCode: 'MMT', cohort: '2022' },
+    { code: '2199015', name: 'Lương Văn Dũng', class: 'CTK45MMT', majorCode: 'MMT', cohort: '2022' },
+    { code: '2299016', name: 'Trịnh Quốc Bảo', class: 'CTK46MMT', majorCode: 'MMT', cohort: '2023' },
+    { code: '2077017', name: 'Vũ Hoàng Lâm', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
+    { code: '2077018', name: 'Cao Đình Khang', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
+    { code: '2177019', name: 'Hà Tiến Đạt', class: 'CTK45MMT', majorCode: 'MMT', cohort: '2022' },
+    { code: '1977020', name: 'Nguyễn Quang Sáng', class: 'CTK43PM', majorCode: 'KTPM', cohort: '2020' },
+    { code: '1966021', name: 'Trương Quốc Toàn', class: 'CTK43MMT', majorCode: 'MMT', cohort: '2020' },
+    { code: '2066022', name: 'Dương Mỹ Linh', class: 'CTK44PM', majorCode: 'KTPM', cohort: '2021' },
+    { code: '2166023', name: 'Tạ Minh Khang', class: 'CTK45PM', majorCode: 'KTPM', cohort: '2022' },
+    { code: '2066024', name: 'Lâm Hải Đăng', class: 'CTK44MMT', majorCode: 'MMT', cohort: '2021' },
   ];
 
   const pastStudentProfiles: any[] = [];
@@ -1428,9 +1713,9 @@ async function main() {
     pastStudentProfiles.push(profile);
   }
 
-  // E. 20 Đề tài lưu trữ hoàn chỉnh (10 CNPM, 10 MMT, đủ KLTN, ĐACN, ĐACS)
+  // E. 20 Đề tài lưu trữ hoàn chỉnh (10 KTPM, 10 MMT, đủ KLTN, ĐACN, ĐACS)
   const ARCHIVED_TOPICS = [
-    // 1. KLTN - CNPM - HK2 24-25
+    // 1. KLTN - KTPM - HK2 24-25
     {
       title: 'Xây dựng Hệ thống Quản trị Học tập Trực tuyến (LMS) Hỗ trợ Đào tạo Theo Tín chỉ cho Đại học Đà Lạt',
       titleEn: 'Development of Credit-based Online Learning Management System (LMS) for Dalat University',
@@ -1438,14 +1723,14 @@ async function main() {
       objectives: '- Phân tích và xây dựng hệ thống LMS theo chuẩn tín chỉ Đại học Đà Lạt.\n- Triển khai máy chủ đánh giá mã nguồn tự động an toàn trong Sandbox Docker.\n- Tối ưu hóa hiệu năng chịu tải trên 1000 người dùng trực tuyến.',
       expectedOutcomes: '- Cổng thông tin web LMS hoàn chỉnh gồm phân hệ sinh viên, giảng viên và quản trị viên.\n- Hệ thống tự động chấm bài tập lập trình (Auto-grader) cho môn C/C++, Java và Python.\n- Báo cáo kết quả thử nghiệm hiệu năng và độ ổn định hệ thống.',
       techStack: 'Next.js 14, NestJS, PostgreSQL, Redis, Docker, RabbitMQ',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast1,
       roundKey: 'HK2-2024-2025_DATN',
       lecturerId: pbProfile.id,
       studentIdx: 0,
       grade: { p1: 8.5, p2: 9.0, def: 8.8, finalNum: 8.8, finalLetter: 'A' },
     },
-    // 2. KLTN - CNPM - HK2 24-25
+    // 2. KLTN - KTPM - HK2 24-25
     {
       title: 'Ứng dụng Mô hình Thị giác Máy tính YOLOv8 trong Giám sát An toàn Lao động tại Công trường Xây dựng',
       titleEn: 'Application of YOLOv8 Computer Vision in Construction Site Safety Monitoring',
@@ -1453,14 +1738,14 @@ async function main() {
       objectives: '- Xây dựng tập dữ liệu hơn 8.000 hình ảnh trang thiết bị bảo hộ lao động thực tế tại Đà Lạt.\n- Huấn luyện mô hình YOLOv8 đạt độ chính xác phát hiện mAP@0.5 trên 92%.\n- Đóng gói ứng dụng giám sát video thời gian thực từ các camera IP RTSP.',
       expectedOutcomes: '- Mô hình học sâu nhận diện vi phạm an toàn lao động với độ trễ dưới 50ms.\n- Dashboard quản lý các sự kiện vi phạm an toàn và xuất báo cáo hàng tuần.\n- Luận văn tốt nghiệp và video demo hoạt động thực tế.',
       techStack: 'Python, PyTorch, YOLOv8, OpenCV, FastAPI, React, Docker',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast1,
       roundKey: 'HK2-2024-2025_DATN',
       lecturerId: lnProfile.id,
       studentIdx: 1,
       grade: { p1: 9.0, p2: 9.5, def: 9.2, finalNum: 9.3, finalLetter: 'A+' },
     },
-    // 3. KLTN - CNPM - HK2 24-25
+    // 3. KLTN - KTPM - HK2 24-25
     {
       title: 'Nền tảng Hỗ trợ Khởi nghiệp Đổi mới Sáng tạo và Kết nối Vốn Đầu tư Thiên thần (StartupHub)',
       titleEn: 'StartupHub - Innovation Support and Angel Investor Matching Platform',
@@ -1468,14 +1753,14 @@ async function main() {
       objectives: '- Xây dựng thuật toán matching dự án dựa trên lĩnh vực, giai đoạn gọi vốn và khẩu vị đầu tư.\n- Bảo mật dữ liệu tài chính của startup bằng mã hóa và phân quyền truy cập chặt chẽ.\n- Tích hợp phòng họp trực tuyến và chia sẻ tài liệu thuyết trình bảo mật.',
       expectedOutcomes: '- Nền tảng web StartupHub tương thích hoàn hảo mọi thiết bị di động.\n- Module phân tích chỉ số tài chính (Burn rate, Runway, CAC/LTV) trực quan.\n- Tài liệu đặc tả kiến trúc hệ thống và hướng dẫn sử dụng.',
       techStack: 'React, Node.js, GraphQL, PostgreSQL, TailwindCSS, WebRTC',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast1,
       roundKey: 'HK2-2024-2025_DATN',
       lecturerId: abProfile.id,
       studentIdx: 2,
       grade: { p1: 8.5, p2: 8.8, def: 8.6, finalNum: 8.6, finalLetter: 'A' },
     },
-    // 4. ĐACN - CNPM - HK2 24-25
+    // 4. ĐACN - KTPM - HK2 24-25
     {
       title: 'Ứng dụng Quản lý Tour Du lịch Trải nghiệm Sinh thái và Đặt Phòng Homestay Đà Lạt',
       titleEn: 'Mobile Application for Eco-tourism Experience Tour and Homestay Booking in Dalat',
@@ -1483,14 +1768,14 @@ async function main() {
       objectives: '- Thiết kế giao diện di động thân thiện, tối ưu trải nghiệm khám phá địa điểm du lịch.\n- Xây dựng hệ thống quản lý phòng trống (Availability Calendar) đồng bộ tức thì.\n- Tích hợp bản đồ dẫn đường tương tác đến các địa điểm ngoại ô Đà Lạt.',
       expectedOutcomes: '- Ứng dụng di động chạy tốt trên Android và iOS.\n- Hệ thống Backend API RESTful quản lý đặt chỗ và thanh toán.\n- Báo cáo kiểm thử người dùng thực tế với 30 tình nguyện viên.',
       techStack: 'Flutter, Dart, Node.js, Express, MongoDB, VNPay SDK',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast1,
       roundKey: 'HK2-2024-2025_DACN',
       lecturerId: pbProfile.id,
       studentIdx: 4,
       grade: { p1: 8.0, p2: 8.5, def: 8.5, finalNum: 8.4, finalLetter: 'B+' },
     },
-    // 5. ĐACN - CNPM - HK2 24-25
+    // 5. ĐACN - KTPM - HK2 24-25
     {
       title: 'Hệ thống Quản lý và Tự động Hóa Quy trình Đăng ký Đề tài Nghiên cứu Khoa học Sinh viên',
       titleEn: 'Automated Student Scientific Research Project Management System',
@@ -1498,14 +1783,14 @@ async function main() {
       objectives: '- Số hóa quy trình xét duyệt đề tài NCKH theo quy định hiện hành của Bộ GD&ĐT.\n- Xây dựng luồng phê duyệt đa cấp (Giảng viên hướng dẫn -> Bộ môn -> Phòng QLKH).\n- Tự động sinh biên bản nghiệm thu và chứng nhận NCKH dạng PDF.',
       expectedOutcomes: '- Website ứng dụng Next.js giao diện chuyên nghiệp chuẩn nhận diện thương hiệu Nhà trường.\n- Module sinh file PDF biên bản tự động bằng thư viện Puppeteer/React-PDF.\n- Sổ tay hướng dẫn quản trị viên và sinh viên thực hiện.',
       techStack: 'Next.js 14, TypeScript, Prisma, PostgreSQL, TailwindCSS',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast1,
       roundKey: 'HK2-2024-2025_DACN',
       lecturerId: abProfile.id,
       studentIdx: 5,
       grade: { p1: 9.0, p2: 9.0, def: 9.0, finalNum: 9.0, finalLetter: 'A' },
     },
-    // 6. ĐACS - CNPM - HK2 24-25
+    // 6. ĐACS - KTPM - HK2 24-25
     {
       title: 'Xây dựng Website Bán Nông sản Sạch và Hoa Tươi Đà Lạt Ứng dụng Kiến trúc Hướng Dịch vụ',
       titleEn: 'Clean Agricultural Products and Fresh Flowers E-commerce Website for Dalat',
@@ -1513,14 +1798,14 @@ async function main() {
       objectives: '- Phân tích và thiết kế cơ sở dữ liệu quan hệ cho sàn thương mại điện tử nông sản.\n- Áp dụng mô hình MVC và các nguyên lý lập trình hướng đối tượng (OOP).\n- Đảm bảo tính bảo mật trong lưu trữ mật khẩu người dùng và giỏ hàng.',
       expectedOutcomes: '- Website bán hàng chạy mượt mà trên môi trường Web Responsive.\n- Trang quản trị (Admin Dashboard) quản lý sản phẩm, đơn hàng và doanh thu.\n- Báo cáo đồ án cơ sở đạt loại Khá giỏi.',
       techStack: 'React, Express.js, MySQL, TailwindCSS, Axios',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast1,
       roundKey: 'HK2-2024-2025_DACS',
       lecturerId: pbProfile.id,
       studentIdx: 6,
       grade: { p1: 8.0, p2: 8.2, def: 8.3, finalNum: 8.2, finalLetter: 'B+' },
     },
-    // 7. KLTN - CNPM - HK1 24-25
+    // 7. KLTN - KTPM - HK1 24-25
     {
       title: 'Hệ thống Phân tích Sắc thái Cảm xúc Đánh giá Khách hàng trên Sàn Thương mại Điện tử Shopee',
       titleEn: 'Customer Review Sentiment Analysis System on Shopee E-Commerce Platform Using PhoBERT',
@@ -1528,14 +1813,14 @@ async function main() {
       objectives: '- Thu thập và gán nhãn tập dữ liệu hơn 50.000 đánh giá sản phẩm Shopee thực tế.\n- Huấn luyện mô hình PhoBERT với kỹ thuật Data Augmentation đạt F1-score trên 91%.\n- Xây dựng Dashboard trực quan hóa xu hướng hài lòng của khách hàng theo thời gian.',
       expectedOutcomes: '- Đường ống thu thập dữ liệu (Scraper) hoạt động ổn định và an toàn.\n- API phân loại cảm xúc thời gian thực cho các hệ thống CRM bên thứ ba.\n- Luận văn tốt nghiệp đạt kết quả xuất sắc.',
       techStack: 'Python, PhoBERT, PyTorch, FastAPI, Next.js, Docker, MongoDB',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast2,
       roundKey: 'HK1-2024-2025_DATN',
       lecturerId: lnProfile.id,
       studentIdx: 7,
       grade: { p1: 9.0, p2: 9.2, def: 9.1, finalNum: 9.1, finalLetter: 'A+' },
     },
-    // 8. KLTN - CNPM - HK1 24-25
+    // 8. KLTN - KTPM - HK1 24-25
     {
       title: 'Nền tảng Đặt xe Công nghệ và Tối ưu Tuyến đường Đón trả Khách cho Xe Điện Du lịch Đà Lạt',
       titleEn: 'Smart Ride-Hailing and Route Optimization Platform for Dalat Tourist Electric Shuttles',
@@ -1543,14 +1828,14 @@ async function main() {
       objectives: '- Xây dựng thuật toán gom chuyến và điều phối xe điện linh hoạt theo thời gian thực.\n- Tích hợp bản đồ số OpenStreetMap và hệ thống GPS định vị phương tiện.\n- Phát triển ứng dụng tài xế và ứng dụng hành khách trên thiết bị di động.',
       expectedOutcomes: '- Bộ ứng dụng di động tài xế và hành khách hoàn chỉnh.\n- Máy chủ trung tâm điều hành trực quan hóa vị trí đội xe theo thời gian thực.\n- Báo cáo phân tích hiệu quả tiết kiệm 20% quãng đường di chuyển rỗng.',
       techStack: 'React Native, NestJS, Go, PostgreSQL, PostGIS, WebSocket, Docker',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast2,
       roundKey: 'HK1-2024-2025_DATN',
       lecturerId: abProfile.id,
       studentIdx: 8,
       grade: { p1: 8.5, p2: 8.8, def: 8.6, finalNum: 8.6, finalLetter: 'A' },
     },
-    // 9. ĐACN - CNPM - HK1 24-25
+    // 9. ĐACN - KTPM - HK1 24-25
     {
       title: 'Ứng dụng Sổ tay Sức khỏe Điện tử và Đặt lịch Tiêm chủng cho Trẻ em',
       titleEn: 'Digital Child Health Record and Vaccination Scheduling Mobile Application',
@@ -1558,14 +1843,14 @@ async function main() {
       objectives: '- Xây dựng phác đồ tiêm chủng chuẩn quốc gia và thuật toán tính toán ngày tiêm kế tiếp.\n- Thiết kế giao diện sinh động, dễ sử dụng cho các bậc phụ huynh trẻ.\n- Đảm bảo an toàn bảo mật hồ sơ sức khỏe trẻ em.',
       expectedOutcomes: '- Ứng dụng di động Flutter hỗ trợ chế độ Offline và đồng bộ đám mây.\n- Báo cáo thử nghiệm tại Trung tâm Y tế Dự phòng với đánh giá tích cực.',
       techStack: 'Flutter, Firebase, Node.js, Express, MongoDB',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast2,
       roundKey: 'HK1-2024-2025_DACN',
       lecturerId: pbProfile.id,
       studentIdx: 9,
       grade: { p1: 9.0, p2: 8.8, def: 8.9, finalNum: 8.9, finalLetter: 'A' },
     },
-    // 10. ĐACS - CNPM - HK1 24-25
+    // 10. ĐACS - KTPM - HK1 24-25
     {
       title: 'Xây dựng Phần mềm Quản lý Phòng khám Nha khoa Tư nhân',
       titleEn: 'Dental Clinic Management Desktop Software with Appointment Scheduling',
@@ -1573,7 +1858,7 @@ async function main() {
       objectives: '- Phân tích nghiệp vụ quản lý hồ sơ nha khoa chuyên khoa.\n- Xây dựng giao diện tương tác sơ đồ 32 răng trực quan.\n- Báo cáo doanh thu và quản lý kho vật tư tiêu hao.',
       expectedOutcomes: '- Phần mềm cài đặt trên máy tính Windows hoạt động ổn định.\n- Tài liệu đặc tả cơ sở dữ liệu và bản vẽ UML.',
       techStack: 'C#, .NET Core, SQL Server, WPF, MaterialDesignInXAML',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast2,
       roundKey: 'HK1-2024-2025_DACS',
       lecturerId: abProfile.id,
@@ -1700,7 +1985,7 @@ async function main() {
       studentIdx: 18,
       grade: { p1: 8.5, p2: 8.6, def: 8.6, finalNum: 8.6, finalLetter: 'A' },
     },
-    // 19. KLTN - CNPM - HK2 23-24
+    // 19. KLTN - KTPM - HK2 23-24
     {
       title: 'Nền tảng Đấu giá Trực tuyến Thời gian thực Ứng dụng WebSocket và Kiến trúc Hướng Sự kiện (Event-Driven)',
       titleEn: 'Real-time Online Bidding Platform Using WebSocket and Event-Driven Architecture',
@@ -1708,7 +1993,7 @@ async function main() {
       objectives: '- Thiết kế cơ chế khóa phân tán (Distributed Lock với Redis) để tránh xung đột bước giá.\n- Duy trì kết nối WebSocket ổn định cho hàng nghìn người cùng xem một phiên đấu giá.\n- Tự động hoàn tiền cọc cho những người trả giá không thành công.',
       expectedOutcomes: '- Website đấu giá trực tuyến hoạt động trơn tru với độ trễ cập nhật giá thầu dưới 100ms.\n- Báo cáo kiểm thử tải với công cụ k6 đạt 500 yêu cầu trả giá mỗi giây.',
       techStack: 'Next.js, Node.js, Redis Pub/Sub, Kafka, PostgreSQL, Docker',
-      majorCode: 'CNPM',
+      majorCode: 'KTPM',
       semKey: semPast3,
       roundKey: 'HK2-2023-2024_DATN',
       lecturerId: pbProfile.id,
@@ -1799,7 +2084,30 @@ async function main() {
 
   console.log(`[✓] 13. Kho lưu trữ: Đã tạo 20 đề tài hoàn chỉnh (status COMPLETED, đợt FINALIZED) cho các học kỳ trước kèm sinh viên và điểm số`);
 
-  // 14. SEED ROLE PERMISSIONS
+  // 14. SEED CHỈ TIÊU RIÊNG & MIỄN TRỪ ĐỀ TÀI THEO ĐỢT (RoundLecturerQuota)
+  if (datnRound && lnProfile) {
+    await prisma.roundLecturerQuota.upsert({
+      where: {
+        roundId_lecturerId: {
+          roundId: datnRound.id,
+          lecturerId: lnProfile.id,
+        },
+      },
+      create: {
+        roundId: datnRound.id,
+        lecturerId: lnProfile.id,
+        targetQuota: 3,
+        isExempt: false,
+      },
+      update: {
+        targetQuota: 3,
+        isExempt: false,
+      },
+    });
+  }
+  console.log(`[✓] 14. Chỉ tiêu giảng viên theo đợt: Đã thiết lập chỉ tiêu tùy biến cho đợt`);
+
+  // 15. SEED ROLE PERMISSIONS
   const defaultRolePermissions = [
     { role: 'ADMIN', permission: 'TOPIC_REGISTRY' },
     { role: 'ADMIN', permission: 'STUDENT_ALLOCATION' },
@@ -1823,7 +2131,47 @@ async function main() {
       create: rp,
     });
   }
-  console.log(`[✓] 14. Phân quyền: Đã cấu hình ma trận quyền mặc định cho các vai trò`);
+  console.log(`[✓] 15. Phân quyền: Đã cấu hình ma trận quyền mặc định cho các vai trò`);
+
+  // 16. SEED USER PERMISSIONS (Phân quyền đặc biệt cho giảng viên)
+  const gvkUser = staffProfileByEmail.get('gvgvk@dlu.edu.vn')?.user;
+  const lnUser = staffProfileByEmail.get('gvln@dlu.edu.vn')?.user;
+  const cdUser = staffProfileByEmail.get('gvcd@dlu.edu.vn')?.user;
+
+  if (lnUser && gvkUser) {
+    await prisma.userPermission.upsert({
+      where: {
+        userId_permission: {
+          userId: lnUser.id,
+          permission: 'TOPIC_REGISTRY',
+        },
+      },
+      create: {
+        userId: lnUser.id,
+        permission: 'TOPIC_REGISTRY',
+        grantedById: gvkUser.id,
+      },
+      update: {},
+    });
+  }
+
+  if (cdUser && gvkUser) {
+    await prisma.userPermission.upsert({
+      where: {
+        userId_permission: {
+          userId: cdUser.id,
+          permission: 'TOPIC_REVIEW_DEPT',
+        },
+      },
+      create: {
+        userId: cdUser.id,
+        permission: 'TOPIC_REVIEW_DEPT',
+        grantedById: gvkUser.id,
+      },
+      update: {},
+    });
+  }
+  console.log(`[✓] 16. Quyền đặc biệt: Đã cấu hình danh sách giảng viên được cấp quyền riêng biệt`);
 
   console.log('\n============================================================');
   console.log('🎉 SEED DỮ LIỆU ĐẦY ĐỦ CHO TẤT CẢ CÁC BẢNG THÀNH CÔNG RỰC RỠ!');
@@ -1835,9 +2183,10 @@ async function main() {
   console.log('  3. TTBM Mạng máy tính   : gvcd@dlu.edu.vn');
   console.log('  4. Giảng viên HD & PB   : gvpb@dlu.edu.vn');
   console.log('  5. Giảng viên (GVLN)    : gvln@dlu.edu.vn');
-  console.log('  6. Sinh viên trưởng nhóm: 2266666@dlu.edu.vn (Nhóm 1 làm KLTN)');
-  console.log('  7. Sinh viên thành viên : 2277777@dlu.edu.vn (Nhóm 1)');
-  console.log('  8. Sinh viên Mạng MT    : 2288888@dlu.edu.vn (Nhóm 2)');
+  console.log(`  6. GV Chủ nhiệm (GVCN)  : ${gvcnEmail}`);
+  console.log('  7. Sinh viên trưởng nhóm: 2266666@dlu.edu.vn (Nhóm 1 làm KLTN)');
+  console.log('  8. Sinh viên thành viên : 2277777@dlu.edu.vn (Nhóm 1)');
+  console.log('  9. Sinh viên Mạng MT    : 2288888@dlu.edu.vn (Nhóm 2)');
   console.log('============================================================\n');
 }
 

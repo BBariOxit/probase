@@ -69,6 +69,8 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
   const transition = useTopicTransition();
   const departmentReview = useDepartmentReviewTopic();
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
+  const [confirmApprovedEdit, setConfirmApprovedEdit] = useState(false);
+  const [pendingFormValues, setPendingFormValues] = useState<any>(null);
   const [draftFeedback, setDraftFeedback] = useState<{
     topicId: number | null;
     text: string;
@@ -155,12 +157,44 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
   const isAdmin = profile?.role === 'ADMIN';
   const isPendingReview =
     topic.status === 'PENDING_DEPARTMENT' || topic.status === 'PENDING';
+  const hasNoRegisteredStudents =
+    !topic.activeGroup || topic.activeGroup.occupiedSeats === 0;
+  const isApproved =
+    topic.status === 'APPROVED' || topic.status === 'APPROVED_OPEN';
   const canEditStatus =
-    !isPendingReview &&
     topic.status !== 'REJECTED' &&
     topic.status !== 'IN_PROGRESS' &&
-    topic.status !== 'COMPLETED';
+    topic.status !== 'COMPLETED' &&
+    hasNoRegisteredStudents;
   const canEditTopic = (isOwner || isAdmin) && canEditStatus;
+
+  async function performUpdate(
+    values: any,
+    status?: 'DRAFT' | 'PENDING_DEPARTMENT',
+  ) {
+    await update.mutateAsync({
+      projectTypeId: values.projectTypeId,
+      title: values.title,
+      description: values.description,
+      expectedOutcomes: values.expectedOutcomes,
+      maxStudents: values.maxStudents,
+      ...(status && { status }),
+    });
+    if (files.length > 0) {
+      toast.success(
+        `Đã cập nhật đề tài và lưu ${files.length} tệp đính kèm mới!`,
+      );
+    } else if (isApproved) {
+      toast.success(
+        'Đã lưu thay đổi. Đề tài đã chuyển về Chờ duyệt lại để TTBM xác nhận.',
+      );
+    } else if (status === 'PENDING_DEPARTMENT') {
+      toast.success('Đã lưu và gửi đề tài lên Bộ môn thẩm định.');
+    } else {
+      toast.success('Đã cập nhật đề tài thành công!');
+    }
+    router.replace(`/lecturer/topics/${topicId}`);
+  }
 
   if (isEditing && canEditTopic) {
     return (
@@ -176,6 +210,19 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
           />
           <TopicStatusBadge status={topic.status} className="mt-1.5" />
         </div>
+
+        {isApproved && (
+          <div className="rounded-xl border border-amber-300/80 bg-amber-50/70 dark:border-amber-800/60 dark:bg-amber-950/20 px-4 py-3 space-y-1">
+            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+              Lưu ý quy trình thẩm định:
+            </p>
+            <p className="text-xs leading-relaxed text-amber-900/90 dark:text-amber-200/90">
+              Đề tài này đã được Trưởng bộ môn phê duyệt trước đó. Mọi thay đổi
+              nội dung sẽ chuyển đề tài về trạng thái{' '}
+              <strong>Chờ duyệt lại</strong> để TTBM xác nhận lại nội dung mới.
+            </p>
+          </div>
+        )}
 
         {topic.departmentFeedback && (
           <div className="rounded-xl border border-amber-200/80 dark:border-amber-800/50 bg-amber-50/70 dark:bg-amber-950/20 px-4 py-3 space-y-1">
@@ -208,23 +255,29 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
             maxStudents: topic.maxStudents,
           }}
           lockSemester
-          submitLabel="Lưu thay đổi"
+          submitLabel={
+            topic.status === 'DRAFT'
+              ? 'Lưu & Gửi duyệt'
+              : isApproved
+                ? 'Lưu thay đổi (sẽ duyệt lại)'
+                : 'Lưu thay đổi'
+          }
+          draftLabel="Lưu bản nháp"
+          onSaveDraft={
+            topic.status === 'DRAFT'
+              ? async (values) => performUpdate(values, 'DRAFT')
+              : undefined
+          }
           onSubmit={async (values) => {
-            await update.mutateAsync({
-              projectTypeId: values.projectTypeId,
-              title: values.title,
-              description: values.description,
-              expectedOutcomes: values.expectedOutcomes,
-              maxStudents: values.maxStudents,
-            });
-            if (files.length > 0) {
-              toast.success(
-                `Đã cập nhật đề tài và lưu ${files.length} tệp đính kèm mới!`,
-              );
+            if (isApproved) {
+              setPendingFormValues(values);
+              setConfirmApprovedEdit(true);
             } else {
-              toast.success('Đã cập nhật đề tài thành công!');
+              await performUpdate(
+                values,
+                topic.status === 'DRAFT' ? 'PENDING_DEPARTMENT' : undefined,
+              );
             }
-            router.replace(`/lecturer/topics/${topicId}`);
           }}
           onCancel={() => {
             router.replace(`/lecturer/topics/${topicId}`);
@@ -240,6 +293,19 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
             }}
           />
         </TopicForm>
+
+        <ConfirmDialog
+          open={confirmApprovedEdit}
+          onOpenChange={setConfirmApprovedEdit}
+          title="Xác nhận lưu thay đổi đề tài đã duyệt?"
+          description="Đề tài này đã được Trưởng bộ môn phê duyệt trước đó. Mọi thay đổi nội dung sẽ tự động chuyển đề tài về trạng thái 'Chờ duyệt lại' để TTBM thẩm định."
+          confirmLabel="Xác nhận lưu & gửi duyệt lại"
+          onConfirm={async () => {
+            if (pendingFormValues) {
+              await performUpdate(pendingFormValues);
+            }
+          }}
+        />
       </div>
     );
   }
@@ -251,8 +317,11 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
     !lecturerMajorId || !topicMajorId || topicMajorId === lecturerMajorId;
   const canDepartmentReview =
     isHeadOfDepartment && isPendingReview && matchesMajor;
+  const canDepartmentRevoke =
+    isHeadOfDepartment && isApproved && matchesMajor && hasNoRegisteredStudents;
   const hasActions =
     canDepartmentReview ||
+    canDepartmentRevoke ||
     (isOwner && (isPendingReview || topic.status === 'DRAFT'));
 
   async function handleDepartmentAction(
@@ -286,7 +355,9 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
 
       const messages = {
         APPROVE: 'Đã duyệt đề tài. Đề tài sẵn sàng để Giáo vụ mở đăng ký.',
-        REQUEST_REVISION: 'Đã yêu cầu giảng viên chỉnh sửa lại đề tài.',
+        REQUEST_REVISION: isApproved
+          ? 'Đã hủy duyệt đề tài và yêu cầu giảng viên chỉnh sửa lại.'
+          : 'Đã yêu cầu giảng viên chỉnh sửa lại đề tài.',
         REJECT: 'Đã từ chối đề tài.',
       };
       toast.success(messages[action]);
@@ -329,14 +400,18 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
             : undefined
         }
         extraContent={
-          canDepartmentReview ? (
+          canDepartmentReview || canDepartmentRevoke ? (
             <div className="space-y-2">
               <Label
                 htmlFor="department-review-feedback"
                 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2"
               >
                 <MessageSquareText className="size-4 text-primary shrink-0" />
-                <span>Nhận xét chuyên môn (TTBM)</span>
+                <span>
+                  {canDepartmentRevoke
+                    ? 'Lý do hủy duyệt / Yêu cầu sửa'
+                    : 'Nhận xét chuyên môn (TTBM)'}
+                </span>
               </Label>
               <Textarea
                 ref={feedbackRef}
@@ -355,7 +430,11 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
                     setDraftFeedbackError({ topicId: null, message: null });
                   }
                 }}
-                placeholder="Nhập nhận xét hoặc góp ý để giảng viên chỉnh sửa đề tài…"
+                placeholder={
+                  canDepartmentRevoke
+                    ? 'Nhập lý do hủy duyệt để giảng viên biết cần chỉnh sửa nội dung gì…'
+                    : 'Nhập nhận xét hoặc góp ý để giảng viên chỉnh sửa đề tài…'
+                }
                 className={cn(
                   'resize-y text-sm',
                   feedbackError &&
@@ -418,6 +497,52 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
                     <span>Duyệt</span>
                   </Button>
                 </>
+              )}
+
+              {canDepartmentRevoke && (
+                <Button
+                  variant="outline"
+                  disabled={departmentReview.isPending}
+                  onClick={() => handleDepartmentAction('REQUEST_REVISION')}
+                  className="gap-1.5 font-semibold text-amber-700 hover:text-amber-800 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30 border-amber-300 dark:border-amber-700 cursor-pointer shadow-xs"
+                >
+                  {actionInProgress === 'REQUEST_REVISION' ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <RotateCcw className="size-4" />
+                  )}
+                  <span>Hủy duyệt & Yêu cầu sửa</span>
+                </Button>
+              )}
+
+              {isOwner && topic.status === 'DRAFT' && (
+                <Button
+                  variant="default"
+                  disabled={transition.isPending}
+                  onClick={async () => {
+                    try {
+                      const res = await transition.mutateAsync({
+                        id: topic.id,
+                        to: 'submit',
+                      });
+                      toast.success(
+                        res.status === 'APPROVED'
+                          ? 'Đề tài đã được phê duyệt tự động (TTBM).'
+                          : 'Đã gửi đề tài lên Bộ môn thẩm định.',
+                      );
+                    } catch {
+                      toast.error('Không thể gửi duyệt đề tài.');
+                    }
+                  }}
+                  className="gap-1.5 font-semibold bg-primary text-white hover:bg-primary/90 cursor-pointer shadow-xs"
+                >
+                  {transition.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Send className="size-4" />
+                  )}
+                  <span>Gửi duyệt</span>
+                </Button>
               )}
 
               {isOwner && isPendingReview && (

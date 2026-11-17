@@ -6,7 +6,6 @@ import {
   CalendarRange,
   ChartColumn,
   ClipboardCheck,
-  ClipboardPen,
   FileCheck2,
   FileUp,
   GraduationCap,
@@ -14,7 +13,6 @@ import {
   Layers,
   LibraryBig,
   Lightbulb,
-  MessageSquareText,
   ScrollText,
   Shuffle,
   TrendingUp,
@@ -110,18 +108,11 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           ready: true,
         },
         {
-          href: '/lecturer/reports',
-          label: 'Báo cáo & nhận xét',
-          icon: MessageSquareText,
-          ready: true,
-        },
-        {
           href: '/lecturers',
           label: 'Giảng viên',
           icon: GraduationCap,
           ready: true,
         },
-        { href: '/lecturer/cham-diem', label: 'Chấm điểm', icon: ClipboardPen },
       ],
     },
     {
@@ -156,7 +147,7 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
 
   GVCN: [
     {
-      label: 'Vận hành',
+      label: 'Chủ nhiệm',
       items: [
         {
           href: '/admin/topic-registry',
@@ -168,6 +159,41 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           href: '/admin/allocations',
           label: 'Phân bổ đề tài',
           icon: Shuffle,
+          ready: true,
+        },
+      ],
+    },
+    {
+      label: 'Hướng dẫn',
+      items: [
+        {
+          href: '/lecturer',
+          label: 'Đề tài của tôi',
+          icon: BookOpen,
+          ready: true,
+        },
+        {
+          href: '/lecturer/groups',
+          label: 'Nhóm hướng dẫn',
+          icon: Users,
+          ready: true,
+        },
+        {
+          href: '/lecturer/outlines',
+          label: 'Đề cương M03',
+          icon: FileCheck2,
+          ready: true,
+        },
+        {
+          href: '/lecturer/proposals',
+          label: 'Đề xuất từ SV',
+          icon: Lightbulb,
+          ready: true,
+        },
+        {
+          href: '/lecturers',
+          label: 'Giảng viên',
+          icon: GraduationCap,
           ready: true,
         },
       ],

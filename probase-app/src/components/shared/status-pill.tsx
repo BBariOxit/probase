@@ -40,13 +40,13 @@ export function StatusPill({
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center text-xs whitespace-nowrap',
+        'inline-flex shrink-0 items-center whitespace-nowrap',
         variant === 'tag'
           ? cn(
-              'px-2.5 py-0.5 rounded-md border font-semibold',
+              'px-2.5 py-0.5 rounded-md border text-xs font-semibold',
               TAG_TONE_CLASS[tone],
             )
-          : cn('font-medium', TEXT_TONE_CLASS[tone]),
+          : cn('text-sm font-medium', TEXT_TONE_CLASS[tone]),
         className,
       )}
     >

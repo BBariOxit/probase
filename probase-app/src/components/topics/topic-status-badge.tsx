@@ -10,7 +10,7 @@ const TOPIC_STATUS: Record<TopicStatus, StatusLabel> = {
   OPEN: { label: 'Đang mở', tone: 'success' },
   ASSIGNED: { label: 'Đã giao nhóm', tone: 'idle' },
   IN_PROGRESS: { label: 'Đang thực hiện', tone: 'active' },
-  COMPLETED: { label: 'Hoàn thành', tone: 'idle' },
+  COMPLETED: { label: 'Hoàn thành', tone: 'active' },
   REJECTED: { label: 'Bị từ chối', tone: 'danger' },
 };
 
@@ -34,24 +34,14 @@ export function TopicStatusBadge({
 
 export function TopicOwnerBadge({
   status,
-  activeGroup,
   variant = 'text',
   className,
 }: {
   status: TopicStatus;
-  activeGroup: ActiveGroup | null;
+  activeGroup?: ActiveGroup | null;
   variant?: 'text' | 'tag';
   className?: string;
 }) {
-  if (status === 'OPEN' && activeGroup) {
-    const owned =
-      activeGroup.status === 'SUBMITTED'
-        ? ({ label: 'Đã đủ người', tone: 'success' } as const)
-        : ({ label: 'Đang lập nhóm', tone: 'active' } as const);
-
-    return <StatusPill {...owned} variant={variant} className={className} />;
-  }
-
   return (
     <StatusPill
       {...TOPIC_STATUS[status]}

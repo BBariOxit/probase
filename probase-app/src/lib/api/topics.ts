@@ -139,6 +139,27 @@ export function useSubmitDraftTopics() {
   });
 }
 
+export function useCloneTopic() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: number;
+      input?: {
+        title?: string;
+        projectTypeId?: number;
+        semesterId?: number;
+        majorId?: number;
+        maxStudents?: number;
+      };
+    }) => topicService.clone(id, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: topicKeys.lists() }),
+  });
+}
+
 export function useBulkOpenTopics() {
   const queryClient = useQueryClient();
 

@@ -10,6 +10,7 @@ export const UpdateTopicSchema = z.object({
   majorId: z.coerce.number().int().positive().optional(),
   objectives: z.string().trim().max(3000).optional(),
   techStack: z.string().trim().max(255).optional(),
+  status: z.enum(['DRAFT', 'PENDING_DEPARTMENT']).optional(),
 });
 
 export class UpdateTopicDto extends createZodDto(UpdateTopicSchema) {}

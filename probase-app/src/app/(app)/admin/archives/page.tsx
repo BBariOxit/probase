@@ -242,7 +242,7 @@ export default function ArchivesPage() {
             >
               {/* Lọc theo học kỳ */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                <Label className="text-sm font-semibold text-slate-800 dark:text-neutral-200">
                   Học kỳ / Năm học
                 </Label>
                 <Select
@@ -253,7 +253,7 @@ export default function ArchivesPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
+                  <SelectTrigger className="w-full h-9.5 text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
                     <SelectValue>
                       {(val) => {
                         if (!val || val === 'all') return 'Tất cả học kỳ';
@@ -263,9 +263,15 @@ export default function ArchivesPage() {
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="max-h-64">
-                    <SelectItem value="all">Tất cả học kỳ</SelectItem>
+                    <SelectItem value="all" className="text-sm">
+                      Tất cả học kỳ
+                    </SelectItem>
                     {semesters.map((s) => (
-                      <SelectItem key={s.id} value={String(s.id)}>
+                      <SelectItem
+                        key={s.id}
+                        value={String(s.id)}
+                        className="text-sm"
+                      >
                         {formatSemesterAbbr(s)}
                       </SelectItem>
                     ))}
@@ -275,7 +281,7 @@ export default function ArchivesPage() {
 
               {/* Lọc theo đợt đồ án */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                <Label className="text-sm font-semibold text-slate-800 dark:text-neutral-200">
                   Đợt đăng ký
                 </Label>
                 <Select
@@ -285,7 +291,7 @@ export default function ArchivesPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
+                  <SelectTrigger className="w-full h-9.5 text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
                     <SelectValue>
                       {(val) => {
                         if (!val || val === 'all') return 'Mọi đợt';
@@ -297,15 +303,25 @@ export default function ArchivesPage() {
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="max-h-64">
-                    <SelectItem value="all">Mọi đợt</SelectItem>
+                    <SelectItem value="all" className="text-sm">
+                      Mọi đợt
+                    </SelectItem>
                     {selectedSemesterId !== 'all' && rounds.length > 0
                       ? rounds.map((r) => (
-                          <SelectItem key={r.id} value={String(r.projectTypeId)}>
+                          <SelectItem
+                            key={r.id}
+                            value={String(r.projectTypeId)}
+                            className="text-sm"
+                          >
                             {r.projectType?.name || `Đợt ${r.id}`}
                           </SelectItem>
                         ))
                       : projectTypes.map((pt) => (
-                          <SelectItem key={pt.id} value={String(pt.id)}>
+                          <SelectItem
+                            key={pt.id}
+                            value={String(pt.id)}
+                            className="text-sm"
+                          >
                             {pt.name}
                           </SelectItem>
                         ))}
@@ -315,7 +331,7 @@ export default function ArchivesPage() {
 
               {/* Lọc theo chuyên ngành */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-slate-700 dark:text-neutral-300">
+                <Label className="text-sm font-semibold text-slate-800 dark:text-neutral-200">
                   Chuyên ngành
                 </Label>
                 <Select
@@ -325,7 +341,7 @@ export default function ArchivesPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-full h-8.5 text-xs rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
+                  <SelectTrigger className="w-full h-9.5 text-sm rounded-lg border-[1.5px] border-slate-300 dark:border-neutral-700">
                     <SelectValue>
                       {(val) => {
                         if (!val || val === 'all') return 'Mọi chuyên ngành';
@@ -335,9 +351,15 @@ export default function ArchivesPage() {
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="max-h-64">
-                    <SelectItem value="all">Mọi chuyên ngành</SelectItem>
+                    <SelectItem value="all" className="text-sm">
+                      Mọi chuyên ngành
+                    </SelectItem>
                     {majors.map((m) => (
-                      <SelectItem key={m.id} value={String(m.id)}>
+                      <SelectItem
+                        key={m.id}
+                        value={String(m.id)}
+                        className="text-sm"
+                      >
                         {m.name}
                       </SelectItem>
                     ))}

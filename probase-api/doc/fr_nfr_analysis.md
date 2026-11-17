@@ -1,333 +1,116 @@
 # Phân tích Yêu cầu Chức năng (FR) và Phi Chức năng (NFR)
 ## Hệ thống Quản lý Đồ án - Khoa Công nghệ Thông tin (Trường Đại học Đà Lạt - DLU)
 
-Tài liệu này định nghĩa chi tiết toàn bộ yêu cầu nghiệp vụ, quy trình hành chính và các quy tắc kiểm tra (Business Rules) bám sát thực tế hoạt động đào tạo của Khoa Công nghệ Thông tin – Trường Đại học Đà Lạt.
+Tài liệu này định nghĩa chi tiết các yêu cầu nghiệp vụ, vai trò tác nhân và quy tắc kiểm tra (Business Rules) đang được áp dụng và vận hành thực tế trên hệ thống ProBase tại Khoa Công nghệ Thông tin – Trường Đại học Đà Lạt.
+
+> **Phạm vi xử lý:** Hệ thống tập trung trọn vẹn vào quy trình tổ chức đợt đồ án, nạp sinh viên đủ điều kiện, xây dựng & thẩm định ngân hàng đề tài, đăng ký/phân bổ đề tài, duyệt đề cương M03, theo dõi tiến độ, thu nhận bài nộp, lưu trữ số hóa và báo cáo giáo vụ. Các phân hệ **Báo cáo & Nhận xét (M02/M04/M05)**, **Chấm điểm tiến độ / Hội đồng bảo vệ**, và **Phân công Giảng viên phản biện (GVPB)** không thuộc phạm vi xử lý của hệ thống.
 
 ---
 
 ## 1. BỐI CẢNH & MÔ HÌNH TỔ CHỨC KHOA CNTT - DLU
 
-1. **Ngành đào tạo duy nhất:**
-   - Khoa CNTT - Đại học Đà Lạt tuyển sinh một ngành duy nhất: **Ngành Công nghệ Thông tin** (Mã ngành: `7480201`).
-   - Khóa sinh viên được định danh theo năm nhập học: `CTK44`, `CTK45`, `CTK46`, `CTK47`, `CTK48`...
-   - Hai năm đầu sinh viên học chung khối kiến thức đại cương và cơ sở ngành.
+1. **Ngành đào tạo chung:**
+   - Khoa CNTT – Đại học Đà Lạt tuyển sinh ngành **Công nghệ Thông tin** (`7480201`).
+   - Khóa sinh viên định danh theo năm nhập học: `CTK44`, `CTK45`, `CTK46`, `CTK47`, `CTK48`...
+   - Hai năm đầu học chung đại cương & cơ sở ngành (mã lớp chưa phân chuyên ngành).
 
 2. **Hai Chuyên ngành đào tạo (từ năm thứ 3):**
-   - Đến năm 3, sinh viên được phân vào một trong **2 Chuyên ngành (hướng chuyên sâu)**:
-     1. **Kỹ thuật phần mềm** (Mã: `CNPM` / `KTPM`, mã lớp: ví dụ `CTK46PM`).
-     2. **Mạng máy tính** (Mã: `MMT`, mã lớp: ví dụ `CTK46MMT`).
-   - Hai chuyên ngành này tương ứng với **2 Chuyên ngành** của Khoa, phụ trách bởi **Tổ trưởng Bộ môn (TTBM)** chuyên trách.
+   - **Kỹ thuật phần mềm** (Mã viết tắt: `KTPM`, mã lớp dạng `CTK46PM`).
+   - **Mạng máy tính** (Mã viết tắt: `MMT`, mã lớp dạng `CTK46MMT`).
+   - Tương ứng với 2 tổ bộ môn chuyên trách do **Tổ trưởng Bộ môn (`TTBM`)** phụ trách.
 
-3. **Ba loại đồ án trong chương trình đào tạo:**
-   - **Đồ án cơ sở (ĐACS)**: Thường dành cho sinh viên năm 2 (ví dụ CTK48).
-   - **Đồ án chuyên ngành (ĐACN)**: Dành cho sinh viên năm 3 theo từng chuyên ngành CNPM hoặc MMT (ví dụ CTK47).
-   - **Khóa luận tốt nghiệp / Đồ án tốt nghiệp (KLTN / ĐATN)**: Dành cho sinh viên năm cuối đủ điều kiện tốt nghiệp (ví dụ CTK46).
+3. **Ba loại đồ án:**
+   - **Đồ án cơ sở (`ĐACS`)**: Dành cho sinh viên năm 2.
+   - **Đồ án chuyên ngành (`ĐACN`)**: Dành cho sinh viên năm 3 theo chuyên ngành `KTPM` hoặc `MMT`.
+   - **Khóa luận tốt nghiệp (`KLTN`)**: Dành cho sinh viên năm cuối.
 
 ---
 
-## 2. BẢNG XÁC ĐỊNH 5 TÁC NHÂN TRÊN HỆ THỐNG (ACTORS) VÀ VAI TRÒ THỰC TẾ
+## 2. XÁC ĐỊNH 5 TÁC NHÂN TRÊN HỆ THỐNG (ACTORS)
 
-> **Lưu ý về Ban Chủ nhiệm Khoa (BCN Khoa):** Theo quy trình vận hành tinh gọn thực tế tại Khoa CNTT - DLU, BCN Khoa **không sử dụng tài khoản riêng trên hệ thống** để duyệt từng đề tài. Việc ký duyệt hành chính của BCN Khoa được thực hiện trên **văn bản giấy ngoài hệ thống** ở 2 mốc (Lần 1: Danh mục đề tài; Lần 2: Quyết định giao đề tài sau Đề cương M03) do Giáo vụ Khoa xuất dữ liệu, in và trình ký.
+> **Lưu ý về Ban Chủ nhiệm Khoa:** BCN Khoa không sử dụng tài khoản riêng trên hệ thống. Việc ký duyệt hành chính thực hiện trên văn bản giấy ngoài hệ thống ở 2 mốc (Danh mục đề tài & Quyết định giao đề tài sau Đề cương M03) từ file xuất của Giáo vụ Khoa.
 
-| STT | Tác nhân (Actor) | Vai trò và trách nhiệm thực tế tại Khoa CNTT - DLU |
+| STT | Tác nhân (Actor) | Vai trò và trách nhiệm trên hệ thống |
 | :---: | :--- | :--- |
-| **1** | **Trợ lý Giáo vụ Khoa (TLGV) / Quản trị hệ thống** | - Thiết lập năm học, học kỳ, đợt làm đồ án (ĐACS, ĐACN, ĐATN) và cấu hình Timeline các mốc deadline.<br>- Import danh sách sinh viên đủ điều kiện làm đồ án theo file Excel từ Phòng Đào tạo/Giáo vụ.<br>- Mở cổng đăng ký các đề tài đã được TTBM duyệt (`APPROVED` $\rightarrow$ `OPEN`); tổng hợp danh mục đề tài (Lần 1) và danh sách đề cương M03 đã duyệt (Lần 2) để xuất file, in trình BCN Khoa ký văn bản giấy ngoài hệ thống.<br>- Quản lý phân công GVPB toàn khoa, thành lập Hội đồng bảo vệ, kho lưu trữ đồ án số hóa, xuất bảng điểm tổng hợp và báo cáo thống kê giáo vụ. |
-| **2** | **Tổ trưởng Bộ môn / Trưởng nhóm chuyên môn (TTBM)** | - Phụ trách 2 tổ chuyên môn: **Kỹ thuật phần mềm** và **Mạng máy tính**.<br>- Rà soát, thẩm định chuyên môn và phê duyệt trực tiếp các đề tài do giảng viên trong bộ môn đề xuất (`PENDING_DEPARTMENT` $\rightarrow$ `APPROVED`).<br>- Tiếp nhận và theo dõi tổng hợp đề cương nghiên cứu M03 từ GVHD thuộc bộ môn.<br>- Đề xuất phân công GVHD (đợt Khoa giao đề tài) và phân công GVPB đúng chuyên môn trước đợt Báo cáo tiến độ lần 2. |
-| **3** | **Giảng viên hướng dẫn (GVHD)** | - Đề xuất danh sách đề tài mới (hoặc sao chép đề tài cũ có tinh chỉnh) theo đúng chuyên ngành.<br>- Xác nhận duyệt nhóm SV đăng ký đề tài (hoặc duyệt đề tài do SV tự đề xuất).<br>- Hướng dẫn, nhận xét và phê duyệt Đề cương chi tiết (Mẫu M03) của SV nộp lên Khoa.<br>- Theo dõi nhật ký tuần, kiểm tra và chấm điểm Báo cáo tiến độ lần 1 (trọng số **20%**).<br>- Phối hợp cùng GVPB kiểm tra, đánh giá và chấm điểm Báo cáo tiến độ lần 2 (trọng số **30%**).<br>- Đọc duyệt bản nộp cuối kỳ, viết Nhận xét của GVHD (**Mẫu M02/M04**), xác nhận cho phép SV ra bảo vệ và chấm điểm Bảo vệ cuối kỳ (trọng số **50%**). |
-| **4** | **Giảng viên phản biện (GVPB) / Thành viên Hội đồng** | - Nhận danh sách đề tài được phân công phản biện từ trước đợt Báo cáo tiến độ lần 2 (cùng chuyên môn CNPM hoặc MMT, khác GVHD).<br>- Xem đề cương M03, xem sản phẩm tại Tiến độ 2 và cùng GVHD chấm điểm Tiến độ lần 2 (**30%**).<br>- Đọc quyển báo cáo toàn văn và kiểm tra source code hoàn chỉnh ở giai đoạn cuối kỳ; viết Nhận xét của GVPB (**Mẫu M05**), xác nhận đề tài đạt yêu cầu bảo vệ và tham gia chấm điểm Bảo vệ (**50%**). |
-| **5** | **Sinh viên (SV / Nhóm SV 1–3 bạn)** | - Đăng nhập Google SSO `@dlu.edu.vn`, tra cứu danh sách đề tài đã được mở; lập nhóm (1–3 SV) để đăng ký đề tài hoặc gửi đề xuất đề tài mới cho GVHD.<br>- Soạn thảo và nộp trực tuyến bản scan có chữ ký sống Đề cương thực hiện đồ án (**Mẫu M03**) theo mẫu chuẩn của Khoa.<br>- Cập nhật nhật ký tuần (link Git, tiến độ), nộp báo cáo Tiến độ lần 1, Tiến độ lần 2 và Báo cáo cuối kỳ.<br>- Gửi yêu cầu điều chỉnh (đổi tên đề tài, gia hạn, đổi thành viên) khi phát sinh.<br>- Nộp gói lưu trữ số hóa hoàn chỉnh (**SOURCE, DATABASE, THESIS**) sau khi bảo vệ; tra cứu kho đồ án tham khảo. |
+| **1** | **Trợ lý Giáo vụ Khoa (`ADMIN` / `TLGV`)** | Thiết lập học kỳ, đợt đồ án (`ĐACS`/`ĐACN`/`KLTN`) và mốc yêu cầu bài nộp; quản lý tài khoản, giảng viên và ma trận phân quyền RBAC; import Excel sinh viên đủ điều kiện; mở cổng đăng ký đề tài; phân bổ SV chưa có nhóm; quản lý đề cương M03, bài nộp, kho lưu trữ số hóa, báo cáo thống kê và nhật ký hệ thống. |
+| **2** | **Tổ trưởng Bộ môn (`TTBM`)** | Phụ trách chuyên môn 1 trong 2 tổ (`KTPM` hoặc `MMT`); thẩm định đề tài giảng viên đề xuất (`PENDING_DEPARTMENT` → `APPROVED` / `DRAFT` / `REJECTED`), kiểm tra trùng lặp; đề tài do chính TTBM tạo cùng chuyên ngành được tự động phê duyệt khi gửi duyệt. |
+| **3** | **Giáo viên chủ nhiệm (`GVCN`)** | Có đầy đủ quyền của giảng viên, đồng thời được cấp quyền quản lý danh mục đề tài (`/admin/topic-registry`) và hỗ trợ phân bổ đề tài cho sinh viên còn chưa có nhóm (`/admin/allocations`). |
+| **4** | **Giảng viên hướng dẫn (`LECTURER` / `GVHD`)** | Quản lý đề tài theo 3 tab (Đề tài của tôi, Kho đề tài cũ có nhân bản, Đề tài đồng nghiệp có xem bản nháp); duyệt đề xuất đề tài từ sinh viên; quản lý nhóm hướng dẫn; xem và phê duyệt Đề cương M03. |
+| **5** | **Sinh viên (`STUDENT` / Nhóm 1–3 SV)** | Đăng nhập, tra cứu và đăng ký đề tài đúng chuyên ngành; lập nhóm 1–3 bạn qua Join Code; gửi đề xuất đề tài mới cho GVHD; nộp bản scan Đề cương M03; cập nhật sổ tay tiến độ và nộp tài liệu theo các mốc quy định của đợt. |
 
 ---
 
-## 3. CHI TIẾT 23 YÊU CẦU NGHIỆP VỤ (BUSINESS REQUIREMENTS - BR)
+## 3. CHI TIẾT CÁC YÊU CẦU NGHIỆP VỤ (BUSINESS REQUIREMENTS)
 
-### Phân hệ 1: Thiết lập đợt đồ án & Quản lý danh mục
+### Phân hệ 1: Quản trị Học kỳ, Danh mục, Phân quyền & Sinh viên đủ điều kiện
 
-#### BR-01: Quản lý đợt đồ án & Cấu hình Timeline 7 giai đoạn
-- **Tác nhân:** TLGV (Admin).
-- **Mô tả:** Cho phép tạo đợt đồ án theo `Học kỳ` – `Năm học` – `Khóa` – `Loại đồ án` (VD: ĐATN CTK46 HK1 2026-2027, ĐACN CTK47 HK1, ĐACS CTK48 HK2).
-- Cấu hình thời gian đóng/mở tự động cho 7 giai đoạn:
-  1. *Đề xuất & Duyệt đề tài* (GV ra đề, TTBM duyệt, Giáo vụ mở cổng).
-  2. *SV chọn đề tài & Lập nhóm* (Mở cổng đăng ký).
-  3. *Lập & Duyệt Đề cương M03* (Tuần 1 sau khi chốt đề tài).
-  4. *Tiến độ lần 1 (20%)* (Tuần 4–5).
-  5. *Tiến độ lần 2 (30%)* (Tuần 9–10, phân công GVPB trước 1 tuần).
-  6. *Nộp kết quả cuối kỳ & Nhập nhận xét M02/M05* (Tuần 14–15).
-  7. *Bảo vệ Hội đồng (50%) & Nộp gói lưu trữ*.
-- **Đầu ra:** Lịch trình hiển thị trực quan dưới dạng Stepper/Timeline trên Dashboard; hệ thống tự khóa/mở cổng nộp theo hạn.
+#### BR-01: Quản lý Học kỳ, Đợt đồ án & Yêu cầu bài nộp
+- Tạo/kích hoạt duy nhất 1 học kỳ đang diễn ra (hiển thị rút gọn `HKI-2026-2027`).
+- Cấu hình từng Đợt đồ án (`RegistrationRound`) theo cặp `(Học kỳ × Loại đồ án)`, gán khóa áp dụng (`RoundEligibility`), thiết lập cửa sổ đăng ký, hạn nộp đề cương M03 và danh sách mốc tài liệu cần nộp (`SubmissionRequirement`).
 
-#### BR-02: Quản lý danh sách SV đủ điều kiện & Import Excel theo Đợt
-- **Tác nhân:** Trợ lý Giáo vụ Khoa (TLGV) / Quản trị hệ thống (Admin).
-- **Nguồn gốc dữ liệu:** File Excel danh sách sinh viên đủ điều kiện làm đồ án do Phòng Đào tạo (PĐT) thẩm định và chuyển giao cho Văn phòng Khoa sau khi kết thúc đợt đăng ký tín chỉ học phần.
-- **Quy trình Import theo Đợt (Học kỳ × Loại đồ án: ĐACS / ĐACN / KLTN):**
-  - Cho phép Giáo vụ chọn Đợt làm đồ án và upload file `.xlsx` hoặc `.csv`.
-  - Hệ thống tự động nhận diện và đọc các cột: `MSSV` (7 số), `Họ và tên`, `Lớp` (ví dụ `CTK46PM`, `CTK46MMT`), `Email` (tùy chọn, mặc định tự sinh `<MSSV>@dlu.edu.vn`), `Ghi chú` (tùy chọn: "Đủ tín chỉ", "Học vượt", "Trả nợ K45").
-  - **Cơ chế xử lý đồng bộ 2-in-1:**
-    + *Nếu sinh viên chưa có tài khoản:* Hệ thống tự động khởi tạo tài khoản User (Role `STUDENT`) kèm `StudentProfile`:
-      * **Sinh viên Năm 1-2 (lớp dạng `CTK48`, `CTK47`):** Lưu mã lớp, tính cohort, `majorId = null` (chưa phân chuyên ngành, phục vụ làm Đồ án cơ sở ĐACS nền tảng).
-      * **Sinh viên Năm 3-4 (lớp có hậu tố `CTK46PM`, `CTK46MMT`):** Tự động map sang Chuyên ngành CNPM hoặc MMT tương ứng (phục vụ lọc đề tài ĐACN và KLTN).
-    + *Nếu sinh viên đã có tài khoản:* Hệ thống tự động liên kết và kích hoạt cờ "Đủ điều kiện làm đồ án" cho sinh viên trong đợt đó (`RoundStudentEligibility`).
-- **Bộ lọc & Quản lý danh sách cho Giáo vụ:**
-  - Bộ lọc nhanh theo **Lớp** sinh hoạt (`CTK48` đại trà, `CTK46PM`, `CTK46MMT`...).
-  - Bộ lọc theo **Loại đồ án** (Cơ sở / Chuyên ngành / Tốt nghiệp) hoặc Đợt đăng ký.
-  - Tìm kiếm nhanh theo MSSV, Họ tên.
-  - Hiển thị trực quan tình trạng: *Đã có đề tài*, *Chưa có đề tài*, *Đang trong nhóm*.
-  - Hỗ trợ xuất file Excel (Export) phục vụ đối soát và báo cáo.
-- **Thông báo & Trải nghiệm phía Sinh viên:**
-  - Tự động phát thông báo in-app (chuông) và gửi email kích hoạt cho sinh viên có tên trong danh sách.
-  - **Banner Dashboard sinh viên:**
-    + *Sinh viên đủ điều kiện:* Hiển thị banner màu xanh nổi bật chúc mừng, thông báo thời hạn chọn đề tài & nộp đề cương M03 kèm nút tắt điều hướng nhanh.
-    + *Sinh viên không đủ điều kiện:* Hiển thị cảnh báo rõ ràng: *"Tài khoản của bạn chưa nằm trong danh sách đủ điều kiện làm đồ án của học kỳ này. Vui lòng liên hệ Giáo vụ Khoa nếu có thắc mắc."* và chặn hoàn toàn thao tác đăng ký đề tài/tạo nhóm.
-- **Cấu hình Định mức GV & Giới hạn nhóm:**
-  - Cấu hình số lượng SV trên 1 đề tài: **từ 1 đến 3 sinh viên** (theo quy định Khoa CNTT).
-  - Cấu hình định mức tải hướng dẫn tối đa của mỗi GV trong một học kỳ (hạn mức quota).
-- **Đầu ra:** Danh sách sinh viên chính thức đủ điều kiện theo từng đợt; bộ lọc và công cụ import Excel tối ưu; luồng kiểm soát quyền đăng ký chuẩn xác.
+#### BR-02: Phân quyền Vai trò & Quyền tùy biến (RBAC Matrix)
+- Quản trị viên quản lý danh sách giảng viên theo chuyên ngành (`KTPM`/`MMT`), phân vai trò kiêm nhiệm (`GVHD`, `TTBM`, `GVCN`).
+- Cấu hình chi tiết quyền hạn theo vai trò (`RolePermission`) và ghi đè quyền riêng lẻ theo từng cá nhân (`UserPermission`) ngay tại màn hình `/admin/lecturers`.
+
+#### BR-03: Import & Quản lý Danh sách Sinh viên đủ điều kiện
+- Giáo vụ chọn Đợt đồ án, tải mẫu và import file Excel/CSV từ Phòng Đào tạo.
+- Tự động tách khóa, nhận diện chuyên ngành (`KTPM`/`MMT`) theo hậu tố mã lớp, tự động tạo tài khoản sinh viên mới và kích hoạt `RoundStudentEligibility`.
+- Hỗ trợ thêm SV thủ công, xuất Excel đối soát và tìm kiếm qua **Bộ lọc gộp nâng cao (`AdvancedFilterPopover`)** kèm **Active Filter Chips**.
 
 ---
 
-### Phân hệ 2: Đề xuất, Xét duyệt & Đăng ký đề tài
+### Phân hệ 2: Quản lý Ngân hàng Đề tài, Thẩm định & Đăng ký
 
-#### BR-03: Giảng viên đề xuất đề tài
-- **Tác nhân:** GVHD.
-- **Mô tả:** GV nhập thông tin đề tài:
-  - Tên đề tài (Tiếng Việt & Tiếng Anh).
-  - Loại đồ án (ĐACS, ĐACN, KLTN).
-  - Chuyên ngành: **Kỹ thuật phần mềm** hoặc **Mạng máy tính**.
-  - Mục tiêu đề tài, Nội dung yêu cầu, Công nghệ/Công cụ dự kiến.
-  - Số lượng sinh viên tối đa: từ 1 đến 3 SV.
-  - Hỗ trợ kế thừa/sao chép đề tài từ các học kỳ trước và tinh chỉnh nội dung.
-- **Đầu ra:** Đề tài ở trạng thái `CHỜ_TỔ_TRƯỞNG_DUYỆT` (PENDING_DEPARTMENT).
+#### BR-04: Quản lý Đề tài Giảng viên (Kiến trúc 3 Tab) & Nhân bản đề tài cũ
+- **Tab 1 — Đề tài của tôi:** Soạn mới (tên, mô tả, mục tiêu, kết quả dự kiến, công nghệ, loại đồ án, chuyên ngành `KTPM`/`MMT`, số SV tối đa 1–3), lưu nháp (`DRAFT`), gửi duyệt từng đề tài hoặc gửi duyệt hàng loạt (`POST /topics/submit-drafts`), sửa/xóa/thu hồi bản nháp.
+- **Tab 2 — Kho đề tài cũ:** Tra cứu đề tài các học kỳ trước (`excludeSemesterId`), mặc định lọc theo chính mình nhưng cho phép mở rộng sang *"Tất cả giảng viên"* hoặc một đồng nghiệp bất kỳ. Tích hợp chức năng **Nhân bản sang kỳ này (`POST /topics/:id/clone`)** giúp sao chép bất kỳ đề tài cũ nào thành bản nháp mới trong học kỳ hiện tại và tinh chỉnh tiêu đề/loại đồ án/chuyên ngành/số lượng SV.
+- **Tab 3 — Đề tài đồng nghiệp:** Tra cứu đề tài học kỳ hiện tại của các giảng viên khác (`excludeLecturerId`), **hiển thị cả các đề tài đang ở trạng thái `Bản nháp` (`includeDrafts=true`)** để hạn chế trùng lặp ý tưởng ngay từ giai đoạn ra đề. Chế độ chỉ đọc.
 
-#### BR-04: Kiểm tra trùng lặp đề tài tự động (Similarity Check)
-- **Tác nhân:** Hệ thống, TTBM, TLGV.
-- **Mô tả:** Khi GV hoặc SV tạo đề tài mới, hệ thống tự động đối chiếu độ tương đồng văn bản (Cosine similarity qua TF-IDF hoặc Embeddings) với kho đề tài của Khoa trong **3–5 khóa gần nhất**.
-- **Đầu ra:** Cảnh báo tỷ lệ % tương đồng kèm danh sách các đề tài cũ có nguy cơ bị trùng lặp tên/nội dung để TTBM cân nhắc khi thẩm định đề tài.
+#### BR-05: Kiểm tra tương đồng đề tài & Thẩm định cấp Bộ môn (TTBM)
+- Hệ thống đối chiếu độ tương đồng nội dung đề tài (`GET /topics/:id/similarity`) giúp TTBM phát hiện đề tài trùng lặp.
+- TTBM thẩm định các đề tài thuộc chuyên ngành mình phụ trách (`KTPM` hoặc `MMT`): Chấp thuận (`APPROVED`), Yêu cầu chỉnh sửa (`DRAFT` kèm góp ý), hoặc Từ chối (`REJECTED`).
+- Giáo vụ / GVCN quản lý danh mục đề tài đã duyệt tại `/admin/topic-registry`, xuất danh sách trình ký giấy (Lần 1) và mở đăng ký lẻ hoặc đồng loạt (`APPROVED` → `OPEN`).
 
-#### BR-05: Thẩm định danh sách đề tài cấp Bộ môn & Mở cổng đăng ký
-- **Tác nhân:** TTBM, TLGV.
-- **Quy trình tinh gọn:**
-  1. **Thẩm định chuyên môn (TTBM):** TTBM rà soát tính chuyên môn, khối lượng và độ trùng lặp của đề tài thuộc chuyên ngành mình phụ trách (`CNPM` hoặc `MMT`). TTBM có quyền: Chấp thuận (`APPROVE` $\rightarrow$ chuyển thẳng sang trạng thái `APPROVED`), Yêu cầu GV chỉnh sửa (`REQUEST_REVISION` $\rightarrow$ `DRAFT`), hoặc Từ chối (`REJECT`).
-  2. **Tổng hợp & Mở cổng (TLGV):** Giáo vụ tổng hợp/in danh mục đề tài đã duyệt trình BCN Khoa ký duyệt giấy (Lần 1 - ngoài hệ thống) và bấm mở đăng ký trên hệ thống (`APPROVED` $\rightarrow$ `OPEN`).
-- **Đầu ra:** Đề tài chuyển sang trạng thái `OPEN` và công bố cho SV.
+#### BR-06: Sinh viên đăng ký đề tài, Lập nhóm (1–3 SV) & Đề xuất đề tài
+- **Đăng ký đề tài có sẵn:** Sinh viên đủ điều kiện chọn đề tài đang mở đúng chuyên ngành, trở thành trưởng nhóm và chia sẻ Join Code / link `/join/[code]` mời thành viên (tối đa 3 SV/nhóm, mỗi SV tối đa 1 nhóm/đợt).
+- **Sinh viên tự đề xuất đề tài:** Sinh viên tạo đề xuất kèm mô tả & chọn GVHD nguyện vọng (`/student/proposals`). GVHD xem tại `/lecturer/proposals` để nhận hướng dẫn, trao đổi nhận xét hoặc từ chối.
 
-#### BR-06: Sinh viên đăng ký đề tài & Lập nhóm (1–3 SV)
-- **Tác nhân:** Sinh viên.
-- **Mô tả hỗ trợ 2 hình thức:**
-  1. *Chọn đề tài có sẵn:* SV1 chọn đề tài từ danh sách đã duyệt; nếu làm nhóm 2–3 người thì gửi lời mời qua mã SV / link mời để các thành viên còn lại đăng nhập xác nhận.
-  2. *SV tự đề xuất đề tài:* Nhóm SV soạn thông tin đề tài nguyện vọng và chọn GVHD mong muốn để gửi yêu cầu.
-- **Quy tắc cứng (Business Rule):**
-  - Mỗi đề tài cho phép từ 1 đến 3 sinh viên.
-  - Mỗi sinh viên chỉ được tham gia duy nhất 1 nhóm trong một học kỳ.
-- **Đầu ra:** Bản ghi đăng ký ở trạng thái `CHỜ_GVHD_XÁC_NHẬN`.
-
-#### BR-07: Phân công GVHD & Giao đề tài
-- **Tác nhân:** GVHD, TTBM, TLGV.
-- **Mô tả:**
-  - *Với đề tài SV đăng ký / tự đề xuất:* GVHD xem hồ sơ nhóm SV và bấm Chấp nhận hướng dẫn (hoặc từ chối kèm phản hồi).
-  - *Với hình thức Khoa/Bộ môn giao đề tài:* Đối với sinh viên chưa chọn được đề tài khi cổng đóng, TTBM và TLGV thực hiện gán đề tài còn trống và phân công GVHD trực tiếp trên hệ thống.
-- **Đầu ra:** Danh sách phân công tạm thời (SV – Đề tài – GVHD) chuyển sang giai đoạn lập Đề cương M03.
+#### BR-07: Phân bổ đề tài cho Sinh viên chưa có nhóm
+- Sau khi hết hạn đăng ký, Giáo vụ hoặc GVCN vào `/admin/allocations` để xem danh sách sinh viên chưa có nhóm và xếp vào các đề tài còn chỗ trống, sau đó chốt đợt.
 
 ---
 
-### Phân hệ 3: Lập, Xét duyệt Đề cương (Mẫu M03) & Công bố chính thức
+### Phân hệ 3: Đề cương M03, Tiến độ, Bài nộp & Lưu trữ số hóa
 
-#### BR-08: Lập và nộp Đề cương chi tiết (Mẫu M03)
-- **Tác nhân:** Sinh viên (đại diện nhóm).
-- **Mô tả quy trình thực tế:**
-  1. *Tải biểu mẫu:* Nhóm sinh viên tải file biểu mẫu chuẩn **Đề cương thực hiện đồ án (Mẫu M03)** định dạng `.docx` do Khoa CNTT - DLU ban hành trực tiếp từ hệ thống.
-  2. *Soạn thảo & Xin chữ ký sống:* Sinh viên điền thông tin đề tài và 6 mục chuyên môn (Mục tiêu, Phạm vi, Công cụ, Kết quả dự kiến, Kế hoạch tuần, Tài liệu tham khảo). Nhóm in văn bản ra giấy và gặp Giảng viên hướng dẫn (GVHD) để trao đổi chuyên môn, xin chữ ký sống xác nhận trực tiếp của GVHD trên bản in.
-  3. *Nộp bản scan lên hệ thống:* Nhóm scan hoặc chụp rõ nét bản đề cương đã có chữ ký GVHD thành file PDF (hoặc DOCX/ảnh scan) và upload nộp lên hệ thống trước hạn chót.
-  4. *Tính năng nâng cao (Lộ trình Roadmap - Triển khai sau):* Hệ thống tự động điền trước thông tin đề tài/nhóm vào file Word (Auto-fill Template M03) khi sinh viên bấm tải về.
-- **Đầu ra:** Bản ghi Đề cương M03 ở trạng thái `SUBMITTED` (Chờ GVHD duyệt trên hệ thống) kèm file đính kèm.
+#### BR-08: Nộp & Phê duyệt Đề cương chi tiết (Mẫu M03)
+- Sinh viên tải biểu mẫu chuẩn M03, xin chữ ký sống GVHD trên bản giấy và upload bản scan PDF tại `/student/groups`.
+- GVHD kiểm tra trực tiếp file PDF tại `/lecturer/outlines` để **Phê duyệt** (đề tài chuyển sang `IN_PROGRESS` và khóa nộp lại) hoặc **Yêu cầu chỉnh sửa** kèm nhận xét.
+- Giáo vụ theo dõi toàn khoa tại `/admin/outlines` và xuất danh sách trình ký Quyết định giao đề tài (Lần 2).
 
-#### BR-09: GVHD duyệt đề cương và chuyển tiếp lên Giáo vụ / Bộ môn
-- **Tác nhân:** GVHD.
-- **Mô tả quy trình thực tế:**
-  1. GVHD nhận thông báo có bài nộp M03 từ nhóm sinh viên hướng dẫn, vào hệ thống xem trước file scan đề cương và đối chiếu chữ ký xác nhận cùng nội dung.
-  2. **Trường hợp chưa đạt:** (Chữ ký mờ, thiếu chữ ký, hoặc nội dung cần chỉnh sửa thêm), GVHD bấm **"Yêu cầu chỉnh sửa / Nộp lại"** kèm nhận xét góp ý cụ thể. Nhóm sinh viên nhận thông báo và upload bản thay thế.
-  3. **Trường hợp đạt:** GVHD bấm **"Phê duyệt Đề cương"**. Bản ghi chuyển sang trạng thái `APPROVED_BY_LECTURER` (hoặc `APPROVED`).
-  4. *Tính năng nâng cao (Lộ trình Roadmap - Triển khai sau):* Cơ chế Ký số điện tử nội bộ (E-Signature Stamp) kèm mã QR xác thực để đóng dấu mộc điện tử tự động trực tiếp trên web thay cho việc in scan giấy.
-- **Đầu ra:** Đề cương ở trạng thái `APPROVED_BY_LECTURER`. Hệ thống tự động tổng hợp về danh sách quản lý của TLGV và TTBM.
+#### BR-09: Theo dõi Tiến độ thực hiện & Quản lý Bài nộp
+- Sinh viên ghi nhận nhật ký tiến độ công việc hàng tuần (`/student/progress`) và nộp các mốc tài liệu theo cấu hình đợt (`/student/submissions`).
+- GVHD theo dõi danh sách nhóm hướng dẫn và tiến độ tại `/lecturer/groups`.
+- Giáo vụ theo dõi tình hình nộp tài liệu toàn khoa tại `/admin/submissions`.
 
-#### BR-10: Trình ký & Công bố danh sách chính thức
-- **Tác nhân:** TLGV, TTBM.
-- **Mô tả:**
-  - TLGV và TTBM theo dõi danh sách tổng hợp M03: thống kê các nhóm đã được GVHD phê duyệt, cảnh báo các nhóm chưa nộp hoặc chưa hoàn tất thủ tục đề cương.
-  - TLGV xuất Tờ trình danh sách chính thức (Tên đề tài – GVHD – Tên SV – MSSV) để in ra văn bản giấy và trình BCN Khoa / Lãnh đạo ký ban hành Quyết định giao đề tài chính thức ngoài hệ thống (Lần 2).
-  - Hệ thống chuyển trạng thái đề tài sang `IN_PROGRESS`, kích hoạt không gian làm việc theo dõi tiến độ tuần (BR-11) và đợt Báo cáo Tiến độ 1 (BR-12).
-- **Đầu ra:** Quyết định giao đề tài chính thức; kích hoạt giai đoạn thực hiện đồ án.
+#### BR-10: Kho Lưu trữ số hóa & Thống kê Báo cáo
+- Quản lý gói lưu trữ số hóa các học kỳ trước tại `/admin/archives` (`SOURCE`, `DATABASE`, `THESIS`), kiểm duyệt xác nhận lưu trữ và xuất Excel.
+- Dashboard thống kê và xuất báo cáo tổng hợp tại `/admin/reports`.
+- Theo dõi nhật ký kiểm toán các thao tác hệ thống tại `/admin/audit`.
 
 ---
 
-### Phân hệ 4: Theo dõi tiến độ thực hiện & Quản lý thay đổi
+### Phân hệ 4: Xác thực & Thông báo
 
-#### BR-11: Sổ tay tiến độ nội bộ (Internal Progress / Sprint Tracking)
-- **Tác nhân:** Sinh viên, Giảng viên hướng dẫn (GVHD).
-- **Mô tả quy trình thực tế:**
-  - **Khoa không bắt buộc sinh viên nộp báo cáo hành chính hàng tuần lên Khoa.** Hình thức và tần suất báo cáo định kỳ (hàng tuần hoặc hàng tháng) là **thỏa thuận nội bộ giữa GVHD và nhóm sinh viên** (họp Meet/Zoom, trao đổi Zalo, hoặc gặp trực tiếp để kiểm tra source code và sửa báo cáo).
-  - Hệ thống cung cấp **Sổ tay tiến độ nội bộ (Feed/Timeline)**:
-    + Sinh viên chủ động tạo bài đăng cập nhật tiến độ theo tuần/sprint: Tiêu đề công việc, % tiến độ ước lượng (0–100%), tóm tắt các việc đã hoàn thành, link kho mã nguồn (Git commit/PR/repo), khó khăn vướng mắc.
-    + GVHD truy cập timeline của nhóm: Bấm **"Đã xem / Xác nhận"** (để SV biết thầy cô đã nắm tiến độ), để lại bình luận góp ý chuyên môn trực tiếp.
-- **Đầu ra:** Dòng thời gian làm việc minh bạch (Internal Activity Log) làm minh chứng cho quá trình làm việc thực chất của SV khi đánh giá thái độ và bảo vệ Hội đồng.
+#### BR-11: Xác thực & Quản lý Tài khoản
+- Hỗ trợ đăng nhập Google OAuth2 (`@dlu.edu.vn`) và tài khoản mật khẩu nội bộ, cấp phát JWT Access/Refresh Token an toàn, đổi mật khẩu và khôi phục mật khẩu.
 
-#### BR-12: Kiểm tra tiến độ lần 1 của Khoa (Bắt buộc - Đánh giá 20%)
-- **Tác nhân:** Sinh viên, GVHD.
-- **Thời điểm:** Khoảng tuần thứ 5 – 6 từ khi bắt đầu đợt đồ án (theo lịch ấn định của Khoa).
-- **Mô tả quy trình:**
-  - Nhóm sinh viên nộp hồ sơ đợt 1 lên hệ thống: Báo cáo phân tích thiết kế, sơ đồ cơ sở dữ liệu ban đầu, giao diện mẫu thô (wireframe/UI prototype) và link repo Git.
-  - **GVHD kiểm tra trực tiếp** và nhập kết quả đánh giá:
-    + Nhập nhận xét góp ý chuyên môn.
-    + Nhập **Điểm Tiến độ lần 1 (trọng số 20%)** theo thang điểm 10.
-  - Kết quả tự động chuyển về danh sách theo dõi của Khoa và thông báo cho sinh viên.
-- **Đầu ra:** Cột điểm Tiến độ 1 (20%) được ghi nhận vào bảng điểm tổng kết; nhóm SV nhận góp ý chỉnh sửa cho giai đoạn 2.
-
-#### BR-13: Phân công Giảng viên phản biện (GVPB)
-- **Tác nhân:** Tổ trưởng Bộ môn (TTBM), Trợ lý Giáo vụ (TLGV / Admin).
-- **Thời điểm:** Thực hiện trước đợt Báo cáo tiến độ lần 2 hoặc trước ngày bảo vệ chính thức khoảng 2–3 tuần.
-- **3 Nguyên tắc phân công bắt buộc tuân thủ (Business Rules):**
-  1. ❌ **Không được vừa hướng dẫn vừa phản biện:** GVHD của nhóm đồ án đó **tuyệt đối không được** làm GVPB cho chính nhóm đó. Hệ thống tự động loại trừ tên GVHD ra khỏi danh sách ứng viên chọn GVPB cho nhóm.
-  2. 🎯 **Đúng chuyên môn / Tổ Bộ môn:** Sinh viên/Đề tài thuộc Chuyên ngành nào (ví dụ: Kỹ thuật phần mềm - KTPM/CNPM) thì GVPB bắt buộc phải là giảng viên thuộc Bộ môn đó để đảm bảo tính chuyên môn khi chấm bài.
-  3. ⚖️ **Cân bằng tải công việc:** Mỗi giảng viên thường chỉ nhận phản biện một số lượng đồ án tối đa (ví dụ: 5–7 đề tài/học kỳ). Hệ thống hiển thị chỉ số tải công việc `(HD: x | PB: y)` ngay cạnh tên giảng viên.
-- **Cơ chế phân công trên hệ thống:**
-  - *Chế độ 1 (Thủ công):* TTBM duyệt danh sách đề tài, chọn GVPB qua thẻ dropdown select (đã lọc đúng bộ môn, trừ GVHD, kèm chỉ số tải).
-  - *Chế độ 2 (Phân công tự động - Bán tự động):* Hệ thống chạy thuật toán tối ưu tải trọng (Greedy Min-load Balancer) tự động ghép cặp đề tài với giảng viên có số lượng phản biện ít nhất trong bộ môn, hiển thị bản xem trước (Preview) để TTBM rà soát trước khi lưu chính thức.
-- **Đầu ra:** Bản ghi phân công `TopicAssignment` được kích hoạt; hệ thống gửi thông báo in-app `REVIEWER_ASSIGNED` đến GVPB; mở quyền truy cập menu "Đề tài phản biện" (`/lecturer/reviews`) để GVPB đọc đề cương M03, tải các bản thảo báo cáo và nhập phiếu nhận xét phản biện M05.
-
-#### BR-14: Kiểm tra tiến độ lần 2 tập trung của Khoa (Bắt buộc - Hội đồng Bộ môn đánh giá 30%)
-- **Tác nhân:** Sinh viên, Hội đồng Bộ môn (gồm GVHD và GVPB).
-- **Thời điểm:** Khoảng tuần thứ 9 – 10 (cách ngày bảo vệ chính thức 3–4 tuần).
-- **Mô tả quy trình:**
-  - Đây là đợt kiểm tra **cực kỳ quan trọng** mang tính quyết định: Sinh viên báo cáo tập trung trước Hội đồng Bộ môn (gồm GVHD và GVPB, sinh viên làm đồ án ở xa trường có thể báo cáo trực tuyến).
-  - Nhóm sinh viên nộp sản phẩm tiến độ lần 2 lên hệ thống: Mã nguồn chạy được các chức năng cốt lõi (demo), cơ sở dữ liệu hoàn chỉnh, dự thảo quyển báo cáo đồ án.
-  - **GVHD và GVPB cùng đánh giá độc lập:**
-    + Nhập nhận xét chuyên môn.
-    + Nhập điểm Tiến độ 2 (thang 10, **trọng số 30%**). Điểm đợt 2 là trung bình cộng giữa điểm GVHD và GVPB.
-    + **Điều kiện tiên quyết sống còn (Pass/Fail Gate):** Hội đồng thẩm định xem sản phẩm chạy có đạt **tối thiểu 50% khối lượng công việc** hay không.
-    + *Nếu đạt:* Đồ án được phép hoàn thiện quyển báo cáo để nộp cuối kỳ và ra Hội đồng bảo vệ chính thức.
-    + *Nếu không đạt (< 50% khối lượng):* Hệ thống kích hoạt trạng thái **"Cảnh báo đình chỉ bảo vệ"**, ghi nhận kết quả báo cáo về Giáo vụ Khoa để xử lý không cho phép bảo vệ chính thức trong học kỳ này.
-- **Đầu ra:** Cột điểm Tiến độ 2 (30%), biên bản góp ý chỉnh sửa cuối kỳ, và trạng thái cho phép bảo vệ.
-
-#### BR-15: Quản lý thay đổi trong quá trình thực hiện đề tài
-- **Tác nhân:** Sinh viên, GVHD, TLGV.
-- **Mô tả:** Xử lý 3 loại yêu cầu phát sinh:
-  1. *Đổi tên đề tài:* Do quá trình thực hiện thu hẹp hoặc mở rộng phạm vi theo góp ý ở TĐ1/TĐ2.
-  2. *Thay đổi thành viên nhóm:* Rút thành viên, tách nhóm do không phối hợp được.
-  3. *Xin gia hạn thời gian hoặc Xin hủy đề tài.*
-- **Quy trình:** Nhóm SV làm đơn trực tuyến ➔ GVHD xác nhận ➔ TLGV phê duyệt.
-- **Đầu ra:** Lưu vết thay đổi (`topic_change_requests` & `audit_logs`) và tự động cập nhật tên mới vào biên bản bảo vệ.
+#### BR-12: Thông báo in-app
+- Gửi thông báo tự động cho các sự kiện nghiệp vụ (duyệt/góp ý đề tài, đề xuất từ sinh viên, nộp/duyệt đề cương M03, đủ điều kiện đợt đồ án).
 
 ---
 
-### Phân hệ 5: Nộp báo cáo cuối kỳ & Đánh giá kết quả (Bảo vệ)
+## 4. YÊU CẦU PHI CHỨC NĂNG (NFR)
 
-#### BR-16: Nộp kết quả đồ án cuối kỳ trước bảo vệ
-- **Tác nhân:** Sinh viên.
-- **Mô tả:** Trước tuần bảo vệ theo lịch của Khoa, nhóm SV upload:
-  - Bản quyển báo cáo hoàn chỉnh (`.pdf`, `.docx`).
-  - Slide thuyết trình (`.pptx`, `.pdf`).
-  - Link kho lưu trữ mã nguồn (GitHub/GitLab) và link file sao lưu cơ sở dữ liệu.
-- **Đầu ra:** Hồ sơ bảo vệ hoàn tất; thông báo tự động gửi đến GVHD và GVPB để đọc duyệt.
-
-#### BR-17: Nhập nhận xét GVHD (Mẫu M02/M04) & Nhận xét GVPB (Mẫu M05)
-- **Tác nhân:** GVHD, GVPB.
-- **Mô tả:** Hai giảng viên đọc quyển, kiểm tra code và điền form nhận xét trực tuyến theo đúng biểu mẫu hành chính của Khoa CNTT - DLU:
-  - **Mẫu M02:** Trang nhận xét của GVHD dành cho Đồ án cơ sở & Đồ án chuyên ngành.
-  - **Mẫu M04:** Trang nhận xét của GVHD dành cho Khóa luận tốt nghiệp (KLTN).
-  - **Mẫu M05:** Trang nhận xét của Giảng viên phản biện (GVPB).
-  - Cả GVHD và GVPB đều phải đưa ra kết luận: **"Đề tài đạt yêu cầu và ĐƯỢC PHÉP BẢO VỆ"** hoặc **"KHÔNG ĐƯỢC PHÉP BẢO VỆ"**.
-- **Đầu ra:** Tự động xuất file PDF trang nhận xét M02/M04 và M05 chuẩn format DLU; tự động chốt danh sách SV đủ điều kiện ra Hội đồng.
-
-#### BR-18: Lập Hội đồng, Xếp lịch bảo vệ & Chấm điểm cuối kỳ (50%)
-- **Tác nhân:** TLGV (Admin), GVHD, GVPB, Thành viên Hội đồng (Chủ tịch, Thư ký, Ủy viên).
-- **Mô tả:**
-  - *Với ĐACS / ĐACN:* Đã hoàn tất đánh giá kết thúc môn tại Tiến độ 2 qua Tiểu ban gồm GVHD và GVPB (Sub-council).
-  - *Với KLTN:* Thành lập Hội đồng bảo vệ gồm 3–5 thành viên (Chủ tịch, Thư ký, GVPB, Ủy viên); xếp phòng thi, ngày giờ, ca bảo vệ (`timeSlot`) và thứ tự bảo vệ.
-  - **Chấm điểm thầm độc lập (Independent Scoring):** Từng thành viên Hội đồng nhập điểm đánh giá độc lập (thang 10, bước nhảy 0.1) trên giao diện riêng. Hệ thống bảo mật điểm số giữa các thành viên.
-  - **Điểm Hội đồng (50%):** Tự động tính điểm trung bình cộng của các thành viên Hội đồng đã chấm:
-    $$\text{Điểm HĐ} = \frac{\sum \text{Điểm thành viên}}{N}$$
-  - **Công thức tính điểm tổng kết chính thức của DLU:**
-    $$\text{Điểm TK} = (20\% \times \text{Điểm TĐ1}) + (30\% \times \text{Điểm TĐ2}) + (50\% \times \text{Điểm HĐ})$$
-  - Hệ thống tự động quy đổi điểm chữ (A, B+, B, C+, C, D+, D, F) và đồng bộ vào bảng điểm `student_grades`.
-  - **📌 Tính năng nâng cao (Roadmap):** Bàn làm việc Thư ký (Secretary Console) ghi chép biên bản câu hỏi chất vấn & yêu cầu chỉnh sửa của Hội đồng, và xuất file PDF Biên bản bảo vệ chuẩn DLU.
-- **Đầu ra:** Bảng điểm tổng hợp chi tiết của từng sinh viên; bảng điểm tổng kết toàn khóa được chốt khóa an toàn.
-
----
-
-### Phân hệ 6: Lưu trữ, Tra cứu & Thống kê báo cáo
-
-#### BR-19: Nộp gói lưu trữ số hóa sau bảo vệ (SOURCE, DATABASE, THESIS)
-- **Tác nhân:** Sinh viên, GVHD, TLGV.
-- **Mô tả:** Sau khi bảo vệ và chỉnh sửa báo cáo theo góp ý của Hội đồng, nhóm SV phải nộp gói lưu trữ số hóa đúng **3 thành phần chuẩn của Khoa CNTT - DLU**:
-  1. **Thư mục SOURCE:** Toàn bộ mã nguồn hoàn chỉnh, cấu hình và dữ liệu kiểm thử.
-  2. **Thư mục DATABASE:** File script tạo bảng (`.sql`) hoặc file sao lưu CSDL backup (`.bak`, `.dump`).
-  3. **Thư mục THESIS:** File báo cáo toàn văn định dạng PDF (đã lồng trang Đề cương M03 và các trang nhận xét M02/M04, M05 đã ký) + File Hướng dẫn cài đặt/sử dụng + Thông tin liên hệ nhóm tác giả.
-- **Quy tắc:** Hệ thống tự động kiểm tra đủ 3 thành phần; GVHD và TLGV bấm xác nhận thì sinh viên mới được hoàn tất thủ tục kết thúc học phần.
-- **Đầu ra:** Hồ sơ đề tài được đóng băng (`ARCHIVED`) và đưa vào Kho lưu trữ số.
-
-#### BR-20: Tra cứu kho đồ án & Tài liệu tham khảo
-- **Tác nhân:** Sinh viên, Giảng viên, TLGV.
-- **Mô tả:** Cung cấp bộ lọc tra cứu đồ án các khóa trước phục vụ học tập và nghiên cứu:
-  - Lọc theo: Khóa học (`CTK44`, `CTK45`, `CTK46`...), Loại đồ án (`ĐACS`, `ĐACN`, `KLTN`), Chuyên ngành (`CNPM`, `Mạng máy tính`), Giảng viên hướng dẫn, Năm thực hiện, Từ khóa công nghệ.
-  - **Phân quyền truy cập tài liệu:**
-    + Sinh viên các khóa sau: Được đọc phần Tóm tắt (Abstract), Mục tiêu và Chương mở đầu.
-    + Giảng viên và Giáo vụ: Được phép tải toàn bộ quyển báo cáo, mã nguồn và CSDL phục vụ đối chiếu và kiểm tra.
-- **Đầu ra:** Giao diện Thư viện số đồ án Khoa CNTT - DLU.
-
-#### BR-21: Thống kê & Xuất báo cáo giáo vụ
-- **Tác nhân:** TLGV, TTBM.
-- **Mô tả:** Cung cấp dashboard trực quan và xuất file Excel/PDF các báo cáo theo chuẩn giáo vụ:
-  - Báo cáo định mức giờ hướng dẫn & phản biện của từng giảng viên trong kỳ.
-  - Thống kê tình hình nộp Đề cương M03, Tiến độ 1, Tiến độ 2 (danh sách SV nộp trễ, SV bị dừng đề tài).
-  - Phổ điểm tổng kết (tỷ lệ điểm A, B, C, D, F) và tỷ lệ bảo vệ thành công.
-  - Thống kê xu hướng công nghệ (AI, Web, Mobile, IoT, Cloud...) qua từng năm.
-- **Đầu ra:** Biểu đồ Dashboard và các file Excel xuất mẫu giáo vụ Khoa CNTT - DLU.
-
----
-
-### Phân hệ 7: Xác thực & Tiện ích hệ thống
-
-#### BR-22: Xác thực đăng nhập một chạm (Google Workspace DLU SSO)
-- **Tác nhân:** Toàn bộ Actor.
-- **Mô tả luồng xử lý:**
-  1. Sinh viên / Giảng viên bấm nút **"Đăng nhập bằng tài khoản Google DLU"**.
-  2. Hệ thống nhận thông tin người dùng từ Google OAuth2 (Email, Họ tên, Avatar).
-  3. **Kiểm tra và phân quyền tự động (Tách Role theo đuôi Domain):**
-     - Email sinh viên có 7 số MSSV dạng 2212345@dlu.edu.vn ➔ Định tuyến vào bảng **Sinh viên** (student_profiles).
-     - Đuôi email `@dlu.edu.vn` (VD: `linhttp@dlu.edu.vn`) ➔ Định tuyến vào bảng **Giảng viên** (`lecturer_profiles`) và nạp các quyền chức vụ kiêm nhiệm (TTBM, TLGV).
-     - Các domain email khác (Gmail thường `@gmail.com`, v.v.) bị từ chối truy cập ngay lập tức.
-  4. **Kiểm tra hợp lệ & Cấp Token:**
-     - Nếu email đã tồn tại trong hệ thống (do Giáo vụ Khoa đã import trước bằng file Excel hoặc danh sách cán bộ giảng viên đã khai báo) ➔ Hệ thống tạo cặp mã JWT (Access Token & Refresh Token) và hoàn tất đăng nhập.
-     - Nếu email chưa có trong danh sách đủ điều kiện ➔ Cảnh báo: *"Tài khoản chưa nằm trong danh sách được phép làm đồ án của học kỳ này"*.
-  - **Hỗ trợ Chế độ Demo / Kiểm thử (Dev Mode Role Switcher):** Cung cấp bộ tài khoản test theo từng vai trò hệ thống (Giáo vụ, TTBM, GVHD/GVPB, Sinh viên) ở môi trường kiểm thử để thuận tiện đánh giá quy trình.
-- **Đầu ra:** Phiên đăng nhập an toàn, loại bỏ hoàn toàn việc tạo tài khoản và quên mật khẩu thủ công.
-
-#### BR-23: Thông báo & Nhắc hạn tự động (Notification & Email)
-- **Tác nhân:** Hệ thống, Toàn bộ Actor.
-- **Mô tả:**
-  - Thông báo in-app (chuông thông báo) theo thời gian thực (Socket.io).
-  - Gửi email nhắc nhở tự động theo Timeline:
-    + Nhắc SV trước 3 ngày khi sắp đến hạn nộp Đề cương M03, Tiến độ 1, Tiến độ 2, Báo cáo cuối kỳ.
-    + Thông báo cho GV khi nhóm SV nộp bài cần chấm điểm.
-    + Cảnh báo danh sách đề tài trễ hạn cho TLGV và TTBM.
-- **Đầu ra:** Luồng thông báo tức thời, giảm thiểu tối đa tình trạng trễ hạn.
-
----
-
-## 4. YÊU CẦU PHI CHỨC NĂNG (NON-FUNCTIONAL REQUIREMENTS - NFR)
-
-### 4.1. Hiệu năng (Performance)
-- Thời gian tải trang thông thường dưới 1.5 giây.
-- Thời gian trích xuất file PDF (Mẫu M03, M02, M05) dưới 3 giây.
-- Hệ thống chịu tải đồng thời từ 500 – 1000 người dùng trong giờ cao điểm mở cổng đăng ký đề tài.
-
-### 4.2. Bảo mật & Toàn vẹn dữ liệu (Security & Integrity)
-- Xác thực 2 lớp qua Google OAuth 2.0 `@dlu.edu.vn` + JWT Access/Refresh tokens.
-- Phân quyền theo vai trò (Role-Based Access Control - RBAC) nghiêm ngặt ở cả Frontend và Backend API.
-- Toàn bộ hành vi nhạy cảm (Sửa điểm, Phê duyệt đề tài, Thay đổi thành viên) đều được ghi vết tự động vào bảng `audit_logs`.
-- Điểm số sau mốc chốt điểm (`grade_submission_deadline`) được đóng băng vĩnh viễn, chỉ Quản trị viên / Giáo vụ Khoa (Admin) mới có quyền mở khóa có ghi log.
-
-### 4.3. Giao diện & Bản sắc DLU (Usability & Branding)
-- Giao diện mang đậm màu sắc nhận diện của **Đại học Đà Lạt**: Tone màu xanh thông (Pine Green / Emerald) kết hợp Slate và Amber.
-- Tiêu đề học thuật trang trọng: **TRƯỜNG ĐẠI HỌC ĐÀ LẠT - KHOA CÔNG NGHỆ THÔNG TIN**.
-- Quy trình hiển thị dưới dạng **Stepper trực quan 7 giai đoạn** trên màn hình Sinh viên, xóa bỏ hoàn toàn cảm giác "form CRUD AI nhạt nhẽo".
-- Đáp ứng hiển thị hoàn hảo trên cả máy tính để bàn, máy tính bảng và điện thoại di động.
+1. **Hiệu năng:** Thời gian phản hồi danh sách có phân trang và bộ lọc gộp dưới 1 giây; tối ưu caching phía client qua React Query và tìm kiếm debounce.
+2. **Bảo mật & Toàn vẹn:** Kiểm soát phân quyền RBAC chặt chẽ tại cả API Guard (`@Roles`, phân quyền theo tổ chuyên môn/sở hữu) và giao diện; lưu vết các hành động quan trọng trong `audit_logs`; chỉ giảng viên/quản trị mới được phép xem bản nháp (`includeDrafts`) của đồng nghiệp.
+3. **Giao diện & Trải nghiệm (UX):** Tuân thủ chuẩn thiết kế *Matte Obsidian & Neutral Stone* (`ui_design_guidelines.md`), độ tương phản cao, cỡ chữ tối thiểu `text-sm`, sử dụng đồng bộ `AdvancedFilterPopover` và hệ thống viết tắt chuẩn (`HKI-2026-2027`, `KLTN`/`ĐACN`/`ĐACS`, `KTPM`/`MMT`).

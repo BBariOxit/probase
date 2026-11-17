@@ -33,7 +33,7 @@ import {
   useTopicTransition,
   useTopics,
 } from '@/lib/api/topics';
-import { useRequireRole } from '@/lib/auth/use-require-role';
+import { useRequireGvcnOrAdmin } from '@/lib/auth/use-require-role';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
 import type { TopicListItem, TopicStatus } from '@/lib/api/types';
 import { useSemesters } from '@/lib/api/master-data';
@@ -44,6 +44,7 @@ import { LecturerCombobox } from '@/components/shared/lecturer-combobox';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import {
   Select,
   SelectContent,
@@ -210,7 +211,7 @@ function TopicActionsDropdown({ topic }: { topic: TopicListItem }) {
 }
 
 export default function AdminTopicRegistryPage() {
-  const allowed = useRequireRole(['ADMIN', 'GVCN', 'LECTURER']);
+  const { allowed, isLoading } = useRequireGvcnOrAdmin('TOPIC_REGISTRY');
 
   const [activeTab, setActiveTab] = useState<'topics' | 'progress'>('topics');
   const [page, setPage] = useState(1);
@@ -292,26 +293,33 @@ export default function AdminTopicRegistryPage() {
         onValueChange={(val) => setActiveTab(val as 'topics' | 'progress')}
         className="w-full min-w-0 space-y-4"
       >
-        {/* ── Header ── */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-lg font-semibold tracking-tight">Quản lý đề tài</h1>
-            <div className="hidden h-4 w-px bg-slate-300 dark:bg-neutral-700 sm:block" />
-            <TabsList className="h-9 p-1 rounded-lg bg-slate-100 dark:bg-[#141414] border border-slate-200 dark:border-neutral-800">
-              <TabsTrigger value="topics" className="h-7 px-2.5 py-1 text-xs gap-1.5 rounded-md font-medium">
-                <BookMarked className="size-3.5" />
-                <span>Sổ đề tài</span>
-                {data && (
-                  <span className="ml-1 rounded-full bg-slate-200 dark:bg-neutral-800 px-1.5 py-0.2 text-[10px] font-mono text-slate-700 dark:text-neutral-300">
-                    {data.total}
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="progress" className="h-7 px-2.5 py-1 text-xs gap-1.5 rounded-md font-medium">
-                <Users className="size-3.5" />
-                <span>Tiến độ nộp đề tài</span>
-              </TabsTrigger>
-            </TabsList>
+        {/* ── Tiêu đề trang tích hợp đồng thời làm Tab điều hướng ── */}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-3">
+          <div className="flex items-center gap-8">
+            <button
+              type="button"
+              onClick={() => setActiveTab('topics')}
+              className={cn(
+                'group inline-flex items-center gap-2 pb-0.5 text-xl font-bold tracking-tight transition-colors cursor-pointer relative',
+                activeTab === 'topics'
+                  ? 'text-foreground after:absolute after:-bottom-3.5 after:left-0 after:right-0 after:h-[3px] after:rounded-full after:bg-primary'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              Sổ đề tài
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('progress')}
+              className={cn(
+                'group inline-flex items-center gap-2 pb-0.5 text-xl font-bold tracking-tight transition-colors cursor-pointer relative',
+                activeTab === 'progress'
+                  ? 'text-foreground after:absolute after:-bottom-3.5 after:left-0 after:right-0 after:h-[3px] after:rounded-full after:bg-primary'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              Tiến độ nộp đề tài
+            </button>
           </div>
 
           {activeTab === 'topics' && (
@@ -330,7 +338,7 @@ export default function AdminTopicRegistryPage() {
               />
 
               <Button
-                className="gap-2 cursor-pointer"
+                className="gap-2 cursor-pointer shadow-xs"
                 onClick={() => setBulkOpen(true)}
                 disabled={!hasActiveSemester || approvedCount === 0}
               >
@@ -346,7 +354,7 @@ export default function AdminTopicRegistryPage() {
           )}
         </div>
 
-        <TabsContent value="topics" className="space-y-4">
+        <TabsContent value="topics" className="space-y-4 pt-1">
 
         {/* ── Filters ── */}
         <div className="flex flex-wrap items-center gap-2">
@@ -434,7 +442,7 @@ export default function AdminTopicRegistryPage() {
                 <TableHead className="w-14 px-2 text-center whitespace-nowrap">
                   Chỗ
                 </TableHead>
-                <TableHead className="w-[122px] px-2.5 whitespace-nowrap">
+                <TableHead className="w-[122px] px-2.5 text-center whitespace-nowrap">
                   Nguồn gốc
                 </TableHead>
                 <TableHead className="w-[152px] px-3 whitespace-nowrap">
@@ -493,7 +501,7 @@ export default function AdminTopicRegistryPage() {
                   <TableCell className="w-14 px-2 text-center whitespace-nowrap">
                     <OccupancyBadge topic={topic} />
                   </TableCell>
-                  <TableCell className="w-[122px] px-2.5 whitespace-nowrap">
+                  <TableCell className="w-[122px] px-2.5 text-center whitespace-nowrap">
                     <OriginBadge fromProposal={topic.fromProposal} />
                   </TableCell>
                   <TableCell className="w-[152px] px-3 whitespace-nowrap">

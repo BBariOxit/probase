@@ -56,7 +56,7 @@ function getMajorAbbreviation(major?: {
 }
 
 export function RolePermissionMatrix() {
-  const { data, isPending } = usePermissionMatrix();
+  const { data, isPending, refetch } = usePermissionMatrix();
   const updateRoleMutation = useUpdateRolePermissions();
   const updateUserPermsMutation = useUpdateUserPermissions();
   const revokeMutation = useRevokePermission();
@@ -214,6 +214,7 @@ export function RolePermissionMatrix() {
         userId: targetId,
         permissions: modalPerms,
       });
+      await refetch();
       toast.success(`Đã cập nhật quyền đặc biệt cho ${targetName}.`);
       setIsModalOpen(false);
     } catch (err: any) {
@@ -232,6 +233,7 @@ export function RolePermissionMatrix() {
   ) => {
     try {
       await revokeMutation.mutateAsync({ userId, permission: permissionCode });
+      await refetch();
       toast.success(`Đã thu hồi quyền "${permissionName}" từ ${fullName}.`);
     } catch (err: any) {
       toast.error(err?.message || 'Không thể thu hồi quyền.');

@@ -1,47 +1,28 @@
 'use client';
 
-import { use } from 'react';
+import { use, useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, FileText, Loader2, MessageSquareText } from 'lucide-react';
+import {
+  ArrowLeft,
+  BookOpen,
+  Check,
+  Copy,
+  Loader2,
+  Users,
+} from 'lucide-react';
+import { toast } from 'sonner';
 import { useGroup } from '@/lib/api/registration';
-import { useSubmissions, useSubmissionFeedback } from '@/lib/api/submissions';
-import type { Submission } from '@/lib/api/types';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useBreadcrumbLabel } from '@/lib/breadcrumb-context';
-import { cn } from '@/lib/utils';
-import { ApiError } from '@/lib/api/client';
-import { EmptyState } from '@/components/shared/empty-state';
-import { FormError } from '@/components/shared/form-error';
-import { toast } from 'sonner';
-import { LecturerProgressEvaluation } from '@/components/progress/lecturer-progress-evaluation';
-import { SubmissionCard } from '@/components/submissions/submission-card';
-import { SubmissionDeadlines } from '@/components/submissions/submission-deadlines';
-import { UserAvatar } from '@/components/shared/user-avatar';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { PageWithRail } from '@/components/layout/page-with-rail';
-import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
-const JOIN_SOURCE_LABEL: Record<string, string> = {
-  SELF: 'Tự đăng ký',
-  LINK: 'Mời qua MSSV',
-  ASSIGNED: 'Khoa phân công',
-};
-
-const dateFormat = new Intl.DateTimeFormat('vi-VN', {
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-});
+function copyText(text: string, successMessage: string) {
+  navigator.clipboard.writeText(text).then(
+    () => toast.success(successMessage),
+    () => toast.error('Không thể sao chép vào bộ nhớ tạm.'),
+  );
+}
 
 export default function LecturerGroupDetailPage({
   params,
@@ -51,17 +32,20 @@ export default function LecturerGroupDetailPage({
   const { id } = use(params);
   const groupId = Number(id);
   const allowed = useRequireRole('LECTURER');
-  const [answering, setAnswering] = useState<Submission | null>(null);
+  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
 
   const { data: group, isPending, error } = useGroup(groupId);
 
-  // Inject the topic title so the header breadcrumb reads
-  // "Nhóm hướng dẫn › [Tên đề tài]" instead of "Nhóm hướng dẫn › 42".
   useBreadcrumbLabel(id, group?.topic.title);
-  const { data: submissionsData, isPending: subPending } = useSubmissions({
-    groupId,
-    limit: 50,
-  });
+
+  const isFull =
+    group && group.occupiedSeats >= group.topic.maxStudents;
+
+  function handleCopySingleEmail(email: string) {
+    copyText(email, `Đã sao chép: ${email}`);
+    setCopiedEmail(email);
+    setTimeout(() => setCopiedEmail(null), 2000);
+  }
 
   if (!allowed) return null;
 
@@ -77,263 +61,145 @@ export default function LecturerGroupDetailPage({
     return <p className="text-sm text-destructive">Không tìm thấy nhóm này.</p>;
   }
 
-  const submissions = submissionsData?.items ?? [];
-
   return (
-    <PageWithRail
-      rail={
-        <>
-          {/* Topic brief */}
-          <section className="space-y-1 rounded-xl border bg-card p-4">
-            <p className="text-xs font-medium text-muted-foreground">Đề tài</p>
-            <p className="text-sm font-medium">{group.topic.title}</p>
-            <p className="text-xs text-muted-foreground">
-              {group.topic.projectType.name}
-            </p>
-            <Link
-              href={`/lecturer/topics/${group.topicId}`}
-              className="mt-2 flex items-center gap-1.5 text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <BookOpen className="size-3.5 shrink-0" />
-              Xem & sửa đề tài
-            </Link>
-          </section>
+    <div className="space-y-4">
+      {/* Top bar: Nút quay lại */}
+      <div className="flex items-center justify-between">
+        <Link
+          href="/lecturer/groups"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-primary dark:text-neutral-400 dark:hover:text-primary transition-colors cursor-pointer"
+        >
+          <ArrowLeft className="size-4" />
+          <span>Danh sách nhóm hướng dẫn</span>
+        </Link>
+      </div>
 
-          {/* Submission deadlines */}
-          {group.requirements.length > 0 && (
-            <SubmissionDeadlines
-              requirements={group.requirements}
-              submissions={submissions}
-            />
-          )}
-        </>
-      }
-    >
-      {/* Members table */}
-      <section className="space-y-3">
-        <h2 className="font-heading text-sm font-semibold tracking-tight">
-          Thành viên · {group.occupiedSeats}/{group.topic.maxStudents}
-        </h2>
+      {/* Khối đề tài */}
+      <div className="rounded-xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#18181b] p-5 shadow-2xs">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="space-y-1.5 flex-1 min-w-0">
+            <div className="flex items-center gap-2 text-xs">
+              <span className="font-medium text-slate-500 dark:text-neutral-400">
+                {group.topic.projectType.name}
+              </span>
+              <span className="text-slate-300 dark:text-neutral-700" aria-hidden="true">
+                •
+              </span>
+              <span
+                className={cn(
+                  'font-mono font-bold',
+                  isFull
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-amber-600 dark:text-amber-400',
+                )}
+              >
+                {group.occupiedSeats}/{group.topic.maxStudents}
+              </span>
+            </div>
 
-        <div className="overflow-hidden rounded-xl border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
-                <th className="px-4 py-2.5 font-medium">Sinh viên</th>
-                <th className="hidden px-4 py-2.5 font-medium sm:table-cell">
-                  Mã SV
-                </th>
-                <th className="hidden px-4 py-2.5 font-medium md:table-cell">
-                  Lớp
-                </th>
-                <th className="hidden px-4 py-2.5 font-medium lg:table-cell">
-                  Vào nhóm
-                </th>
-                <th className="px-4 py-2.5 font-medium">Nguồn</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {group.members.map((member) => (
-                <tr
-                  key={member.id}
-                  className={cn(
-                    'transition-colors hover:bg-muted/30',
-                    member.isLeader && 'bg-muted/20',
-                  )}
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2.5">
-                      <UserAvatar
-                        name={member.student.fullName}
-                        src={member.student.avatarUrl}
-                        className="size-7 shrink-0"
-                      />
-                      <div className="min-w-0">
-                        <p className="truncate font-medium">
-                          {member.student.fullName}
-                          {member.isLeader && (
-                            <span className="ml-1.5 inline-block rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-                              Nhóm trưởng
-                            </span>
-                          )}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground sm:hidden">
-                          <span className="font-mono text-xs font-semibold text-primary">
-                            {member.student.studentCode}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="hidden px-4 py-3 sm:table-cell">
-                    <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 font-mono text-xs font-semibold text-primary">
-                      {member.student.studentCode}
-                    </span>
-                  </td>
-                  <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
-                    {member.student.class ?? '—'}
-                  </td>
-                  <td className="hidden px-4 py-3 text-xs text-muted-foreground lg:table-cell">
-                    {member.joinedAt
-                      ? dateFormat.format(new Date(member.joinedAt))
-                      : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-xs">
-                    {member.joinSource === 'ASSIGNED' ? (
-                      <span className="inline-flex items-center rounded-md border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
-                        Khoa phân công
-                      </span>
-                    ) : member.joinSource === 'LINK' ? (
-                      <span className="inline-flex items-center rounded-md border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-neutral-300">
-                        Mời qua MSSV
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                        Tự đăng ký
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* Tiến độ đồ án (BR-11, BR-12, BR-14) */}
-      <LecturerProgressEvaluation groupId={groupId} />
-
-      {/* Submissions */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="font-heading text-sm font-semibold tracking-tight">
-            Bài nộp
-          </h2>
-          {submissionsData && (
-            <span className="text-sm text-muted-foreground">
-              {submissionsData.total} phiên bản
-            </span>
-          )}
-        </div>
-
-        {subPending && (
-          <div className="flex justify-center py-8">
-            <Loader2 className="size-5 animate-spin text-muted-foreground" />
+            <h1 className="text-lg font-bold text-slate-900 dark:text-neutral-100 leading-snug">
+              {group.topic.title}
+            </h1>
           </div>
-        )}
 
-        {!subPending && submissions.length === 0 && (
-          <div className="rounded-xl border">
-            <EmptyState icon={FileText} title="Chưa có bài nộp nào." />
-          </div>
-        )}
-
-        <ul className="space-y-3">
-          {submissions.map((submission) => (
-            <li key={submission.id}>
-              <SubmissionCard
-                submission={submission}
-                actions={
-                  <Button
-                    size="sm"
-                    variant={submission.feedbackAt ? 'outline' : 'default'}
-                    onClick={() => setAnswering(submission)}
-                  >
-                    <MessageSquareText />
-                    {submission.feedbackAt ? 'Sửa nhận xét' : 'Nhận xét'}
-                  </Button>
-                }
-              />
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {answering && (
-        <FeedbackDialog
-          submission={answering}
-          onClose={() => setAnswering(null)}
-        />
-      )}
-    </PageWithRail>
-  );
-}
-
-function FeedbackDialog({
-  submission,
-  onClose,
-}: {
-  submission: Submission;
-  onClose: () => void;
-}) {
-  const answer = useSubmissionFeedback();
-  const [feedback, setFeedback] = useState(submission.lecturerFeedback ?? '');
-  const [error, setError] = useState<string | null>(null);
-
-  const trimmed = feedback.trim();
-
-  async function submit() {
-    setError(null);
-    try {
-      await answer.mutateAsync({ id: submission.id, feedback: trimmed });
-      toast.success('Đã gửi phản hồi.');
-      onClose();
-    } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : 'Không kết nối được máy chủ',
-      );
-    }
-  }
-
-  return (
-    <Dialog
-      open
-      onOpenChange={(next) => !next && !answer.isPending && onClose()}
-    >
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            Nhận xét {submission.requirement.name.toLowerCase()}
-          </DialogTitle>
-          <DialogDescription>
-            {submission.group.topic.title} · lần {submission.version}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <FormError message={error} />
-
-          <div className="space-y-2">
-            <Label htmlFor="feedback">Nhận xét cho nhóm</Label>
-            <Textarea
-              id="feedback"
-              rows={5}
-              maxLength={4000}
-              autoFocus
-              value={feedback}
-              aria-invalid={trimmed === ''}
-              onChange={(event) => setFeedback(event.target.value)}
-            />
-          </div>
-        </div>
-
-        <DialogFooter>
           <Button
             variant="outline"
-            disabled={answer.isPending}
-            onClick={onClose}
+            size="sm"
+            className="h-8 gap-1.5 text-xs font-medium shrink-0"
+            render={<Link href={`/lecturer/topics/${group.topicId}`} />}
           >
-            Huỷ
+            <BookOpen className="size-3.5" />
+            <span>Xem & sửa đề tài</span>
           </Button>
-          <Button
-            disabled={trimmed === '' || answer.isPending}
-            onClick={submit}
-          >
-            {answer.isPending && <Loader2 className="animate-spin" />}
-            Gửi nhận xét
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+
+      {/* Khối thành viên nhóm: Dạng section gạch ngang từng dòng */}
+      <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#18181b] shadow-2xs">
+        <div className="border-b border-slate-200/80 dark:border-neutral-800 bg-slate-50/70 dark:bg-neutral-900/60 px-4 py-3 sm:px-5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="size-4 text-primary" />
+            <h2 className="text-sm font-bold text-slate-900 dark:text-neutral-100">
+              Thành viên nhóm ({group.occupiedSeats}/{group.topic.maxStudents})
+            </h2>
+          </div>
+        </div>
+
+        {group.members.length === 0 ? (
+          <div className="py-8 text-center text-xs text-muted-foreground">
+            Chưa có sinh viên nào trong nhóm.
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-neutral-800/80">
+            {group.members.map((member) => (
+              <div
+                key={member.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 py-3 sm:px-5 hover:bg-slate-50/60 dark:hover:bg-neutral-800/30 transition-colors"
+              >
+                {/* Cụm 1: Ký tự đại diện + Họ tên + (Trưởng nhóm) */}
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="size-7 shrink-0 rounded-full bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-neutral-300 flex items-center justify-center text-xs font-bold font-mono">
+                    {member.student.fullName.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                    <span className="font-semibold text-sm text-slate-900 dark:text-neutral-100">
+                      {member.student.fullName}
+                    </span>
+                    {member.isLeader && (
+                      <span className="text-xs font-medium text-primary">
+                        (Trưởng nhóm)
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Cụm 2: MSSV • Lớp • Email liên hệ */}
+                <div className="flex items-center gap-2.5 sm:gap-3 text-xs text-slate-600 dark:text-neutral-400 flex-wrap pl-10 sm:pl-0">
+                  <span className="font-mono font-semibold text-slate-800 dark:text-neutral-200">
+                    {member.student.studentCode}
+                  </span>
+
+                  <span className="text-slate-300 dark:text-neutral-700" aria-hidden="true">
+                    •
+                  </span>
+
+                  <span className="font-mono text-slate-600 dark:text-neutral-400">
+                    {member.student.class || '—'}
+                  </span>
+
+                  <span className="text-slate-300 dark:text-neutral-700" aria-hidden="true">
+                    •
+                  </span>
+
+                  <div className="flex items-center gap-1">
+                    <a
+                      href={`mailto:${member.student.email}`}
+                      className="font-mono text-slate-600 hover:text-primary dark:text-neutral-400 dark:hover:text-primary transition-colors hover:underline"
+                      title="Gửi email"
+                    >
+                      {member.student.email}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleCopySingleEmail(member.student.email)
+                      }
+                      className="rounded p-1 text-slate-400 hover:text-slate-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
+                      title="Sao chép email"
+                    >
+                      {copiedEmail === member.student.email ? (
+                        <Check className="size-3 text-emerald-600 dark:text-emerald-400" />
+                      ) : (
+                        <Copy className="size-3" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

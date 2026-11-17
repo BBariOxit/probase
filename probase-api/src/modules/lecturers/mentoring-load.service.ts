@@ -65,13 +65,9 @@ export class MentoringLoadService {
     lecturer: Quota,
     semesterId: number,
   ): Promise<void> {
-    const load = await this.loadForOne(lecturer, semesterId);
-
-    if (!load.atQuota) return;
-
-    throw new ConflictException(
-      `Bạn đã nhận đủ ${load.quota} nhóm cho học kỳ này (${load.groups} nhóm đang hướng dẫn, ${load.reserved} đề tài đã nhận đang chờ sinh viên đăng ký), nên chưa nhận thêm được. Bạn vẫn có thể từ chối kèm nhận xét, hoặc đề nghị khoa nâng hạn mức.`,
-    );
+    // Không giới hạn cứng hạn mức hướng dẫn khi giảng viên nhận đề xuất từ sinh viên.
+    // Số lượng nhóm hướng dẫn hoàn toàn phụ thuộc vào số lượng đề tài do Bộ môn phê duyệt.
+    return;
   }
 
   async activeSemesterId(): Promise<number | undefined> {

@@ -141,6 +141,7 @@ function LoginForm() {
             </Label>
             <Link
               href="/forgot-password"
+              tabIndex={-1}
               className="rounded-sm text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               Quên mật khẩu?

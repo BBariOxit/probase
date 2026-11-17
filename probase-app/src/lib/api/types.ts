@@ -43,6 +43,7 @@ export interface MeResponse {
     academicTitle?: string | null;
     isHeadOfDepartment?: boolean;
     isAcademicAssistant?: boolean;
+    isHomeroomTeacher?: boolean;
     major?: { id: number; name: string; code: string } | null;
   } | null;
 }
@@ -398,6 +399,7 @@ export interface MyProfile {
     researchInterests: string | null;
     isHeadOfDepartment?: boolean;
     isAcademicAssistant?: boolean;
+    isHomeroomTeacher?: boolean;
     major?: { id: number; name: string; code: string } | null;
     mentoring: MentoringLoad;
   } | null;
@@ -720,8 +722,11 @@ export interface LecturerRoundProgress {
   pendingCount: number;
   draftCount: number;
   targetQuota: number;
+  hasCustomQuota?: boolean;
+  isExempt?: boolean;
+  exemptReason?: string | null;
   isMetQuota: boolean;
-  status: 'MET' | 'IN_PROGRESS' | 'NOT_STARTED';
+  status: 'MET' | 'IN_PROGRESS' | 'NOT_STARTED' | 'EXEMPT';
 }
 
 export interface RoundCapacitySummary {
@@ -748,7 +753,10 @@ export interface RoundCapacitySummary {
   deficit: number;
   balanceStatus: 'DEFICIT' | 'BALANCED' | 'SURPLUS';
   targetQuota: number;
+  totalTargetQuota?: number;
   lecturersCount: number;
+  activeLecturersCount?: number;
+  exemptLecturersCount?: number;
   lecturersMetQuotaCount: number;
   lecturerProgress: LecturerRoundProgress[];
 }

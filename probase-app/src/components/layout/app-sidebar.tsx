@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useActiveSemester, useMyEligibleProjectTypes } from '@/lib/api/master-data';
 import { useMyProfile } from '@/lib/api/me';
+import { useMyPermissions } from '@/lib/api/permissions';
 import { useMyGroup } from '@/lib/api/registration';
 import { useTopics } from '@/lib/api/topics';
 import type { SessionUser } from '@/lib/api/types';
@@ -72,9 +73,21 @@ function NavEntry({ item, badge }: { item: NavItem; badge?: number }) {
 
 export function AppSidebar({ user }: { user: SessionUser }) {
   const isStudent = user.role === 'STUDENT';
-  const isLecturer = user.role === 'LECTURER';
+  const isLecturer = user.role === 'LECTURER' || user.role === 'GVCN';
   const { data: myProfile } = useMyProfile({ enabled: isLecturer });
+  const { data: myPermissions } = useMyPermissions();
+
   const isHeadOfDepartment = myProfile?.lecturer?.isHeadOfDepartment ?? false;
+  const isHomeroomTeacher =
+    user.role === 'GVCN' || (myProfile?.lecturer?.isHomeroomTeacher ?? false);
+
+  const hasDeptReviewPerm =
+    isHeadOfDepartment || (myPermissions?.includes('TOPIC_REVIEW_DEPT') ?? false);
+  const hasTopicRegistryPerm =
+    isHomeroomTeacher || (myPermissions?.includes('TOPIC_REGISTRY') ?? false);
+  const hasAllocationPerm =
+    isHomeroomTeacher || (myPermissions?.includes('STUDENT_ALLOCATION') ?? false);
+
   const lecturerMajorId = myProfile?.lecturer?.major?.id;
   const { data: pendingDepartmentTopics } = useTopics(
     {
@@ -83,9 +96,9 @@ export function AppSidebar({ user }: { user: SessionUser }) {
       page: 1,
       limit: 1,
     },
-    { enabled: isLecturer && isHeadOfDepartment },
+    { enabled: isLecturer && hasDeptReviewPerm },
   );
-  const pendingDepartmentCount = isHeadOfDepartment
+  const pendingDepartmentCount = hasDeptReviewPerm
     ? (pendingDepartmentTopics?.total ?? 0)
     : 0;
   const { data: myGroup } = useMyGroup({ enabled: isStudent });
@@ -121,7 +134,7 @@ export function AppSidebar({ user }: { user: SessionUser }) {
   }, [isStudent, myGroup, eligibleTypes]);
 
   const navGroups = useMemo(() => {
-    const rawGroups = NAV_BY_ROLE[user.role];
+    const rawGroups = NAV_BY_ROLE[user.role === 'GVCN' ? 'GVCN' : user.role];
 
     if (isLecturer) {
       const filtered = rawGroups
@@ -129,7 +142,13 @@ export function AppSidebar({ user }: { user: SessionUser }) {
           ...group,
           items: group.items.filter((item) => {
             if (item.href === '/lecturer/topic-reviews') {
-              return isHeadOfDepartment;
+              return hasDeptReviewPerm;
+            }
+            if (item.href === '/admin/topic-registry') {
+              return hasTopicRegistryPerm;
+            }
+            if (item.href === '/admin/allocations') {
+              return hasAllocationPerm;
             }
             return true;
           }),
@@ -141,6 +160,13 @@ export function AppSidebar({ user }: { user: SessionUser }) {
         const deptGroup = filtered.find((g) => g.label === 'Tổ chuyên môn');
         const others = filtered.filter((g) => g.label !== 'Tổ chuyên môn');
         return deptGroup ? [deptGroup, ...others] : filtered;
+      }
+
+      // Surface Chủ nhiệm first for GVCN so registry/allocations is immediately visible.
+      if (isHomeroomTeacher) {
+        const gvcnGroup = filtered.find((g) => g.label === 'Chủ nhiệm');
+        const others = filtered.filter((g) => g.label !== 'Chủ nhiệm');
+        return gvcnGroup ? [gvcnGroup, ...others] : filtered;
       }
 
       return filtered;
@@ -157,7 +183,17 @@ export function AppSidebar({ user }: { user: SessionUser }) {
         return true;
       }),
     }));
-  }, [user.role, isLecturer, isHeadOfDepartment, isStudent, isKLTN]);
+  }, [
+    user.role,
+    isLecturer,
+    hasDeptReviewPerm,
+    hasTopicRegistryPerm,
+    hasAllocationPerm,
+    isHeadOfDepartment,
+    isHomeroomTeacher,
+    isStudent,
+    isKLTN,
+  ]);
 
   return (
     <Sidebar variant="sidebar" collapsible="icon">

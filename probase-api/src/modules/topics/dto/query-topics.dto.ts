@@ -4,8 +4,10 @@ import { TopicStatus } from '../../../../generated/prisma/client';
 
 export const QueryTopicsSchema = z.object({
   semesterId: z.coerce.number().int().positive().optional(),
+  excludeSemesterId: z.coerce.number().int().positive().optional(),
   projectTypeId: z.coerce.number().int().positive().optional(),
   lecturerId: z.coerce.number().int().positive().optional(),
+  excludeLecturerId: z.coerce.number().int().positive().optional(),
   majorId: z.coerce.number().int().positive().optional(),
   // Students never widen their own visibility with this — TopicsService
   // intersects whatever is asked for with the statuses their role may see.
@@ -20,6 +22,10 @@ export const QueryTopicsSchema = z.object({
     .transform((value) => value === 'true'),
 
   forMyCohort: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => value === 'true'),
+  includeDrafts: z
     .enum(['true', 'false'])
     .optional()
     .transform((value) => value === 'true'),

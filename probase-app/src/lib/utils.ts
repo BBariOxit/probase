@@ -108,3 +108,87 @@ export function downloadCsvFile(
   document.body.removeChild(link);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+/**
+ * Rút gọn tên học kỳ thành định dạng ngắn gọn: HKII-2023-2024 hoặc HKI-2024-2025
+ */
+export function formatSemesterShort(
+  semester?: { name?: string; code?: string } | null,
+): string {
+  if (!semester) return '—';
+  const name = (semester.name || '').trim();
+  const match = name.match(
+    /Học kỳ\s*([0-9IVX]+)(?:\s*năm học\s*(\d{4})[-–/](\d{4}))?/i,
+  );
+  if (match) {
+    const termNum = match[1].toUpperCase();
+    const roman =
+      termNum === '1' || termNum === 'I'
+        ? 'HKI'
+        : termNum === '2' || termNum === 'II'
+          ? 'HKII'
+          : termNum === '3' || termNum === 'III'
+            ? 'HKIII'
+            : `HK${termNum}`;
+    if (match[2] && match[3]) {
+      return `${roman}-${match[2]}-${match[3]}`;
+    }
+    return roman;
+  }
+  return semester.code || name;
+}
+
+/**
+ * Rút gọn loại đồ án: KLTN, ĐACN, ĐACS (tận dụng trường code trong DB)
+ */
+export function formatProjectTypeShort(
+  projectType?: { name?: string; code?: string } | null,
+): { short: string; full: string } {
+  if (!projectType) return { short: '—', full: '' };
+  const code = (projectType.code ?? '').toUpperCase();
+  const name = projectType.name ?? '';
+
+  if (
+    code === 'DATN' ||
+    code === 'KLTN' ||
+    name.toLowerCase().includes('khóa luận') ||
+    name.toLowerCase().includes('tốt nghiệp')
+  ) {
+    return { short: 'KLTN', full: name || 'Khóa luận tốt nghiệp' };
+  }
+  if (code === 'DACN' || name.toLowerCase().includes('chuyên ngành')) {
+    return { short: 'ĐACN', full: name || 'Đồ án chuyên ngành' };
+  }
+  if (code === 'DACS' || name.toLowerCase().includes('cơ sở')) {
+    return { short: 'ĐACS', full: name || 'Đồ án cơ sở' };
+  }
+  return { short: projectType.code || name || '—', full: name };
+}
+
+/**
+ * Rút gọn chuyên ngành: KTPM, MMT (tận dụng trường code trong DB)
+ */
+export function formatMajorShort(
+  major?: { name?: string; code?: string } | null,
+): { short: string; full: string } {
+  if (!major) return { short: 'Chung', full: 'Chung cho khoa' };
+  const code = (major.code ?? '').toUpperCase();
+  const name = major.name ?? '';
+  if (
+    code === 'CNPM' ||
+    code === 'KTPM' ||
+    code === 'PM' ||
+    name.toLowerCase().includes('kỹ thuật phần mềm')
+  ) {
+    return { short: 'KTPM', full: name || 'Kỹ thuật phần mềm' };
+  }
+  if (code === 'MMT' || name.toLowerCase().includes('mạng máy tính')) {
+    return { short: 'MMT', full: name || 'Mạng máy tính' };
+  }
+  return {
+    short: major.code || name || '—',
+    full: name || major.code || '',
+  };
+}
+
+
