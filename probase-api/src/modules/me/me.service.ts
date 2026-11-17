@@ -35,6 +35,7 @@ const LECTURER_FIELDS = {
   maxMentoringQuota: true,
   isHeadOfDepartment: true,
   isAcademicAssistant: true,
+  isHomeroomTeacher: true,
   major: { select: { id: true, name: true, code: true } },
 } as const;
 
@@ -96,6 +97,7 @@ export class MeService {
       researchInterests: lecturer.researchInterests,
       isHeadOfDepartment: lecturer.isHeadOfDepartment,
       isAcademicAssistant: lecturer.isAcademicAssistant,
+      isHomeroomTeacher: lecturer.isHomeroomTeacher,
       major: lecturer.major,
       mentoring: await this.mentoring.loadForOne(lecturer, semesterId),
     };

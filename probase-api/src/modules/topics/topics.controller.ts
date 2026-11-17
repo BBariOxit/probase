@@ -100,7 +100,11 @@ export class TopicsController {
 
   // Literal routes must be declared before wildcard :id routes so NestJS does
   // not swallow 'bulk-open' as a param value and send it to ParseIntPipe.
-  @RequirePermissions(SystemPermission.TOPIC_SIGN_OFF)
+  @Roles('ADMIN', 'GVCN')
+  @RequirePermissions(
+    SystemPermission.TOPIC_SIGN_OFF,
+    SystemPermission.TOPIC_REGISTRY,
+  )
   @Patch('bulk-open')
   bulkOpen(@Body() dto: BulkOpenTopicsDto) {
     return this.topicsService.bulkOpen(dto.semesterId);

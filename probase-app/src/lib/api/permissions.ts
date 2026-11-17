@@ -69,7 +69,8 @@ export function useUpdateRolePermissions() {
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['permissions'] });
-      queryClient.invalidateQueries({ queryKey: ['lecturers', 'admin-roster'] });
+      queryClient.invalidateQueries({ queryKey: ['lecturers'] });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
     },
   });
 }
@@ -100,7 +101,8 @@ export function useUpdateUserPermissions() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['permissions'] });
-      queryClient.invalidateQueries({ queryKey: ['lecturers', 'admin-roster'] });
+      queryClient.invalidateQueries({ queryKey: ['lecturers'] });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
     },
   });
 }
@@ -125,7 +127,8 @@ export function useGrantPermission() {
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['permissions'] });
-      queryClient.invalidateQueries({ queryKey: ['lecturers', 'admin-roster'] });
+      queryClient.invalidateQueries({ queryKey: ['lecturers'] });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
     },
   });
 }
@@ -150,7 +153,8 @@ export function useRevokePermission() {
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['permissions'] });
-      queryClient.invalidateQueries({ queryKey: ['lecturers', 'admin-roster'] });
+      queryClient.invalidateQueries({ queryKey: ['lecturers'] });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
     },
   });
 }

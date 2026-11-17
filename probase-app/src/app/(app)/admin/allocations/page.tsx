@@ -21,7 +21,7 @@ import type {
   AllocationTopic,
   UnplacedStudent,
 } from '@/lib/api/types';
-import { useRequireRole } from '@/lib/auth/use-require-role';
+import { useRequireGvcnOrAdmin } from '@/lib/auth/use-require-role';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/shared/empty-state';
 import { FinalizeRoundDialog } from '@/components/admin/finalize-round-dialog';
@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/select';
 
 export default function AllocationDeskPage() {
-  const allowed = useRequireRole(['ADMIN', 'GVCN', 'LECTURER']);
+  const { allowed, isLoading } = useRequireGvcnOrAdmin('STUDENT_ALLOCATION');
   const semester = useActiveSemester();
   const { data: rounds } = useRoundsForSemester(semester?.id);
   const [picked, setPicked] = useState<number | null>(null);

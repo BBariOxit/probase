@@ -33,7 +33,7 @@ import {
   useTopicTransition,
   useTopics,
 } from '@/lib/api/topics';
-import { useRequireRole } from '@/lib/auth/use-require-role';
+import { useRequireGvcnOrAdmin } from '@/lib/auth/use-require-role';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
 import type { TopicListItem, TopicStatus } from '@/lib/api/types';
 import { useSemesters } from '@/lib/api/master-data';
@@ -211,7 +211,7 @@ function TopicActionsDropdown({ topic }: { topic: TopicListItem }) {
 }
 
 export default function AdminTopicRegistryPage() {
-  const allowed = useRequireRole(['ADMIN', 'GVCN', 'LECTURER']);
+  const { allowed, isLoading } = useRequireGvcnOrAdmin('TOPIC_REGISTRY');
 
   const [activeTab, setActiveTab] = useState<'topics' | 'progress'>('topics');
   const [page, setPage] = useState(1);

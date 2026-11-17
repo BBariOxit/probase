@@ -43,6 +43,7 @@ export interface MeResponse {
     academicTitle?: string | null;
     isHeadOfDepartment?: boolean;
     isAcademicAssistant?: boolean;
+    isHomeroomTeacher?: boolean;
     major?: { id: number; name: string; code: string } | null;
   } | null;
 }
@@ -398,6 +399,7 @@ export interface MyProfile {
     researchInterests: string | null;
     isHeadOfDepartment?: boolean;
     isAcademicAssistant?: boolean;
+    isHomeroomTeacher?: boolean;
     major?: { id: number; name: string; code: string } | null;
     mentoring: MentoringLoad;
   } | null;
