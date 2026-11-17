@@ -403,39 +403,36 @@ export function RoundLecturerProgressTab({
         <div className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-800 bg-white dark:bg-[#18181b] shadow-xs">
           <div className="w-full overflow-x-auto">
             <Table className="relative w-full min-w-[960px] text-left text-sm">
-              <TableHeader
-                sticky
-                className="bg-slate-100/90 dark:bg-neutral-800/90 text-slate-700 dark:text-neutral-200 border-b border-slate-200 dark:border-neutral-700"
-              >
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-12 text-center text-sm font-semibold text-slate-700 dark:text-neutral-300">
+              <TableHeader sticky>
+                <TableRow>
+                  <TableHead className="w-12 text-center">
                     STT
                   </TableHead>
-                  <TableHead className="min-w-48 px-4 text-sm font-semibold text-slate-700 dark:text-neutral-300">
+                  <TableHead className="min-w-48 px-4">
                     Giảng viên
                   </TableHead>
-                  <TableHead className="px-4 text-sm font-semibold text-slate-700 dark:text-neutral-300">
+                  <TableHead className="px-4">
                     Bộ môn / Chuyên ngành
                   </TableHead>
-                  <TableHead className="text-center px-3 text-sm font-semibold text-slate-700 dark:text-neutral-300">
-                    Tổng đề tài
+                  <TableHead className="text-center px-3">
+                    Đã nộp
                   </TableHead>
-                  <TableHead className="text-center px-3 text-sm font-semibold text-slate-700 dark:text-neutral-300">
+                  <TableHead className="text-center px-3">
                     Đã duyệt
                   </TableHead>
-                  <TableHead className="text-center px-3 text-sm font-semibold text-slate-700 dark:text-neutral-300">
+                  <TableHead className="text-center px-3">
                     Chờ duyệt
                   </TableHead>
-                  <TableHead className="text-center px-3 text-sm font-semibold text-slate-700 dark:text-neutral-300">
+                  <TableHead className="text-center px-3">
                     Bản nháp
                   </TableHead>
-                  <TableHead className="text-center px-3 text-sm font-semibold text-slate-700 dark:text-neutral-300">
+                  <TableHead className="text-center px-3">
                     Chỉ tiêu
                   </TableHead>
-                  <TableHead className="text-center px-4 text-sm font-semibold text-slate-700 dark:text-neutral-300">
+                  <TableHead className="text-center px-4">
                     Trạng thái
                   </TableHead>
-                  <TableHead className="w-24 text-right px-4 text-sm font-semibold text-slate-700 dark:text-neutral-300">
+                  <TableHead className="w-24 text-right px-4">
                     Thao tác
                   </TableHead>
                 </TableRow>
@@ -543,7 +540,7 @@ export function RoundLecturerProgressTab({
                               )}
                             </div>
                           )}
-                          <Pencil className="size-3.5 text-slate-400 opacity-40 group-hover/quota:opacity-100 group-hover/quota:text-primary transition-opacity" />
+                          <Pencil className="size-3.5 text-primary -translate-y-0.5 shrink-0 transition-transform group-hover/quota:scale-110" />
                         </button>
                       </TableCell>
 
