@@ -75,10 +75,12 @@ export function AttachmentUploader({
 
   return (
     <div className="space-y-3 pt-2">
-      <div className="flex items-center justify-between">
-        <div>
-          <Label className="text-xs font-medium">{label}</Label>
-          <p className="text-[11px] text-muted-foreground">{hint}</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-0.5">
+          <Label className="text-sm sm:text-[15px] font-semibold text-slate-800 dark:text-neutral-200">
+            {label}
+          </Label>
+          <p className="text-xs sm:text-[13px] text-muted-foreground">{hint}</p>
         </div>
 
         {totalCount < maxFiles && (
@@ -95,10 +97,10 @@ export function AttachmentUploader({
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 gap-1.5 text-xs font-semibold cursor-pointer"
+              className="h-9 px-3.5 gap-1.5 text-sm font-medium cursor-pointer"
               onClick={() => fileInputRef.current?.click()}
             >
-              <Upload className="size-3.5" />
+              <Upload className="size-4" />
               Thêm tệp
             </Button>
           </div>
@@ -106,7 +108,7 @@ export function AttachmentUploader({
       </div>
 
       {totalCount > 0 && (
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-2.5 sm:grid-cols-2">
           {/* Tệp đã có từ trước */}
           {existingFiles.map((file) => {
             const isImg =
@@ -116,9 +118,9 @@ export function AttachmentUploader({
             return (
               <div
                 key={`existing-${file.id}`}
-                className="flex items-center gap-2.5 rounded-lg border border-slate-200 dark:border-neutral-800 bg-slate-50/70 dark:bg-neutral-900/50 p-2.5 text-xs shadow-2xs"
+                className="flex items-center gap-3 rounded-lg border border-slate-200 dark:border-neutral-800 bg-slate-50/70 dark:bg-neutral-900/50 p-3 text-sm shadow-2xs"
               >
-                <div className="flex size-9 shrink-0 items-center justify-center rounded border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-muted-foreground overflow-hidden">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-muted-foreground overflow-hidden">
                   {isImg && file.url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -144,7 +146,7 @@ export function AttachmentUploader({
                         title={file.name}
                       >
                         <span className="truncate">{file.name}</span>
-                        <ExternalLink className="size-3 shrink-0 opacity-60" />
+                        <ExternalLink className="size-3.5 shrink-0 opacity-60" />
                       </a>
                     ) : (
                       <p className="truncate font-medium text-slate-800 dark:text-neutral-200" title={file.name}>
@@ -154,11 +156,11 @@ export function AttachmentUploader({
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
                     {file.size ? (
-                      <span className="text-[11px] text-muted-foreground">
+                      <span className="text-xs text-muted-foreground">
                         {formatBytes(file.size)}
                       </span>
                     ) : null}
-                    <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-slate-200 dark:bg-neutral-700 text-slate-700 dark:text-neutral-300">
+                    <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-slate-200 dark:bg-neutral-700 text-slate-700 dark:text-neutral-300">
                       Đã đính kèm
                     </span>
                   </div>
@@ -169,11 +171,11 @@ export function AttachmentUploader({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-7 text-muted-foreground hover:text-destructive cursor-pointer"
+                    className="size-8 text-muted-foreground hover:text-destructive cursor-pointer"
                     onClick={() => onDeleteExisting(file.id)}
                     title="Xoá tệp đính kèm này"
                   >
-                    <Trash2 className="size-3.5" />
+                    <Trash2 className="size-4" />
                   </Button>
                 )}
               </div>
@@ -187,9 +189,9 @@ export function AttachmentUploader({
             return (
               <div
                 key={`new-${idx}`}
-                className="flex items-center gap-2.5 rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-2.5 text-xs shadow-2xs"
+                className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-3 text-sm shadow-2xs"
               >
-                <div className="flex size-9 shrink-0 items-center justify-center rounded border border-primary/20 bg-white dark:bg-neutral-800 text-primary">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded border border-primary/20 bg-white dark:bg-neutral-800 text-primary">
                   {isImg ? (
                     <ImageIcon className="size-4" />
                   ) : (
@@ -202,10 +204,10 @@ export function AttachmentUploader({
                     {file.name}
                   </p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       {formatBytes(file.size)}
                     </span>
-                    <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-primary text-white">
+                    <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-primary text-white">
                       Mới
                     </span>
                   </div>
@@ -215,11 +217,11 @@ export function AttachmentUploader({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="size-7 text-muted-foreground hover:text-destructive cursor-pointer"
+                  className="size-8 text-muted-foreground hover:text-destructive cursor-pointer"
                   onClick={() => removeFile(idx)}
                   title="Bỏ tệp này"
                 >
-                  <Trash2 className="size-3.5" />
+                  <Trash2 className="size-4" />
                 </Button>
               </div>
             );

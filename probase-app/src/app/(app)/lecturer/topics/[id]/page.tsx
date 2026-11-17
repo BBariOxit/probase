@@ -23,7 +23,7 @@ import {
 } from '@/lib/api/topics';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useBreadcrumbLabel } from '@/lib/breadcrumb-context';
-import { cn, sanitizeLecturerName } from '@/lib/utils';
+import { cn, formatSemesterShort, sanitizeLecturerName } from '@/lib/utils';
 import { PageHeading } from '@/components/layout/page-heading';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import {
@@ -198,101 +198,116 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
 
   if (isEditing && canEditTopic) {
     return (
-      <div className="mx-auto max-w-2xl space-y-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <PageHeading
-            title="Sửa đề tài"
-            description={
-              topic.activeGroup
-                ? `${topic.semester.name} · nhóm ${topic.activeGroup.occupiedSeats}/${topic.maxStudents}`
-                : `${topic.semester.name} · chưa có nhóm`
-            }
-          />
-          <TopicStatusBadge status={topic.status} className="mt-1.5" />
+      <div className="mx-auto max-w-4xl space-y-4">
+        <div className="flex items-center justify-between">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => router.replace(`/lecturer/topics/${topicId}`)}
+            className="gap-2 cursor-pointer shadow-xs font-semibold"
+          >
+            <ArrowLeft className="size-4" />
+            <span>Quay lại chi tiết đề tài</span>
+          </Button>
         </div>
 
-        {isApproved && (
-          <div className="rounded-xl border border-amber-300/80 bg-amber-50/70 dark:border-amber-800/60 dark:bg-amber-950/20 px-4 py-3 space-y-1">
-            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
-              Lưu ý quy trình thẩm định:
-            </p>
-            <p className="text-xs leading-relaxed text-amber-900/90 dark:text-amber-200/90">
-              Đề tài này đã được Trưởng bộ môn phê duyệt trước đó. Mọi thay đổi
-              nội dung sẽ chuyển đề tài về trạng thái{' '}
-              <strong>Chờ duyệt lại</strong> để TTBM xác nhận lại nội dung mới.
-            </p>
+        <div className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <PageHeading
+              title="Sửa đề tài"
+              description={
+                topic.activeGroup
+                  ? `${formatSemesterShort(topic.semester)} · nhóm ${topic.activeGroup.occupiedSeats}/${topic.maxStudents}`
+                  : `${formatSemesterShort(topic.semester)} · chưa có nhóm`
+              }
+            />
+            <TopicStatusBadge status={topic.status} className="mt-1.5" />
           </div>
-        )}
 
-        {topic.departmentFeedback && (
-          <div className="rounded-xl border border-amber-200/80 dark:border-amber-800/50 bg-amber-50/70 dark:bg-amber-950/20 px-4 py-3 space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-              <MessageSquareText className="size-3.5 shrink-0" />
-              <span>
-                Góp ý từ Bộ môn
-                {topic.departmentReviewer &&
-                  ` (${
-                    sanitizeLecturerName(
-                      topic.departmentReviewer.fullName,
-                      topic.departmentReviewer.academicTitle,
-                    ).displayName
-                  })`}
-              </span>
-            </p>
-            <p className="text-sm leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line break-words [overflow-wrap:anywhere]">
-              {topic.departmentFeedback}
-            </p>
-          </div>
-        )}
+          {isApproved && (
+            <div className="rounded-xl border border-amber-300/80 bg-amber-50/70 dark:border-amber-800/60 dark:bg-amber-950/20 px-4 py-3.5 space-y-1.5">
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                Lưu ý quy trình thẩm định:
+              </p>
+              <p className="text-sm leading-relaxed text-amber-900/90 dark:text-amber-200/90">
+                Đề tài này đã được Trưởng bộ môn phê duyệt trước đó. Mọi thay đổi
+                nội dung sẽ chuyển đề tài về trạng thái{' '}
+                <strong>Chờ duyệt lại</strong> để TTBM xác nhận lại nội dung mới.
+              </p>
+            </div>
+          )}
 
-        <TopicForm
-          defaultValues={{
-            semesterId: topic.semesterId,
-            projectTypeId: topic.projectTypeId,
-            title: topic.title,
-            description: topic.description,
-            expectedOutcomes: topic.expectedOutcomes,
-            maxStudents: topic.maxStudents,
-          }}
-          lockSemester
-          submitLabel={
-            topic.status === 'DRAFT'
-              ? 'Lưu & Gửi duyệt'
-              : isApproved
-                ? 'Lưu thay đổi (sẽ duyệt lại)'
-                : 'Lưu thay đổi'
-          }
-          draftLabel="Lưu bản nháp"
-          onSaveDraft={
-            topic.status === 'DRAFT'
-              ? async (values) => performUpdate(values, 'DRAFT')
-              : undefined
-          }
-          onSubmit={async (values) => {
-            if (isApproved) {
-              setPendingFormValues(values);
-              setConfirmApprovedEdit(true);
-            } else {
-              await performUpdate(
-                values,
-                topic.status === 'DRAFT' ? 'PENDING_DEPARTMENT' : undefined,
-              );
-            }
-          }}
-          onCancel={() => {
-            router.replace(`/lecturer/topics/${topicId}`);
-          }}
-        >
-          <AttachmentUploader
-            files={files}
-            onChange={setFiles}
-            existingFiles={existingFiles}
-            onDeleteExisting={(fileId) => {
-              setDeletedFileIds((prev) => [...prev, fileId]);
-              toast.success('Đã xoá tệp đính kèm.');
+          {topic.departmentFeedback && (
+            <div className="rounded-xl border border-amber-200/80 dark:border-amber-800/50 bg-amber-50/70 dark:bg-amber-950/20 px-4 py-3.5 space-y-1.5">
+              <p className="text-sm font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                <MessageSquareText className="size-4 shrink-0" />
+                <span>
+                  Góp ý từ Bộ môn
+                  {topic.departmentReviewer &&
+                    ` (${
+                      sanitizeLecturerName(
+                        topic.departmentReviewer.fullName,
+                        topic.departmentReviewer.academicTitle,
+                      ).displayName
+                    })`}
+                </span>
+              </p>
+              <p className="text-[15px] leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line break-words [overflow-wrap:anywhere]">
+                {topic.departmentFeedback}
+              </p>
+            </div>
+          )}
+
+          <TopicForm
+            defaultValues={{
+              semesterId: topic.semesterId,
+              projectTypeId: topic.projectTypeId,
+              title: topic.title,
+              description: topic.description,
+              expectedOutcomes: topic.expectedOutcomes,
+              maxStudents: topic.maxStudents,
             }}
-          />
-        </TopicForm>
+            semesterInfo={topic.semester}
+            lockSemester
+            submitLabel={
+              topic.status === 'DRAFT'
+                ? 'Lưu & Gửi duyệt'
+                : isApproved
+                  ? 'Lưu thay đổi (sẽ duyệt lại)'
+                  : 'Lưu thay đổi'
+            }
+            draftLabel="Lưu bản nháp"
+            onSaveDraft={
+              topic.status === 'DRAFT'
+                ? async (values) => performUpdate(values, 'DRAFT')
+                : undefined
+            }
+            onSubmit={async (values) => {
+              if (isApproved) {
+                setPendingFormValues(values);
+                setConfirmApprovedEdit(true);
+              } else {
+                await performUpdate(
+                  values,
+                  topic.status === 'DRAFT' ? 'PENDING_DEPARTMENT' : undefined,
+                );
+              }
+            }}
+            onCancel={() => {
+              router.replace(`/lecturer/topics/${topicId}`);
+            }}
+          >
+            <AttachmentUploader
+              files={files}
+              onChange={setFiles}
+              existingFiles={existingFiles}
+              onDeleteExisting={(fileId) => {
+                setDeletedFileIds((prev) => [...prev, fileId]);
+                toast.success('Đã xoá tệp đính kèm.');
+              }}
+            />
+          </TopicForm>
+        </div>
 
         <ConfirmDialog
           open={confirmApprovedEdit}

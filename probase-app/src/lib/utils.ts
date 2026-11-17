@@ -110,32 +110,39 @@ export function downloadCsvFile(
 }
 
 /**
- * Rút gọn tên học kỳ thành định dạng ngắn gọn: HKII-2023-2024 hoặc HKI-2024-2025
+ * Rút gọn tên học kỳ thành định dạng ngắn gọn: HK II - 2023-2024 hoặc HK I - 2026-2027
  */
 export function formatSemesterShort(
   semester?: { name?: string; code?: string } | null,
 ): string {
   if (!semester) return '—';
   const name = (semester.name || '').trim();
+  const toRoman = (term: string) => {
+    const t = term.toUpperCase();
+    if (t === '1' || t === 'I') return 'HK I';
+    if (t === '2' || t === 'II') return 'HK II';
+    if (t === '3' || t === 'III') return 'HK III';
+    return `HK ${t}`;
+  };
+
   const match = name.match(
     /Học kỳ\s*([0-9IVX]+)(?:\s*năm học\s*(\d{4})[-–/](\d{4}))?/i,
   );
   if (match) {
-    const termNum = match[1].toUpperCase();
-    const roman =
-      termNum === '1' || termNum === 'I'
-        ? 'HKI'
-        : termNum === '2' || termNum === 'II'
-          ? 'HKII'
-          : termNum === '3' || termNum === 'III'
-            ? 'HKIII'
-            : `HK${termNum}`;
+    const roman = toRoman(match[1]);
     if (match[2] && match[3]) {
-      return `${roman}-${match[2]}-${match[3]}`;
+      return `${roman} - ${match[2]}-${match[3]}`;
     }
     return roman;
   }
-  return semester.code || name;
+
+  const code = (semester.code || '').trim();
+  const codeMatch = code.match(/^HK\s*([0-9IVX]+)[-_](\d{4})[-–/](\d{4})$/i);
+  if (codeMatch) {
+    return `${toRoman(codeMatch[1])} - ${codeMatch[2]}-${codeMatch[3]}`;
+  }
+
+  return code || name;
 }
 
 /**
