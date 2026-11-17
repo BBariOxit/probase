@@ -45,7 +45,7 @@ export function usePermissionMatrix() {
   return useQuery({
     queryKey: ['permissions', 'matrix'],
     queryFn: () => api<PermissionMatrixResponse>('/permissions/matrix'),
-    staleTime: 30_000,
+    staleTime: 5_000,
   });
 }
 
@@ -68,7 +68,8 @@ export function useUpdateRolePermissions() {
         },
       ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['permissions', 'matrix'] });
+      queryClient.invalidateQueries({ queryKey: ['permissions'] });
+      queryClient.invalidateQueries({ queryKey: ['lecturers', 'admin-roster'] });
     },
   });
 }
@@ -78,7 +79,7 @@ export function useUserPermissions(userId?: number) {
     queryKey: ['permissions', 'user', userId],
     queryFn: () => api<UserPermissionsResponse>(`/permissions/users/${userId}`),
     enabled: typeof userId === 'number' && userId > 0,
-    staleTime: 10_000,
+    staleTime: 5_000,
   });
 }
 
@@ -97,13 +98,9 @@ export function useUpdateUserPermissions() {
         method: 'PUT',
         body: { permissions },
       }),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ['permissions', 'user', variables.userId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['lecturers', 'admin-roster'],
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['permissions'] });
+      queryClient.invalidateQueries({ queryKey: ['lecturers', 'admin-roster'] });
     },
   });
 }
@@ -127,7 +124,7 @@ export function useGrantPermission() {
         },
       ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['permissions', 'matrix'] });
+      queryClient.invalidateQueries({ queryKey: ['permissions'] });
       queryClient.invalidateQueries({ queryKey: ['lecturers', 'admin-roster'] });
     },
   });
@@ -152,7 +149,7 @@ export function useRevokePermission() {
         },
       ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['permissions', 'matrix'] });
+      queryClient.invalidateQueries({ queryKey: ['permissions'] });
       queryClient.invalidateQueries({ queryKey: ['lecturers', 'admin-roster'] });
     },
   });
