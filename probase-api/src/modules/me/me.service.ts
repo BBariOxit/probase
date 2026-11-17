@@ -141,7 +141,12 @@ export class MeService {
       return this.getProfile(userId);
     }
 
-    if (user.role === 'LECTURER' && user.lecturerProfile) {
+    if (
+      (user.role === 'LECTURER' ||
+        user.role === 'GVCN' ||
+        user.role === 'ADMIN') &&
+      user.lecturerProfile
+    ) {
       await this.prisma.lecturerProfile.update({
         where: { id: user.lecturerProfile.id },
         data: {

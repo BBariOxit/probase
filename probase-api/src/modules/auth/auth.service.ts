@@ -109,6 +109,7 @@ export class AuthService {
           majorId: true,
           isHeadOfDepartment: true,
           isAcademicAssistant: true,
+          isHomeroomTeacher: true,
         },
       },
     };
@@ -302,6 +303,7 @@ export class AuthService {
           majorId: true,
           isHeadOfDepartment: true,
           isAcademicAssistant: true,
+          isHomeroomTeacher: true,
         },
       },
     };
@@ -478,6 +480,7 @@ export class AuthService {
             majorId: true,
             isHeadOfDepartment: true,
             isAcademicAssistant: true,
+            isHomeroomTeacher: true,
           },
         },
       },

@@ -295,7 +295,7 @@ export class TopicsService {
     }
 
     if (query.mine) {
-      if (role !== Role.LECTURER) {
+      if (!isLecturerRole(role)) {
         throw new ForbiddenException('Chỉ giảng viên mới có quyền sở hữu đề tài.');
       }
       where.lecturerId = await this.requireLecturerProfileId(userId);
@@ -303,18 +303,14 @@ export class TopicsService {
         where.status = { equals: query.status };
       }
     } else if (query.reviewStage) {
-      if (role !== Role.LECTURER) {
+      if (!isLecturerRole(role)) {
         throw new ForbiddenException(
           'Chỉ Tổ trưởng Bộ môn (giảng viên) mới có quyền xem hàng chờ thẩm định.',
         );
       }
       if (query.reviewStage === 'DEPARTMENT') {
         if (query.status) {
-          if (query.status === ('ALL' as any)) {
-            // Show all department statuses
-          } else {
-            where.status = query.status;
-          }
+          where.status = query.status;
         } else {
           where.status = {
             in: [TopicStatus.PENDING_DEPARTMENT, TopicStatus.PENDING],
@@ -334,7 +330,10 @@ export class TopicsService {
       } else if (query.excludeLecturerId) {
         where.lecturerId = { not: query.excludeLecturerId };
       }
-      if (query.includeDrafts && (role === Role.LECTURER || role === Role.ADMIN)) {
+      if (
+        query.includeDrafts &&
+        (isLecturerRole(role) || role === Role.ADMIN)
+      ) {
         where.status = query.status ? query.status : undefined;
       } else {
         where.status = visibleStatusFilter(role, query.status);
@@ -490,7 +489,7 @@ export class TopicsService {
     }
 
     if (topic.status === TopicStatus.DRAFT) {
-      if (role !== Role.LECTURER && role !== Role.ADMIN) {
+      if (!isLecturerRole(role) && role !== Role.ADMIN) {
         throw new NotFoundException('Không tìm thấy đề tài.');
       }
     } else if (!canSee(topic.status, role)) {
@@ -506,6 +505,7 @@ export class TopicsService {
 
     return {
       ...withActiveGroup(topic, phase, viewer(topic)),
+      attachments: (topic as any).sourceProposal?.attachments ?? [],
       roundPhase: phase,
       // Saves the client a second request to the round just to decide whether
       // the register button should be live. This one is about the topic and the
@@ -545,18 +545,39 @@ export class TopicsService {
       }
     }
 
-    const topic = await this.prisma.topic.create({
-      data: {
-        ...rest,
-        maxStudents,
-        majorId,
-        semesterId,
-        roundId: round.id,
-        lecturerId: lecturerProfile.id,
-        status: initialStatus,
-        departmentReviewerId: reviewerId,
-      },
-      include: DETAIL_INCLUDE,
+    const isAutoApproved = initialStatus === TopicStatus.APPROVED;
+
+    const topic = await this.prisma.$transaction(async (tx) => {
+      const res = await tx.topic.create({
+        data: {
+          ...rest,
+          maxStudents,
+          majorId,
+          semesterId,
+          roundId: round.id,
+          lecturerId: lecturerProfile.id,
+          status: initialStatus,
+          departmentReviewerId: reviewerId,
+        },
+        include: DETAIL_INCLUDE,
+      });
+
+      if (isAutoApproved) {
+        await recordAudit(tx, {
+          userId,
+          action: 'TOPIC_DEPARTMENT_APPROVED',
+          targetTable: 'topics',
+          targetId: res.id,
+          oldValue: { status: TopicStatus.DRAFT },
+          newValue: {
+            status: TopicStatus.APPROVED,
+            departmentReviewerId: lecturerProfile.id,
+            autoApproved: true,
+          },
+        });
+      }
+
+      return res;
     });
 
     if (initialStatus === TopicStatus.PENDING_DEPARTMENT) {
@@ -678,6 +699,7 @@ export class TopicsService {
     let reviewerId: number | null | undefined = undefined;
     let clearFeedback = false;
     let isRevertedFromApproved = false;
+    let isAutoApprovedOnUpdate = false;
 
     if (
       topic.status === TopicStatus.APPROVED ||
@@ -706,6 +728,7 @@ export class TopicsService {
           : TopicStatus.PENDING_DEPARTMENT;
         if (canAutoApprove && lecturer) {
           reviewerId = lecturer.id;
+          isAutoApprovedOnUpdate = true;
         }
       } else {
         newStatus = TopicStatus.DRAFT;
@@ -733,6 +756,21 @@ export class TopicsService {
           targetId: id,
           oldValue: { status: topic.status },
           newValue: { status: newStatus },
+        });
+      }
+
+      if (isAutoApprovedOnUpdate && lecturer) {
+        await recordAudit(tx, {
+          userId,
+          action: 'TOPIC_DEPARTMENT_APPROVED',
+          targetTable: 'topics',
+          targetId: id,
+          oldValue: { status: topic.status },
+          newValue: {
+            status: TopicStatus.APPROVED,
+            departmentReviewerId: lecturer.id,
+            autoApproved: true,
+          },
         });
       }
 
@@ -1033,7 +1071,7 @@ export class TopicsService {
     );
     const isHead =
       user.role === Role.ADMIN ||
-      (user.role === Role.LECTURER &&
+      (isLecturerRole(user.role) &&
         ((user.lecturerProfile?.isHeadOfDepartment ?? false) || hasCustomPerm));
     if (!isHead) {
       throw new ForbiddenException(
@@ -1255,6 +1293,10 @@ export class TopicsService {
 
     if (!semester) throw new NotFoundException(`Không tìm thấy học kỳ mã #${id}`);
   }
+}
+
+function isLecturerRole(role: Role): boolean {
+  return role === Role.LECTURER || role === Role.GVCN;
 }
 
 function canHeadAutoApproveOwnTopic(

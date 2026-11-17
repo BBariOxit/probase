@@ -81,6 +81,7 @@ const ROLE_FILTERS = [
   { value: 'ALL', label: 'Mọi vai trò' },
   { value: 'STUDENT', label: 'Sinh viên' },
   { value: 'LECTURER', label: 'Giảng viên' },
+  { value: 'GVCN', label: 'GV Chủ nhiệm' },
   { value: 'ADMIN', label: 'Quản trị' },
 ];
 
@@ -496,6 +497,7 @@ function EditUserDialog({
               <SelectContent>
                 <SelectItem value="STUDENT">Sinh viên</SelectItem>
                 <SelectItem value="LECTURER">Giảng viên</SelectItem>
+                <SelectItem value="GVCN">GV Chủ nhiệm</SelectItem>
                 <SelectItem value="ADMIN">Quản trị</SelectItem>
               </SelectContent>
             </Select>

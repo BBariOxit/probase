@@ -52,7 +52,7 @@ export function TopicDetailView({
   const { data: profile } = useMyProfile();
 
   const isStudent = user?.role === 'STUDENT';
-  const isLecturer = user?.role === 'LECTURER';
+  const isLecturer = user?.role === 'LECTURER' || user?.role === 'GVCN';
   const isAdmin = user?.role === 'ADMIN';
 
   // Kiểm tra quyền chỉnh sửa đề tài (Giảng viên tạo đề tài hoặc Quản trị viên/Giáo vụ)

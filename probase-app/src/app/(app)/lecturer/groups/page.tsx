@@ -104,7 +104,7 @@ function GroupRosterSection({
 }
 
 export default function LecturerGroupsPage() {
-  const allowed = useRequireRole('LECTURER');
+  const allowed = useRequireRole(['LECTURER', 'GVCN']);
   const [search, setSearch] = useState('');
 
   // Tự động lấy danh sách nhóm thuộc học kỳ hiện tại

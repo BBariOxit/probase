@@ -23,7 +23,7 @@ function getNotificationAction(
   notice: { type: string; targetId: number | null; title: string; content: string },
   role?: string,
 ) {
-  const isLecturer = role === 'LECTURER';
+  const isLecturer = role === 'LECTURER' || role === 'GVCN';
   const isStudent = role === 'STUDENT';
 
   // 0. Kết quả thẩm định đề tài từ Tổ trưởng Bộ môn

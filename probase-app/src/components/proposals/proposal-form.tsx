@@ -265,9 +265,6 @@ export function ProposalForm({
           <span className="font-semibold text-xs text-slate-900 dark:text-neutral-100 px-3 py-2 rounded-lg bg-slate-100 dark:bg-neutral-800 border border-slate-300 dark:border-neutral-700">
             {matchingRound?.maxStudentsPerTopic ?? 1} sinh viên / đề tài
           </span>
-          <span className="text-xs text-slate-500 dark:text-neutral-400">
-            (Quy định tự động theo đợt đồ án)
-          </span>
         </div>
         <input type="hidden" {...register('maxStudents', { valueAsNumber: true })} />
       </div>

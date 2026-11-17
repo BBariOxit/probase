@@ -8,6 +8,7 @@ import {
   GroupMemberStatus,
   NotificationType,
   Prisma,
+  RegistrationGroupStatus,
 } from '../../../generated/prisma/client';
 import { CloudinaryService } from '../../core/cloudinary/cloudinary.service';
 import { NotificationsService } from '../../core/notifications/notifications.service';
@@ -57,8 +58,13 @@ export class ProgressService {
       where: {
         studentId: student.id,
         status: GroupMemberStatus.ACCEPTED,
+        group: {
+          status: { not: RegistrationGroupStatus.REJECTED },
+          semester: { isActive: true },
+        },
       },
       select: { groupId: true },
+      orderBy: { id: 'desc' },
     });
 
     if (!membership) {
@@ -233,7 +239,12 @@ export class ProgressService {
       where: {
         studentId: student.id,
         status: GroupMemberStatus.ACCEPTED,
+        group: {
+          status: { not: RegistrationGroupStatus.REJECTED },
+          semester: { isActive: true },
+        },
       },
+      orderBy: { id: 'desc' },
       include: {
         group: {
           include: {
@@ -473,7 +484,12 @@ export class ProgressService {
       where: {
         studentId: student.id,
         status: GroupMemberStatus.ACCEPTED,
+        group: {
+          status: { not: RegistrationGroupStatus.REJECTED },
+          semester: { isActive: true },
+        },
       },
+      orderBy: { id: 'desc' },
       include: {
         group: {
           include: {
@@ -829,9 +845,12 @@ export class ProgressService {
     }
 
     const whereClause: Prisma.RegistrationGroupWhereInput = {
-      topic: { lecturerId: lecturer.id },
+      status: { not: RegistrationGroupStatus.REJECTED },
+      topic: {
+        lecturerId: lecturer.id,
+        ...(query.roundId && { roundId: query.roundId }),
+      },
       ...(query.semesterId && { semesterId: query.semesterId }),
-      ...(query.roundId && { topic: { roundId: query.roundId } }),
     };
 
     const groups = await this.prisma.registrationGroup.findMany({

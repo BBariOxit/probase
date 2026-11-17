@@ -970,7 +970,7 @@ export class UsersService {
   ) {
     const user = await this.findOne(id);
 
-    if (user.role !== 'LECTURER') {
+    if (user.role !== 'LECTURER' && user.role !== 'GVCN') {
       throw new ConflictException(
         'Hồ sơ giảng viên chỉ có thể gán cho tài khoản có vai trò Giảng viên.',
       );

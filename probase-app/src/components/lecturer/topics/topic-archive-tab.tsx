@@ -169,7 +169,7 @@ export function TopicArchiveTab({
 
       {error && (
         <p className="text-sm text-destructive">
-          Không tải được kho đề tài cũ.
+          Không tải được danh sách đề tài kỳ trước.
         </p>
       )}
 

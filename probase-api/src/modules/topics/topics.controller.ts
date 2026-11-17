@@ -127,7 +127,7 @@ export class TopicsController {
     return this.topicsService.submitDrafts(userId, dto.topicIds);
   }
 
-  @Roles('LECTURER', 'ADMIN')
+  @Roles('LECTURER', 'GVCN', 'ADMIN')
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -138,7 +138,7 @@ export class TopicsController {
     return this.topicsService.update(id, dto, userId, role);
   }
 
-  @Roles('LECTURER', 'ADMIN')
+  @Roles('LECTURER', 'GVCN', 'ADMIN')
   @Delete(':id')
   remove(
     @Param('id', ParseIntPipe) id: number,
@@ -164,7 +164,7 @@ export class TopicsController {
     return this.topicsService.submit(id, userId);
   }
 
-  @Roles('LECTURER', 'ADMIN')
+  @Roles('LECTURER', 'GVCN', 'ADMIN')
   @Patch(':id/withdraw')
   withdraw(
     @Param('id', ParseIntPipe) id: number,

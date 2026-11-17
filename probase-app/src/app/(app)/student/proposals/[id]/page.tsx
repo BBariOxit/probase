@@ -189,9 +189,17 @@ export default function StudentProposalDetailPage({
                   variant="default"
                   size="sm"
                   onClick={async () => {
-                    await submitProposal.mutateAsync(proposal.id);
-                    toast.success('Đã gửi đề xuất cho giảng viên thành công.');
-                    router.push('/student/proposals');
+                    try {
+                      await submitProposal.mutateAsync(proposal.id);
+                      toast.success('Đã gửi đề xuất cho giảng viên thành công.');
+                      router.push('/student/proposals');
+                    } catch (err: unknown) {
+                      toast.error(
+                        err instanceof Error
+                          ? err.message
+                          : 'Không thể gửi đề xuất cho giảng viên.',
+                      );
+                    }
                   }}
                   disabled={submitProposal.isPending}
                   className="gap-1.5 cursor-pointer font-semibold shadow-xs bg-primary text-white hover:bg-primary/90"

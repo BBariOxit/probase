@@ -1,37 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  BookOpen,
-  FileDown,
-  FileUp,
-  Inbox,
-  Loader2,
-  MessageSquareText,
-} from 'lucide-react';
-import { ApiError } from '@/lib/api/client';
-import { useSubmissions, useSubmissionFeedback } from '@/lib/api/submissions';
+import { BookOpen, FileDown, Inbox, Loader2 } from 'lucide-react';
+import { useSubmissions } from '@/lib/api/submissions';
 import { useTopics } from '@/lib/api/topics';
-import type { Submission } from '@/lib/api/types';
 import { useRequireRole } from '@/lib/auth/use-require-role';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
 import { EmptyState } from '@/components/shared/empty-state';
-import { FormError } from '@/components/shared/form-error';
 import { PageWithRail } from '@/components/layout/page-with-rail';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { SubmissionCard } from '@/components/submissions/submission-card';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -46,7 +24,6 @@ export default function AdminSubmissionsPage() {
   const allowed = useRequireRole('ADMIN');
   const [page, setPage] = useState(1);
   const [topicId, setTopicId] = useState<number | undefined>(undefined);
-  const [answering, setAnswering] = useState<Submission | null>(null);
 
   const { data, isPending, error } = useSubmissions({
     topicId,
@@ -142,14 +119,6 @@ export default function AdminSubmissionsPage() {
                       Tải file
                     </Button>
                   )}
-                  <Button
-                    size="sm"
-                    variant={submission.feedbackAt ? 'outline' : 'default'}
-                    onClick={() => setAnswering(submission)}
-                  >
-                    <MessageSquareText />
-                    {submission.feedbackAt ? 'Sửa nhận xét' : 'Nhận xét'}
-                  </Button>
                 </div>
               }
             />
@@ -162,13 +131,6 @@ export default function AdminSubmissionsPage() {
           page={data.page}
           totalPages={data.totalPages}
           onPageChange={setPage}
-        />
-      )}
-
-      {answering && (
-        <FeedbackDialog
-          submission={answering}
-          onClose={() => setAnswering(null)}
         />
       )}
     </PageWithRail>
@@ -217,87 +179,5 @@ function TopicFilter({
         </SelectContent>
       </Select>
     </div>
-  );
-}
-
-function FeedbackDialog({
-  submission,
-  onClose,
-}: {
-  submission: Submission;
-  onClose: () => void;
-}) {
-  const answer = useSubmissionFeedback();
-  const [feedback, setFeedback] = useState(submission.lecturerFeedback ?? '');
-  const [error, setError] = useState<string | null>(null);
-
-  const trimmed = feedback.trim();
-
-  async function submit() {
-    setError(null);
-    try {
-      await answer.mutateAsync({ id: submission.id, feedback: trimmed });
-      toast.success('Đã gửi phản hồi.');
-      onClose();
-    } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : 'Không kết nối được máy chủ',
-      );
-    }
-  }
-
-  return (
-    <Dialog
-      open
-      onOpenChange={(next) => !next && !answer.isPending && onClose()}
-    >
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            Nhận xét {submission.requirement.name.toLowerCase()}
-          </DialogTitle>
-          <DialogDescription>
-            {submission.group.topic.title} · lần {submission.version}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <FormError message={error} />
-
-          <div className="space-y-2">
-            <Label htmlFor="admin-feedback">Nhận xét</Label>
-            <p className="-mt-1 text-xs text-muted-foreground">
-              Nhóm sẽ nhận thông báo và đọc được nguyên văn nhận xét này.
-            </p>
-            <Textarea
-              id="admin-feedback"
-              rows={5}
-              maxLength={4000}
-              autoFocus
-              value={feedback}
-              aria-invalid={trimmed === ''}
-              onChange={(event) => setFeedback(event.target.value)}
-            />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button
-            variant="outline"
-            disabled={answer.isPending}
-            onClick={onClose}
-          >
-            Huỷ
-          </Button>
-          <Button
-            disabled={trimmed === '' || answer.isPending}
-            onClick={submit}
-          >
-            {answer.isPending && <Loader2 className="animate-spin" />}
-            Gửi nhận xét
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }

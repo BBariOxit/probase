@@ -32,7 +32,7 @@ export function notificationHref(
   notice: AppNotification,
   role: Role,
 ): string | null {
-  if (role === 'LECTURER') {
+  if (role === 'LECTURER' || role === 'GVCN') {
     switch (notice.type) {
       // Carries the proposal's id, which the inbox screen does not need: what
       // they are opening it for is the queue, and the one they were told about
@@ -69,9 +69,6 @@ export function notificationHref(
         return notice.targetId
           ? `/lecturer/topics/${notice.targetId}`
           : '/lecturer';
-
-      case 'REVIEWER_ASSIGNED':
-        return '/lecturer/reviews';
 
       default:
         return null;

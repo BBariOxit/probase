@@ -38,6 +38,12 @@ export function ProgressReportModal({
   const submitMutation = useSubmitProgressReport();
   const isPending = submitMutation.isPending;
 
+  const openModal = () => {
+    setFile(null);
+    setSourceCodeUrl(existingReport?.sourceCodeUrl ?? '');
+    setOpen(true);
+  };
+
   const stageTitle =
     stage === 'STAGE_1'
       ? 'Tiến độ lần 1 (Tuần 5–6)'
@@ -71,7 +77,7 @@ export function ProgressReportModal({
   return (
     <>
       {trigger ? (
-        <span onClick={() => setOpen(true)} className="inline-block cursor-pointer">
+        <span onClick={openModal} className="inline-block cursor-pointer">
           {trigger}
         </span>
       ) : (
@@ -79,14 +85,17 @@ export function ProgressReportModal({
           size="sm"
           variant="outline"
           className="gap-1.5"
-          onClick={() => setOpen(true)}
+          onClick={openModal}
         >
           <FileUp className="size-4" />
           {existingReport ? 'Nộp lại bài' : 'Nộp báo cáo'}
         </Button>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => (next ? openModal() : setOpen(false))}
+      >
         <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Báo cáo {stageTitle}</DialogTitle>

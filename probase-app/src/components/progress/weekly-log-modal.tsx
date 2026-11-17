@@ -55,6 +55,16 @@ export function WeeklyLogModal({
   const updateMutation = useUpdateWeeklyLog();
   const isPending = createMutation.isPending || updateMutation.isPending;
 
+  const openModal = () => {
+    setWeekNumber(initialLog?.weekNumber ?? suggestedWeek);
+    setTitle(initialLog?.title ?? '');
+    setPercentage(initialLog?.completionPercentage ?? currentPercentage);
+    setGitUrl(initialLog?.gitCommitUrl ?? '');
+    setSummary(initialLog?.summaryNotes ?? '');
+    setBlockers(initialLog?.blockers ?? '');
+    setOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!summary.trim()) {
@@ -93,17 +103,20 @@ export function WeeklyLogModal({
   return (
     <>
       {trigger ? (
-        <span onClick={() => setOpen(true)} className="inline-block cursor-pointer">
+        <span onClick={openModal} className="inline-block cursor-pointer">
           {trigger}
         </span>
       ) : (
-        <Button size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
+        <Button size="sm" className="gap-1.5" onClick={openModal}>
           <Plus className="size-4" />
           Ghi nhận tiến độ
         </Button>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => (next ? openModal() : setOpen(false))}
+      >
         <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
