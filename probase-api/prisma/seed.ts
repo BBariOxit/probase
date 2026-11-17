@@ -1801,7 +1801,7 @@ async function main() {
         expectedOutcomes: item.expectedOutcomes,
         techStack: item.techStack,
         maxStudents: 2,
-        status: 'COMPLETED',
+        status: 'OPEN',
         semesterId: item.semKey.id,
         roundId: round.id,
         lecturerId: item.lecturerId,

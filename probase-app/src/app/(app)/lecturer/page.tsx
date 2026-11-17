@@ -337,8 +337,9 @@ export default function LecturerTopicsPage() {
           <Table className="w-full table-fixed text-left text-sm">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[380px] max-w-[440px] min-w-[280px] px-5 py-3.5 whitespace-nowrap">Tiêu đề</TableHead>
-                <TableHead className="w-40 px-3 py-3.5 whitespace-nowrap">Loại đồ án</TableHead>
+                <TableHead className="w-[360px] max-w-[420px] min-w-[260px] px-5 py-3.5 whitespace-nowrap">Tiêu đề</TableHead>
+                <TableHead className="w-36 px-3 py-3.5 whitespace-nowrap">Loại đồ án</TableHead>
+                <TableHead className="w-24 px-3 py-3.5 text-center whitespace-nowrap">Chỗ</TableHead>
                 <TableHead className="w-36 px-3 py-3.5 whitespace-nowrap">Trạng thái</TableHead>
                 <TableHead className="w-24 px-4 py-3.5 text-right whitespace-nowrap" />
               </TableRow>
@@ -349,8 +350,8 @@ export default function LecturerTopicsPage() {
                   key={topic.id}
                   className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                 >
-                  <TableCell className="w-[380px] max-w-[440px] min-w-[280px] px-5 py-3.5 align-middle whitespace-normal">
-                    <div className="w-full max-w-[440px] whitespace-normal">
+                  <TableCell className="w-[360px] max-w-[420px] min-w-[260px] px-5 py-3.5 align-middle whitespace-normal">
+                    <div className="w-full max-w-[420px] whitespace-normal">
                       <Link
                         href={`/lecturer/topics/${topic.id}`}
                         className="block font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal line-clamp-2 cursor-pointer"
@@ -358,31 +359,26 @@ export default function LecturerTopicsPage() {
                       >
                         {topic.title}
                       </Link>
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-normal text-muted-foreground">
-                        <span>
-                          {topic.activeGroup
-                            ? `Nhóm ${topic.activeGroup.occupiedSeats}/${topic.maxStudents} sinh viên`
-                            : 'Chưa có nhóm sinh viên'}
-                        </span>
-                        {(topic.status === 'DRAFT' ||
-                          topic.status === 'REJECTED') &&
-                          topic.departmentFeedback?.trim() && (
-                            <>
-                              <span aria-hidden="true">•</span>
-                              <Link
-                                href={`/lecturer/topics/${topic.id}`}
-                                title={topic.departmentFeedback}
-                                className="font-medium text-amber-600 hover:underline dark:text-amber-400"
-                              >
-                                Xem góp ý
-                              </Link>
-                            </>
-                          )}
-                      </div>
+                      {(topic.status === 'DRAFT' ||
+                        topic.status === 'REJECTED') &&
+                        topic.departmentFeedback?.trim() && (
+                          <div className="mt-1 flex items-center gap-1.5 text-xs font-normal">
+                            <Link
+                              href={`/lecturer/topics/${topic.id}`}
+                              title={topic.departmentFeedback}
+                              className="font-medium text-amber-600 hover:underline dark:text-amber-400"
+                            >
+                              Xem góp ý từ Bộ môn
+                            </Link>
+                          </div>
+                        )}
                     </div>
                   </TableCell>
-                  <TableCell className="w-40 px-3 py-3.5 align-middle whitespace-nowrap font-medium text-slate-700 dark:text-neutral-300">
+                  <TableCell className="w-36 px-3 py-3.5 align-middle whitespace-nowrap font-medium text-slate-700 dark:text-neutral-300">
                     {topic.projectType.name}
+                  </TableCell>
+                  <TableCell className="w-24 px-3 py-3.5 text-center align-middle whitespace-nowrap font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                    {topic.activeGroup?.occupiedSeats ?? 0}/{topic.maxStudents}
                   </TableCell>
                   <TableCell className="w-36 px-3 py-3.5 align-middle whitespace-nowrap">
                     <TopicOwnerBadge

@@ -540,7 +540,7 @@ export function RoundLecturerProgressTab({
                               )}
                             </div>
                           )}
-                          <Pencil className="size-3.5 text-primary -translate-y-0.5 shrink-0 transition-transform group-hover/quota:scale-110" />
+                          <Pencil className="size-3.5 text-primary shrink-0 transition-transform group-hover/quota:scale-110" />
                         </button>
                       </TableCell>
 

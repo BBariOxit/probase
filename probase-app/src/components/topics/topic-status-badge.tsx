@@ -34,24 +34,14 @@ export function TopicStatusBadge({
 
 export function TopicOwnerBadge({
   status,
-  activeGroup,
   variant = 'text',
   className,
 }: {
   status: TopicStatus;
-  activeGroup: ActiveGroup | null;
+  activeGroup?: ActiveGroup | null;
   variant?: 'text' | 'tag';
   className?: string;
 }) {
-  if (status === 'OPEN' && activeGroup) {
-    const owned =
-      activeGroup.status === 'SUBMITTED'
-        ? ({ label: 'Đã đủ người', tone: 'success' } as const)
-        : ({ label: 'Đang lập nhóm', tone: 'active' } as const);
-
-    return <StatusPill {...owned} variant={variant} className={className} />;
-  }
-
   return (
     <StatusPill
       {...TOPIC_STATUS[status]}
