@@ -720,8 +720,11 @@ export interface LecturerRoundProgress {
   pendingCount: number;
   draftCount: number;
   targetQuota: number;
+  hasCustomQuota?: boolean;
+  isExempt?: boolean;
+  exemptReason?: string | null;
   isMetQuota: boolean;
-  status: 'MET' | 'IN_PROGRESS' | 'NOT_STARTED';
+  status: 'MET' | 'IN_PROGRESS' | 'NOT_STARTED' | 'EXEMPT';
 }
 
 export interface RoundCapacitySummary {
@@ -748,7 +751,10 @@ export interface RoundCapacitySummary {
   deficit: number;
   balanceStatus: 'DEFICIT' | 'BALANCED' | 'SURPLUS';
   targetQuota: number;
+  totalTargetQuota?: number;
   lecturersCount: number;
+  activeLecturersCount?: number;
+  exemptLecturersCount?: number;
   lecturersMetQuotaCount: number;
   lecturerProgress: LecturerRoundProgress[];
 }

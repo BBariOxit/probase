@@ -34,6 +34,7 @@ import { QueryEligibleStudentsDto } from './dto/query-eligible-students.dto';
 import { QueryRoundsDto } from './dto/query-rounds.dto';
 import { SetRequirementsDto } from './dto/set-requirements.dto';
 import { UnlockRoundDto } from './dto/unlock-round.dto';
+import { UpdateLecturerQuotaDto } from './dto/update-lecturer-quota.dto';
 import { UpdateRoundDto } from './dto/update-round.dto';
 import { EligibleStudentsService } from './eligible-students.service';
 import { RequirementsService } from './requirements.service';
@@ -66,6 +67,27 @@ export class RoundsController {
   @Get(':id/capacity')
   getRoundCapacity(@Param('id', ParseIntPipe) id: number) {
     return this.roundsService.getRoundCapacity(id);
+  }
+
+  @RequirePermissions(
+    SystemPermission.TOPIC_REGISTRY,
+    SystemPermission.TOPIC_REVIEW_DEPT,
+  )
+  @Patch(':id/lecturers/:lecturerId/quota')
+  updateLecturerQuota(
+    @Param('id', ParseIntPipe) roundId: number,
+    @Param('lecturerId', ParseIntPipe) lecturerId: number,
+    @Body() dto: UpdateLecturerQuotaDto,
+    @GetUser('id') userId: number,
+    @GetUser('role') role: Role,
+  ) {
+    return this.roundsService.updateLecturerQuota(
+      roundId,
+      lecturerId,
+      dto,
+      userId,
+      role,
+    );
   }
 
   @Get(':id')

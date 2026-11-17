@@ -217,6 +217,35 @@ export function useUpdateRound() {
   });
 }
 
+export function useUpdateLecturerQuota() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      roundId,
+      lecturerId,
+      data,
+    }: {
+      roundId: number;
+      lecturerId: number;
+      data: {
+        targetQuota?: number | null;
+        isExempt?: boolean;
+        exemptReason?: string | null;
+      };
+    }) =>
+      api(`/rounds/${roundId}/lecturers/${lecturerId}/quota`, {
+        method: 'PATCH',
+        body: data,
+      }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['rounds', variables.roundId, 'capacity'],
+      });
+    },
+  });
+}
+
 export interface CatalogueInput {
   name: string;
   code: string;

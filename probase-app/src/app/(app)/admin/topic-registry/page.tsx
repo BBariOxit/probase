@@ -307,11 +307,6 @@ export default function AdminTopicRegistryPage() {
               )}
             >
               Sổ đề tài
-              {data && (
-                <span className="ml-1 rounded-full bg-slate-200 dark:bg-neutral-800 px-2 py-0.5 text-xs font-mono font-medium text-slate-700 dark:text-neutral-300">
-                  {data.total}
-                </span>
-              )}
             </button>
             <button
               type="button"

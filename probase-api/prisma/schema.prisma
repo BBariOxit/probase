@@ -221,6 +221,7 @@ model LecturerProfile {
   councilMembers           CouncilMember[]
   reviewedTopics           CouncilTopic[]
   topicReviews             TopicReview[]
+  roundQuotas              RoundLecturerQuota[]
 
   @@map("lecturer_profiles")
 }
@@ -305,6 +306,7 @@ model RegistrationRound {
   finalisedBy      User?                     @relation("RoundFinalisedBy", fields: [finalisedById], references: [id], onDelete: SetNull)
   eligibilities    RoundEligibility[]
   eligibleStudents RoundStudentEligibility[]
+  lecturerQuotas   RoundLecturerQuota[]
   requirements     SubmissionRequirement[]
   topics           Topic[]
 
@@ -340,6 +342,26 @@ model RoundStudentEligibility {
   @@index([roundId])
   @@index([studentId])
   @@map("round_student_eligibilities")
+}
+
+/// Custom quota or exemption per lecturer for a specific registration round
+model RoundLecturerQuota {
+  id           Int      @id @default(autoincrement())
+  roundId      Int
+  lecturerId   Int
+  targetQuota  Int?     // Custom quota; if null, falls back to round default
+  isExempt     Boolean  @default(false)
+  exemptReason String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  round    RegistrationRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  lecturer LecturerProfile   @relation(fields: [lecturerId], references: [id], onDelete: Cascade)
+
+  @@unique([roundId, lecturerId])
+  @@index([roundId])
+  @@index([lecturerId])
+  @@map("round_lecturer_quotas")
 }
 
 // Project category (e.g. "Đồ án cơ sở", "Đồ án chuyên ngành", "Khóa luận tốt nghiệp")

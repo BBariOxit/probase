@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -21,6 +22,7 @@ import { ExtendRoundDto } from './dto/extend-round.dto';
 import { QueryRoundsDto } from './dto/query-rounds.dto';
 import { SetSemesterRoundsDto } from './dto/set-semester-rounds.dto';
 import { UnlockRoundDto } from './dto/unlock-round.dto';
+import { UpdateLecturerQuotaDto } from './dto/update-lecturer-quota.dto';
 import { UpdateRoundDto } from './dto/update-round.dto';
 import { RoundPhaseService } from './round-phase.service';
 import { markTopicsBackOnOffer } from './topic-lifecycle';
@@ -769,6 +771,12 @@ export class RoundsService {
         : 5;
     const targetQuota = round.minTopicsPerLecturer ?? defaultSuggestedQuota;
 
+    // Load custom quotas / exemptions for this round
+    const customQuotas = await this.prisma.roundLecturerQuota.findMany({
+      where: { roundId },
+    });
+    const quotaMap = new Map(customQuotas.map((q) => [q.lecturerId, q]));
+
     const lecturerProgress = lecturers.map((lecturer) => {
       const lecturerTopics = topics.filter((t) => t.lecturerId === lecturer.id);
       const total = lecturerTopics.length;
@@ -780,8 +788,21 @@ export class RoundsService {
         (t) => t.status === TopicStatus.DRAFT,
       ).length;
 
-      let status: 'MET' | 'IN_PROGRESS' | 'NOT_STARTED' = 'NOT_STARTED';
-      if (approved >= targetQuota) {
+      const override = quotaMap.get(lecturer.id);
+      const isExempt = override?.isExempt ?? false;
+      const exemptReason = override?.exemptReason ?? null;
+      const hasCustomQuota =
+        override?.targetQuota !== null && override?.targetQuota !== undefined;
+      const lecturerTargetQuota = isExempt
+        ? 0
+        : hasCustomQuota
+          ? override.targetQuota!
+          : targetQuota;
+
+      let status: 'MET' | 'IN_PROGRESS' | 'NOT_STARTED' | 'EXEMPT' = 'NOT_STARTED';
+      if (isExempt) {
+        status = 'EXEMPT';
+      } else if (approved >= lecturerTargetQuota) {
         status = 'MET';
       } else if (total > 0) {
         status = 'IN_PROGRESS';
@@ -800,11 +821,21 @@ export class RoundsService {
         approvedCount: approved,
         pendingCount: pending,
         draftCount: draft,
-        targetQuota,
-        isMetQuota: approved >= targetQuota,
+        targetQuota: lecturerTargetQuota,
+        hasCustomQuota,
+        isExempt,
+        exemptReason,
+        isMetQuota: isExempt || approved >= lecturerTargetQuota,
         status,
       };
     });
+
+    const activeLecturers = lecturerProgress.filter((l) => !l.isExempt);
+    const exemptLecturers = lecturerProgress.filter((l) => l.isExempt);
+    const totalTargetQuota = activeLecturers.reduce(
+      (sum, l) => sum + l.targetQuota,
+      0,
+    );
 
     return {
       round: {
@@ -830,10 +861,73 @@ export class RoundsService {
       deficit,
       balanceStatus,
       targetQuota,
+      totalTargetQuota,
       lecturersCount: lecturers.length,
-      lecturersMetQuotaCount: lecturerProgress.filter((l) => l.isMetQuota).length,
+      activeLecturersCount: activeLecturers.length,
+      exemptLecturersCount: exemptLecturers.length,
+      lecturersMetQuotaCount: activeLecturers.filter((l) => l.isMetQuota).length,
       lecturerProgress,
     };
+  }
+
+  async updateLecturerQuota(
+    roundId: number,
+    lecturerId: number,
+    dto: UpdateLecturerQuotaDto,
+    currentUserId: number,
+    currentUserRole: Role,
+  ) {
+    const round = await this.prisma.registrationRound.findUnique({
+      where: { id: roundId },
+      select: { id: true },
+    });
+    if (!round) {
+      throw new NotFoundException('Không tìm thấy đợt đăng ký');
+    }
+
+    const lecturer = await this.prisma.lecturerProfile.findUnique({
+      where: { id: lecturerId },
+      select: { id: true, majorId: true, fullName: true },
+    });
+    if (!lecturer) {
+      throw new NotFoundException('Không tìm thấy giảng viên');
+    }
+
+    // Role-based check: TTBM can only update lecturers within their department
+    if (currentUserRole === Role.LECTURER) {
+      const caller = await this.prisma.lecturerProfile.findUnique({
+        where: { userId: currentUserId },
+        select: { majorId: true, isHeadOfDepartment: true },
+      });
+      if (caller && caller.majorId && lecturer.majorId !== caller.majorId) {
+        throw new ForbiddenException(
+          'Bạn chỉ có quyền điều chỉnh chỉ tiêu cho giảng viên thuộc bộ môn của mình.',
+        );
+      }
+    }
+
+    return this.prisma.roundLecturerQuota.upsert({
+      where: {
+        roundId_lecturerId: {
+          roundId,
+          lecturerId,
+        },
+      },
+      update: {
+        targetQuota:
+          dto.targetQuota !== undefined ? dto.targetQuota : undefined,
+        isExempt: dto.isExempt !== undefined ? dto.isExempt : undefined,
+        exemptReason:
+          dto.exemptReason !== undefined ? dto.exemptReason : undefined,
+      },
+      create: {
+        roundId,
+        lecturerId,
+        targetQuota: dto.targetQuota ?? null,
+        isExempt: dto.isExempt ?? false,
+        exemptReason: dto.exemptReason ?? null,
+      },
+    });
   }
 
   private async loadRow(id: number) {
