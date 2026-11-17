@@ -442,7 +442,7 @@ export default function AdminTopicRegistryPage() {
                 <TableHead className="w-14 px-2 text-center whitespace-nowrap">
                   Chỗ
                 </TableHead>
-                <TableHead className="w-[122px] px-2.5 whitespace-nowrap">
+                <TableHead className="w-[122px] px-2.5 text-center whitespace-nowrap">
                   Nguồn gốc
                 </TableHead>
                 <TableHead className="w-[152px] px-3 whitespace-nowrap">
@@ -501,7 +501,7 @@ export default function AdminTopicRegistryPage() {
                   <TableCell className="w-14 px-2 text-center whitespace-nowrap">
                     <OccupancyBadge topic={topic} />
                   </TableCell>
-                  <TableCell className="w-[122px] px-2.5 whitespace-nowrap">
+                  <TableCell className="w-[122px] px-2.5 text-center whitespace-nowrap">
                     <OriginBadge fromProposal={topic.fromProposal} />
                   </TableCell>
                   <TableCell className="w-[152px] px-3 whitespace-nowrap">

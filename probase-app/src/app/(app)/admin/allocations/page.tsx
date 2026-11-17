@@ -29,6 +29,12 @@ import { UnlockRoundDialog } from '@/components/admin/unlock-round-dialog';
 import { UserAvatar } from '@/components/shared/user-avatar';
 import { Button } from '@/components/ui/button';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -133,122 +139,148 @@ function Desk({ roundId, desk }: { roundId: number; desk: AllocationDesk }) {
         </p>
       )}
 
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        {/* Cột trái: Sinh viên chưa có đề tài */}
-        <Panel
-          title="Chưa có đề tài"
-          count={desk.students.length}
-          empty={
-            <EmptyState
-              icon={UserRoundCheck}
-              title="Mọi sinh viên trong đợt đều đã có đề tài."
-            />
-          }
-        >
-          {desk.students.map((student) => (
-            <li key={student.id}>
-              <button
-                type="button"
-                disabled={!desk.canPlace}
-                aria-pressed={stillUnplaced?.id === student.id}
-                onClick={() =>
-                  setSelected((current) =>
-                    current?.id === student.id ? null : student,
-                  )
-                }
-                className={cn(
-                  'flex w-full items-center gap-3.5 px-4 py-3 text-left transition-colors cursor-pointer',
-                  desk.canPlace
-                    ? 'hover:bg-slate-50/70 dark:hover:bg-neutral-800/50'
-                    : 'cursor-default opacity-70',
-                  stillUnplaced?.id === student.id
-                    ? 'bg-primary/10 dark:bg-primary/20 ring-1.5 ring-primary ring-inset'
-                    : '',
-                )}
-              >
-                <UserAvatar
-                  name={student.fullName}
-                  src={student.avatarUrl}
-                  className="size-9 ring-1 ring-slate-200 dark:ring-neutral-700"
+      <div className="grid items-start gap-4 grid-cols-1 lg:grid-cols-12">
+        {/* Cột trái: Sinh viên chưa có đề tài (gọn lại) */}
+        <div className="lg:col-span-4">
+          <Panel
+            title="Chưa có đề tài"
+            count={desk.students.length}
+            empty={
+              <EmptyState
+                icon={UserRoundCheck}
+                title="Mọi sinh viên trong đợt đều đã có đề tài."
+              />
+            }
+          >
+            {desk.students.map((student) => (
+              <li key={student.id}>
+                <button
+                  type="button"
+                  disabled={!desk.canPlace}
+                  aria-pressed={stillUnplaced?.id === student.id}
+                  onClick={() =>
+                    setSelected((current) =>
+                      current?.id === student.id ? null : student,
+                    )
+                  }
+                  className={cn(
+                    'flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors cursor-pointer',
+                    desk.canPlace
+                      ? 'hover:bg-slate-50/70 dark:hover:bg-neutral-800/50'
+                      : 'cursor-default opacity-70',
+                    stillUnplaced?.id === student.id
+                      ? 'bg-primary/10 dark:bg-primary/20 ring-1.5 ring-primary ring-inset'
+                      : '',
+                  )}
+                >
+                  <UserAvatar
+                    name={student.fullName}
+                    src={student.avatarUrl}
+                    className="size-8.5 shrink-0 ring-1 ring-slate-200 dark:ring-neutral-700"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-neutral-100">
+                      {student.fullName}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground mt-0.5">
+                      <span className="font-mono text-primary font-semibold text-xs">
+                        {student.studentCode}
+                      </span>
+                      {student.class && ` · ${student.class}`}
+                    </p>
+                  </div>
+                </button>
+              </li>
+            ))}
+          </Panel>
+        </div>
+
+        {/* Cột phải: Đề tài còn chỗ (dài hơn, tên 2 dòng, cột GVHD riêng, 0/2, nút primary) */}
+        <div className="lg:col-span-8">
+          <TooltipProvider delay={200}>
+            <Panel
+              title="Đề tài còn chỗ"
+              count={desk.topics.length}
+              empty={
+                <EmptyState
+                  icon={Users}
+                  title="Không còn đề tài nào trống chỗ trong đợt này."
                 />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-neutral-100">
-                    {student.fullName}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground mt-0.5">
-                    <span className="font-mono text-primary font-semibold text-xs">
-                      {student.studentCode}
-                    </span>
-                    {student.class && ` · ${student.class}`}
-                    {student.major && ` · ${student.major.name}`}
-                  </p>
-                </div>
-              </button>
-            </li>
-          ))}
-        </Panel>
-
-        {/* Cột phải: Đề tài còn chỗ */}
-        <Panel
-          title="Đề tài còn chỗ"
-          count={desk.topics.length}
-          empty={
-            <EmptyState
-              icon={Users}
-              title="Không còn đề tài nào trống chỗ trong đợt này."
-            />
-          }
-        >
-          {desk.topics.map((topic) => (
-            <li
-              key={topic.id}
-              className="flex items-center gap-3.5 px-4 py-3 text-sm hover:bg-slate-50/70 dark:hover:bg-neutral-800/40 transition-colors"
+              }
             >
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-slate-900 dark:text-neutral-100 leading-snug">
-                  {topic.title}
-                </p>
-                <p className="truncate text-xs text-muted-foreground mt-0.5">
-                  <span className="font-medium text-slate-700 dark:text-neutral-300">
-                    {topic.lecturer.academicTitle
-                      ? `${topic.lecturer.academicTitle} ${topic.lecturer.fullName}`
-                      : topic.lecturer.fullName}
-                  </span>
-                  {' · '}
-                  <span className="font-mono text-xs font-semibold text-primary">
-                    {topic.occupiedSeats}/{topic.maxStudents}
-                  </span>
-                  {' · '}
-                  <span>{topic.group ? 'đã có nhóm' : 'chưa có nhóm'}</span>
-                </p>
-              </div>
+              {desk.topics.map((topic) => (
+                <li
+                  key={topic.id}
+                  className="grid grid-cols-[1fr_160px_48px_auto] items-center gap-x-6 sm:gap-x-8 px-4 py-3 sm:px-5 text-sm hover:bg-slate-50/70 dark:hover:bg-neutral-800/40 transition-colors"
+                >
+                  {/* Tên đề tài: Cho phép hiển thị 2 dòng + Tooltip hiển thị đầy đủ khi hover */}
+                  <div className="min-w-0 pr-2 sm:pr-4">
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <p
+                            className="line-clamp-2 text-sm font-semibold text-slate-900 dark:text-neutral-100 leading-snug break-words cursor-default"
+                          />
+                        }
+                      >
+                        {topic.title}
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        align="start"
+                        className="max-w-md p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-neutral-800 dark:text-neutral-100 rounded-lg shadow-xl border border-slate-700 dark:border-neutral-700 z-50"
+                      >
+                        <p className="font-semibold text-primary mb-1">Tên đề tài đầy đủ:</p>
+                        <p className="text-slate-200 dark:text-neutral-200 break-words [overflow-wrap:anywhere]">
+                          {topic.title}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
 
-              <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                còn {topic.freeSeats} chỗ
-              </span>
+                  {/* Cột Giảng viên hướng dẫn riêng biệt: Chữ to rõ ràng, giữ khoảng cách thoáng đãng với tên đề tài */}
+                  <div className="min-w-0 text-left">
+                    <p
+                      className="truncate text-sm font-semibold text-slate-800 dark:text-neutral-200"
+                      title={
+                        topic.lecturer.academicTitle
+                          ? `${topic.lecturer.academicTitle} ${topic.lecturer.fullName}`
+                          : topic.lecturer.fullName
+                      }
+                    >
+                      {topic.lecturer.academicTitle
+                        ? `${topic.lecturer.academicTitle} ${topic.lecturer.fullName}`
+                        : topic.lecturer.fullName}
+                    </p>
+                  </div>
 
-              <Button
-                size="sm"
-                variant={stillUnplaced && desk.canPlace ? 'default' : 'outline'}
-                className={cn(
-                  'shrink-0 h-8 font-semibold gap-1.5 transition-all cursor-pointer shadow-2xs',
-                  stillUnplaced && desk.canPlace
-                    ? 'bg-primary text-white hover:bg-primary/90'
-                    : 'border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800',
-                )}
-                disabled={!desk.canPlace || !stillUnplaced || place.isPending}
-                onClick={() => assign(topic)}
-              >
-                {place.isPending && place.variables?.topicId === topic.id ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <ArrowRight className="size-3.5" />
-                )}
-                <span>Xếp vào</span>
-              </Button>
-            </li>
-          ))}
-        </Panel>
+                  {/* Số chỗ: 0/2 gọn gàng, căn giữa cột */}
+                  <div className="text-center">
+                    <span className="font-mono font-bold text-sm text-primary">
+                      {topic.occupiedSeats}/{topic.maxStudents}
+                    </span>
+                  </div>
+
+                  {/* Nút Xếp vào: Luôn là Primary */}
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="shrink-0 h-8 font-semibold gap-1.5 cursor-pointer shadow-2xs bg-primary text-white hover:bg-primary/90 disabled:opacity-50"
+                    disabled={!desk.canPlace || !stillUnplaced || place.isPending}
+                    onClick={() => assign(topic)}
+                  >
+                    {place.isPending && place.variables?.topicId === topic.id ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <ArrowRight className="size-3.5" />
+                    )}
+                    <span>Xếp vào</span>
+                  </Button>
+                </li>
+              ))}
+          </Panel>
+        </TooltipProvider>
+      </div>
       </div>
 
       <PlacementsMade roundId={roundId} desk={desk} />

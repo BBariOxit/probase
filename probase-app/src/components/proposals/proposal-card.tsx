@@ -1,10 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { CalendarDays, Layers, MessageSquare, Users } from 'lucide-react';
 import type { ProposalStatus, TopicProposal } from '@/lib/api/types';
 import { StatusPill, type StatusLabel } from '@/components/shared/status-pill';
-import { TextSection } from '@/components/shared/text-section';
+import { cn } from '@/lib/utils';
 
 const PROPOSAL_STATUS: Record<ProposalStatus, StatusLabel> = {
   DRAFT: { label: 'Bản nháp', tone: 'idle' },
@@ -21,7 +20,13 @@ export function ProposalStatusBadge({
   status: ProposalStatus;
   className?: string;
 }) {
-  return <StatusPill {...PROPOSAL_STATUS[status]} className={className} />;
+  return (
+    <StatusPill
+      {...PROPOSAL_STATUS[status]}
+      variant="text"
+      className={cn('text-xs font-semibold', className)}
+    />
+  );
 }
 
 const dateFormat = new Intl.DateTimeFormat('vi-VN', {
@@ -47,11 +52,10 @@ export function ProposalCard({
 }) {
   return (
     <article
-      className={`space-y-3 rounded-xl border bg-card p-4 overflow-hidden min-w-0 max-w-full break-words ${
-        onClick
-          ? 'cursor-pointer transition-colors hover:border-foreground/20 hover:bg-muted/30'
-          : ''
-      }`}
+      className={cn(
+        'rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#18181b] overflow-hidden shadow-xs hover:border-slate-400 dark:hover:border-neutral-600 hover:shadow-sm transition-all',
+        onClick && 'cursor-pointer',
+      )}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
@@ -62,69 +66,74 @@ export function ProposalCard({
         }
       }}
     >
-      <div className="flex items-start justify-between gap-3 min-w-0">
-        <div className="min-w-0 flex-1 space-y-3">
-          {titleHref ? (
-            <Link
-              href={titleHref}
-              onClick={(e) => e.stopPropagation()}
-              className="block text-base font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors cursor-pointer leading-snug break-all [overflow-wrap:anywhere]"
-            >
-              {proposal.title}
-            </Link>
-          ) : (
-            <h2 className="text-base font-bold text-slate-900 dark:text-neutral-100 group-hover:underline cursor-pointer leading-snug break-all [overflow-wrap:anywhere]">
-              {proposal.title}
-            </h2>
-          )}
-
-          <div
-            className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {counterparty}
-            <span className="inline-flex items-center gap-1.5">
-              <Layers className="size-3.5 shrink-0" />
-              {proposal.projectType.name}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Users className="size-3.5 shrink-0" />
-              {proposal.maxStudents ?? 1} SV
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <CalendarDays className="size-3.5 shrink-0" />
-              Gửi {dateFormat.format(new Date(proposal.createdAt))}
-            </span>
-            {proposal.comments && proposal.comments.length > 0 && (
-              <span className="inline-flex items-center gap-1.5 text-primary font-medium">
-                <MessageSquare className="size-3.5 shrink-0" />
-                {proposal.comments.length} trao đổi
-              </span>
-            )}
-          </div>
-
-          <TextSection
-            title="Mô tả"
-            body={proposal.description}
-            titleAs="h3"
-            titleClassName="text-xs text-muted-foreground"
-            bodyClassName="line-clamp-3 text-foreground"
-          />
-        </div>
-        <ProposalStatusBadge status={proposal.status} className="shrink-0" />
+      {/* Header bar: Phân loại đề tài & Trạng thái duyệt */}
+      <div className="bg-slate-100/75 dark:bg-neutral-900/80 px-4 py-2.5 sm:px-5 border-b border-slate-200 dark:border-neutral-800 flex items-center justify-between gap-3">
+        <span className="font-semibold text-xs text-slate-600 dark:text-neutral-400 uppercase tracking-wider">
+          {proposal.projectType.name}
+        </span>
+        <ProposalStatusBadge status={proposal.status} />
       </div>
-      {/* Hide expected outcomes on card to keep it compact */}
 
-      {footer && <div onClick={(e) => e.stopPropagation()}>{footer}</div>}
+      {/* Body: Tên đề tài, người đề xuất, mô tả tóm tắt */}
+      <div className="p-4 sm:p-5 space-y-3">
+        {titleHref ? (
+          <Link
+            href={titleHref}
+            onClick={(e) => e.stopPropagation()}
+            className="block text-base sm:text-[17px] font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words"
+          >
+            {proposal.title}
+          </Link>
+        ) : (
+          <h3 className="text-base sm:text-[17px] font-bold text-slate-900 dark:text-neutral-100 leading-snug break-words">
+            {proposal.title}
+          </h3>
+        )}
 
-      {actions && (
+        {/* Thông tin người gửi */}
         <div
-          className="flex flex-wrap items-center gap-2 pt-1"
+          className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-600 dark:text-neutral-400"
           onClick={(e) => e.stopPropagation()}
         >
-          {actions}
+          {counterparty}
+          {proposal.comments && proposal.comments.length > 0 && (
+            <>
+              <span className="text-slate-300 dark:text-neutral-700" aria-hidden="true">•</span>
+              <span className="font-medium text-primary">
+                {proposal.comments.length} phản hồi
+              </span>
+            </>
+          )}
         </div>
-      )}
+
+        {/* Nội dung tóm tắt: Không tiêu đề rườm rà, dễ đọc, tương phản tốt */}
+        {proposal.description && (
+          <p className="text-sm text-slate-600 dark:text-neutral-300 leading-relaxed line-clamp-3 break-words">
+            {proposal.description}
+          </p>
+        )}
+
+        {/* Footer (lý do từ chối, kết quả chuyển đề tài...) */}
+        {footer && <div onClick={(e) => e.stopPropagation()}>{footer}</div>}
+
+        {/* Nút hành động & Ngày gửi ở góc phải */}
+        <div
+          className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-slate-100 dark:border-neutral-800"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {actions ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {actions}
+            </div>
+          ) : (
+            <div />
+          )}
+
+          <span className="text-xs text-slate-500 dark:text-neutral-400 ml-auto shrink-0">
+            Gửi {dateFormat.format(new Date(proposal.createdAt))}
+          </span>
+        </div>
+      </div>
     </article>
   );
 }

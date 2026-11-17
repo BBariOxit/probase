@@ -134,7 +134,7 @@ export default function LecturerProposalDetailPage({
           </div>
 
           <div className="space-y-1.5 min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold font-heading text-slate-900 dark:text-neutral-50 tracking-tight leading-snug break-words [overflow-wrap:anywhere]">
+            <h1 className="text-2xl sm:text-3xl font-bold font-heading text-slate-900 dark:text-neutral-50 tracking-tight leading-snug break-words">
               {proposal.title}
             </h1>
           </div>
@@ -158,7 +158,7 @@ export default function LecturerProposalDetailPage({
               <FileText className="size-4 text-primary shrink-0" />
               Mô tả nội dung yêu cầu
             </h3>
-            <div className="text-sm sm:text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify font-normal break-words [overflow-wrap:anywhere]">
+            <div className="text-sm sm:text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify font-normal break-words">
               {proposal.description || 'Chưa có mô tả chi tiết.'}
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function LecturerProposalDetailPage({
               <Target className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               Yêu cầu đầu ra & Mục tiêu
             </h3>
-            <div className="text-sm sm:text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify font-normal break-words [overflow-wrap:anywhere]">
+            <div className="text-sm sm:text-base leading-relaxed text-slate-800 dark:text-neutral-200 whitespace-pre-line text-justify font-normal break-words">
               {proposal.expectedOutcomes || 'Chưa có yêu cầu đầu ra cụ thể.'}
             </div>
           </div>
@@ -196,15 +196,16 @@ export default function LecturerProposalDetailPage({
             <Button
               size="default"
               onClick={() => setAnswering('accept')}
-              className="gap-2 cursor-pointer font-semibold shadow-xs bg-primary text-white hover:bg-primary/90 h-10 px-5"
+              className="gap-2 cursor-pointer font-medium shadow-xs h-10 px-5"
             >
               <Check className="size-4.5" />
               <span>Nhận hướng dẫn</span>
             </Button>
             <Button
               size="default"
+              variant="outline"
               onClick={() => setAnswering('reject')}
-              className="gap-2 cursor-pointer font-semibold shadow-xs bg-rose-600 text-white hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-700 dark:text-white h-10 px-5"
+              className="gap-2 cursor-pointer font-medium shadow-xs border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-700 dark:hover:text-rose-300 h-10 px-5"
             >
               <X className="size-4.5" />
               <span>Từ chối</span>

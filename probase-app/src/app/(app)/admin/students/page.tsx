@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import {
-  CheckCircle2,
   Download,
   FileUp,
   Loader2,
@@ -532,17 +531,7 @@ export default function StudentRosterPage() {
           </p>
         )}
 
-        {hasImportedRoundRoster && eligibleMeta && (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/8 px-3.5 py-2 text-xs text-slate-700 dark:text-neutral-200">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-              <span>
-                Đợt <strong className="font-semibold">{eligibleMeta.round.projectTypeName}</strong> đang áp dụng danh sách import:{' '}
-                <strong className="font-semibold">{eligibleMeta.totalEligible}</strong> SV đủ ĐK ({eligibleMeta.withGroupCount} đã có nhóm, {eligibleMeta.withoutGroupCount} chưa có nhóm).
-              </span>
-            </div>
-          </div>
-        )}
+
 
         {/* BẢNG DỮ LIỆU: VÙNG BẢNG (flex-1 min-h-0 overflow-auto), STICKY HEADER z-10 */}
         <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs overflow-hidden">

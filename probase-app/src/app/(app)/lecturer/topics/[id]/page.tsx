@@ -300,9 +300,9 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
           title="Xác nhận lưu thay đổi đề tài đã duyệt?"
           description="Đề tài này đã được Trưởng bộ môn phê duyệt trước đó. Mọi thay đổi nội dung sẽ tự động chuyển đề tài về trạng thái 'Chờ duyệt lại' để TTBM thẩm định."
           confirmLabel="Xác nhận lưu & gửi duyệt lại"
-          onConfirm={() => {
+          onConfirm={async () => {
             if (pendingFormValues) {
-              return performUpdate(pendingFormValues);
+              await performUpdate(pendingFormValues);
             }
           }}
         />

@@ -57,7 +57,7 @@ export function notificationHref(
             ? `/lecturer/topics/${notice.targetId}`
             : '/lecturer';
         }
-        return '/lecturer/reports';
+        return '/lecturer/groups';
 
       case 'PROGRESS_LOG_SUBMITTED':
       case 'PROGRESS_REPORT_SUBMITTED':
