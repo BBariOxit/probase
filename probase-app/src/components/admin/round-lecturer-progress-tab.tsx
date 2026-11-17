@@ -44,11 +44,13 @@ import {
 
 interface RoundLecturerProgressTabProps {
   semesterId: number | undefined;
+  defaultMajorId?: number;
   onFilterByLecturer?: (lecturerId: number) => void;
 }
 
 export function RoundLecturerProgressTab({
   semesterId,
+  defaultMajorId,
   onFilterByLecturer,
 }: RoundLecturerProgressTabProps) {
   const { data: rounds, isPending: isRoundsPending } =
@@ -60,7 +62,9 @@ export function RoundLecturerProgressTab({
     undefined,
   );
   const [search, setSearch] = useState('');
-  const [majorFilter, setMajorFilter] = useState<string>('ALL');
+  const [majorFilter, setMajorFilter] = useState<string>(
+    defaultMajorId ? String(defaultMajorId) : 'ALL',
+  );
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
   // Quota adjustment dialog state
@@ -199,30 +203,20 @@ export function RoundLecturerProgressTab({
         </div>
 
         {capacity && (
-          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-neutral-400">
-            <span>
-              Chỉ tiêu:{' '}
-              <strong className="text-slate-900 dark:text-neutral-100 font-semibold">
-                {capacity.targetQuota} đề tài
-              </strong>{' '}
-              / GV
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-800/60 text-slate-700 dark:text-neutral-300 font-medium">
+              Chỉ tiêu: <strong className="text-slate-900 dark:text-neutral-100 font-semibold">{capacity.targetQuota} đề tài</strong> / GV
             </span>
-            <span className="text-slate-300 dark:text-neutral-700">•</span>
-            <span>
-              Đạt chỉ tiêu:{' '}
-              <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                {capacity.lecturersMetQuotaCount}
-              </strong>
-              /{capacity.lecturersCount} GV
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-800/60 text-slate-700 dark:text-neutral-300 font-medium">
+              Đạt chỉ tiêu: <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">{capacity.lecturersMetQuotaCount}/{capacity.lecturersCount} GV</strong>
             </span>
-            <span className="text-slate-300 dark:text-neutral-700">•</span>
             {capacity.deficit > 0 ? (
-              <span className="font-semibold text-amber-600 dark:text-amber-400">
+              <span className="inline-flex items-center px-3 py-1 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 font-semibold text-amber-700 dark:text-amber-400">
                 Thiếu {capacity.deficit} đề tài
               </span>
             ) : (
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                Đủ đáp ứng ({capacity.approvedTopicsCount}/{capacity.estimatedGroupsNeeded})
+              <span className="inline-flex items-center px-3 py-1 rounded-lg border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 font-semibold text-emerald-700 dark:text-emerald-400">
+                Đủ đáp ứng ({capacity.approvedTopicsCount}/{capacity.estimatedGroupsNeeded} nhóm)
               </span>
             )}
           </div>
@@ -298,117 +292,164 @@ export function RoundLecturerProgressTab({
           </span>
         </div>
 
-        {/* Bảng danh sách chuẩn mực, đồng bộ header với các trang khác */}
-        <div className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
-          <Table containerClassName="overflow-visible" className="relative w-full text-left text-sm">
-            <TableHeader sticky>
-              <TableRow>
-                <TableHead className="w-12 text-center">STT</TableHead>
-                <TableHead className="min-w-48 px-4">Giảng viên</TableHead>
-                <TableHead className="px-4">Bộ môn / Chuyên ngành</TableHead>
-                <TableHead className="text-center px-3">Đã nộp</TableHead>
-                <TableHead className="text-center px-3">Đã duyệt</TableHead>
-                <TableHead className="text-center px-3">Chờ duyệt</TableHead>
-                <TableHead className="text-center px-3">Bản nháp</TableHead>
-                <TableHead className="text-center px-3">Chỉ tiêu</TableHead>
-                <TableHead className="text-center px-4">Trạng thái</TableHead>
-                <TableHead className="w-24 text-right px-4">Thao tác</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredLecturers.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={10}
-                    className="py-8 text-center text-xs text-slate-500 dark:text-neutral-400"
-                  >
-                    Không tìm thấy giảng viên phù hợp với bộ lọc.
-                  </TableCell>
+        {/* Bảng danh sách chuẩn mực, có cuộn ngang mượt mà khi thu nhỏ màn hình */}
+        <div className="overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-800 bg-white dark:bg-[#18181b] shadow-xs">
+          <div className="w-full overflow-x-auto">
+            <Table className="relative w-full min-w-[940px] text-left text-xs">
+              <TableHeader
+                sticky
+                className="bg-slate-100/90 dark:bg-neutral-800/90 text-slate-700 dark:text-neutral-200 border-b border-slate-200 dark:border-neutral-700"
+              >
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="w-12 text-center text-xs font-semibold text-slate-700 dark:text-neutral-300">
+                    STT
+                  </TableHead>
+                  <TableHead className="min-w-48 px-4 text-xs font-semibold text-slate-700 dark:text-neutral-300">
+                    Giảng viên
+                  </TableHead>
+                  <TableHead className="px-4 text-xs font-semibold text-slate-700 dark:text-neutral-300">
+                    Bộ môn / Chuyên ngành
+                  </TableHead>
+                  <TableHead className="text-center px-3 text-xs font-semibold text-slate-700 dark:text-neutral-300">
+                    Đã nộp
+                  </TableHead>
+                  <TableHead className="text-center px-3 text-xs font-semibold text-slate-700 dark:text-neutral-300">
+                    Đã duyệt
+                  </TableHead>
+                  <TableHead className="text-center px-3 text-xs font-semibold text-slate-700 dark:text-neutral-300">
+                    Chờ duyệt
+                  </TableHead>
+                  <TableHead className="text-center px-3 text-xs font-semibold text-slate-700 dark:text-neutral-300">
+                    Bản nháp
+                  </TableHead>
+                  <TableHead className="text-center px-3 text-xs font-semibold text-slate-700 dark:text-neutral-300">
+                    Chỉ tiêu
+                  </TableHead>
+                  <TableHead className="text-center px-4 text-xs font-semibold text-slate-700 dark:text-neutral-300">
+                    Trạng thái
+                  </TableHead>
+                  <TableHead className="w-24 text-right px-4 text-xs font-semibold text-slate-700 dark:text-neutral-300">
+                    Thao tác
+                  </TableHead>
                 </TableRow>
-              ) : (
-                filteredLecturers.map((lecturer, index) => (
-                  <TableRow
-                    key={lecturer.lecturerId}
-                    className="hover:bg-slate-50/80 dark:hover:bg-neutral-800/40"
-                  >
-                    <TableCell className="text-center text-xs font-mono text-slate-500 py-3.5">
-                      {index + 1}
-                    </TableCell>
-
-                    <TableCell className="px-4 py-3.5">
-                      <div>
-                        <p className="font-semibold text-xs text-slate-900 dark:text-neutral-100">
-                          {
-                            sanitizeLecturerName(
-                              lecturer.fullName,
-                              lecturer.academicTitle,
-                            ).displayName
-                          }
-                        </p>
-                        <p className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono">
-                          {lecturer.email}
-                        </p>
-                      </div>
-                    </TableCell>
-
-                    <TableCell className="px-4 py-3.5 text-xs text-slate-700 dark:text-neutral-300">
-                      {lecturer.majorName ?? 'Chưa phân bộ môn'}
-                    </TableCell>
-
-                    <TableCell className="text-center font-mono font-semibold text-xs text-slate-900 dark:text-neutral-100 px-3 py-3.5">
-                      {lecturer.topicsCount}
-                    </TableCell>
-
-                    <TableCell className="text-center font-mono font-semibold text-xs text-emerald-600 dark:text-emerald-400 px-3 py-3.5">
-                      {lecturer.approvedCount}
-                    </TableCell>
-
-                    <TableCell className="text-center font-mono font-semibold text-xs text-amber-600 dark:text-amber-400 px-3 py-3.5">
-                      {lecturer.pendingCount}
-                    </TableCell>
-
-                    <TableCell className="text-center font-mono text-xs text-slate-400 px-3 py-3.5">
-                      {lecturer.draftCount}
-                    </TableCell>
-
-                    <TableCell className="text-center font-mono text-xs text-slate-600 dark:text-neutral-400 px-3 py-3.5">
-                      {lecturer.targetQuota}
-                    </TableCell>
-
-                    <TableCell className="text-center px-4 py-3.5">
-                      {lecturer.status === 'MET' ? (
-                        <span className="font-semibold text-xs text-emerald-600 dark:text-emerald-400">
-                          Đạt chỉ tiêu
-                        </span>
-                      ) : lecturer.status === 'IN_PROGRESS' ? (
-                        <span className="font-semibold text-xs text-amber-600 dark:text-amber-400">
-                          Đang nộp ({lecturer.approvedCount}/{lecturer.targetQuota})
-                        </span>
-                      ) : (
-                        <span className="font-semibold text-xs text-rose-600 dark:text-rose-400">
-                          Chưa nộp
-                        </span>
-                      )}
-                    </TableCell>
-
-                    <TableCell className="text-right px-4 py-3.5">
-                      {onFilterByLecturer && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10 cursor-pointer gap-1"
-                          onClick={() => onFilterByLecturer(lecturer.lecturerId)}
-                        >
-                          <span>Xem đề tài</span>
-                          <ArrowRight className="size-3" />
-                        </Button>
-                      )}
+              </TableHeader>
+              <TableBody>
+                {filteredLecturers.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={10}
+                      className="py-12 text-center text-xs text-slate-500 dark:text-neutral-400"
+                    >
+                      Không tìm thấy giảng viên phù hợp với bộ lọc.
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredLecturers.map((lecturer, index) => (
+                    <TableRow
+                      key={lecturer.lecturerId}
+                      className="hover:bg-slate-50/80 dark:hover:bg-neutral-800/40 transition-colors"
+                    >
+                      <TableCell className="text-center text-xs font-mono text-slate-400 dark:text-neutral-500 py-3.5">
+                        {index + 1}
+                      </TableCell>
+
+                      <TableCell className="px-4 py-3.5">
+                        <div>
+                          <p className="font-semibold text-xs text-slate-900 dark:text-neutral-100">
+                            {
+                              sanitizeLecturerName(
+                                lecturer.fullName,
+                                lecturer.academicTitle,
+                              ).displayName
+                            }
+                          </p>
+                          <p className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono">
+                            {lecturer.email}
+                          </p>
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="px-4 py-3.5 text-xs text-slate-700 dark:text-neutral-300">
+                        {lecturer.majorName ?? 'Chưa phân bộ môn'}
+                      </TableCell>
+
+                      {/* Đã nộp: số tổng */}
+                      <TableCell className="text-center font-mono font-semibold text-xs text-slate-800 dark:text-neutral-200 px-3 py-3.5">
+                        {lecturer.topicsCount}
+                      </TableCell>
+
+                      {/* Đã duyệt: chỉ xanh khi > 0 */}
+                      <TableCell className="text-center font-mono text-xs px-3 py-3.5">
+                        {lecturer.approvedCount > 0 ? (
+                          <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                            {lecturer.approvedCount}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 dark:text-neutral-500">
+                            0
+                          </span>
+                        )}
+                      </TableCell>
+
+                      {/* Chờ duyệt: chỉ cam khi > 0 */}
+                      <TableCell className="text-center font-mono text-xs px-3 py-3.5">
+                        {lecturer.pendingCount > 0 ? (
+                          <span className="font-semibold text-amber-600 dark:text-amber-400">
+                            {lecturer.pendingCount}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 dark:text-neutral-500">
+                            0
+                          </span>
+                        )}
+                      </TableCell>
+
+                      {/* Bản nháp: số mờ */}
+                      <TableCell className="text-center font-mono text-xs text-slate-400 dark:text-neutral-500 px-3 py-3.5">
+                        {lecturer.draftCount}
+                      </TableCell>
+
+                      {/* Chỉ tiêu */}
+                      <TableCell className="text-center font-mono text-xs text-slate-700 dark:text-neutral-300 px-3 py-3.5 font-medium">
+                        {lecturer.targetQuota}
+                      </TableCell>
+
+                      {/* Trạng thái: Badge với màu sắc êm dịu */}
+                      <TableCell className="text-center px-4 py-3.5">
+                        {lecturer.status === 'MET' ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30">
+                            Đạt chỉ tiêu ({lecturer.approvedCount}/{lecturer.targetQuota})
+                          </span>
+                        ) : lecturer.status === 'IN_PROGRESS' ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30">
+                            Đang nộp ({lecturer.approvedCount}/{lecturer.targetQuota})
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30">
+                            Chưa nộp
+                          </span>
+                        )}
+                      </TableCell>
+
+                      <TableCell className="text-right px-4 py-3.5">
+                        {onFilterByLecturer && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10 cursor-pointer gap-1"
+                            onClick={() => onFilterByLecturer(lecturer.lecturerId)}
+                          >
+                            <span>Xem đề tài</span>
+                            <ArrowRight className="size-3" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
 

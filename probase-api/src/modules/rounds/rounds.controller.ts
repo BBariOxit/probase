@@ -73,7 +73,10 @@ export class RoundsController {
     return this.roundsService.findOne(id);
   }
 
-  @RequirePermissions(SystemPermission.TOPIC_REGISTRY)
+  @RequirePermissions(
+    SystemPermission.TOPIC_REGISTRY,
+    SystemPermission.TOPIC_REVIEW_DEPT,
+  )
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRoundDto) {
     return this.roundsService.update(id, dto);

@@ -5,12 +5,15 @@ import Link from 'next/link';
 import { Check, ClipboardCheck, Loader2, Search } from 'lucide-react';
 import { useMyProfile } from '@/lib/api/me';
 import { useTopics } from '@/lib/api/topics';
+import { useSemesters } from '@/lib/api/master-data';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { TopicReviewSheet } from '@/components/topics/topic-review-sheet';
+import { RoundLecturerProgressTab } from '@/components/admin/round-lecturer-progress-tab';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import {
   Table,
   TableBody,
@@ -37,10 +40,15 @@ export default function LecturerTopicReviewsPage() {
   const lecturer = profile?.lecturer;
   const isHeadOfDepartment = lecturer?.isHeadOfDepartment ?? false;
 
+  const [activeTab, setActiveTab] = useState<'reviews' | 'progress'>('reviews');
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const debouncedSearch = useDebounce(search);
+
+  const { data: semesters } = useSemesters();
+  const activeSemester = semesters?.find((s) => s.isActive);
+  const activeSemesterId = activeSemester?.id ?? semesters?.[0]?.id;
 
   const { data, isPending, error } = useTopics(
     {
@@ -78,119 +86,166 @@ export default function LecturerTopicReviewsPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-52 flex-1 sm:max-w-xs">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
-              setPage(1);
-            }}
-            placeholder="Tìm theo tên đề tài…"
-            className="pl-8"
-            aria-label="Tìm đề tài"
-          />
+      {/* ── Tiêu đề trang tích hợp đồng thời làm Tab điều hướng ── */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-3">
+        <div className="flex items-center gap-8">
+          <button
+            type="button"
+            onClick={() => setActiveTab('reviews')}
+            className={cn(
+              'group inline-flex items-center gap-2 pb-0.5 text-xl font-bold tracking-tight transition-colors cursor-pointer relative',
+              activeTab === 'reviews'
+                ? 'text-foreground after:absolute after:-bottom-3.5 after:left-0 after:right-0 after:h-[3px] after:rounded-full after:bg-primary'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            Đề tài cần duyệt
+            {data && (
+              <span className="ml-1 rounded-full bg-slate-200 dark:bg-neutral-800 px-2 py-0.5 text-xs font-mono font-medium text-slate-700 dark:text-neutral-300">
+                {data.total}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('progress')}
+            className={cn(
+              'group inline-flex items-center gap-2 pb-0.5 text-xl font-bold tracking-tight transition-colors cursor-pointer relative',
+              activeTab === 'progress'
+                ? 'text-foreground after:absolute after:-bottom-3.5 after:left-0 after:right-0 after:h-[3px] after:rounded-full after:bg-primary'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            Tiến độ nộp đề tài
+          </button>
         </div>
-
-        {data && (
-          <span className="ml-auto text-sm text-muted-foreground">
-            {data.total} đề tài chờ duyệt
-          </span>
-        )}
       </div>
 
-      {error && (
-        <p className="text-sm text-destructive">Không tải được hàng chờ.</p>
-      )}
-
-      <div className="isolate w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
-        <Table
-          containerClassName="w-full overflow-x-auto"
-          className="w-full min-w-[850px] table-fixed text-left text-sm"
-        >
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[340px] max-w-[380px] min-w-[280px] px-5 py-3.5 whitespace-nowrap">
-                Tiêu đề
-              </TableHead>
-              <TableHead className="w-40 px-3 py-3.5 whitespace-nowrap">
-                Giảng viên
-              </TableHead>
-              <TableHead className="w-44 px-3 py-3.5 whitespace-nowrap">
-                Loại đồ án
-              </TableHead>
-              <TableHead className="w-28 px-3 py-3.5 whitespace-nowrap">
-                Ngày gửi
-              </TableHead>
-              <TableHead className="w-28 px-4 py-3.5 text-right whitespace-nowrap" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {topics.map((topic) => (
-              <TableRow
-                key={topic.id}
-                className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
-              >
-                <TableCell className="w-[340px] max-w-[380px] min-w-[280px] px-5 py-3.5 align-middle font-medium whitespace-normal">
-                  <div className="w-full max-w-[380px] whitespace-normal">
-                    <Link
-                      href={`/lecturer/topics/${topic.id}?from=topic-reviews`}
-                      className="line-clamp-2 font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal"
-                      title={topic.title}
-                    >
-                      {topic.title}
-                    </Link>
-                  </div>
-                </TableCell>
-                <TableCell className="w-40 px-3 py-3.5 align-middle truncate font-medium text-slate-800 dark:text-neutral-200">
-                  {topic.lecturer.fullName}
-                </TableCell>
-                <TableCell className="w-44 px-3 py-3.5 align-middle truncate font-medium text-slate-700 dark:text-neutral-300">
-                  {topic.projectType.name}
-                </TableCell>
-                <TableCell className="w-28 px-3 py-3.5 align-middle whitespace-nowrap text-muted-foreground tabular-nums">
-                  {dateFormat.format(new Date(topic.createdAt))}
-                </TableCell>
-                <TableCell className="w-28 px-4 py-3.5 align-middle text-right whitespace-nowrap">
-                  <Button
-                    size="sm"
-                    onClick={() => setSelectedTopicId(topic.id)}
-                    className="cursor-pointer"
-                  >
-                    <Check />
-                    Duyệt
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        {isPending && (
-          <div className="flex justify-center py-14">
-            <Loader2 className="size-5 animate-spin text-muted-foreground" />
-          </div>
-        )}
-
-        {!isPending && topics.length === 0 && (
-          <EmptyState
-            icon={ClipboardCheck}
-            title={
-              debouncedSearch
-                ? 'Không có đề tài nào khớp từ khoá.'
-                : 'Không còn đề tài nào chờ duyệt.'
-            }
-          />
-        )}
-      </div>
-
-      {data && (
-        <PaginationBar
-          page={data.page}
-          totalPages={data.totalPages}
-          onPageChange={setPage}
+      {activeTab === 'progress' ? (
+        <RoundLecturerProgressTab
+          semesterId={activeSemesterId}
+          defaultMajorId={lecturer?.major?.id}
+          onFilterByLecturer={(_lecturerId) => {
+            setActiveTab('reviews');
+          }}
         />
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative min-w-52 flex-1 sm:max-w-xs">
+              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Tìm theo tên đề tài…"
+                className="pl-8"
+                aria-label="Tìm đề tài"
+              />
+            </div>
+
+            {data && (
+              <span className="ml-auto text-sm text-muted-foreground">
+                {data.total} đề tài chờ duyệt
+              </span>
+            )}
+          </div>
+
+          {error && (
+            <p className="text-sm text-destructive">Không tải được hàng chờ.</p>
+          )}
+
+          <div className="isolate w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
+            <Table
+              containerClassName="w-full overflow-x-auto"
+              className="w-full min-w-[850px] table-fixed text-left text-sm"
+            >
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[340px] max-w-[380px] min-w-[280px] px-5 py-3.5 whitespace-nowrap">
+                    Tiêu đề
+                  </TableHead>
+                  <TableHead className="w-40 px-3 py-3.5 whitespace-nowrap">
+                    Giảng viên
+                  </TableHead>
+                  <TableHead className="w-44 px-3 py-3.5 whitespace-nowrap">
+                    Loại đồ án
+                  </TableHead>
+                  <TableHead className="w-28 px-3 py-3.5 whitespace-nowrap">
+                    Ngày gửi
+                  </TableHead>
+                  <TableHead className="w-28 px-4 py-3.5 text-right whitespace-nowrap" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {topics.map((topic) => (
+                  <TableRow
+                    key={topic.id}
+                    className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
+                  >
+                    <TableCell className="w-[340px] max-w-[380px] min-w-[280px] px-5 py-3.5 align-middle font-medium whitespace-normal">
+                      <div className="w-full max-w-[380px] whitespace-normal">
+                        <Link
+                          href={`/lecturer/topics/${topic.id}?from=topic-reviews`}
+                          className="line-clamp-2 font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal"
+                          title={topic.title}
+                        >
+                          {topic.title}
+                        </Link>
+                      </div>
+                    </TableCell>
+                    <TableCell className="w-40 px-3 py-3.5 align-middle truncate font-medium text-slate-800 dark:text-neutral-200">
+                      {topic.lecturer.fullName}
+                    </TableCell>
+                    <TableCell className="w-44 px-3 py-3.5 align-middle truncate font-medium text-slate-700 dark:text-neutral-300">
+                      {topic.projectType.name}
+                    </TableCell>
+                    <TableCell className="w-28 px-3 py-3.5 align-middle whitespace-nowrap text-muted-foreground tabular-nums">
+                      {dateFormat.format(new Date(topic.createdAt))}
+                    </TableCell>
+                    <TableCell className="w-28 px-4 py-3.5 align-middle text-right whitespace-nowrap">
+                      <Button
+                        size="sm"
+                        onClick={() => setSelectedTopicId(topic.id)}
+                        className="cursor-pointer"
+                      >
+                        <Check />
+                        Duyệt
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            {isPending && (
+              <div className="flex justify-center py-14">
+                <Loader2 className="size-5 animate-spin text-muted-foreground" />
+              </div>
+            )}
+
+            {!isPending && topics.length === 0 && (
+              <EmptyState
+                icon={ClipboardCheck}
+                title={
+                  debouncedSearch
+                    ? 'Không có đề tài nào khớp từ khoá.'
+                    : 'Không còn đề tài nào chờ duyệt.'
+                }
+              />
+            )}
+          </div>
+
+          {data && (
+            <PaginationBar
+              page={data.page}
+              totalPages={data.totalPages}
+              onPageChange={setPage}
+            />
+          )}
+        </>
       )}
 
       <TopicReviewSheet
