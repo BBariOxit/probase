@@ -76,11 +76,13 @@ function RowActions({
     isHeadOfDepartment &&
     (!lecturerMajorId || !topicMajorId || topicMajorId === lecturerMajorId);
   const submitLabel = willAutoApprove ? 'Gửi & duyệt' : 'Gửi duyệt';
+  const hasNoRegisteredStudents =
+    topic.activeGroup === null || topic.activeGroup.occupiedSeats === 0;
   const canEdit =
-    !isPendingReview &&
     topic.status !== 'REJECTED' &&
     topic.status !== 'IN_PROGRESS' &&
-    topic.status !== 'COMPLETED';
+    topic.status !== 'COMPLETED' &&
+    hasNoRegisteredStudents;
   const canDelete =
     topic.activeGroup === null &&
     topic.status !== 'IN_PROGRESS' &&

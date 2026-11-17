@@ -52,6 +52,7 @@ export interface TopicInput {
   expectedOutcomes: string;
   techStack?: string;
   maxStudents: number;
+  status?: 'DRAFT' | 'PENDING_DEPARTMENT';
 }
 
 export type TopicPatch = Partial<Omit<TopicInput, 'semesterId'>>;

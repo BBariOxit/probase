@@ -2,7 +2,15 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Check, ClipboardCheck, Loader2, Search } from 'lucide-react';
+import {
+  Check,
+  ClipboardCheck,
+  Eye,
+  Loader2,
+  RotateCcw,
+  Search,
+  X,
+} from 'lucide-react';
 import { useMyProfile } from '@/lib/api/me';
 import { useTopics } from '@/lib/api/topics';
 import { useSemesters } from '@/lib/api/master-data';
@@ -10,9 +18,17 @@ import { useRequireRole } from '@/lib/auth/use-require-role';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { TopicReviewSheet } from '@/components/topics/topic-review-sheet';
+import { TopicStatusBadge } from '@/components/topics/topic-status-badge';
 import { RoundLecturerProgressTab } from '@/components/admin/round-lecturer-progress-tab';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import {
   Table,
@@ -41,6 +57,13 @@ export default function LecturerTopicReviewsPage() {
   const isHeadOfDepartment = lecturer?.isHeadOfDepartment ?? false;
 
   const [activeTab, setActiveTab] = useState<'reviews' | 'progress'>('reviews');
+  const [filterStatus, setFilterStatus] = useState<
+    'PENDING_DEPARTMENT' | 'APPROVED' | 'ALL'
+  >('PENDING_DEPARTMENT');
+  const [filterLecturerId, setFilterLecturerId] = useState<number | null>(null);
+  const [filterLecturerName, setFilterLecturerName] = useState<string | null>(
+    null,
+  );
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
@@ -54,6 +77,10 @@ export default function LecturerTopicReviewsPage() {
     {
       reviewStage: 'DEPARTMENT',
       ...(lecturer?.major?.id ? { majorId: lecturer.major.id } : {}),
+      ...(filterStatus !== 'ALL'
+        ? { status: filterStatus as any }
+        : { status: 'ALL' as any }),
+      ...(filterLecturerId ? { lecturerId: filterLecturerId } : {}),
       page,
       limit: TOPIC_PAGE_SIZE,
       q: debouncedSearch || undefined,
@@ -125,7 +152,11 @@ export default function LecturerTopicReviewsPage() {
         <RoundLecturerProgressTab
           semesterId={activeSemesterId}
           defaultMajorId={lecturer?.major?.id}
-          onFilterByLecturer={(_lecturerId) => {
+          onFilterByLecturer={(lecturerId, lecturerName) => {
+            setFilterLecturerId(lecturerId);
+            setFilterLecturerName(lecturerName || null);
+            setFilterStatus('ALL');
+            setPage(1);
             setActiveTab('reviews');
           }}
         />
@@ -146,9 +177,46 @@ export default function LecturerTopicReviewsPage() {
               />
             </div>
 
+            <Select
+              value={filterStatus}
+              onValueChange={(val: any) => {
+                setFilterStatus(val);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PENDING_DEPARTMENT">Chờ duyệt</SelectItem>
+                <SelectItem value="APPROVED">Đã duyệt</SelectItem>
+                <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {filterLecturerId && (
+              <div className="flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                <span>
+                  Giảng viên: {filterLecturerName ?? `#${filterLecturerId}`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterLecturerId(null);
+                    setFilterLecturerName(null);
+                    setPage(1);
+                  }}
+                  className="rounded-full p-0.5 hover:bg-primary/20 cursor-pointer"
+                  title="Xoá bộ lọc giảng viên"
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+            )}
+
             {data && (
               <span className="ml-auto text-sm text-muted-foreground">
-                {data.total} đề tài chờ duyệt
+                {data.total} đề tài
               </span>
             )}
           </div>
@@ -164,19 +232,24 @@ export default function LecturerTopicReviewsPage() {
             >
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[340px] max-w-[380px] min-w-[280px] px-5 py-3.5 whitespace-nowrap">
+                  <TableHead className="w-[320px] max-w-[360px] min-w-[260px] px-5 py-3.5 whitespace-nowrap">
                     Tiêu đề
                   </TableHead>
-                  <TableHead className="w-40 px-3 py-3.5 whitespace-nowrap">
+                  <TableHead className="w-36 px-3 py-3.5 whitespace-nowrap">
                     Giảng viên
                   </TableHead>
-                  <TableHead className="w-44 px-3 py-3.5 whitespace-nowrap">
+                  <TableHead className="w-36 px-3 py-3.5 whitespace-nowrap">
                     Loại đồ án
+                  </TableHead>
+                  <TableHead className="w-28 px-3 py-3.5 whitespace-nowrap">
+                    Trạng thái
                   </TableHead>
                   <TableHead className="w-28 px-3 py-3.5 whitespace-nowrap">
                     Ngày gửi
                   </TableHead>
-                  <TableHead className="w-28 px-4 py-3.5 text-right whitespace-nowrap" />
+                  <TableHead className="w-32 px-4 py-3.5 text-right whitespace-nowrap">
+                    Thao tác
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -185,8 +258,8 @@ export default function LecturerTopicReviewsPage() {
                     key={topic.id}
                     className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                   >
-                    <TableCell className="w-[340px] max-w-[380px] min-w-[280px] px-5 py-3.5 align-middle font-medium whitespace-normal">
-                      <div className="w-full max-w-[380px] whitespace-normal">
+                    <TableCell className="w-[320px] max-w-[360px] min-w-[260px] px-5 py-3.5 align-middle font-medium whitespace-normal">
+                      <div className="w-full max-w-[360px] whitespace-normal">
                         <Link
                           href={`/lecturer/topics/${topic.id}?from=topic-reviews`}
                           className="line-clamp-2 font-bold text-slate-900 dark:text-neutral-100 hover:text-primary dark:hover:text-primary transition-colors leading-snug break-words [overflow-wrap:anywhere] whitespace-normal"
@@ -196,24 +269,50 @@ export default function LecturerTopicReviewsPage() {
                         </Link>
                       </div>
                     </TableCell>
-                    <TableCell className="w-40 px-3 py-3.5 align-middle truncate font-medium text-slate-800 dark:text-neutral-200">
+                    <TableCell className="w-36 px-3 py-3.5 align-middle truncate font-medium text-slate-800 dark:text-neutral-200">
                       {topic.lecturer.fullName}
                     </TableCell>
-                    <TableCell className="w-44 px-3 py-3.5 align-middle truncate font-medium text-slate-700 dark:text-neutral-300">
+                    <TableCell className="w-36 px-3 py-3.5 align-middle truncate font-medium text-slate-700 dark:text-neutral-300">
                       {topic.projectType.name}
+                    </TableCell>
+                    <TableCell className="w-28 px-3 py-3.5 align-middle whitespace-nowrap">
+                      <TopicStatusBadge status={topic.status} />
                     </TableCell>
                     <TableCell className="w-28 px-3 py-3.5 align-middle whitespace-nowrap text-muted-foreground tabular-nums">
                       {dateFormat.format(new Date(topic.createdAt))}
                     </TableCell>
-                    <TableCell className="w-28 px-4 py-3.5 align-middle text-right whitespace-nowrap">
-                      <Button
-                        size="sm"
-                        onClick={() => setSelectedTopicId(topic.id)}
-                        className="cursor-pointer"
-                      >
-                        <Check />
-                        Duyệt
-                      </Button>
+                    <TableCell className="w-32 px-4 py-3.5 align-middle text-right whitespace-nowrap">
+                      {topic.status === 'PENDING_DEPARTMENT' ||
+                      topic.status === 'PENDING' ? (
+                        <Button
+                          size="sm"
+                          onClick={() => setSelectedTopicId(topic.id)}
+                          className="cursor-pointer gap-1.5 font-semibold"
+                        >
+                          <Check className="size-4" />
+                          <span>Duyệt</span>
+                        </Button>
+                      ) : topic.status === 'APPROVED' ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedTopicId(topic.id)}
+                          className="cursor-pointer gap-1.5 font-medium text-amber-700 hover:text-amber-800 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30 border-amber-300 dark:border-amber-700"
+                        >
+                          <RotateCcw className="size-3.5" />
+                          <span>Hủy duyệt</span>
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setSelectedTopicId(topic.id)}
+                          className="cursor-pointer gap-1.5 font-medium"
+                        >
+                          <Eye className="size-3.5" />
+                          <span>Xem</span>
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -232,7 +331,9 @@ export default function LecturerTopicReviewsPage() {
                 title={
                   debouncedSearch
                     ? 'Không có đề tài nào khớp từ khoá.'
-                    : 'Không còn đề tài nào chờ duyệt.'
+                    : filterStatus === 'PENDING_DEPARTMENT'
+                      ? 'Không còn đề tài nào chờ duyệt.'
+                      : 'Không có đề tài nào trong danh sách.'
                 }
               />
             )}

@@ -50,7 +50,7 @@ import {
 interface RoundLecturerProgressTabProps {
   semesterId: number | undefined;
   defaultMajorId?: number;
-  onFilterByLecturer?: (lecturerId: number) => void;
+  onFilterByLecturer?: (lecturerId: number, lecturerName?: string) => void;
 }
 
 export function RoundLecturerProgressTab({
@@ -571,7 +571,12 @@ export function RoundLecturerProgressTab({
                             variant="ghost"
                             size="sm"
                             className="h-8 px-2.5 text-xs text-primary hover:text-primary hover:bg-primary/10 cursor-pointer gap-1"
-                            onClick={() => onFilterByLecturer(lecturer.lecturerId)}
+                            onClick={() =>
+                              onFilterByLecturer(
+                                lecturer.lecturerId,
+                                lecturer.fullName,
+                              )
+                            }
                           >
                             <span>Xem đề tài</span>
                             <ArrowRight className="size-3.5" />

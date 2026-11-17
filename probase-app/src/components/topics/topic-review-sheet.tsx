@@ -75,12 +75,25 @@ export function TopicReviewSheet({
     onClose();
   }
 
+  const isApproved =
+    topic?.status === 'APPROVED' || topic?.status === 'APPROVED_OPEN';
+  const hasNoRegisteredStudents =
+    !topic?.activeGroup || topic?.activeGroup?.occupiedSeats === 0;
+
   const canReview =
     !isPending &&
     Boolean(topic) &&
     isHeadOfDepartment &&
     (stage === 'DEPARTMENT' || stage === 'AUTO') &&
     (topic?.status === 'PENDING_DEPARTMENT' || topic?.status === 'PENDING');
+
+  const canRevoke =
+    !isPending &&
+    Boolean(topic) &&
+    isHeadOfDepartment &&
+    (stage === 'DEPARTMENT' || stage === 'AUTO') &&
+    isApproved &&
+    hasNoRegisteredStudents;
 
   async function handleDepartmentAction(
     action: 'APPROVE' | 'REQUEST_REVISION' | 'REJECT',
@@ -93,7 +106,9 @@ export function TopicReviewSheet({
         message:
           action === 'REJECT'
             ? 'Vui lòng nhập nhận xét trước khi từ chối đề tài.'
-            : 'Vui lòng nhập nhận xét trước khi yêu cầu sửa đề tài.',
+            : isApproved
+              ? 'Vui lòng nhập lý do trước khi hủy duyệt đề tài.'
+              : 'Vui lòng nhập nhận xét trước khi yêu cầu sửa đề tài.',
       });
       feedbackRef.current?.scrollIntoView({
         behavior: 'smooth',
@@ -117,7 +132,9 @@ export function TopicReviewSheet({
 
       const messages = {
         APPROVE: 'Đã duyệt đề tài. Đề tài sẵn sàng để Giáo vụ mở đăng ký.',
-        REQUEST_REVISION: 'Đã yêu cầu giảng viên chỉnh sửa lại đề tài.',
+        REQUEST_REVISION: isApproved
+          ? 'Đã hủy duyệt đề tài và yêu cầu giảng viên chỉnh sửa lại.'
+          : 'Đã yêu cầu giảng viên chỉnh sửa lại đề tài.',
         REJECT: 'Đã từ chối đề tài.',
       };
       toast.success(messages[action]);
@@ -191,6 +208,23 @@ export function TopicReviewSheet({
           Duyệt
         </Button>
       </>
+    ) : canRevoke ? (
+      <>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={isMutating}
+          onClick={() => handleDepartmentAction('REQUEST_REVISION')}
+          className="cursor-pointer font-semibold text-amber-700 hover:text-amber-800 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30 border-amber-300 dark:border-amber-700"
+        >
+          {actionInProgress === 'REQUEST_REVISION' ? (
+            <Loader2 className="animate-spin" />
+          ) : (
+            <RotateCcw />
+          )}
+          Hủy duyệt & Yêu cầu sửa
+        </Button>
+      </>
     ) : (
       <Button variant="ghost" onClick={handleClose}>
         Đóng
@@ -259,13 +293,15 @@ export function TopicReviewSheet({
               body={topic.departmentFeedback}
             />
           )}
-          {canReview && (
+          {(canReview || canRevoke) && (
             <div className="space-y-1.5 border-t pt-4">
               <Label
                 htmlFor="sheet-department-review-feedback"
                 className="text-sm font-medium"
               >
-                Nhận xét chuyên môn
+                {canRevoke
+                  ? 'Lý do hủy duyệt / Yêu cầu sửa'
+                  : 'Nhận xét chuyên môn'}
               </Label>
               <Textarea
                 ref={feedbackRef}
@@ -286,7 +322,11 @@ export function TopicReviewSheet({
                     setDraftError({ topicId: null, message: null });
                   }
                 }}
-                placeholder="Nhập nhận xét hoặc góp ý để giảng viên chỉnh sửa đề tài…"
+                placeholder={
+                  canRevoke
+                    ? 'Nhập lý do hủy duyệt để giảng viên biết cần chỉnh sửa nội dung gì…'
+                    : 'Nhập nhận xét hoặc góp ý để giảng viên chỉnh sửa đề tài…'
+                }
                 className={cn(
                   'resize-none text-sm',
                   feedbackError &&

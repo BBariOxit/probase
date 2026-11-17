@@ -61,15 +61,15 @@ export function TopicDetailView({
     (profile?.lecturer?.id === topic.lecturer.id ||
       user?.fullName === topic.lecturer.fullName);
 
-  const isPendingReview =
-    topic.status === 'PENDING_DEPARTMENT' || topic.status === 'PENDING';
+  const hasNoRegisteredStudents =
+    !topic.activeGroup || topic.activeGroup.occupiedSeats === 0;
 
   const canEdit =
     (isTopicOwner || isAdmin) &&
-    !isPendingReview &&
     topic.status !== 'REJECTED' &&
     topic.status !== 'IN_PROGRESS' &&
-    topic.status !== 'COMPLETED';
+    topic.status !== 'COMPLETED' &&
+    hasNoRegisteredStudents;
 
   const canStudentRegister =
     isStudent &&
