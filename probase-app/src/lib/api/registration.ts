@@ -3,7 +3,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 import { topicKeys } from '@/lib/api/topics';
-import type { GroupInvitation, JoinPreview, RegistrationGroup } from '@/lib/api/types';
+import type {
+  GroupInvitation,
+  JoinPreview,
+  NotifySupervisedGroupsInput,
+  NotifySupervisedGroupsResult,
+  RegistrationGroup,
+} from '@/lib/api/types';
 
 export const groupKeys = {
   all: ['registration-groups'] as const,
@@ -266,5 +272,18 @@ export function useDeclineInvitation() {
         method: 'POST',
       }),
     onSuccess: () => invalidate(),
+  });
+}
+
+export function useNotifySupervisedGroups() {
+  return useMutation({
+    mutationFn: (input: NotifySupervisedGroupsInput) =>
+      api<NotifySupervisedGroupsResult>(
+        '/registration-groups/my-supervised/notify',
+        {
+          method: 'POST',
+          body: input,
+        },
+      ),
   });
 }

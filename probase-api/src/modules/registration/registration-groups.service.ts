@@ -1193,7 +1193,7 @@ export class RegistrationGroupsService {
       return { studentId: profile?.id ?? null, lecturerId: null, role };
     }
 
-    if (role === Role.LECTURER) {
+    if (role === Role.LECTURER || role === Role.GVCN) {
       const profile = await this.prisma.lecturerProfile.findUnique({
         where: { userId },
         select: { id: true },

@@ -138,8 +138,12 @@ export function notificationHref(
     */
     case 'ROUND_EXTENDED':
     case 'REGISTRATION_CLOSING_SOON':
-    case 'DEADLINE_REMINDER':
       return '/student';
+
+    case 'DEADLINE_REMINDER':
+      return notice.targetId && notice.title !== 'Mở đăng ký đề tài'
+        ? '/student/groups'
+        : '/student';
 
     default:
       return null;

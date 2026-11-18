@@ -1,122 +1,73 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
-import {
-  Loader2,
-  Search,
-  Users,
-} from 'lucide-react';
+import { Loader2, Mail, Search, Users } from 'lucide-react';
+import { useSemesters } from '@/lib/api/master-data';
 import { useSupervisedGroups } from '@/lib/api/registration';
-import type { RegistrationGroup } from '@/lib/api/types';
 import { useRequireRole } from '@/lib/auth/use-require-role';
+import {
+  cn,
+  formatProjectTypeShort,
+  formatSemesterShort,
+} from '@/lib/utils';
 import { EmptyState } from '@/components/shared/empty-state';
+import { GroupAnnouncementDialog } from '@/components/lecturer/groups/group-announcement-dialog';
+import { SupervisedGroupCard } from '@/components/lecturer/groups/supervised-group-card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
-
-function GroupRosterSection({
-  group,
-}: {
-  group: RegistrationGroup;
-}) {
-  const isFull = group.occupiedSeats >= group.topic.maxStudents;
-
-  return (
-    <section className="flex flex-col h-full rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#18181b] overflow-hidden shadow-xs hover:border-slate-400 dark:hover:border-neutral-600 hover:shadow-sm transition-all">
-      {/* Header đề tài: Nền xám nhạt tương phản rõ ràng với nền trang và nội dung card */}
-      <div className="bg-slate-100/75 dark:bg-neutral-900/80 px-4 py-3 sm:px-5 border-b border-slate-200 dark:border-neutral-800 space-y-1">
-        <div className="flex items-center justify-between gap-2 text-xs">
-          <span className="font-semibold text-xs text-slate-600 dark:text-neutral-400 uppercase tracking-wider">
-            {group.topic.projectType.name}
-          </span>
-          <span
-            className={cn(
-              'font-mono font-bold text-xs',
-              isFull
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : 'text-amber-600 dark:text-amber-400',
-            )}
-          >
-            {group.occupiedSeats}/{group.topic.maxStudents}
-          </span>
-        </div>
-
-        <Link
-          href={`/lecturer/topics/${group.topicId}`}
-          className="block font-bold text-[15px] sm:text-base text-slate-900 hover:text-primary dark:text-neutral-100 dark:hover:text-primary transition-colors leading-snug break-words"
-          title={group.topic.title}
-        >
-          {group.topic.title}
-        </Link>
-      </div>
-
-      {/* Danh sách thành viên: Gọn gàng, bỏ email, phân cấp rõ nét */}
-      <div className="p-4 sm:p-5 flex-1 bg-white dark:bg-[#18181b]">
-        {group.members.length === 0 ? (
-          <p className="text-xs text-muted-foreground py-1">
-            Chưa có sinh viên nào trong nhóm.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {group.members.map((member, idx) => (
-              <div
-                key={member.id}
-                className={cn(
-                  'flex items-center gap-3 pt-3 first:pt-0',
-                  idx > 0 && 'border-t border-slate-100 dark:border-neutral-800/80',
-                )}
-              >
-                {/* Ký tự đại diện tròn với viền sắc nét (đồng nhất màu) */}
-                <div className="size-8.5 shrink-0 rounded-full flex items-center justify-center text-xs font-bold font-mono border bg-slate-100 text-slate-700 border-slate-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700">
-                  {member.student.fullName.charAt(0).toUpperCase()}
-                </div>
-
-                {/* Thông tin sinh viên: Dòng 1 Họ tên + Trưởng nhóm, Dòng 2 MSSV · Lớp */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-sm text-slate-900 dark:text-neutral-100">
-                      {member.student.fullName}
-                    </span>
-                    {member.isLeader && (
-                      <span className="text-[11px] font-semibold text-primary bg-primary/10 dark:bg-primary/20 px-1.5 py-0.5 rounded leading-none">
-                        Trưởng nhóm
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-neutral-400 mt-0.5">
-                    <span className="font-mono font-semibold text-xs text-slate-800 dark:text-neutral-200 bg-slate-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded border border-slate-200/80 dark:border-neutral-700 leading-none">
-                      {member.student.studentCode}
-                    </span>
-                    <span className="text-slate-300 dark:text-neutral-700" aria-hidden="true">•</span>
-                    <span className="font-medium text-slate-600 dark:text-neutral-300">
-                      {member.student.class || '—'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function LecturerGroupsPage() {
   const allowed = useRequireRole(['LECTURER', 'GVCN']);
+  const { data: semesters } = useSemesters();
+  const [pickedSemester, setPickedSemester] = useState<number | undefined>(
+    undefined,
+  );
+  const [projectTypeFilter, setProjectTypeFilter] = useState<
+    number | undefined
+  >(undefined);
   const [search, setSearch] = useState('');
 
-  // Tự động lấy danh sách nhóm thuộc học kỳ hiện tại
-  const { data: groups, isPending, error } = useSupervisedGroups();
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [composeInitialIds, setComposeInitialIds] = useState<number[]>([]);
 
-  const items = groups ?? [];
+  const semesterId =
+    pickedSemester ?? semesters?.find((one) => one.isActive)?.id;
+  const { data: groups, isPending, error } = useSupervisedGroups(semesterId);
 
-  // Tìm kiếm realtime theo tên đề tài, tên sinh viên, MSSV, lớp hoặc email
+  const items = useMemo(() => groups ?? [], [groups]);
+
+  const projectTypes = useMemo(() => {
+    const map = new Map<number, { id: number; short: string; full: string }>();
+    for (const g of items) {
+      if (!map.has(g.topic.projectType.id)) {
+        const pt = formatProjectTypeShort(g.topic.projectType);
+        map.set(g.topic.projectType.id, {
+          id: g.topic.projectType.id,
+          short: pt.short,
+          full: pt.full,
+        });
+      }
+    }
+    return [...map.values()];
+  }, [items]);
+
   const filteredGroups = useMemo(() => {
-    if (!search.trim()) return items;
     const q = search.toLowerCase().trim();
     return items.filter((g) => {
+      if (
+        projectTypeFilter !== undefined &&
+        g.topic.projectType.id !== projectTypeFilter
+      ) {
+        return false;
+      }
+      if (!q) return true;
       const matchTopic =
         g.topic.title.toLowerCase().includes(q) ||
         g.topic.projectType.name.toLowerCase().includes(q);
@@ -129,53 +80,136 @@ export default function LecturerGroupsPage() {
       );
       return matchTopic || matchMember;
     });
-  }, [items, search]);
+  }, [items, projectTypeFilter, search]);
 
   const totalStudents = useMemo(
     () => items.reduce((acc, g) => acc + g.occupiedSeats, 0),
     [items],
   );
 
+  function openComposer(groupIds: number[]) {
+    setComposeInitialIds(groupIds);
+    setComposeOpen(true);
+  }
+
   if (!allowed) return null;
 
   return (
     <div className="space-y-4">
-      {/* Toolbar: Ô tìm kiếm + thống kê tinh gọn */}
+      {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="relative min-w-64 flex-1 sm:max-w-md">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo tên đề tài, sinh viên, MSSV, lớp..."
-            className="pl-9 text-sm"
-          />
+        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
+          <div className="relative min-w-56 flex-1 sm:max-w-xs">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm đề tài, sinh viên, MSSV, lớp..."
+              className="h-9.5 pl-9 text-sm"
+            />
+          </div>
+
+          {semesters && semesters.length > 0 && (
+            <Select
+              value={semesterId ?? null}
+              onValueChange={(val) => {
+                setPickedSemester(val as number);
+                setProjectTypeFilter(undefined);
+              }}
+            >
+              <SelectTrigger className="h-9.5 w-48 text-sm" aria-label="Chọn học kỳ">
+                <SelectValue>
+                  {(val) => {
+                    const found = semesters.find((s) => s.id === val);
+                    return found ? formatSemesterShort(found) : 'Học kỳ';
+                  }}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {semesters.map((semester) => (
+                  <SelectItem
+                    key={semester.id}
+                    value={semester.id}
+                    className="text-sm"
+                  >
+                    {formatSemesterShort(semester)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          {projectTypes.length > 1 && (
+            <div
+              className="flex items-center gap-1 rounded-lg border border-border bg-card p-1"
+              role="group"
+              aria-label="Lọc theo loại đồ án"
+            >
+              <button
+                type="button"
+                onClick={() => setProjectTypeFilter(undefined)}
+                className={cn(
+                  'rounded-md px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer',
+                  projectTypeFilter === undefined
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                Tất cả
+              </button>
+              {projectTypes.map((pt) => (
+                <button
+                  key={pt.id}
+                  type="button"
+                  title={pt.full}
+                  onClick={() => setProjectTypeFilter(pt.id)}
+                  className={cn(
+                    'rounded-md px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer',
+                    projectTypeFilter === pt.id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {pt.short}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {!isPending && !error && items.length > 0 && (
-          <span className="text-xs text-slate-500 dark:text-neutral-400 font-medium">
-            Đang hướng dẫn <strong className="text-slate-800 dark:text-neutral-200">{items.length}</strong> nhóm ({totalStudents} sinh viên)
-          </span>
-        )}
+        <div className="flex items-center gap-3 shrink-0">
+          {!isPending && !error && items.length > 0 && (
+            <span className="hidden sm:inline text-xs font-medium text-muted-foreground tabular-nums">
+              <strong className="text-foreground">{items.length}</strong> nhóm (
+              {totalStudents} SV)
+            </span>
+          )}
+
+          <Button
+            onClick={() => openComposer(filteredGroups.map((g) => g.id))}
+            disabled={isPending || totalStudents === 0}
+            className="h-9.5 gap-2 text-sm cursor-pointer"
+          >
+            <Mail className="size-4" />
+            <span>Gửi thông báo</span>
+          </Button>
+        </div>
       </div>
 
-      {/* Loading state */}
       {isPending && (
         <div className="flex justify-center py-16">
           <Loader2 className="size-5 animate-spin text-muted-foreground" />
         </div>
       )}
 
-      {/* Error state */}
       {error && (
         <p className="text-sm text-destructive">
           Không tải được danh sách nhóm hướng dẫn.
         </p>
       )}
 
-      {/* Empty state */}
       {!isPending && !error && items.length === 0 && (
-        <div className="rounded-xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#18181b]">
+        <div className="rounded-xl border border-border bg-card">
           <EmptyState
             icon={Users}
             title="Học kỳ này chưa có nhóm sinh viên đăng ký đề tài của bạn."
@@ -183,21 +217,30 @@ export default function LecturerGroupsPage() {
         </div>
       )}
 
-      {/* No results from search */}
       {!isPending && !error && items.length > 0 && filteredGroups.length === 0 && (
         <div className="py-12 text-center text-sm text-muted-foreground">
-          Không tìm thấy nhóm hoặc sinh viên phù hợp với từ khóa &ldquo;{search}&rdquo;.
+          Không tìm thấy nhóm hoặc sinh viên phù hợp.
         </div>
       )}
 
-      {/* Danh sách các nhóm dạng 2 nhóm trên 1 hàng (2-column grid) */}
       {!isPending && filteredGroups.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+        <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2">
           {filteredGroups.map((group) => (
-            <GroupRosterSection key={group.id} group={group} />
+            <SupervisedGroupCard
+              key={group.id}
+              group={group}
+              onNotifyGroup={(groupId) => openComposer([groupId])}
+            />
           ))}
         </div>
       )}
+
+      <GroupAnnouncementDialog
+        open={composeOpen}
+        onOpenChange={setComposeOpen}
+        groups={items}
+        initialGroupIds={composeInitialIds}
+      />
     </div>
   );
 }

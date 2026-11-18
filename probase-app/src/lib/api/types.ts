@@ -340,6 +340,22 @@ export interface RegistrationGroup {
   inviteMessage?: string;
 }
 
+export interface NotifySupervisedGroupsInput {
+  groupIds: number[];
+  title: string;
+  content: string;
+  sendNotification: boolean;
+  sendEmail: boolean;
+}
+
+export interface NotifySupervisedGroupsResult {
+  groupCount: number;
+  recipientCount: number;
+  notificationsSent: number;
+  emailsSent: number;
+  emailsFailed: number;
+}
+
 export interface GroupInvitation {
   id: number;
   groupId: number;

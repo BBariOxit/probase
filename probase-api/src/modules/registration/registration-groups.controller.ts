@@ -9,19 +9,27 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Role } from '../../../generated/prisma/client';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { InviteMemberDto } from './dto/invite-member.dto';
+import { NotifySupervisedGroupsDto } from './dto/notify-supervised-groups.dto';
 import { QueryMyGroupDto } from './dto/query-my-group.dto';
 import { QuerySupervisedGroupsDto } from './dto/query-supervised-groups.dto';
 import { SwitchTopicDto } from './dto/switch-topic.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { RegistrationGroupsService } from './registration-groups.service';
+import { SupervisedAnnouncementsService } from './supervised-announcements.service';
+
+const ANNOUNCEMENT_RATE_LIMIT = { default: { limit: 10, ttl: 60_000 } };
 
 @Controller('registration-groups')
 export class RegistrationGroupsController {
-  constructor(private readonly groups: RegistrationGroupsService) {}
+  constructor(
+    private readonly groups: RegistrationGroupsService,
+    private readonly announcements: SupervisedAnnouncementsService,
+  ) {}
 
   @Roles('STUDENT')
   @Post(':id/invite')
@@ -64,6 +72,16 @@ export class RegistrationGroupsController {
     @GetUser('id') userId: number,
   ) {
     return this.groups.findSupervisedGroups(query, userId);
+  }
+
+  @Roles('LECTURER')
+  @Throttle(ANNOUNCEMENT_RATE_LIMIT)
+  @Post('my-supervised/notify')
+  notifySupervisedGroups(
+    @Body() dto: NotifySupervisedGroupsDto,
+    @GetUser('id') userId: number,
+  ) {
+    return this.announcements.send(dto, userId);
   }
 
   @Get(':id')

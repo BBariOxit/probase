@@ -210,6 +210,13 @@ function getNotificationAction(
         icon: FileText,
       };
     }
+    if (notice.targetId && notice.title !== 'Mở đăng ký đề tài') {
+      return {
+        label: 'Xem nhóm đồ án của tôi',
+        url: '/student/groups',
+        icon: Users,
+      };
+    }
     return {
       label: 'Xem danh sách đề tài',
       url: '/student',
