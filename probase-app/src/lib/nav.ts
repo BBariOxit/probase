@@ -7,9 +7,7 @@ import {
   ChartColumn,
   ClipboardCheck,
   FileCheck2,
-  FileUp,
   GraduationCap,
-  Inbox,
   Layers,
   LibraryBig,
   Lightbulb,
@@ -52,12 +50,6 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           href: '/student/groups',
           label: 'Nhóm của tôi',
           icon: Users,
-          ready: true,
-        },
-        {
-          href: '/student/submissions',
-          label: 'Bài nộp',
-          icon: FileUp,
           ready: true,
         },
         {
@@ -230,12 +222,6 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           href: '/admin/allocations',
           label: 'Phân bổ đề tài',
           icon: Shuffle,
-          ready: true,
-        },
-        {
-          href: '/admin/submissions',
-          label: 'Bài nộp',
-          icon: Inbox,
           ready: true,
         },
         {

@@ -121,17 +121,9 @@ export function notificationHref(
     case 'ROUND_FINALIZED':
       return '/student/groups';
 
-    /*
-      The supervisor answered a version of something the group handed in.
-      `targetId` is the group, which the submissions screen is already scoped to —
-      it shows that group's whole history, newest first, so the version just
-      answered is at the top of it.
-    */
     case 'SUBMISSION_FEEDBACK':
-    // Same screen for the reminder: what it asks for is a submission, and the
-    // deadline it names is at the top of that page.
     case 'SUBMISSION_DUE_SOON':
-      return '/student/submissions';
+      return '/student/groups';
 
     // The group is gone in both of these, so the student needs to find another
     // topic to register.

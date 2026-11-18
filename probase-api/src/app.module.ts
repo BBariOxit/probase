@@ -26,7 +26,6 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { RoundsModule } from './modules/rounds/rounds.module';
 import { SemestersModule } from './modules/semesters/semesters.module';
 import { StudentsModule } from './modules/students/students.module';
-import { SubmissionsModule } from './modules/submissions/submissions.module';
 import { TopicsModule } from './modules/topics/topics.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -71,7 +70,6 @@ import { UsersModule } from './modules/users/users.module';
     ProjectTypesModule,
     ProposalsModule,
     StudentsModule,
-    SubmissionsModule,
     TopicsModule,
     OutlinesModule,
     ProgressModule,

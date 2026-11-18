@@ -124,7 +124,7 @@ function getNotificationAction(
       };
     }
     return {
-      label: 'Xem bài nộp và tiến độ',
+      label: 'Xem nhóm và tiến độ',
       url: '/student/groups',
       icon: FileText,
     };

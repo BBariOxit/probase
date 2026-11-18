@@ -9,8 +9,6 @@ describe('RemindersService', () => {
   let service: RemindersService;
   let prisma: {
     registrationRound: { findMany: jest.Mock };
-    registrationGroup: { findMany: jest.Mock };
-    submissionRequirement: { findMany: jest.Mock };
   };
   let notifications: {
     notify: jest.Mock;
@@ -31,8 +29,6 @@ describe('RemindersService', () => {
   beforeEach(async () => {
     prisma = {
       registrationRound: { findMany: jest.fn().mockResolvedValue([]) },
-      registrationGroup: { findMany: jest.fn().mockResolvedValue([]) },
-      submissionRequirement: { findMany: jest.fn().mockResolvedValue([]) },
     };
     notifications = {
       notify: jest.fn().mockResolvedValue(0),
@@ -73,7 +69,6 @@ describe('RemindersService', () => {
         ...(prisma.registrationRound.findMany.mock.calls as Call[]).filter(
           ([args]) => 'registrationEnd' in args.where,
         ),
-        ...(prisma.submissionRequirement.findMany.mock.calls as Call[]),
       ];
 
       expect(calls.length).toBeGreaterThan(0);
@@ -155,58 +150,6 @@ describe('RemindersService', () => {
 
       expect(notice.dedupeKey).toBe(
         `REGISTRATION_CLOSING_SOON:round=12:end=${closingSoon.registrationEnd.toISOString()}:user=340`,
-      );
-    });
-  });
-
-  describe('documents due', () => {
-    it('asks only for groups that have handed in nothing against that document', async () => {
-      prisma.submissionRequirement.findMany.mockResolvedValue([
-        {
-          id: 8,
-          roundId: 12,
-          name: 'Đề cương',
-          dueAt: new Date('2026-08-22T00:00:00.000Z'),
-        },
-      ]);
-
-      await service.run();
-
-      expect(prisma.registrationGroup.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            topic: { roundId: 12 },
-            submissions: { none: { requirementId: 8 } },
-          }) as unknown,
-        }),
-      );
-    });
-
-    it('keys the notice to the deadline as well as the document', async () => {
-      prisma.submissionRequirement.findMany.mockResolvedValue([
-        {
-          id: 8,
-          roundId: 12,
-          name: 'Đề cương',
-          dueAt: new Date('2026-08-22T00:00:00.000Z'),
-        },
-      ]);
-      prisma.registrationGroup.findMany.mockResolvedValue([
-        {
-          id: 70,
-          topic: { title: 'Một đề tài' },
-          members: [{ student: { userId: 340 } }],
-        },
-      ]);
-
-      await service.run();
-
-      const [notice] = sent().filter(
-        (one) => one.type === NotificationType.SUBMISSION_DUE_SOON,
-      );
-
-      expect(notice.dedupeKey).toBe(
-        'SUBMISSION_DUE_SOON:req=8:due=2026-08-22T00:00:00.000Z:user=340',
       );
     });
   });

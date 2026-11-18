@@ -796,37 +796,6 @@ export interface SubmissionRequirement {
   sortOrder: number;
 }
 
-export interface Submission {
-  id: number;
-
-  requirement: SubmissionRequirement;
-  version: number;
-  fileUrl: string | null;
-
-  fileName: string | null;
-  fileSize: number | null;
-  submissionUrl: string | null;
-  lecturerFeedback: string | null;
-
-  feedbackAt: string | null;
-  submittedAt: string;
-
-  submittedBy: { id: number; fullName: string; studentCode: string } | null;
-  group: {
-    id: number;
-    name: string | null;
-    topic: {
-      id: number;
-      title: string;
-      lecturer: { id: number; fullName: string; academicTitle: string | null };
-    };
-  };
-
-  dueAt: string | null;
-
-  isLate: boolean;
-}
-
 export type ProposalStatus =
   'DRAFT' | 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'NEEDS_REVISION';
 
