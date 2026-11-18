@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   GroupMemberStatus,
@@ -34,8 +38,11 @@ describe('OutlinesService', () => {
         update: jest.fn(),
         count: jest.fn(),
       },
-      topic: { updateMany: jest.fn() },
-      auditLog: { create: jest.fn() },
+      topic: {
+        updateMany: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      auditLog: { create: jest.fn().mockResolvedValue({}) },
       $transaction: jest.fn((callback) => {
         if (typeof callback === 'function') {
           return callback(prisma);
@@ -298,8 +305,20 @@ describe('OutlinesService', () => {
     });
 
     it('filters by semesterId, roundId, majorId, search and computes scoped stats excluding REJECTED', async () => {
+      prisma.topic.findMany.mockResolvedValue([
+        { id: 10, semesterId: 2 },
+        { id: 11, semesterId: 2 },
+        { id: 12, semesterId: 2 },
+      ]);
       prisma.registrationGroup.findMany.mockResolvedValue([
-        { id: 1, name: 'Nhóm 01', topic: { title: 'Đề tài A' }, outline: null },
+        {
+          id: 1,
+          name: 'Nhóm 01',
+          topicId: 12,
+          semesterId: 2,
+          topic: { id: 12, title: 'Đề tài A', semesterId: 2 },
+          outline: null,
+        },
       ]);
       prisma.registrationGroup.count
         .mockResolvedValueOnce(1) // filtered total
@@ -350,6 +369,12 @@ describe('OutlinesService', () => {
         },
       });
       expect(result.total).toBe(1);
+      expect(result.items[0].topicOrder).toBe(3);
+      expect(prisma.topic.findMany).toHaveBeenCalledWith({
+        where: { semesterId: { in: [2] } },
+        select: { id: true, semesterId: true },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      });
       expect(result.stats).toEqual({
         totalGroups: 10,
         approved: 4,
@@ -357,6 +382,113 @@ describe('OutlinesService', () => {
         needsRevision: 1,
         notSubmitted: 3,
       });
+    });
+  });
+
+  describe('downloadFacultyOutlinesZip', () => {
+    it('throws BadRequestException when selected groups have no scan files', async () => {
+      prisma.registrationGroup.findMany.mockResolvedValue([
+        { id: 1, topicId: 1, semesterId: 2, outline: null },
+      ]);
+
+      await expect(
+        service.downloadFacultyOutlinesZip(
+          { groupIds: [1] },
+          { id: 1, role: Role.ADMIN },
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects non-Cloudinary URLs to guard against SSRF', async () => {
+      prisma.registrationGroup.findMany.mockResolvedValue([
+        {
+          id: 1,
+          topicId: 1,
+          semesterId: 2,
+          outline: {
+            id: 5,
+            attachmentUrl: 'http://169.254.169.254/latest/meta-data',
+            fileName: 'evil.pdf',
+          },
+        },
+      ]);
+
+      await expect(
+        service.downloadFacultyOutlinesZip(
+          { groupIds: [1] },
+          { id: 1, role: Role.ADMIN },
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('downloads allowed scans and packages them into a ZIP archive', async () => {
+      const fetchSpy = jest
+        .spyOn(global, 'fetch')
+        .mockResolvedValue({
+          ok: true,
+          arrayBuffer: async () => Buffer.from('%PDF-1.4 sample').buffer,
+        } as unknown as Response);
+
+      prisma.registrationGroup.findMany.mockResolvedValue([
+        {
+          id: 1,
+          topicId: 10,
+          semesterId: 2,
+          outline: {
+            id: 5,
+            attachmentUrl: 'https://res.cloudinary.com/demo/raw/upload/m03.pdf',
+            fileName: 'De cuong.pdf',
+          },
+        },
+      ]);
+      prisma.topic.findMany.mockResolvedValue([{ id: 10, semesterId: 2 }]);
+
+      try {
+        const res = await service.downloadFacultyOutlinesZip(
+          { groupIds: [1] },
+          { id: 1, role: Role.ADMIN },
+        );
+        expect(res.fileCount).toBe(1);
+        expect(res.buffer.subarray(0, 4)).toEqual(
+          Buffer.from([0x50, 0x4b, 0x03, 0x04]),
+        );
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    });
+  });
+
+  describe('remindFacultyOutlines', () => {
+    it('throws ConflictException if all selected groups already submitted', async () => {
+      prisma.registrationGroup.findMany.mockResolvedValue([]);
+
+      await expect(
+        service.remindFacultyOutlines(
+          { groupIds: [1, 2] },
+          { id: 1, role: Role.ADMIN },
+        ),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('sends reminders to unique active members of missing-outline groups', async () => {
+      prisma.registrationGroup.findMany.mockResolvedValue([
+        {
+          id: 1,
+          topic: { title: 'Đề tài A' },
+          members: [
+            { student: { user: { id: 101 } } },
+            { student: { user: { id: 102 } } },
+          ],
+        },
+      ]);
+
+      const result = await service.remindFacultyOutlines(
+        { groupIds: [1] },
+        { id: 1, role: Role.ADMIN },
+      );
+
+      expect(result).toEqual({ remindedGroups: 1, recipientCount: 2 });
+      expect(notifications.notify).toHaveBeenCalledTimes(1);
     });
   });
 });

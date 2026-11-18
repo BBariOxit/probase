@@ -102,8 +102,8 @@ function getNotificationAction(
       };
     }
     return {
-      label: 'Xem đề cương M03 của nhóm',
-      url: '/student/groups',
+      label: 'Xem bài nộp M03 của nhóm',
+      url: '/student/submissions',
       icon: FileText,
     };
   }
@@ -123,9 +123,11 @@ function getNotificationAction(
         icon: FileText,
       };
     }
+    const toM03 =
+      notice.type === 'SUBMISSION_DUE_SOON' && notice.title?.includes('M03');
     return {
-      label: 'Xem nhóm và tiến độ',
-      url: '/student/groups',
+      label: toM03 ? 'Xem bài nộp M03' : 'Xem nhóm và tiến độ',
+      url: toM03 ? '/student/submissions' : '/student/groups',
       icon: FileText,
     };
   }

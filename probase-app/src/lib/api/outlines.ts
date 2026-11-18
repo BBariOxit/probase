@@ -66,3 +66,10 @@ export function useFacultyOutlines(
     placeholderData: (previous) => previous,
   });
 }
+
+export function useRemindFacultyOutlines() {
+  return useMutation({
+    mutationFn: (groupIds: number[]) =>
+      outlineService.remindFacultyOutlines(groupIds),
+  });
+}

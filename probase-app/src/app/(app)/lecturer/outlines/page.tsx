@@ -4,19 +4,12 @@ import React, { useState } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
-  Clock,
   Download,
   ExternalLink,
-  Eye,
-  FileCheck2,
   FileText,
-  Filter,
   Loader2,
-  MessageSquare,
   Search,
   ThumbsDown,
-  ThumbsUp,
-  Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useActiveSemester, useSemesters } from '@/lib/api/master-data';
@@ -27,7 +20,7 @@ import { PageHeading } from '@/components/layout/page-heading';
 import { EmptyState } from '@/components/shared/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -68,24 +61,18 @@ function formatDate(dateString?: string | null): string {
 function OutlineStatusBadge({ status }: { status?: OutlineStatus | null }) {
   switch (status) {
     case 'APPROVED_BY_LECTURER':
+    case 'SUBMITTED':
       return (
         <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
           <CheckCircle2 className="size-3.5" />
-          Đã duyệt
-        </span>
-      );
-    case 'SUBMITTED':
-      return (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">
-          <Clock className="size-3.5" />
-          Chờ duyệt
+          Đã nộp
         </span>
       );
     case 'NEEDS_REVISION':
       return (
         <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 dark:text-rose-400 whitespace-nowrap">
           <AlertCircle className="size-3.5" />
-          Cần chỉnh sửa
+          Cần nộp lại
         </span>
       );
     default:
@@ -160,8 +147,10 @@ export default function LecturerOutlinesPage() {
           : 'Đã gửi yêu cầu chỉnh sửa đến nhóm sinh viên.',
       );
       handleCloseReview();
-    } catch (err: any) {
-      toast.error(err?.message || 'Có lỗi xảy ra khi xử lý đề cương.');
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error ? err.message : 'Có lỗi xảy ra khi xử lý đề cương.',
+      );
     }
   };
 
@@ -171,8 +160,8 @@ export default function LecturerOutlinesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <PageHeading
-          title="Duyệt Đề cương M03"
-          description="Kiểm tra và phê duyệt bản scan Đề cương thực hiện đồ án (Mẫu M03) của các nhóm hướng dẫn"
+          title="Đề cương M03"
+          description="Theo dõi bản scan Đề cương thực hiện đồ án (Mẫu M03) của các nhóm hướng dẫn"
         />
 
         <div className="flex items-center gap-2">
@@ -215,9 +204,8 @@ export default function LecturerOutlinesPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
-            <SelectItem value="SUBMITTED">Chờ duyệt</SelectItem>
-            <SelectItem value="APPROVED_BY_LECTURER">Đã duyệt</SelectItem>
-            <SelectItem value="NEEDS_REVISION">Cần chỉnh sửa</SelectItem>
+            <SelectItem value="SUBMITTED">Đã nộp</SelectItem>
+            <SelectItem value="NEEDS_REVISION">Cần nộp lại</SelectItem>
             <SelectItem value="NOT_SUBMITTED">Chưa nộp</SelectItem>
           </SelectContent>
         </Select>
@@ -258,7 +246,10 @@ export default function LecturerOutlinesPage() {
           {items.map((group) => {
             const outline = group.outline;
             const outlineStatus: OutlineStatus = outline?.status ?? 'NOT_SUBMITTED';
-            const isSubmitted = outlineStatus === 'SUBMITTED';
+            const canRequestResubmit =
+              Boolean(outline?.attachmentUrl) &&
+              (outlineStatus === 'SUBMITTED' ||
+                outlineStatus === 'APPROVED_BY_LECTURER');
 
             return (
               <Card key={group.id} className="border shadow-xs hover:border-border/80 transition-all overflow-hidden">
@@ -300,26 +291,16 @@ export default function LecturerOutlinesPage() {
                         </Button>
                       )}
 
-                      {isSubmitted && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-rose-700 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/30 border-rose-200 gap-1.5"
-                            onClick={() => handleOpenReview(group, 'REQUEST_REVISION')}
-                          >
-                            <ThumbsDown className="size-3.5" />
-                            Yêu cầu sửa
-                          </Button>
-                          <Button
-                            size="sm"
-                            className="bg-emerald-700 hover:bg-emerald-800 text-white gap-1.5"
-                            onClick={() => handleOpenReview(group, 'APPROVE')}
-                          >
-                            <ThumbsUp className="size-3.5" />
-                            Phê duyệt
-                          </Button>
-                        </>
+                      {canRequestResubmit && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-rose-700 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/30 border-rose-200 gap-1.5"
+                          onClick={() => handleOpenReview(group, 'REQUEST_REVISION')}
+                        >
+                          <ThumbsDown className="size-3.5" />
+                          Yêu cầu nộp lại
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -356,11 +337,6 @@ export default function LecturerOutlinesPage() {
                           ({formatBytes(outline.fileSize)})
                         </span>
                       </div>
-                      {outline.approvedAt && (
-                        <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                          Đã duyệt lúc {formatDate(outline.approvedAt)}
-                        </span>
-                      )}
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground italic">

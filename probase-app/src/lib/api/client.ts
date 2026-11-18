@@ -144,8 +144,9 @@ export async function api<T>(
 export async function download(
   path: string,
   fallbackName: string,
+  options: RequestOptions = {},
 ): Promise<void> {
-  const response = await request(path);
+  const response = await request(path, options);
   const blob = await response.blob();
 
   const disposition = response.headers.get('Content-Disposition') ?? '';

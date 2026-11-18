@@ -1,4 +1,4 @@
-import { api } from '@/lib/api/client';
+import { api, download } from '@/lib/api/client';
 import type {
   FacultyOutlineOverview,
   LecturerGroupOutlineItem,
@@ -61,4 +61,22 @@ export const outlineService = {
   // TLGV & TTBM: Tổng hợp toàn Khoa
   getFacultyOutlines: (query: OutlineQuery = {}) =>
     api<FacultyOutlineOverview>(`/outlines/faculty${toSearchParams(query)}`),
+
+  downloadFacultyOutlineFile: (outlineId: number, fileName: string) =>
+    download(`/outlines/faculty/${outlineId}/download`, fileName),
+
+  downloadFacultyOutlinesZip: (groupIds: number[]) =>
+    download('/outlines/faculty/download-zip', 'de-cuong-m03.zip', {
+      method: 'POST',
+      body: { groupIds },
+    }),
+
+  remindFacultyOutlines: (groupIds: number[]) =>
+    api<{ remindedGroups: number; recipientCount: number }>(
+      '/outlines/faculty/remind',
+      {
+        method: 'POST',
+        body: { groupIds },
+      },
+    ),
 };

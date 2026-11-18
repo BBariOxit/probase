@@ -90,6 +90,8 @@ export function notificationHref(
 
     case 'OUTLINE_APPROVED':
     case 'OUTLINE_REVISION_REQUESTED':
+      return '/student/submissions';
+
     case 'PROGRESS_LOG_FEEDBACK':
     case 'PROGRESS_REPORT_GRADED':
       return '/student/groups';
@@ -122,8 +124,12 @@ export function notificationHref(
       return '/student/groups';
 
     case 'SUBMISSION_FEEDBACK':
-    case 'SUBMISSION_DUE_SOON':
       return '/student/groups';
+
+    case 'SUBMISSION_DUE_SOON':
+      return notice.title?.includes('M03')
+        ? '/student/submissions'
+        : '/student/groups';
 
     // The group is gone in both of these, so the student needs to find another
     // topic to register.

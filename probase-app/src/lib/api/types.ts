@@ -1090,6 +1090,7 @@ export interface StudentGroupOutlineResponse {
 export interface LecturerGroupOutlineItem {
   id: number;
   name: string | null;
+  topicOrder?: number | null;
   topic: TopicDetail;
   members: Array<{
     id: number;

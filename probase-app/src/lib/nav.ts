@@ -53,6 +53,12 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           ready: true,
         },
         {
+          href: '/student/submissions',
+          label: 'Bài nộp',
+          icon: FileCheck2,
+          ready: true,
+        },
+        {
           href: '/student/progress',
           label: 'Tiến độ',
           icon: TrendingUp,
