@@ -196,6 +196,27 @@ function getNotificationAction(
     };
   }
 
+  if (notice.type === 'DEADLINE_REMINDER') {
+    if (isLecturer) {
+      return {
+        label:
+          notice.targetId && notice.title === 'Đề tài đã được mở đăng ký'
+            ? 'Xem chi tiết đề tài'
+            : 'Xem danh sách đề tài',
+        url:
+          notice.targetId && notice.title === 'Đề tài đã được mở đăng ký'
+            ? `/lecturer/topics/${notice.targetId}`
+            : '/lecturer',
+        icon: FileText,
+      };
+    }
+    return {
+      label: 'Xem danh sách đề tài',
+      url: '/student',
+      icon: ExternalLink,
+    };
+  }
+
   return null;
 }
 

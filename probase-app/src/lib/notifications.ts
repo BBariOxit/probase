@@ -4,6 +4,8 @@ const TOPIC_DEPARTMENT_REVIEW_TITLES = new Set([
   'Đề tài đã được Bộ môn phê duyệt',
   'Yêu cầu chỉnh sửa đề tài',
   'Đề tài bị từ chối',
+  'Bộ môn hủy duyệt đề tài và yêu cầu chỉnh sửa',
+  'Đề tài đã cập nhật sau khi duyệt',
 ]);
 
 export function isTopicDepartmentReviewNotification(notice: {
@@ -70,6 +72,11 @@ export function notificationHref(
           ? `/lecturer/topics/${notice.targetId}`
           : '/lecturer';
 
+      case 'DEADLINE_REMINDER':
+        return notice.targetId && notice.title === 'Đề tài đã được mở đăng ký'
+          ? `/lecturer/topics/${notice.targetId}`
+          : '/lecturer';
+
       default:
         return null;
     }
@@ -87,19 +94,9 @@ export function notificationHref(
     case 'PROGRESS_REPORT_GRADED':
       return '/student/groups';
 
-    /*
-      Both land on the outbox rather than on the thing they name, and for
-      different reasons that happen to agree.
-
-      A rejection's `targetId` is the proposal, and the proposal screen is where
-      the lecturer's reason is — there is nowhere better to go. An acceptance's
-      `targetId` is the *topic* that was just written, and that topic stays
-      unlisted (`DRAFT` / `PENDING_DEPARTMENT` / `APPROVED`) until the head of
-      department approves it and the faculty office opens registration:
-      `/student/topics/:id` answers 404 for a student until then, so following
-      it would take the good news to an error page. The outbox names the topic
-      and says which stage it is waiting on.
-    */
+    // Proposal notifications (accepted, rejected, revision requested, commented)
+    // all carry the proposal's id so the student lands on the proposal detail
+    // page (and can see the lecturer's feedback or next stage).
     case 'PROPOSAL_ACCEPTED':
     case 'PROPOSAL_REJECTED':
     case 'PROPOSAL_REVISION_REQUESTED':
@@ -149,6 +146,7 @@ export function notificationHref(
     */
     case 'ROUND_EXTENDED':
     case 'REGISTRATION_CLOSING_SOON':
+    case 'DEADLINE_REMINDER':
       return '/student';
 
     default:
@@ -218,9 +216,16 @@ export function notificationCategory(
     case 'REGISTRATION_CLOSING_SOON':
     case 'ROUND_FINALIZED':
       return { label: 'Đợt đăng ký', color: neutral };
+    case 'DEADLINE_REMINDER':
+      return {
+        label:
+          title === 'Mở đăng ký đề tài' || title === 'Đề tài đã được mở đăng ký'
+            ? 'Đợt đăng ký'
+            : 'Báo cáo & Nhắc nhở',
+        color: neutral,
+      };
     case 'SUBMISSION_FEEDBACK':
     case 'SUBMISSION_DUE_SOON':
-    case 'DEADLINE_REMINDER':
       return { label: 'Báo cáo & Nhắc nhở', color: neutral };
     case 'OUTLINE_SUBMITTED':
     case 'OUTLINE_REVISION_REQUESTED':

@@ -70,9 +70,13 @@ describe('RemindersService', () => {
 
       type Call = [{ where: Record<string, { gt: Date; lte: Date }> }];
       const calls: Call[] = [
-        ...(prisma.registrationRound.findMany.mock.calls as Call[]),
+        ...(prisma.registrationRound.findMany.mock.calls as Call[]).filter(
+          ([args]) => 'registrationEnd' in args.where,
+        ),
         ...(prisma.submissionRequirement.findMany.mock.calls as Call[]),
       ];
+
+      expect(calls.length).toBeGreaterThan(0);
 
       for (const [args] of calls) {
         const [range] = Object.values(args.where);
@@ -83,9 +87,48 @@ describe('RemindersService', () => {
     });
   });
 
+  describe('round opened', () => {
+    it('announces a PREP round once it enters OPEN with open topics', async () => {
+      const openingRound = {
+        ...closingSoon,
+        phase: RoundPhase.PREP,
+        semester: { name: 'HKI-2026-2027' },
+        _count: { eligibleStudents: 5 },
+      };
+      prisma.registrationRound.findMany.mockImplementation((args: any) => {
+        if (args?.where?.phase === RoundPhase.PREP) {
+          return Promise.resolve([openingRound]);
+        }
+        return Promise.resolve([]);
+      });
+      phases.resolveMany.mockResolvedValueOnce(
+        new Map([[openingRound.id, RoundPhase.OPEN]]),
+      );
+      notifications.studentsWithoutGroupIn.mockResolvedValueOnce([340]);
+
+      await service.run();
+
+      const [notice] = sent().filter(
+        (one) => one.type === NotificationType.DEADLINE_REMINDER,
+      );
+
+      expect(notice).toEqual(
+        expect.objectContaining({
+          userId: 340,
+          targetId: 12,
+          dedupeKey: 'ROUND_OPENED:round=12:user=340',
+        }),
+      );
+    });
+  });
+
   describe('registration closing', () => {
     it('says nothing about a round whose gate has already shut', async () => {
-      prisma.registrationRound.findMany.mockResolvedValueOnce([closingSoon]);
+      prisma.registrationRound.findMany.mockImplementation((args: any) =>
+        'registrationEnd' in (args?.where ?? {})
+          ? Promise.resolve([closingSoon])
+          : Promise.resolve([]),
+      );
       phases.resolveMany.mockResolvedValueOnce(
         new Map([[closingSoon.id, RoundPhase.RECONCILING]]),
       );
@@ -97,7 +140,11 @@ describe('RemindersService', () => {
     });
 
     it('keys each notice to the deadline, so an extension is heard again', async () => {
-      prisma.registrationRound.findMany.mockResolvedValueOnce([closingSoon]);
+      prisma.registrationRound.findMany.mockImplementation((args: any) =>
+        'registrationEnd' in (args?.where ?? {})
+          ? Promise.resolve([closingSoon])
+          : Promise.resolve([]),
+      );
       notifications.studentsWithoutGroupIn.mockResolvedValueOnce([340]);
 
       await service.run();

@@ -5,8 +5,10 @@ import {
   NotificationType,
   RegistrationGroupStatus,
   RoundPhase,
+  TopicStatus,
 } from '../../../generated/prisma/client';
 import { formatDate } from '../../common/utils/named-day.util';
+import { buildRoundOpenedNotices } from '../notifications/notification-templates';
 import {
   NotificationsService,
   type NewNotification,
@@ -19,6 +21,7 @@ const LEAD_DAYS = 3;
 const GATE_OPEN: readonly RoundPhase[] = [RoundPhase.OPEN, RoundPhase.EXTENDED];
 
 export interface ReminderRun {
+  roundOpened: number;
   registrationClosingSoon: number;
   submissionsDueSoon: number;
 }
@@ -41,17 +44,67 @@ export class RemindersService {
     const sent = await this.run();
 
     this.logger.log(
-      `Deadline reminders: ${sent.registrationClosingSoon} về hạn đăng ký, ${sent.submissionsDueSoon} về hạn nộp bài`,
+      `Deadline reminders: ${sent.roundOpened} mở đăng ký, ${sent.registrationClosingSoon} về hạn đăng ký, ${sent.submissionsDueSoon} về hạn nộp bài`,
     );
   }
 
   async run(): Promise<ReminderRun> {
-    const [registrationClosingSoon, submissionsDueSoon] = await Promise.all([
-      this.remindRegistrationClosing(),
-      this.remindSubmissionsDue(),
-    ]);
+    const [roundOpened, registrationClosingSoon, submissionsDueSoon] =
+      await Promise.all([
+        this.remindRoundOpened(),
+        this.remindRegistrationClosing(),
+        this.remindSubmissionsDue(),
+      ]);
 
-    return { registrationClosingSoon, submissionsDueSoon };
+    return { roundOpened, registrationClosingSoon, submissionsDueSoon };
+  }
+
+  private async remindRoundOpened(): Promise<number> {
+    const rounds = await this.prisma.registrationRound.findMany({
+      where: {
+        phase: RoundPhase.PREP,
+        topics: { some: { status: TopicStatus.OPEN } },
+      },
+      select: {
+        id: true,
+        semesterId: true,
+        phase: true,
+        registrationStart: true,
+        registrationEnd: true,
+        semester: { select: { name: true } },
+        projectType: { select: { name: true } },
+        eligibilities: { select: { cohort: true } },
+        _count: { select: { eligibleStudents: true } },
+      },
+    });
+
+    if (rounds.length === 0) return 0;
+
+    const phases = await this.phases.resolveMany(rounds);
+    const notices: NewNotification[] = [];
+
+    for (const round of rounds) {
+      if (round.phase !== RoundPhase.PREP) continue;
+      const phase = phases.get(round.id) ?? round.phase;
+      if (!GATE_OPEN.includes(phase)) continue;
+
+      const userIds = await this.notifications.studentsWithoutGroupIn({
+        roundId: round.id,
+        hasSpecificRoster: (round._count?.eligibleStudents ?? 0) > 0,
+        semesterId: round.semesterId,
+        cohorts: round.eligibilities.map((rule) => rule.cohort),
+      });
+
+      notices.push(
+        ...buildRoundOpenedNotices(round.id, userIds, {
+          semesterName: round.semester?.name ?? '',
+          projectTypeName: round.projectType.name,
+          endDate: formatDate(round.registrationEnd),
+        }),
+      );
+    }
+
+    return this.notifications.notify(notices);
   }
 
   private async remindRegistrationClosing(): Promise<number> {

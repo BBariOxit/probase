@@ -14,7 +14,9 @@ import {
   RoundPhase,
   TopicStatus,
 } from '../../../generated/prisma/client';
+import { formatDate } from '../../common/utils/named-day.util';
 import { recordAudit } from '../../core/audit/audit-entry';
+import { buildRoundOpenedNotices } from '../../core/notifications/notification-templates';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { RoundPhaseService } from '../rounds/round-phase.service';
@@ -828,20 +830,53 @@ export class TopicsService {
     return { message: 'Đã xóa đề tài thành công.' };
   }
 
-  async bulkOpen(semesterId?: number) {
+  async bulkOpen(semesterId?: number, actorUserId?: number) {
     // Guard: if a specific semester is provided, it must exist — an invalid id
     // would otherwise silently update zero rows, which is hard to debug.
     if (semesterId !== undefined) {
       await this.requireSemester(semesterId);
     }
 
-    const result = await this.prisma.topic.updateMany({
+    const approvedTopics = await this.prisma.topic.findMany({
       where: {
         ...(semesterId !== undefined && { semesterId }),
         status: TopicStatus.APPROVED,
       },
+      select: {
+        id: true,
+        title: true,
+        lecturer: { select: { userId: true } },
+        round: {
+          select: {
+            id: true,
+            semesterId: true,
+            phase: true,
+            registrationStart: true,
+            registrationEnd: true,
+            semester: { select: { name: true } },
+            projectType: { select: { name: true } },
+            eligibilities: { select: { cohort: true } },
+            _count: { select: { eligibleStudents: true } },
+          },
+        },
+      },
+    });
+
+    if (approvedTopics.length === 0) {
+      return { updated: 0 };
+    }
+
+    const result = await this.prisma.topic.updateMany({
+      where: {
+        id: { in: approvedTopics.map((t) => t.id) },
+        status: TopicStatus.APPROVED,
+      },
       data: { status: TopicStatus.OPEN },
     });
+
+    if (result.count > 0) {
+      await this.announceTopicsOpened(approvedTopics, actorUserId);
+    }
 
     return { updated: result.count };
   }
@@ -855,7 +890,35 @@ export class TopicsService {
       );
     }
 
-    return this.setStatus(id, TopicStatus.OPEN);
+    const opened = await this.setStatus(id, TopicStatus.OPEN);
+
+    const topicForNotice = await this.prisma.topic.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        lecturer: { select: { userId: true } },
+        round: {
+          select: {
+            id: true,
+            semesterId: true,
+            phase: true,
+            registrationStart: true,
+            registrationEnd: true,
+            semester: { select: { name: true } },
+            projectType: { select: { name: true } },
+            eligibilities: { select: { cohort: true } },
+            _count: { select: { eligibleStudents: true } },
+          },
+        },
+      },
+    });
+
+    if (topicForNotice) {
+      await this.announceTopicsOpened([topicForNotice], userId);
+    }
+
+    return opened;
   }
 
   async close(id: number, userId: number, role: Role) {
@@ -1211,6 +1274,76 @@ export class TopicsService {
     });
 
     return this.presentDetail(topic);
+  }
+
+  private async announceTopicsOpened(
+    topics: Array<{
+      id: number;
+      title: string;
+      lecturer: { userId: number };
+      round: {
+        id: number;
+        semesterId: number;
+        phase: RoundPhase;
+        registrationStart: Date;
+        registrationEnd: Date;
+        semester: { name: string };
+        projectType: { name: string };
+        eligibilities: { cohort: string }[];
+        _count?: { eligibleStudents: number };
+      };
+    }>,
+    actorUserId?: number,
+  ) {
+    const byLecturer = new Map<number, Array<{ id: number; title: string }>>();
+    const roundMap = new Map<number, (typeof topics)[number]['round']>();
+
+    for (const topic of topics) {
+      roundMap.set(topic.round.id, topic.round);
+      if (topic.lecturer.userId === actorUserId) continue;
+      const list = byLecturer.get(topic.lecturer.userId) ?? [];
+      list.push({ id: topic.id, title: topic.title });
+      byLecturer.set(topic.lecturer.userId, list);
+    }
+
+    const lecturerNotices = Array.from(byLecturer.entries()).map(
+      ([lecturerUserId, items]) => ({
+        userId: lecturerUserId,
+        type: NotificationType.DEADLINE_REMINDER,
+        title: 'Đề tài đã được mở đăng ký',
+        content:
+          items.length === 1
+            ? `Đề tài "${items[0].title}" đã được mở cổng đăng ký cho sinh viên.`
+            : `Giáo vụ đã mở cổng đăng ký cho ${items.length} đề tài của bạn trong học kỳ.`,
+        targetId: items.length === 1 ? items[0].id : null,
+      }),
+    );
+
+    const rounds = Array.from(roundMap.values());
+    const resolvedPhases = await this.phases.resolveMany(rounds);
+    const studentNotices = [];
+
+    for (const round of rounds) {
+      const phase = resolvedPhases.get(round.id) ?? round.phase;
+      if (phase !== RoundPhase.OPEN && phase !== RoundPhase.EXTENDED) continue;
+
+      const userIds = await this.notifications.studentsWithoutGroupIn({
+        roundId: round.id,
+        hasSpecificRoster: (round._count?.eligibleStudents ?? 0) > 0,
+        semesterId: round.semesterId,
+        cohorts: round.eligibilities.map((e) => e.cohort),
+      });
+
+      studentNotices.push(
+        ...buildRoundOpenedNotices(round.id, userIds, {
+          semesterName: round.semester.name,
+          projectTypeName: round.projectType.name,
+          endDate: formatDate(round.registrationEnd),
+        }),
+      );
+    }
+
+    await this.notifications.notify([...lecturerNotices, ...studentNotices]);
   }
 
   private async presentDetail<T extends TopicWithGroups>(topic: T) {

@@ -43,6 +43,7 @@ describe('TopicsService', () => {
 
     notifications = {
       notify: jest.fn().mockResolvedValue(undefined),
+      studentsWithoutGroupIn: jest.fn().mockResolvedValue([]),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -494,6 +495,55 @@ describe('TopicsService', () => {
         service.update(45, { title: 'Edited Title' }, 50, Role.LECTURER),
       ).rejects.toThrow(ConflictException);
       expect(prisma.topic.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('bulkOpen', () => {
+    it('notifies affected lecturers and eligible students in OPEN rounds', async () => {
+      const round = {
+        id: 12,
+        semesterId: 5,
+        phase: RoundPhase.OPEN,
+        registrationStart: new Date('2026-09-01T00:00:00.000Z'),
+        registrationEnd: new Date('2026-09-15T00:00:00.000Z'),
+        semester: { name: 'HKI-2026-2027' },
+        projectType: { name: 'Khóa luận tốt nghiệp' },
+        eligibilities: [{ cohort: 'K46' }],
+        _count: { eligibleStudents: 10 },
+      };
+
+      prisma.topic.findMany.mockResolvedValue([
+        { id: 101, title: 'Đề tài 1', lecturer: { userId: 201 }, round },
+        { id: 102, title: 'Đề tài 2', lecturer: { userId: 201 }, round },
+      ]);
+      prisma.topic.updateMany.mockResolvedValue({ count: 2 });
+      phases.resolveMany.mockResolvedValue(new Map([[12, RoundPhase.OPEN]]));
+      notifications.studentsWithoutGroupIn.mockResolvedValue([301, 302]);
+
+      const res = await service.bulkOpen(undefined, 999);
+
+      expect(res).toEqual({ updated: 2 });
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            userId: 201,
+            title: 'Đề tài đã được mở đăng ký',
+            targetId: null,
+          }),
+          expect.objectContaining({
+            userId: 301,
+            title: 'Mở đăng ký đề tài',
+            targetId: 12,
+            dedupeKey: 'ROUND_OPENED:round=12:user=301',
+          }),
+          expect.objectContaining({
+            userId: 302,
+            title: 'Mở đăng ký đề tài',
+            targetId: 12,
+            dedupeKey: 'ROUND_OPENED:round=12:user=302',
+          }),
+        ]),
+      );
     });
   });
 });
