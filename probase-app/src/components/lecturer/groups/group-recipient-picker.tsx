@@ -1,40 +1,23 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ChevronDown, Search, Users, X } from 'lucide-react';
+import { Search } from 'lucide-react';
 import type { RegistrationGroup } from '@/lib/api/types';
 import { cn, formatProjectTypeShort } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
-const MAX_VISIBLE_CHIPS = 6;
-
-function getSortedMembers(group: RegistrationGroup) {
-  return [...group.members].sort(
-    (a, b) => Number(b.isLeader) - Number(a.isLeader),
-  );
-}
-
-function formatGroupChipLabel(group: RegistrationGroup): string {
-  const pt = formatProjectTypeShort(group.topic.projectType).short;
-  const members = getSortedMembers(group);
-  if (members.length === 0) return `${pt} · Nhóm #${group.id}`;
-  const lead = members[0].student.fullName;
-  return members.length > 1
-    ? `${pt} · ${lead} +${members.length - 1}`
-    : `${pt} · ${lead}`;
-}
-
-function formatMembersLine(group: RegistrationGroup): string {
-  return getSortedMembers(group)
-    .map((m) => `${m.student.fullName} (${m.student.studentCode})`)
+function formatMemberNames(group: RegistrationGroup): string {
+  return [...group.members]
+    .sort((a, b) => Number(b.isLeader) - Number(a.isLeader))
+    .map((m) => m.student.fullName)
     .join(', ');
 }
 
@@ -49,14 +32,9 @@ export function GroupRecipientPicker({
   recipientCount: number;
   onChangeSelectedIds: (ids: number[]) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
-  const selectedGroups = useMemo(
-    () => groups.filter((g) => selectedSet.has(g.id)),
-    [groups, selectedSet],
-  );
 
   const projectTypes = useMemo(() => {
     const map = new Map<
@@ -107,10 +85,6 @@ export function GroupRecipientPicker({
     }
   }
 
-  function removeGroup(groupId: number) {
-    onChangeSelectedIds(selectedIds.filter((id) => id !== groupId));
-  }
-
   function toggleAll() {
     onChangeSelectedIds(allSelected ? [] : groups.map((g) => g.id));
   }
@@ -124,133 +98,77 @@ export function GroupRecipientPicker({
     onChangeSelectedIds(typeGroupIds);
   }
 
-  const visibleChips = selectedGroups.slice(0, MAX_VISIBLE_CHIPS);
-  const overflowCount = selectedGroups.length - visibleChips.length;
-
   return (
-    <div className="space-y-1.5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Label className="text-sm font-semibold text-foreground">Đến</Label>
+    <div className="flex flex-col h-full min-w-0 space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-sm font-semibold text-foreground">
+          Nhóm nhận
+        </Label>
         <span className="text-xs font-medium text-muted-foreground tabular-nums">
-          {selectedGroups.length}/{groups.length} nhóm ·{' '}
+          {selectedIds.length}/{groups.length} nhóm ·{' '}
           <strong className="text-primary">{recipientCount} sinh viên</strong>
         </span>
       </div>
 
-      <Popover open={open} onOpenChange={setOpen}>
-        <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-background/60 px-2.5 py-2 min-h-11">
-          {selectedGroups.length === 0 ? (
-            <span className="px-1 text-sm text-muted-foreground">
-              Chưa chọn nhóm nhận...
-            </span>
-          ) : (
-            <>
-              {visibleChips.map((group) => (
-                <span
-                  key={group.id}
-                  title={`${group.topic.title} — ${formatMembersLine(group)}`}
-                  className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs font-medium text-foreground shadow-2xs"
-                >
-                  <span className="max-w-52 truncate">
-                    {formatGroupChipLabel(group)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => removeGroup(group.id)}
-                    aria-label={`Bỏ chọn ${group.topic.title}`}
-                    className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
-                  >
-                    <X className="size-3" />
-                  </button>
-                </span>
-              ))}
-              {overflowCount > 0 && (
-                <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
-                  +{overflowCount} nhóm nữa
-                </span>
-              )}
-            </>
-          )}
-
-          <PopoverTrigger
-            render={
-              <button
-                type="button"
-                className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-semibold text-foreground hover:bg-muted/70 transition-colors cursor-pointer shrink-0"
-              >
-                <Users className="size-3.5 text-primary" />
-                <span>
-                  {selectedGroups.length === 0 ? 'Chọn nhóm' : 'Chọn / lọc'}
-                </span>
-                <ChevronDown className="size-3.5 text-muted-foreground" />
-              </button>
-            }
-          />
-        </div>
-
-        <PopoverContent
-          align="end"
-          sideOffset={6}
-          positionerClassName="z-[60]"
-          className="w-[min(560px,calc(100vw-3rem))] p-0 overflow-hidden"
-        >
-          <div className="p-3 border-b border-border space-y-2.5 bg-card">
-            <div className="relative">
-              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm theo đề tài, tên sinh viên hoặc MSSV..."
-                className="h-8.5 pl-8 text-xs"
-              />
-            </div>
-
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                type="button"
-                onClick={toggleAll}
-                className={cn(
-                  'rounded-md border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer',
-                  allSelected
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border text-muted-foreground hover:text-foreground',
-                )}
-              >
-                {allSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
-              </button>
-
-              {projectTypes.length > 1 &&
-                projectTypes.map((pt) => {
-                  const active =
-                    selectedIds.length === pt.groupIds.length &&
-                    pt.groupIds.every((id) => selectedSet.has(id));
-                  return (
-                    <button
-                      key={pt.id}
-                      type="button"
-                      title={`Chỉ chọn nhóm ${pt.full}`}
-                      onClick={() => selectByProjectType(pt.groupIds)}
-                      className={cn(
-                        'rounded-md border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer',
-                        active
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      {pt.short} ({pt.groupIds.length})
-                    </button>
-                  );
-                })}
-            </div>
+      <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-border bg-background/50">
+        <div className="space-y-2.5 border-b border-border/80 bg-muted/20 p-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm đề tài, sinh viên, MSSV..."
+              className="h-9 pl-8.5 text-sm"
+            />
           </div>
 
-          <div className="max-h-72 overflow-y-auto divide-y divide-border/70">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={toggleAll}
+              className={cn(
+                'rounded-md border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer',
+                allSelected
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border bg-card text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {allSelected ? 'Bỏ chọn tất cả' : 'Tất cả'}
+            </button>
+
+            {projectTypes.length > 1 &&
+              projectTypes.map((pt) => {
+                const active =
+                  selectedIds.length === pt.groupIds.length &&
+                  pt.groupIds.every((id) => selectedSet.has(id));
+                return (
+                  <button
+                    key={pt.id}
+                    type="button"
+                    title={`Chỉ chọn nhóm ${pt.full}`}
+                    onClick={() => selectByProjectType(pt.groupIds)}
+                    className={cn(
+                      'rounded-md border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer',
+                      active
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border bg-card text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    {pt.short} ({pt.groupIds.length})
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+
+        <TooltipProvider delay={150}>
+          <div className="flex-1 min-h-56 max-h-[340px] overflow-y-auto divide-y divide-border/60">
             {groups.length === 0 ? (
-              <p className="px-4 py-6 text-center text-xs text-muted-foreground">
+              <p className="px-4 py-8 text-center text-xs text-muted-foreground">
                 Chưa có nhóm nào có sinh viên tham gia.
               </p>
             ) : filteredGroups.length === 0 ? (
-              <p className="px-4 py-6 text-center text-xs text-muted-foreground">
+              <p className="px-4 py-8 text-center text-xs text-muted-foreground">
                 Không tìm thấy nhóm phù hợp.
               </p>
             ) : (
@@ -277,23 +195,41 @@ export function GroupRecipientPicker({
                       className="mt-0.5 shrink-0"
                     />
 
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-2 min-w-0">
-                          <span className="mt-0.5 shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground leading-none">
-                            {pt.short}
-                          </span>
-                          <span className="text-sm font-medium text-foreground leading-snug line-clamp-2">
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground leading-none">
+                          {pt.short}
+                        </span>
+
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground" />
+                            }
+                          >
                             {group.topic.title}
-                          </span>
-                        </div>
-                        <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="top"
+                            align="start"
+                            className="z-[60] max-w-md p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-neutral-800 dark:text-neutral-100 rounded-lg shadow-xl border border-slate-700 dark:border-neutral-700"
+                          >
+                            <p className="font-semibold text-primary mb-1">
+                              Tên đề tài đầy đủ:
+                            </p>
+                            <p className="text-slate-200 dark:text-neutral-200 break-words [overflow-wrap:anywhere]">
+                              {group.topic.title}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                           {group.occupiedSeats} SV
                         </span>
                       </div>
 
-                      <p className="text-xs text-muted-foreground truncate">
-                        {formatMembersLine(group)}
+                      <p className="truncate text-xs text-muted-foreground">
+                        {formatMemberNames(group)}
                       </p>
                     </div>
                   </label>
@@ -301,25 +237,8 @@ export function GroupRecipientPicker({
               })
             )}
           </div>
-
-          <div className="flex items-center justify-between gap-2 border-t border-border bg-muted/30 px-3.5 py-2">
-            <span className="text-xs text-muted-foreground tabular-nums">
-              Đã chọn{' '}
-              <strong className="text-foreground">{selectedIds.length}</strong>{' '}
-              nhóm ({recipientCount} SV)
-            </span>
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              onClick={() => setOpen(false)}
-              className="h-7 px-3 text-xs cursor-pointer"
-            >
-              Xong
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
+        </TooltipProvider>
+      </div>
     </div>
   );
 }
