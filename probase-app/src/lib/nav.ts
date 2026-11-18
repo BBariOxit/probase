@@ -232,7 +232,7 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
         },
         {
           href: '/admin/outlines',
-          label: 'Đề cương M03',
+          label: 'Bài nộp',
           icon: FileCheck2,
           ready: true,
         },

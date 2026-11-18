@@ -26,7 +26,6 @@ import type { LecturerGroupOutlineItem, OutlineStatus } from '@/lib/api/types';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
 import {
-  cn,
   downloadCsvFile,
   formatDate,
   formatMajorShort,
@@ -70,6 +69,27 @@ import {
 } from '@/components/ui/tooltip';
 
 const PAGE_SIZE = 20;
+
+const SUBMISSION_TYPES = [
+  { value: 'M03', label: 'Đề cương chi tiết (Mẫu M03)', ready: true },
+  { value: 'PROGRESS_1', label: 'Báo cáo Tiến độ 1', ready: false },
+  { value: 'PROGRESS_2', label: 'Báo cáo Tiến độ 2', ready: false },
+  {
+    value: 'THESIS_FINAL',
+    label: 'Quyển Báo cáo Toàn văn & Slide',
+    ready: false,
+  },
+  { value: 'ARCHIVE_PACKAGE', label: 'Gói Lưu trữ Số hóa', ready: false },
+] as const;
+
+type SubmissionTypeKey = (typeof SUBMISSION_TYPES)[number]['value'];
+
+const OUTLINE_STATUS_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'ALL', label: 'Mọi trạng thái' },
+  { value: 'SUBMITTED', label: 'Đã nộp' },
+  { value: 'NEEDS_REVISION', label: 'Cần nộp lại' },
+  { value: 'NOT_SUBMITTED', label: 'Chưa nộp' },
+];
 
 function getOutlineStatusLabel(status?: OutlineStatus | null): StatusLabel {
   switch (status) {
@@ -151,11 +171,14 @@ export default function AdminOutlinesPage() {
   );
 
   const [semesterId, setSemesterId] = useState<number | undefined>(undefined);
+  const [submissionType, setSubmissionType] = useState<SubmissionTypeKey>('M03');
   const [roundId, setRoundId] = useState<string>('ALL');
   const [majorId, setMajorId] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+
+  const isOutlineTab = submissionType === 'M03';
 
   const [selectedById, setSelectedById] = useState<
     Record<number, LecturerGroupOutlineItem>
@@ -194,9 +217,15 @@ export default function AdminOutlinesPage() {
   };
   const totalSubmitted = stats.approved + stats.submitted;
 
+  const visibleItems = useMemo(
+    () => (isOutlineTab ? items : []),
+    [isOutlineTab, items],
+  );
+  const displayedSubmitted = isOutlineTab ? totalSubmitted : 0;
+
   const selectedItems = useMemo(
-    () => Object.values(selectedById),
-    [selectedById],
+    () => (isOutlineTab ? Object.values(selectedById) : []),
+    [isOutlineTab, selectedById],
   );
   const downloadableSelectedIds = useMemo(
     () =>
@@ -216,14 +245,15 @@ export default function AdminOutlinesPage() {
   );
 
   const allOnPageSelected =
-    items.length > 0 && items.every((g) => Boolean(selectedById[g.id]));
+    visibleItems.length > 0 &&
+    visibleItems.every((g) => Boolean(selectedById[g.id]));
 
   if (!allowed) return null;
 
   if (!semestersPending && !semestersError && !currentSemesterId) {
     return (
       <div className="w-full min-w-0 space-y-4">
-        <h1 className="text-lg font-semibold">Đề cương M03</h1>
+        <h1 className="text-lg font-semibold">Bài nộp</h1>
         <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
           <EmptyState
             icon={CalendarRange}
@@ -248,7 +278,7 @@ export default function AdminOutlinesPage() {
   function toggleAllOnPage(checked: boolean) {
     setSelectedById((prev) => {
       const next = { ...prev };
-      for (const group of items) {
+      for (const group of visibleItems) {
         if (checked) {
           next[group.id] = group;
         } else {
@@ -383,61 +413,66 @@ export default function AdminOutlinesPage() {
     }
   }
 
-  const statusTabs = [
-    { key: 'ALL', label: 'Tất cả', count: stats.totalGroups },
-    { key: 'SUBMITTED', label: 'Đã nộp', count: totalSubmitted },
-    { key: 'NEEDS_REVISION', label: 'Cần nộp lại', count: stats.needsRevision },
-    { key: 'NOT_SUBMITTED', label: 'Chưa nộp', count: stats.notSubmitted },
-  ] as const;
+  const selectedSubmissionMeta =
+    SUBMISSION_TYPES.find((t) => t.value === submissionType) ??
+    SUBMISSION_TYPES[0];
 
   return (
     <TooltipProvider delay={200}>
       <div className="w-full min-w-0 space-y-4">
-        {/* Header + Inline Status Tabs */}
+        {/* Header: Chọn loại bài nộp + tổng nhóm / đã nộp */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 min-w-0">
-            <h1 className="text-lg font-semibold text-slate-900 dark:text-neutral-100">
-              Đề cương M03
-            </h1>
-
-            <div
-              className="flex flex-wrap items-center gap-1 rounded-lg border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] p-1"
-              role="tablist"
-              aria-label="Lọc nhanh theo trạng thái M03"
+            <Select
+              value={submissionType}
+              onValueChange={(val) => {
+                setSubmissionType((val as SubmissionTypeKey) ?? 'M03');
+                setSelectedById({});
+              }}
             >
-              {statusTabs.map((tab) => {
-                const active = statusFilter === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => {
-                      setStatusFilter(tab.key);
-                      setPage(1);
-                    }}
-                    className={cn(
-                      'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer',
-                      active
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-100',
-                    )}
-                  >
-                    <span>{tab.label}</span>
-                    <span
-                      className={cn(
-                        'tabular-nums font-bold',
-                        active
-                          ? 'text-primary-foreground/90'
-                          : 'text-slate-900 dark:text-neutral-200',
-                      )}
-                    >
-                      {tab.count}
-                    </span>
-                  </button>
-                );
-              })}
+              <SelectTrigger
+                className="h-9.5 w-auto min-w-60 gap-2 text-base font-semibold bg-white dark:bg-[#1e1e1e] border-slate-300 dark:border-neutral-700"
+                aria-label="Chọn loại bài nộp"
+              >
+                <SelectValue>
+                  {() => selectedSubmissionMeta.label}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="w-64">
+                {SUBMISSION_TYPES.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-neutral-400">
+              <span>
+                Tổng:{' '}
+                <strong className="font-semibold text-slate-900 dark:text-neutral-100 tabular-nums">
+                  {stats.totalGroups}
+                </strong>{' '}
+                nhóm
+              </span>
+              <span
+                className="text-slate-300 dark:text-neutral-700"
+                aria-hidden="true"
+              >
+                •
+              </span>
+              <span>
+                Đã nộp:{' '}
+                <strong
+                  className={
+                    displayedSubmitted > 0
+                      ? 'font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums'
+                      : 'font-semibold text-slate-500 dark:text-neutral-400 tabular-nums'
+                  }
+                >
+                  {displayedSubmitted}
+                </strong>
+              </span>
             </div>
           </div>
 
@@ -479,7 +514,7 @@ export default function AdminOutlinesPage() {
                   <Button
                     variant="outline"
                     className="h-9 gap-1.5 text-sm cursor-pointer"
-                    disabled={!currentSemesterId || exporting}
+                    disabled={!currentSemesterId || exporting || !isOutlineTab}
                   >
                     {exporting ? (
                       <Loader2 className="size-4 animate-spin" />
@@ -521,7 +556,8 @@ export default function AdminOutlinesPage() {
               }}
               placeholder="Tìm đề tài, nhóm, GVHD, SV, MSSV…"
               className="h-9 pl-8 pr-8 text-sm"
-              aria-label="Tìm kiếm đề cương"
+              aria-label="Tìm kiếm bài nộp"
+              disabled={!isOutlineTab}
             />
             {search && (
               <button
@@ -544,6 +580,7 @@ export default function AdminOutlinesPage() {
               setRoundId(val ?? 'ALL');
               setPage(1);
             }}
+            disabled={!isOutlineTab}
           >
             <SelectTrigger className="w-48 h-9 text-sm" aria-label="Lọc theo đợt đồ án">
               <SelectValue>
@@ -572,6 +609,7 @@ export default function AdminOutlinesPage() {
               setMajorId(val ?? 'ALL');
               setPage(1);
             }}
+            disabled={!isOutlineTab}
           >
             <SelectTrigger className="w-48 h-9 text-sm" aria-label="Lọc theo chuyên ngành">
               <SelectValue>
@@ -589,6 +627,31 @@ export default function AdminOutlinesPage() {
               {majors?.map((major) => (
                 <SelectItem key={major.id} value={String(major.id)}>
                   {major.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={statusFilter}
+            onValueChange={(val) => {
+              setStatusFilter(val ?? 'ALL');
+              setPage(1);
+            }}
+            disabled={!isOutlineTab}
+          >
+            <SelectTrigger className="w-44 h-9 text-sm" aria-label="Lọc theo trạng thái">
+              <SelectValue>
+                {(value) =>
+                  OUTLINE_STATUS_OPTIONS.find((opt) => opt.value === value)
+                    ?.label ?? 'Mọi trạng thái'
+                }
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {OUTLINE_STATUS_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -671,11 +734,11 @@ export default function AdminOutlinesPage() {
 
         {/* Table */}
         <div className="isolate w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
-          {isPending ? (
+          {isOutlineTab && isPending ? (
             <div className="flex justify-center py-16">
               <Loader2 className="size-6 animate-spin text-muted-foreground" />
             </div>
-          ) : items.length === 0 ? (
+          ) : isOutlineTab && visibleItems.length === 0 ? (
             <EmptyState
               icon={FileText}
               title="Không có bản ghi đề cương nào phù hợp."
@@ -683,7 +746,7 @@ export default function AdminOutlinesPage() {
           ) : (
             <Table
               containerClassName="w-full overflow-x-auto"
-              className="w-full min-w-[980px] table-fixed text-left text-sm"
+              className="w-full min-w-[995px] table-fixed text-left text-sm"
             >
               <TableHeader>
                 <TableRow>
@@ -691,13 +754,14 @@ export default function AdminOutlinesPage() {
                     <Checkbox
                       checked={allOnPageSelected}
                       onCheckedChange={toggleAllOnPage}
+                      disabled={!isOutlineTab || visibleItems.length === 0}
                       aria-label="Chọn tất cả nhóm trên trang"
                     />
                   </TableHead>
                   <TableHead className="w-[96px] px-3 whitespace-nowrap">
                     Nhóm
                   </TableHead>
-                  <TableHead className="w-[230px] px-3">Sinh viên</TableHead>
+                  <TableHead className="w-[245px] px-3">Sinh viên</TableHead>
                   <TableHead className="w-[290px] px-4">Đề tài</TableHead>
                   <TableHead className="w-[155px] px-3 whitespace-nowrap">
                     GVHD
@@ -711,7 +775,21 @@ export default function AdminOutlinesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((group) => {
+                {!isOutlineTab ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="py-14 text-center text-sm text-muted-foreground whitespace-normal"
+                    >
+                      Chưa có dữ liệu bài nộp cho mục{' '}
+                      <span className="font-medium text-foreground">
+                        {selectedSubmissionMeta.label}
+                      </span>
+                      .
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  visibleItems.map((group) => {
                   const outline = group.outline;
                   const projectType = getTopicProjectType(group.topic);
                   const majorShort = group.topic?.major
@@ -891,13 +969,14 @@ export default function AdminOutlinesPage() {
                       </TableCell>
                     </TableRow>
                   );
-                })}
+                })
+                )}
               </TableBody>
             </Table>
           )}
         </div>
 
-        {data && (
+        {isOutlineTab && data && (
           <PaginationBar
             page={page}
             totalPages={data.totalPages}
