@@ -2,33 +2,17 @@
 
 import { useMemo, useState } from 'react';
 import { Loader2, Mail, Search, Users } from 'lucide-react';
-import { useSemesters } from '@/lib/api/master-data';
 import { useSupervisedGroups } from '@/lib/api/registration';
 import { useRequireRole } from '@/lib/auth/use-require-role';
-import {
-  cn,
-  formatProjectTypeShort,
-  formatSemesterShort,
-} from '@/lib/utils';
+import { cn, formatProjectTypeShort } from '@/lib/utils';
 import { EmptyState } from '@/components/shared/empty-state';
 import { GroupAnnouncementDialog } from '@/components/lecturer/groups/group-announcement-dialog';
 import { SupervisedGroupCard } from '@/components/lecturer/groups/supervised-group-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 
 export default function LecturerGroupsPage() {
   const allowed = useRequireRole(['LECTURER', 'GVCN']);
-  const { data: semesters } = useSemesters();
-  const [pickedSemester, setPickedSemester] = useState<number | undefined>(
-    undefined,
-  );
   const [projectTypeFilter, setProjectTypeFilter] = useState<
     number | undefined
   >(undefined);
@@ -37,9 +21,7 @@ export default function LecturerGroupsPage() {
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeInitialIds, setComposeInitialIds] = useState<number[]>([]);
 
-  const semesterId =
-    pickedSemester ?? semesters?.find((one) => one.isActive)?.id;
-  const { data: groups, isPending, error } = useSupervisedGroups(semesterId);
+  const { data: groups, isPending, error } = useSupervisedGroups();
 
   const items = useMemo(() => groups ?? [], [groups]);
 
@@ -108,36 +90,6 @@ export default function LecturerGroupsPage() {
               className="h-9.5 pl-9 text-sm"
             />
           </div>
-
-          {semesters && semesters.length > 0 && (
-            <Select
-              value={semesterId ?? null}
-              onValueChange={(val) => {
-                setPickedSemester(val as number);
-                setProjectTypeFilter(undefined);
-              }}
-            >
-              <SelectTrigger className="h-9.5 w-48 text-sm" aria-label="Chọn học kỳ">
-                <SelectValue>
-                  {(val) => {
-                    const found = semesters.find((s) => s.id === val);
-                    return found ? formatSemesterShort(found) : 'Học kỳ';
-                  }}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {semesters.map((semester) => (
-                  <SelectItem
-                    key={semester.id}
-                    value={semester.id}
-                    className="text-sm"
-                  >
-                    {formatSemesterShort(semester)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
 
           {projectTypes.length > 1 && (
             <div

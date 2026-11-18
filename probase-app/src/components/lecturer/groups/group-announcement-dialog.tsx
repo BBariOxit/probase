@@ -5,7 +5,6 @@ import { Loader2, Mail, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNotifySupervisedGroups } from '@/lib/api/registration';
 import type { RegistrationGroup } from '@/lib/api/types';
-import { cn, formatProjectTypeShort } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -17,8 +16,16 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ANNOUNCEMENT_TEMPLATES } from './announcement-templates';
+import { GroupRecipientPicker } from './group-recipient-picker';
 
 const TITLE_MAX = 150;
 const CONTENT_MAX = 3000;
@@ -87,21 +94,6 @@ function GroupAnnouncementDialogContent({
     [groups],
   );
 
-  const projectTypes = useMemo(() => {
-    const map = new Map<number, { id: number; short: string; full: string }>();
-    for (const g of selectableGroups) {
-      if (!map.has(g.topic.projectType.id)) {
-        const pt = formatProjectTypeShort(g.topic.projectType);
-        map.set(g.topic.projectType.id, {
-          id: g.topic.projectType.id,
-          short: pt.short,
-          full: pt.full,
-        });
-      }
-    }
-    return [...map.values()];
-  }, [selectableGroups]);
-
   const recipientCount = useMemo(() => {
     const selectedSet = new Set(selectedIds);
     const uniqueUsers = new Set<number>();
@@ -114,41 +106,12 @@ function GroupAnnouncementDialogContent({
     return uniqueUsers.size;
   }, [selectableGroups, selectedIds]);
 
-  const allSelected =
-    selectableGroups.length > 0 &&
-    selectedIds.length === selectableGroups.length;
-
   function applyTemplate(templateId: string) {
     const tpl = ANNOUNCEMENT_TEMPLATES.find((t) => t.id === templateId);
     if (!tpl) return;
     setActiveTemplate(tpl.id);
     setTitle(tpl.title);
     setContent(tpl.content);
-  }
-
-  function toggleGroup(groupId: number, checked: boolean) {
-    setSelectedIds((prev) =>
-      checked
-        ? prev.includes(groupId)
-          ? prev
-          : [...prev, groupId]
-        : prev.filter((id) => id !== groupId),
-    );
-  }
-
-  function toggleAll() {
-    if (allSelected) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(selectableGroups.map((g) => g.id));
-    }
-  }
-
-  function selectByProjectType(projectTypeId: number) {
-    const matching = selectableGroups
-      .filter((g) => g.topic.projectType.id === projectTypeId)
-      .map((g) => g.id);
-    setSelectedIds(matching);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -189,9 +152,7 @@ function GroupAnnouncementDialogContent({
         parts.push(`${result.notificationsSent} thông báo`);
       }
       if (sendEmail) {
-        parts.push(
-          `${result.emailsSent}/${result.recipientCount} email`,
-        );
+        parts.push(`${result.emailsSent}/${result.recipientCount} email`);
       }
 
       if (result.emailsFailed > 0) {
@@ -221,121 +182,61 @@ function GroupAnnouncementDialogContent({
 
   return (
     <DialogContent className="sm:max-w-2xl p-6 gap-5 max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base font-bold">
-            <Mail className="size-4 text-primary" />
-            <span>Gửi thông báo đến nhóm hướng dẫn</span>
-          </DialogTitle>
-        </DialogHeader>
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2 text-base font-bold">
+          <Mail className="size-4 text-primary" />
+          <span>Gửi thông báo đến nhóm hướng dẫn</span>
+        </DialogTitle>
+      </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* 1. Chọn nhóm nhận */}
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <Label className="text-sm font-semibold text-foreground">
-                Nhóm nhận ({selectedIds.length}/{selectableGroups.length} nhóm ·{' '}
-                <span className="text-primary">{recipientCount} sinh viên</span>)
-              </Label>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <GroupRecipientPicker
+          groups={selectableGroups}
+          selectedIds={selectedIds}
+          recipientCount={recipientCount}
+          onChangeSelectedIds={setSelectedIds}
+        />
 
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={toggleAll}
-                  className={cn(
-                    'rounded-md border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer',
-                    allSelected
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  {allSelected ? 'Bỏ chọn tất cả' : 'Tất cả'}
-                </button>
-                {projectTypes.length > 1 &&
-                  projectTypes.map((pt) => (
-                    <button
-                      key={pt.id}
-                      type="button"
-                      title={pt.full}
-                      onClick={() => selectByProjectType(pt.id)}
-                      className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                    >
-                      {pt.short}
-                    </button>
-                  ))}
-              </div>
-            </div>
-
-            <div className="max-h-36 overflow-y-auto rounded-lg border border-border divide-y divide-border/70 bg-background/60">
-              {selectableGroups.length === 0 ? (
-                <p className="px-3 py-4 text-center text-xs text-muted-foreground">
-                  Chưa có nhóm nào có sinh viên tham gia.
-                </p>
-              ) : (
-                selectableGroups.map((group) => {
-                  const checked = selectedIds.includes(group.id);
-                  const pt = formatProjectTypeShort(group.topic.projectType);
-                  const checkboxId = `notify-group-${group.id}`;
-
-                  return (
-                    <label
-                      key={group.id}
-                      htmlFor={checkboxId}
-                      className={cn(
-                        'flex items-center justify-between gap-3 px-3 py-2 text-sm cursor-pointer transition-colors',
-                        checked
-                          ? 'bg-primary/5 dark:bg-primary/10'
-                          : 'hover:bg-muted/40',
-                      )}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <Checkbox
-                          id={checkboxId}
-                          checked={checked}
-                          onCheckedChange={(val) => toggleGroup(group.id, val)}
-                        />
-                        <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                          {pt.short}
-                        </span>
-                        <span className="truncate font-medium text-foreground">
-                          {group.topic.title}
-                        </span>
-                      </div>
-                      <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                        {group.occupiedSeats} SV
-                      </span>
-                    </label>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* 2. Mẫu soạn nhanh */}
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold text-foreground">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
+          <div className="space-y-1.5 sm:col-span-4">
+            <Label
+              htmlFor="announcement-template"
+              className="text-sm font-semibold text-foreground"
+            >
               Mẫu nội dung
             </Label>
-            <div className="flex flex-wrap gap-1.5">
-              {ANNOUNCEMENT_TEMPLATES.map((tpl) => (
-                <button
-                  key={tpl.id}
-                  type="button"
-                  onClick={() => applyTemplate(tpl.id)}
-                  className={cn(
-                    'rounded-md border px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer',
-                    activeTemplate === tpl.id
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-border bg-card text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  {tpl.label}
-                </button>
-              ))}
-            </div>
+            <Select
+              value={activeTemplate}
+              onValueChange={(val) => applyTemplate(val as string)}
+            >
+              <SelectTrigger
+                id="announcement-template"
+                className="h-10 w-full text-sm"
+              >
+                <SelectValue>
+                  {(val) => {
+                    const found = ANNOUNCEMENT_TEMPLATES.find(
+                      (t) => t.id === val,
+                    );
+                    return found ? found.label : 'Chọn mẫu';
+                  }}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="z-[60]">
+                {ANNOUNCEMENT_TEMPLATES.map((tpl) => (
+                  <SelectItem
+                    key={tpl.id}
+                    value={tpl.id}
+                    className="text-sm"
+                  >
+                    {tpl.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* 3. Tiêu đề */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 sm:col-span-8">
             <div className="flex items-center justify-between">
               <Label
                 htmlFor="announcement-title"
@@ -356,87 +257,85 @@ function GroupAnnouncementDialogContent({
               className="h-10 text-sm"
             />
           </div>
+        </div>
 
-          {/* 4. Nội dung */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label
-                htmlFor="announcement-content"
-                className="text-sm font-semibold text-foreground"
-              >
-                Nội dung
-              </Label>
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {content.length}/{CONTENT_MAX}
-              </span>
-            </div>
-            <Textarea
-              id="announcement-content"
-              value={content}
-              maxLength={CONTENT_MAX}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Nhập nội dung gửi tới sinh viên..."
-              rows={6}
-              className="min-h-36 text-sm leading-relaxed"
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label
+              htmlFor="announcement-content"
+              className="text-sm font-semibold text-foreground"
+            >
+              Nội dung
+            </Label>
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {content.length}/{CONTENT_MAX}
+            </span>
+          </div>
+          <Textarea
+            id="announcement-content"
+            value={content}
+            maxLength={CONTENT_MAX}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Nhập nội dung gửi tới sinh viên..."
+            rows={7}
+            className="min-h-40 text-sm leading-relaxed"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-6 pt-1">
+          <label
+            htmlFor="channel-notif"
+            className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer"
+          >
+            <Checkbox
+              id="channel-notif"
+              checked={sendNotification}
+              onCheckedChange={setSendNotification}
             />
-          </div>
+            <span>Thông báo trên ProBase</span>
+          </label>
 
-          {/* 5. Kênh gửi */}
-          <div className="flex flex-wrap items-center gap-6 pt-1">
-            <label
-              htmlFor="channel-notif"
-              className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer"
-            >
-              <Checkbox
-                id="channel-notif"
-                checked={sendNotification}
-                onCheckedChange={setSendNotification}
-              />
-              <span>Thông báo trên ProBase</span>
-            </label>
+          <label
+            htmlFor="channel-email"
+            className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer"
+          >
+            <Checkbox
+              id="channel-email"
+              checked={sendEmail}
+              onCheckedChange={setSendEmail}
+            />
+            <span>Gửi kèm Email (@dlu.edu.vn)</span>
+          </label>
+        </div>
 
-            <label
-              htmlFor="channel-email"
-              className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer"
-            >
-              <Checkbox
-                id="channel-email"
-                checked={sendEmail}
-                onCheckedChange={setSendEmail}
-              />
-              <span>Gửi kèm Email (@dlu.edu.vn)</span>
-            </label>
-          </div>
-
-          <DialogFooter className="-mx-6 -mb-6 px-6 py-4 gap-2.5">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={sendAnnouncement.isPending}
-              className="h-10 px-4 text-sm cursor-pointer"
-            >
-              Hủy
-            </Button>
-            <Button
-              type="submit"
-              disabled={!canSubmit}
-              className="h-10 px-4 text-sm gap-2 cursor-pointer"
-            >
-              {sendAnnouncement.isPending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Send className="size-4" />
-              )}
-              <span>
-                {recipientCount > 0
-                  ? `Gửi tới ${recipientCount} sinh viên`
-                  : 'Gửi thông báo'}
-              </span>
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
+        <DialogFooter className="-mx-6 -mb-6 px-6 py-4 gap-2.5">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={sendAnnouncement.isPending}
+            className="h-10 px-4 text-sm cursor-pointer"
+          >
+            Hủy
+          </Button>
+          <Button
+            type="submit"
+            disabled={!canSubmit}
+            className="h-10 px-4 text-sm gap-2 cursor-pointer"
+          >
+            {sendAnnouncement.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Send className="size-4" />
+            )}
+            <span>
+              {recipientCount > 0
+                ? `Gửi tới ${recipientCount} sinh viên`
+                : 'Gửi thông báo'}
+            </span>
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
   );
 }
-
