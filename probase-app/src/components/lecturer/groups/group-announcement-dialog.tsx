@@ -181,7 +181,7 @@ function GroupAnnouncementDialogContent({
     !sendAnnouncement.isPending;
 
   return (
-    <DialogContent className="sm:max-w-5xl p-6 gap-5 max-h-[92vh] overflow-y-auto">
+    <DialogContent className="max-w-[calc(100vw-4rem)] sm:max-w-[780px] p-6 gap-4 max-h-[86vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2 text-base font-bold">
           <Mail className="size-4 text-primary" />
@@ -189,129 +189,123 @@ function GroupAnnouncementDialogContent({
         </DialogTitle>
       </DialogHeader>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-12 items-stretch">
-          <div className="md:col-span-5 min-w-0 flex flex-col">
-            <GroupRecipientPicker
-              groups={selectableGroups}
-              selectedIds={selectedIds}
-              recipientCount={recipientCount}
-              onChangeSelectedIds={setSelectedIds}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <GroupRecipientPicker
+          groups={selectableGroups}
+          selectedIds={selectedIds}
+          recipientCount={recipientCount}
+          onChangeSelectedIds={setSelectedIds}
+        />
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
+          <div className="space-y-1.5 sm:col-span-4">
+            <Label
+              htmlFor="announcement-template"
+              className="text-sm font-semibold text-foreground"
+            >
+              Mẫu nội dung
+            </Label>
+            <Select
+              value={activeTemplate}
+              onValueChange={(val) => applyTemplate(val as string)}
+            >
+              <SelectTrigger
+                id="announcement-template"
+                className="h-10 w-full text-sm"
+              >
+                <SelectValue>
+                  {(val) => {
+                    const found = ANNOUNCEMENT_TEMPLATES.find(
+                      (t) => t.id === val,
+                    );
+                    return found ? found.label : 'Chọn mẫu';
+                  }}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="z-[60]">
+                {ANNOUNCEMENT_TEMPLATES.map((tpl) => (
+                  <SelectItem
+                    key={tpl.id}
+                    value={tpl.id}
+                    className="text-sm"
+                  >
+                    {tpl.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5 sm:col-span-8">
+            <div className="flex items-center justify-between">
+              <Label
+                htmlFor="announcement-title"
+                className="text-sm font-semibold text-foreground"
+              >
+                Tiêu đề
+              </Label>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {title.length}/{TITLE_MAX}
+              </span>
+            </div>
+            <Input
+              id="announcement-title"
+              value={title}
+              maxLength={TITLE_MAX}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Nhập tiêu đề thông báo..."
+              className="h-10 text-sm"
             />
           </div>
+        </div>
 
-          <div className="md:col-span-7 min-w-0 flex flex-col space-y-4">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
-              <div className="space-y-1.5 sm:col-span-4">
-                <Label
-                  htmlFor="announcement-template"
-                  className="text-sm font-semibold text-foreground"
-                >
-                  Mẫu nội dung
-                </Label>
-                <Select
-                  value={activeTemplate}
-                  onValueChange={(val) => applyTemplate(val as string)}
-                >
-                  <SelectTrigger
-                    id="announcement-template"
-                    className="h-10 w-full text-sm"
-                  >
-                    <SelectValue>
-                      {(val) => {
-                        const found = ANNOUNCEMENT_TEMPLATES.find(
-                          (t) => t.id === val,
-                        );
-                        return found ? found.label : 'Chọn mẫu';
-                      }}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="z-[60]">
-                    {ANNOUNCEMENT_TEMPLATES.map((tpl) => (
-                      <SelectItem
-                        key={tpl.id}
-                        value={tpl.id}
-                        className="text-sm"
-                      >
-                        {tpl.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5 sm:col-span-8">
-                <div className="flex items-center justify-between">
-                  <Label
-                    htmlFor="announcement-title"
-                    className="text-sm font-semibold text-foreground"
-                  >
-                    Tiêu đề
-                  </Label>
-                  <span className="text-xs tabular-nums text-muted-foreground">
-                    {title.length}/{TITLE_MAX}
-                  </span>
-                </div>
-                <Input
-                  id="announcement-title"
-                  value={title}
-                  maxLength={TITLE_MAX}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Nhập tiêu đề thông báo..."
-                  className="h-10 text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-1 flex-col space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label
-                  htmlFor="announcement-content"
-                  className="text-sm font-semibold text-foreground"
-                >
-                  Nội dung
-                </Label>
-                <span className="text-xs tabular-nums text-muted-foreground">
-                  {content.length}/{CONTENT_MAX}
-                </span>
-              </div>
-              <Textarea
-                id="announcement-content"
-                value={content}
-                maxLength={CONTENT_MAX}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Nhập nội dung gửi tới sinh viên..."
-                rows={10}
-                className="flex-1 min-h-56 text-sm leading-relaxed"
-              />
-            </div>
-
-            <div className="flex flex-wrap items-center gap-6 pt-0.5">
-              <label
-                htmlFor="channel-notif"
-                className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer"
-              >
-                <Checkbox
-                  id="channel-notif"
-                  checked={sendNotification}
-                  onCheckedChange={setSendNotification}
-                />
-                <span>Thông báo trên ProBase</span>
-              </label>
-
-              <label
-                htmlFor="channel-email"
-                className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer"
-              >
-                <Checkbox
-                  id="channel-email"
-                  checked={sendEmail}
-                  onCheckedChange={setSendEmail}
-                />
-                <span>Gửi kèm Email (@dlu.edu.vn)</span>
-              </label>
-            </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label
+              htmlFor="announcement-content"
+              className="text-sm font-semibold text-foreground"
+            >
+              Nội dung
+            </Label>
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {content.length}/{CONTENT_MAX}
+            </span>
           </div>
+          <Textarea
+            id="announcement-content"
+            value={content}
+            maxLength={CONTENT_MAX}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Nhập nội dung gửi tới sinh viên..."
+            rows={6}
+            className="min-h-32 text-sm leading-relaxed"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-6 pt-0.5">
+          <label
+            htmlFor="channel-notif"
+            className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer"
+          >
+            <Checkbox
+              id="channel-notif"
+              checked={sendNotification}
+              onCheckedChange={setSendNotification}
+            />
+            <span>Thông báo trên ProBase</span>
+          </label>
+
+          <label
+            htmlFor="channel-email"
+            className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer"
+          >
+            <Checkbox
+              id="channel-email"
+              checked={sendEmail}
+              onCheckedChange={setSendEmail}
+            />
+            <span>Gửi kèm Email (@dlu.edu.vn)</span>
+          </label>
         </div>
 
         <DialogFooter className="-mx-6 -mb-6 px-6 py-4 gap-2.5">

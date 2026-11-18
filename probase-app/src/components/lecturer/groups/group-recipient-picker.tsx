@@ -99,7 +99,7 @@ export function GroupRecipientPicker({
   }
 
   return (
-    <div className="flex flex-col h-full min-w-0 space-y-2">
+    <div className="min-w-0 space-y-2">
       <div className="flex items-center justify-between gap-2">
         <Label className="text-sm font-semibold text-foreground">
           Nhóm nhận
@@ -110,19 +110,19 @@ export function GroupRecipientPicker({
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-border bg-background/50">
-        <div className="space-y-2.5 border-b border-border/80 bg-muted/20 p-3">
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
+      <div className="overflow-hidden rounded-xl border border-border bg-background/50">
+        <div className="flex flex-wrap items-center gap-2 border-b border-border/80 bg-muted/20 p-2.5">
+          <div className="relative min-w-48 flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm đề tài, sinh viên, MSSV..."
-              className="h-9 pl-8.5 text-sm"
+              className="h-8 pl-8 text-xs sm:text-sm"
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1">
             <button
               type="button"
               onClick={toggleAll}
@@ -148,7 +148,7 @@ export function GroupRecipientPicker({
                     title={`Chỉ chọn nhóm ${pt.full}`}
                     onClick={() => selectByProjectType(pt.groupIds)}
                     className={cn(
-                      'rounded-md border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer',
+                      'rounded-md border px-2 py-1 text-xs font-medium transition-colors cursor-pointer',
                       active
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-border bg-card text-muted-foreground hover:text-foreground',
@@ -162,7 +162,7 @@ export function GroupRecipientPicker({
         </div>
 
         <TooltipProvider delay={150}>
-          <div className="flex-1 min-h-56 max-h-[340px] overflow-y-auto divide-y divide-border/60">
+          <div className="max-h-44 overflow-y-auto divide-y divide-border/60">
             {groups.length === 0 ? (
               <p className="px-4 py-8 text-center text-xs text-muted-foreground">
                 Chưa có nhóm nào có sinh viên tham gia.
