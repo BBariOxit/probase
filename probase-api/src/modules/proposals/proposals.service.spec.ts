@@ -11,6 +11,7 @@ import { ProposalsService } from './proposals.service';
 describe('ProposalsService', () => {
   let service: ProposalsService;
   let prisma: any;
+  let notifications: { notify: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
@@ -46,7 +47,9 @@ describe('ProposalsService', () => {
         },
         {
           provide: NotificationsService,
-          useValue: { notify: jest.fn().mockResolvedValue(undefined) },
+          useValue: (notifications = {
+            notify: jest.fn().mockResolvedValue(undefined),
+          }),
         },
         {
           provide: MentoringLoadService,
@@ -122,6 +125,13 @@ describe('ProposalsService', () => {
         }),
       );
       expect(service.findOne).toHaveBeenCalledWith(8, 50, Role.LECTURER);
+      expect(notifications.notify).toHaveBeenCalledWith([
+        expect.objectContaining({
+          userId: 100,
+          type: 'PROPOSAL_ACCEPTED',
+          targetId: 8,
+        }),
+      ]);
     });
   });
 });

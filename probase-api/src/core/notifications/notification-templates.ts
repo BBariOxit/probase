@@ -1,6 +1,8 @@
+import { NotificationType } from '../../../generated/prisma/client';
+
 export interface RoundNotificationParams {
   semesterName: string;
-  academicYear: string;
+  academicYear?: string;
   projectTypeName?: string;
   startDate?: string;
   endDate?: string;
@@ -12,9 +14,13 @@ export const NotificationTemplates = {
    */
   roundOpened(params: RoundNotificationParams) {
     const scope = params.projectTypeName ? ` (${params.projectTypeName})` : '';
+    const yearSuffix = params.academicYear ? ` năm học ${params.academicYear}` : '';
+    const deadlineNote = params.endDate
+      ? ` Hạn đăng ký đến hết ngày ${params.endDate}.`
+      : '';
     return {
       title: 'Mở đăng ký đề tài',
-      content: `${params.semesterName} năm học ${params.academicYear} đã chính thức mở đợt đăng ký đề tài${scope}.\n\nSinh viên đủ điều kiện vui lòng nhanh tay theo dõi danh sách đề tài và đăng ký trước thời hạn quy định của Khoa.`,
+      content: `${params.semesterName}${yearSuffix} đã chính thức mở đăng ký đề tài${scope}.${deadlineNote}\n\nSinh viên đủ điều kiện vui lòng nhanh tay theo dõi danh sách đề tài và đăng ký trước thời hạn quy định của Khoa.`,
     };
   },
 
@@ -45,3 +51,20 @@ export const NotificationTemplates = {
     };
   },
 };
+
+export function buildRoundOpenedNotices(
+  roundId: number,
+  userIds: number[],
+  params: RoundNotificationParams,
+) {
+  if (userIds.length === 0) return [];
+  const tpl = NotificationTemplates.roundOpened(params);
+  return userIds.map((userId) => ({
+    userId,
+    type: NotificationType.DEADLINE_REMINDER,
+    title: tpl.title,
+    content: tpl.content,
+    targetId: roundId,
+    dedupeKey: `ROUND_OPENED:round=${roundId}:user=${userId}`,
+  }));
+}

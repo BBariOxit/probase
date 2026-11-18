@@ -45,12 +45,18 @@ function TableHeader({
   );
 }
 
-function TableBody({ className, ...props }: React.ComponentProps<'tbody'>) {
+function TableBody({
+  className,
+  striped = true,
+  ...props
+}: React.ComponentProps<'tbody'> & { striped?: boolean }) {
   return (
     <tbody
       data-slot="table-body"
       className={cn(
         'divide-y divide-slate-200 dark:divide-neutral-700/80 [&_tr:last-child]:border-b-0 bg-card',
+        striped &&
+          '[&>tr:nth-child(even):not([data-state=selected])]:bg-slate-50/85 dark:[&>tr:nth-child(even):not([data-state=selected])]:bg-white/[0.03] [&>tr:hover:not([data-state=selected])]:bg-slate-100/80 dark:[&>tr:hover:not([data-state=selected])]:bg-white/[0.06]',
         className,
       )}
       {...props}
@@ -76,7 +82,7 @@ function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
     <tr
       data-slot="table-row"
       className={cn(
-        'border-b border-slate-200 dark:border-neutral-700/80 transition-colors bg-card hover:bg-slate-50/70 dark:hover:bg-white/4 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted',
+        'border-b border-slate-200 dark:border-neutral-700/80 transition-colors bg-card hover:bg-slate-100/80 dark:hover:bg-white/[0.06] has-aria-expanded:bg-muted/50 data-[state=selected]:bg-primary/8 dark:data-[state=selected]:bg-primary/15',
         className,
       )}
       {...props}

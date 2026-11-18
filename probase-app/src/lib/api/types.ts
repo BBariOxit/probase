@@ -340,6 +340,22 @@ export interface RegistrationGroup {
   inviteMessage?: string;
 }
 
+export interface NotifySupervisedGroupsInput {
+  groupIds: number[];
+  title: string;
+  content: string;
+  sendNotification: boolean;
+  sendEmail: boolean;
+}
+
+export interface NotifySupervisedGroupsResult {
+  groupCount: number;
+  recipientCount: number;
+  notificationsSent: number;
+  emailsSent: number;
+  emailsFailed: number;
+}
+
 export interface GroupInvitation {
   id: number;
   groupId: number;
@@ -796,37 +812,6 @@ export interface SubmissionRequirement {
   sortOrder: number;
 }
 
-export interface Submission {
-  id: number;
-
-  requirement: SubmissionRequirement;
-  version: number;
-  fileUrl: string | null;
-
-  fileName: string | null;
-  fileSize: number | null;
-  submissionUrl: string | null;
-  lecturerFeedback: string | null;
-
-  feedbackAt: string | null;
-  submittedAt: string;
-
-  submittedBy: { id: number; fullName: string; studentCode: string } | null;
-  group: {
-    id: number;
-    name: string | null;
-    topic: {
-      id: number;
-      title: string;
-      lecturer: { id: number; fullName: string; academicTitle: string | null };
-    };
-  };
-
-  dueAt: string | null;
-
-  isLate: boolean;
-}
-
 export type ProposalStatus =
   'DRAFT' | 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'NEEDS_REVISION';
 
@@ -905,12 +890,92 @@ export interface TopicProposal {
   convertedTopic: { id: number; title: string; status: TopicStatus } | null;
 }
 
+export interface OutlineBreakdown {
+  totalGroups: number;
+  approved: number;
+  pendingReview: number;
+  needsRevision: number;
+  notSubmitted: number;
+}
+
+export interface ArchiveBreakdown {
+  totalGroups: number;
+  verified: number;
+  pendingVerify: number;
+  notSubmitted: number;
+}
+
+export interface TopicFunnel {
+  total: number;
+  usable: number;
+  draft: number;
+  pending: number;
+  approvedNotOpen: number;
+  openAvailable: number;
+  inUse: number;
+  inProgress: number;
+  completed: number;
+  rejected: number;
+  seatCapacity: number;
+  seatBalance: number;
+}
+
+export interface GroupSizeBreakdown {
+  total: number;
+  full: number;
+  forming: number;
+  size1: number;
+  size2: number;
+  size3Plus: number;
+  avgSize: number;
+}
+
+export interface ProposalBreakdown {
+  total: number;
+  pending: number;
+  accepted: number;
+  rejected: number;
+  needsRevision: number;
+}
+
+export interface ReportRoundOption {
+  roundId: number;
+  projectType: ProjectType;
+  phase: RoundPhase;
+}
+
+export interface OverviewReport {
+  eligibleStudents: number;
+  studentsWithGroup: number;
+  studentsWithoutGroup: number;
+  selfRegistered: number;
+  assigned: number;
+  groups: GroupSizeBreakdown;
+  topics: TopicFunnel;
+  proposals: ProposalBreakdown;
+  outlines: OutlineBreakdown;
+  archives: ArchiveBreakdown;
+  totalLecturers: number;
+  lecturersWithoutTopics: number;
+  lecturersOverMentoringQuota: number;
+  avgGroupsPerLecturer: number;
+  avgStudentsPerLecturer: number;
+}
+
 export interface FacultyReport {
-  semester: { id: number; name: string; code: string };
+  semester: {
+    id: number;
+    name: string;
+    code: string;
+    startDate: string;
+    endDate: string;
+  };
+  selectedRoundId: number | null;
+  availableRounds: ReportRoundOption[];
+  overview: OverviewReport;
   rounds: RoundReportRow[];
-  supervision: SupervisionRow[];
   majors: MajorReportRow[];
-  progress: ProgressRow[];
+  supervision: SupervisionRow[];
 }
 
 export interface RoundReportRow {
@@ -918,52 +983,56 @@ export interface RoundReportRow {
   projectType: ProjectType;
   phase: RoundPhase;
   cohorts: string[];
-
+  registrationStart: string;
+  registrationEnd: string;
+  outlineDeadline: string | null;
+  officialStartDate: string | null;
+  officialEndDate: string | null;
+  archiveDeadline: string | null;
+  finalisedAt: string | null;
+  maxStudentsPerTopic: number;
+  minTopicsPerLecturer: number | null;
   eligible: number;
   withGroup: number;
   withoutGroup: number;
-
   selfRegistered: number;
-
   assigned: number;
-  topics: number;
-  topicsUnderway: number;
+  groups: GroupSizeBreakdown;
+  topics: TopicFunnel;
+  outlines: OutlineBreakdown;
+  archives: ArchiveBreakdown;
 }
 
 export interface SupervisionRow {
   lecturerId: number;
+  lecturerCode: string;
   fullName: string;
   academicTitle: string | null;
+  majorCode: string | null;
+  maxMentoringQuota: number | null;
+  targetTopicQuota: number | null;
+  isExempt: boolean;
+  topicsUsable: number;
+  topicsPending: number;
+  topicsOpenAvailable: number;
   groups: number;
   students: number;
+  avgStudentsPerGroup: number;
+  outlinesApproved: number;
+  outlinesPending: number;
 }
 
 export interface MajorReportRow {
-  majorId: number;
+  majorId: number | null;
   name: string;
   code: string;
-  students: number;
+  eligibleStudents: number;
   withGroup: number;
-}
-
-export interface ProgressRow {
-  roundId: number;
-  projectType: ProjectType;
+  withoutGroup: number;
   groups: number;
-
-  required: number;
-
-  complete: number;
-
-  awaitingFeedback: number;
-
-  items: {
-    requirementId: number;
-    name: string;
-    dueAt: string;
-    isRequired: boolean;
-    submitted: number;
-  }[];
+  usableTopics: number;
+  seatCapacity: number;
+  seatBalance: number;
 }
 
 export type OutlineStatus =
@@ -1021,6 +1090,7 @@ export interface StudentGroupOutlineResponse {
 export interface LecturerGroupOutlineItem {
   id: number;
   name: string | null;
+  topicOrder?: number | null;
   topic: TopicDetail;
   members: Array<{
     id: number;

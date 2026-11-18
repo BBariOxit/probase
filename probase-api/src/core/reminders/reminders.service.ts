@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import {
-  GroupMemberStatus,
   NotificationType,
-  RegistrationGroupStatus,
   RoundPhase,
+  TopicStatus,
 } from '../../../generated/prisma/client';
 import { formatDate } from '../../common/utils/named-day.util';
+import { buildRoundOpenedNotices } from '../notifications/notification-templates';
 import {
   NotificationsService,
   type NewNotification,
@@ -19,8 +19,8 @@ const LEAD_DAYS = 3;
 const GATE_OPEN: readonly RoundPhase[] = [RoundPhase.OPEN, RoundPhase.EXTENDED];
 
 export interface ReminderRun {
+  roundOpened: number;
   registrationClosingSoon: number;
-  submissionsDueSoon: number;
 }
 
 @Injectable()
@@ -41,17 +41,65 @@ export class RemindersService {
     const sent = await this.run();
 
     this.logger.log(
-      `Deadline reminders: ${sent.registrationClosingSoon} về hạn đăng ký, ${sent.submissionsDueSoon} về hạn nộp bài`,
+      `Deadline reminders: ${sent.roundOpened} mở đăng ký, ${sent.registrationClosingSoon} về hạn đăng ký`,
     );
   }
 
   async run(): Promise<ReminderRun> {
-    const [registrationClosingSoon, submissionsDueSoon] = await Promise.all([
+    const [roundOpened, registrationClosingSoon] = await Promise.all([
+      this.remindRoundOpened(),
       this.remindRegistrationClosing(),
-      this.remindSubmissionsDue(),
     ]);
 
-    return { registrationClosingSoon, submissionsDueSoon };
+    return { roundOpened, registrationClosingSoon };
+  }
+
+  private async remindRoundOpened(): Promise<number> {
+    const rounds = await this.prisma.registrationRound.findMany({
+      where: {
+        phase: RoundPhase.PREP,
+        topics: { some: { status: TopicStatus.OPEN } },
+      },
+      select: {
+        id: true,
+        semesterId: true,
+        phase: true,
+        registrationStart: true,
+        registrationEnd: true,
+        semester: { select: { name: true } },
+        projectType: { select: { name: true } },
+        eligibilities: { select: { cohort: true } },
+        _count: { select: { eligibleStudents: true } },
+      },
+    });
+
+    if (rounds.length === 0) return 0;
+
+    const phases = await this.phases.resolveMany(rounds);
+    const notices: NewNotification[] = [];
+
+    for (const round of rounds) {
+      if (round.phase !== RoundPhase.PREP) continue;
+      const phase = phases.get(round.id) ?? round.phase;
+      if (!GATE_OPEN.includes(phase)) continue;
+
+      const userIds = await this.notifications.studentsWithoutGroupIn({
+        roundId: round.id,
+        hasSpecificRoster: (round._count?.eligibleStudents ?? 0) > 0,
+        semesterId: round.semesterId,
+        cohorts: round.eligibilities.map((rule) => rule.cohort),
+      });
+
+      notices.push(
+        ...buildRoundOpenedNotices(round.id, userIds, {
+          semesterName: round.semester?.name ?? '',
+          projectTypeName: round.projectType.name,
+          endDate: formatDate(round.registrationEnd),
+        }),
+      );
+    }
+
+    return this.notifications.notify(notices);
   }
 
   private async remindRegistrationClosing(): Promise<number> {
@@ -100,60 +148,6 @@ export class RemindersService {
     }
 
     return this.notifications.notify(notices);
-  }
-
-  private async remindSubmissionsDue(): Promise<number> {
-    const due = await this.prisma.submissionRequirement.findMany({
-      where: { dueAt: this.closingWindow() },
-      select: { id: true, roundId: true, name: true, dueAt: true },
-    });
-
-    const notices: NewNotification[] = [];
-
-    for (const requirement of due) {
-      const groups = await this.groupsOwing(
-        requirement.roundId,
-        requirement.id,
-      );
-
-      for (const group of groups) {
-        notices.push(
-          ...group.members.map((member) => ({
-            userId: member.student.userId,
-            type: NotificationType.SUBMISSION_DUE_SOON,
-            title: `Sắp tới hạn nộp ${requirement.name.toLowerCase()}`,
-            content: `Nhóm của bạn chưa nộp ${requirement.name.toLowerCase()} cho đề tài "${group.topic.title}". Hạn nộp: ${formatDate(requirement.dueAt)}. Nộp muộn vẫn được nhận nhưng sẽ bị đánh dấu.`,
-            targetId: group.id,
-            // The deadline is part of the key, so an office that moves it is a
-            // new thing to be told about rather than a repeat.
-            dedupeKey: `SUBMISSION_DUE_SOON:req=${requirement.id}:due=${requirement.dueAt.toISOString()}:user=${member.student.userId}`,
-          })),
-        );
-      }
-    }
-
-    return this.notifications.notify(notices);
-  }
-
-  private async groupsOwing(roundId: number, requirementId: number) {
-    return this.prisma.registrationGroup.findMany({
-      where: {
-        status: { not: RegistrationGroupStatus.REJECTED },
-        topic: { roundId },
-        submissions: { none: { requirementId } },
-      },
-      select: {
-        id: true,
-        topic: { select: { title: true } },
-        members: {
-          where: {
-            status: GroupMemberStatus.ACCEPTED,
-            student: { user: { isActive: true } },
-          },
-          select: { student: { select: { userId: true } } },
-        },
-      },
-    });
   }
 
   private closingWindow() {

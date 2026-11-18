@@ -15,6 +15,7 @@ import {
   TopicStatus,
 } from '../../../generated/prisma/client';
 import { formatDate } from '../../common/utils/named-day.util';
+import { buildRoundOpenedNotices } from '../../core/notifications/notification-templates';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { recordAudit } from '../../core/audit/audit-entry';
 import { PrismaService } from '../../core/prisma/prisma.service';
@@ -396,7 +397,20 @@ export class RoundsService {
       });
     });
 
-    return this.findForSemester(semesterId);
+    const rendered = await this.findForSemester(semesterId);
+
+    for (const round of rendered) {
+      const prev = byProjectType.get(round.projectTypeId);
+      const prevPhase = prev ? (phases.get(prev.id) ?? prev.phase) : null;
+      if (
+        prevPhase === RoundPhase.PREP &&
+        (round.phase === RoundPhase.OPEN || round.phase === RoundPhase.EXTENDED)
+      ) {
+        await this.announceRoundOpenedIfHasOpenTopics(round.id);
+      }
+    }
+
+    return rendered;
   }
 
   async update(id: number, dto: UpdateRoundDto) {
@@ -445,7 +459,15 @@ export class RoundsService {
       if (dto.cohorts) await this.replaceCohorts(tx, id, dto.cohorts);
     });
 
-    return this.findOne(id);
+    const updated = await this.findOne(id);
+    if (
+      phase === RoundPhase.PREP &&
+      (updated.phase === RoundPhase.OPEN || updated.phase === RoundPhase.EXTENDED)
+    ) {
+      await this.announceRoundOpenedIfHasOpenTopics(updated.id);
+    }
+
+    return updated;
   }
 
   async extend(id: number, dto: ExtendRoundDto, userId: number) {
@@ -595,6 +617,41 @@ export class RoundsService {
         content: `Khoa gia hạn đăng ký ${round.projectType.name} đến hết ngày ${formatDate(round.registrationEnd)}. Vui lòng hoàn tất đăng ký trước thời hạn.`,
         targetId: round.id,
       })),
+    );
+  }
+
+  private async announceRoundOpenedIfHasOpenTopics(roundId: number) {
+    const round = await this.prisma.registrationRound.findFirst({
+      where: {
+        id: roundId,
+        topics: { some: { status: TopicStatus.OPEN } },
+      },
+      select: {
+        id: true,
+        semesterId: true,
+        registrationEnd: true,
+        semester: { select: { name: true } },
+        projectType: { select: { name: true } },
+        eligibilities: { select: { cohort: true } },
+        _count: { select: { eligibleStudents: true } },
+      },
+    });
+
+    if (!round) return;
+
+    const userIds = await this.notifications.studentsWithoutGroupIn({
+      roundId: round.id,
+      hasSpecificRoster: (round._count?.eligibleStudents ?? 0) > 0,
+      semesterId: round.semesterId,
+      cohorts: round.eligibilities.map((e) => e.cohort),
+    });
+
+    await this.notifications.notify(
+      buildRoundOpenedNotices(round.id, userIds, {
+        semesterName: round.semester.name,
+        projectTypeName: round.projectType.name,
+        endDate: formatDate(round.registrationEnd),
+      }),
     );
   }
 

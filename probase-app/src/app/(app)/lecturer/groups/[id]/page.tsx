@@ -7,6 +7,7 @@ import {
   BookOpen,
   Check,
   Copy,
+  FileCheck2,
   Loader2,
   Users,
 } from 'lucide-react';
@@ -102,15 +103,27 @@ export default function LecturerGroupDetailPage({
             </h1>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5 text-xs font-medium shrink-0"
-            render={<Link href={`/lecturer/topics/${group.topicId}`} />}
-          >
-            <BookOpen className="size-3.5" />
-            <span>Xem & sửa đề tài</span>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 text-xs font-medium"
+              render={<Link href="/lecturer/outlines" />}
+            >
+              <FileCheck2 className="size-3.5" />
+              <span>Đề cương M03</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 text-xs font-medium"
+              render={<Link href={`/lecturer/topics/${group.topicId}`} />}
+            >
+              <BookOpen className="size-3.5" />
+              <span>Xem & sửa đề tài</span>
+            </Button>
+          </div>
         </div>
       </div>
 

@@ -117,8 +117,8 @@ export class TopicsController {
     SystemPermission.TOPIC_REGISTRY,
   )
   @Patch('bulk-open')
-  bulkOpen(@Body() dto: BulkOpenTopicsDto) {
-    return this.topicsService.bulkOpen(dto.semesterId);
+  bulkOpen(@Body() dto: BulkOpenTopicsDto, @GetUser('id') userId: number) {
+    return this.topicsService.bulkOpen(dto.semesterId, userId);
   }
 
   @Roles('LECTURER')

@@ -7,9 +7,7 @@ import {
   ChartColumn,
   ClipboardCheck,
   FileCheck2,
-  FileUp,
   GraduationCap,
-  Inbox,
   Layers,
   LibraryBig,
   Lightbulb,
@@ -57,7 +55,7 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
         {
           href: '/student/submissions',
           label: 'Bài nộp',
-          icon: FileUp,
+          icon: FileCheck2,
           ready: true,
         },
         {
@@ -233,14 +231,8 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           ready: true,
         },
         {
-          href: '/admin/submissions',
-          label: 'Bài nộp',
-          icon: Inbox,
-          ready: true,
-        },
-        {
           href: '/admin/outlines',
-          label: 'Đề cương M03',
+          label: 'Bài nộp',
           icon: FileCheck2,
           ready: true,
         },

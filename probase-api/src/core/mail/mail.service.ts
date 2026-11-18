@@ -152,17 +152,59 @@ export class MailService {
     });
   }
 
+  async sendLecturerAnnouncement(payload: {
+    to: string;
+    studentName: string;
+    lecturerName: string;
+    lecturerEmail: string;
+    topicTitle: string;
+    subject: string;
+    message: string;
+    groupUrl?: string;
+  }): Promise<boolean> {
+    const url = payload.groupUrl ?? `${this.frontendUrl}/student/groups`;
+    const formattedMessage = escapeHtml(payload.message).replace(/\r?\n/g, '<br/>');
+
+    return this.send({
+      to: payload.to,
+      fullName: payload.studentName,
+      subject: `[ProBase] ${payload.subject}`,
+      logLabel: 'Lecturer-announcement',
+      replyTo: {
+        email: payload.lecturerEmail,
+        name: payload.lecturerName,
+      },
+      html: this.renderShell({
+        fullName: payload.studentName,
+        introText: `Giảng viên hướng dẫn <strong>${escapeHtml(payload.lecturerName)}</strong> vừa gửi thông báo cho nhóm thực hiện đề tài <strong>${escapeHtml(payload.topicTitle)}</strong>:`,
+        replyToHint: `Bạn có thể trả lời trực tiếp email này để phản hồi giảng viên (${escapeHtml(payload.lecturerEmail)}).`,
+        bodyHtml: `
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0 28px;">
+              <tr>
+                <td style="background:#121212;border:1px solid #262626;border-left:3px solid #3b82f6;border-radius:6px;padding:18px 20px;">
+                  <p style="margin:0 0 10px;font-size:15px;font-weight:600;color:#ffffff;">${escapeHtml(payload.subject)}</p>
+                  <div style="font-size:14px;color:#e5e5e5;line-height:1.65;">${formattedMessage}</div>
+                </td>
+              </tr>
+            </table>
+            ${this.renderButton(url, 'Xem nhóm của bạn')}`,
+      }),
+    });
+  }
+
   private async send(args: {
     to: string;
     fullName?: string;
     subject: string;
     logLabel: string;
     html: string;
+    replyTo?: { email: string; name?: string };
   }): Promise<boolean> {
     try {
       await this.client.transactionalEmails.sendTransacEmail({
         sender: { email: this.senderEmail, name: this.senderName },
         to: [{ email: args.to, name: args.fullName ?? args.to }],
+        ...(args.replyTo && { replyTo: args.replyTo }),
         subject: args.subject,
         htmlContent: args.html,
       });
@@ -254,11 +296,15 @@ export class MailService {
     fullName?: string;
     introText: string;
     bodyHtml: string;
+    replyToHint?: string;
   }): string {
     // Only ADMIN accounts have no profile name
     const greeting = data.fullName
       ? `Xin chào <strong style="color:#ffffff;">${escapeHtml(data.fullName)}</strong>,`
       : 'Xin chào,';
+    const footerText =
+      data.replyToHint ??
+      'Email tự động từ hệ thống ProBase.<br>Vui lòng không trả lời email này.';
 
     return `<!DOCTYPE html>
 <html lang="vi">
@@ -286,7 +332,7 @@ export class MailService {
         <tr>
           <td style="padding:32px 40px;border-top:1px solid #1f1f1f;background:#050505;">
             <p style="margin:0;font-size:12px;color:#525252;line-height:1.5;">
-              Email tự động từ hệ thống ProBase.<br>Vui lòng không trả lời email này.
+              ${footerText}
             </p>
           </td>
         </tr>

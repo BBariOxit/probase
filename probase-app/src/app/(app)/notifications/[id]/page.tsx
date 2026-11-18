@@ -102,8 +102,8 @@ function getNotificationAction(
       };
     }
     return {
-      label: 'Xem đề cương M03 của nhóm',
-      url: '/student/groups',
+      label: 'Xem bài nộp M03 của nhóm',
+      url: '/student/submissions',
       icon: FileText,
     };
   }
@@ -123,9 +123,11 @@ function getNotificationAction(
         icon: FileText,
       };
     }
+    const toM03 =
+      notice.type === 'SUBMISSION_DUE_SOON' && notice.title?.includes('M03');
     return {
-      label: 'Xem bài nộp và tiến độ',
-      url: '/student/groups',
+      label: toM03 ? 'Xem bài nộp M03' : 'Xem nhóm và tiến độ',
+      url: toM03 ? '/student/submissions' : '/student/groups',
       icon: FileText,
     };
   }
@@ -192,6 +194,34 @@ function getNotificationAction(
     return {
       label: 'Xem danh sách đề tài',
       url: isStudent ? '/student' : '/lecturer',
+      icon: ExternalLink,
+    };
+  }
+
+  if (notice.type === 'DEADLINE_REMINDER') {
+    if (isLecturer) {
+      return {
+        label:
+          notice.targetId && notice.title === 'Đề tài đã được mở đăng ký'
+            ? 'Xem chi tiết đề tài'
+            : 'Xem danh sách đề tài',
+        url:
+          notice.targetId && notice.title === 'Đề tài đã được mở đăng ký'
+            ? `/lecturer/topics/${notice.targetId}`
+            : '/lecturer',
+        icon: FileText,
+      };
+    }
+    if (notice.targetId && notice.title !== 'Mở đăng ký đề tài') {
+      return {
+        label: 'Xem nhóm đồ án của tôi',
+        url: '/student/groups',
+        icon: Users,
+      };
+    }
+    return {
+      label: 'Xem danh sách đề tài',
+      url: '/student',
       icon: ExternalLink,
     };
   }

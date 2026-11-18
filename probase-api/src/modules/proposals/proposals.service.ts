@@ -422,7 +422,7 @@ export class ProposalsService {
         type: 'PROPOSAL_ACCEPTED',
         title: 'Đề xuất của bạn đã được nhận',
         content: `${lecturerName(lecturer)} nhận hướng dẫn đề tài "${topic.title}". Đề tài đã được lưu vào danh sách của GV và sẽ được gửi Bộ môn thẩm định.`,
-        targetId: topic.id,
+        targetId: proposal.id,
       },
     ]);
 

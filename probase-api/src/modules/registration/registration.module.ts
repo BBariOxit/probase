@@ -7,6 +7,7 @@ import { AllocationController } from './allocation.controller';
 import { AllocationService } from './allocation.service';
 import { RegistrationGroupsController } from './registration-groups.controller';
 import { RegistrationGroupsService } from './registration-groups.service';
+import { SupervisedAnnouncementsService } from './supervised-announcements.service';
 import { TopicRegistrationController } from './topic-registration.controller';
 
 @Module({
@@ -16,7 +17,11 @@ import { TopicRegistrationController } from './topic-registration.controller';
     TopicRegistrationController,
     AllocationController,
   ],
-  providers: [RegistrationGroupsService, AllocationService],
+  providers: [
+    RegistrationGroupsService,
+    AllocationService,
+    SupervisedAnnouncementsService,
+  ],
   exports: [RegistrationGroupsService],
 })
 export class RegistrationModule {}

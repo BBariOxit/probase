@@ -1,5 +1,7 @@
+import { extname } from 'node:path';
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -11,12 +13,17 @@ import {
   Prisma,
   RegistrationGroupStatus,
   Role,
+  RoundPhase,
   TopicStatus,
 } from '../../../generated/prisma/client';
+import { mapWithConcurrency } from '../../common/utils/concurrency.util';
+import { buildZipArchive } from '../../common/utils/zip.util';
 import { recordAudit } from '../../core/audit/audit-entry';
 import { CloudinaryService } from '../../core/cloudinary/cloudinary.service';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { duePhase } from '../rounds/round-phase.service';
+import { BulkOutlineGroupIdsDto } from './dto/bulk-outlines.dto';
 import { QueryOutlinesDto } from './dto/query-outlines.dto';
 import {
   OutlineReviewAction,
@@ -203,6 +210,13 @@ export class OutlinesService {
         topic: {
           include: {
             lecturer: true,
+            round: {
+              select: {
+                phase: true,
+                registrationStart: true,
+                registrationEnd: true,
+              },
+            },
           },
         },
         outline: true,
@@ -212,12 +226,6 @@ export class OutlinesService {
     if (!group || !group.topic) {
       throw new BadRequestException(
         'Nhóm chưa có đề tài được phê duyệt để nộp đề cương.',
-      );
-    }
-
-    if (group.outline?.status === 'APPROVED_BY_LECTURER') {
-      throw new BadRequestException(
-        'Đề cương M03 đã được Giảng viên hướng dẫn phê duyệt. Không thể nộp lại bản khác.',
       );
     }
 
@@ -271,8 +279,8 @@ export class OutlinesService {
         {
           userId: supervisorUserId,
           type: NotificationType.OUTLINE_SUBMITTED,
-          title: `Đề cương M03 mới cần duyệt: ${group.topic.title}`,
-          content: `Nhóm sinh viên "${group.name ?? `Nhóm ${group.id}`}" đã nộp bản scan Đề cương M03. Vui lòng vào kiểm tra và duyệt.`,
+          title: `Nhóm đã nộp Đề cương M03: ${group.topic.title}`,
+          content: `Nhóm sinh viên "${group.name ?? `Nhóm ${group.id}`}" đã nộp bản scan Đề cương M03 lên hệ thống.`,
           targetId: group.id,
           dedupeKey: `outline_submitted_${group.id}_${Date.now()}`,
         },
@@ -300,7 +308,11 @@ export class OutlinesService {
       },
       ...(query.status && {
         outline:
-          query.status === 'NOT_SUBMITTED' ? null : { status: query.status },
+          query.status === 'NOT_SUBMITTED'
+            ? null
+            : query.status === 'SUBMITTED'
+              ? { status: { in: ['SUBMITTED', 'APPROVED_BY_LECTURER'] } }
+              : { status: query.status },
       }),
       ...(query.search && {
         OR: [
@@ -399,6 +411,13 @@ export class OutlinesService {
         topic: {
           include: {
             lecturer: true,
+            round: {
+              select: {
+                phase: true,
+                registrationStart: true,
+                registrationEnd: true,
+              },
+            },
           },
         },
         group: {
@@ -432,7 +451,7 @@ export class OutlinesService {
       );
     }
 
-    if (outline.status !== 'SUBMITTED') {
+    if (!['SUBMITTED', 'APPROVED_BY_LECTURER'].includes(outline.status)) {
       throw new BadRequestException(
         `Đề cương hiện đang ở trạng thái "${outline.status}", không thể xử lý.`,
       );
@@ -460,8 +479,13 @@ export class OutlinesService {
         },
       });
 
-      // Nếu duyệt đề cương, cập nhật Topic sang IN_PROGRESS nếu đang là APPROVED/OPEN/ASSIGNED
-      if (isApproved) {
+      // Chỉ chuyển đề tài sang IN_PROGRESS khi đợt đã chốt phân bổ (FINALIZED).
+      // Nếu đợt vẫn đang mở đăng ký/điều chỉnh, giữ nguyên trạng thái OPEN để
+      // không khóa chỗ trống còn lại của nhóm hoặc hiển thị nhầm "Đang làm" sớm.
+      const roundPhase = outline.topic.round
+        ? duePhase(outline.topic.round)
+        : null;
+      if (isApproved && roundPhase === RoundPhase.FINALIZED) {
         await tx.topic.updateMany({
           where: {
             id: outline.topicId,
@@ -519,20 +543,7 @@ export class OutlinesService {
     user: { id: number; role: Role },
     query: QueryOutlinesDto,
   ) {
-    // Chỉ Admin hoặc GV có cờ kiêm nhiệm (TLGV, TTBM) mới được truy cập
-    if (user.role === Role.LECTURER || user.role === Role.GVCN) {
-      const lecturer = await this.prisma.lecturerProfile.findUnique({
-        where: { userId: user.id },
-      });
-      if (
-        !lecturer ||
-        (!lecturer.isAcademicAssistant && !lecturer.isHeadOfDepartment)
-      ) {
-        throw new ForbiddenException(
-          'Chỉ Trợ lý Giáo vụ hoặc Tổ trưởng Bộ môn mới có quyền xem báo cáo này.',
-        );
-      }
-    }
+    await this.assertFacultyReader(user);
 
     const topicScope: Prisma.TopicWhereInput = {
       ...(query.semesterId && { semesterId: query.semesterId }),
@@ -551,7 +562,11 @@ export class OutlinesService {
       ...baseGroupWhere,
       ...(query.status && {
         outline:
-          query.status === 'NOT_SUBMITTED' ? null : { status: query.status },
+          query.status === 'NOT_SUBMITTED'
+            ? null
+            : query.status === 'SUBMITTED'
+              ? { status: { in: ['SUBMITTED', 'APPROVED_BY_LECTURER'] } }
+              : { status: query.status },
       }),
       ...(query.search && {
         OR: [
@@ -654,8 +669,20 @@ export class OutlinesService {
       totalWithTopic - (approvedCount + submittedCount + needsRevisionCount),
     );
 
+    const semesterIds = [
+      ...new Set(
+        groups
+          .map((g) => g.topic?.semesterId ?? g.semesterId)
+          .filter((id): id is number => typeof id === 'number'),
+      ),
+    ];
+    const topicOrderMap = await this.getTopicOrderMap(semesterIds);
+
     return {
-      items: groups,
+      items: groups.map((group) => ({
+        ...group,
+        topicOrder: topicOrderMap.get(group.topicId) ?? null,
+      })),
       total,
       page: query.page,
       limit: query.limit,
@@ -669,4 +696,260 @@ export class OutlinesService {
       },
     };
   }
+
+  async downloadFacultyOutlineFile(
+    outlineId: number,
+    user: { id: number; role: Role },
+  ): Promise<{ buffer: Buffer; fileName: string }> {
+    await this.assertFacultyReader(user);
+
+    const outline = await this.prisma.topicOutline.findUnique({
+      where: { id: outlineId },
+      select: { id: true, attachmentUrl: true, fileName: true, groupId: true },
+    });
+
+    if (!outline?.attachmentUrl) {
+      throw new NotFoundException('Không tìm thấy tệp bản scan Đề cương M03.');
+    }
+
+    const buffer = await this.fetchAttachmentBuffer(outline.attachmentUrl);
+    const fileName = sanitizeZipEntryName(
+      outline.fileName || `De_cuong_M03_nhom_${outline.groupId}.pdf`,
+    );
+    return { buffer, fileName };
+  }
+
+  async downloadFacultyOutlinesZip(
+    dto: BulkOutlineGroupIdsDto,
+    user: { id: number; role: Role },
+  ): Promise<{ buffer: Buffer; fileCount: number }> {
+    await this.assertFacultyReader(user);
+
+    const uniqueGroupIds = [...new Set(dto.groupIds)];
+    const groups = await this.prisma.registrationGroup.findMany({
+      where: {
+        id: { in: uniqueGroupIds },
+        status: { not: RegistrationGroupStatus.REJECTED },
+      },
+      select: {
+        id: true,
+        topicId: true,
+        semesterId: true,
+        outline: {
+          select: { id: true, attachmentUrl: true, fileName: true },
+        },
+      },
+    });
+
+    const downloadable = groups.filter((g) => Boolean(g.outline?.attachmentUrl));
+    if (downloadable.length === 0) {
+      throw new BadRequestException(
+        'Các nhóm đã chọn chưa có bản scan Đề cương M03 nào để tải.',
+      );
+    }
+
+    const semesterIds = [...new Set(downloadable.map((g) => g.semesterId))];
+    const topicOrderMap = await this.getTopicOrderMap(semesterIds);
+
+    const usedNames = new Set<string>();
+    const targets = downloadable.map((group) => {
+      const order = topicOrderMap.get(group.topicId);
+      const groupPrefix = order
+        ? `Nhom_${String(order).padStart(2, '0')}`
+        : `Nhom_${group.id}`;
+      const rawName = group.outline!.fileName || 'De_cuong_M03.pdf';
+      const ext = extname(rawName) || '.pdf';
+      const base = sanitizeZipEntryName(rawName.replace(/\.[^/.]+$/, ''));
+      let candidate = `${groupPrefix}_${base}${ext}`;
+      let seq = 2;
+      while (usedNames.has(candidate)) {
+        candidate = `${groupPrefix}_${base}_${seq}${ext}`;
+        seq += 1;
+      }
+      usedNames.add(candidate);
+
+      return {
+        name: candidate,
+        url: group.outline!.attachmentUrl!,
+      };
+    });
+
+    const entries = await mapWithConcurrency(targets, 5, async (target) => ({
+      name: target.name,
+      data: await this.fetchAttachmentBuffer(target.url),
+    }));
+
+    return {
+      buffer: buildZipArchive(entries),
+      fileCount: entries.length,
+    };
+  }
+
+  async remindFacultyOutlines(
+    dto: BulkOutlineGroupIdsDto,
+    user: { id: number; role: Role },
+  ): Promise<{ remindedGroups: number; recipientCount: number }> {
+    await this.assertFacultyReader(user);
+
+    const uniqueGroupIds = [...new Set(dto.groupIds)];
+    const groups = await this.prisma.registrationGroup.findMany({
+      where: {
+        id: { in: uniqueGroupIds },
+        status: { not: RegistrationGroupStatus.REJECTED },
+        OR: [
+          { outline: { is: null } },
+          { outline: { is: { status: 'NEEDS_REVISION' } } },
+        ],
+      },
+      select: {
+        id: true,
+        topic: { select: { title: true } },
+        members: {
+          where: {
+            status: GroupMemberStatus.ACCEPTED,
+            student: { user: { isActive: true } },
+          },
+          select: {
+            student: {
+              select: { user: { select: { id: true } } },
+            },
+          },
+        },
+      },
+    });
+
+    const seenUsers = new Set<number>();
+    const notices: Array<{
+      userId: number;
+      type: NotificationType;
+      title: string;
+      content: string;
+      targetId: number;
+    }> = [];
+
+    let remindedGroups = 0;
+    for (const group of groups) {
+      if (group.members.length === 0) continue;
+      remindedGroups += 1;
+      for (const member of group.members) {
+        const memberUserId = member.student.user.id;
+        if (seenUsers.has(memberUserId)) continue;
+        seenUsers.add(memberUserId);
+        notices.push({
+          userId: memberUserId,
+          type: NotificationType.SUBMISSION_DUE_SOON,
+          title: 'Nhắc nộp bản scan Đề cương M03',
+          content: `Giáo vụ Khoa nhắc nhóm thực hiện đề tài "${group.topic.title}" hoàn thiện và nộp bản scan Đề cương chi tiết (Mẫu M03) tại mục Bài nộp.`,
+          targetId: group.id,
+        });
+      }
+    }
+
+    if (notices.length === 0) {
+      throw new ConflictException(
+        'Các nhóm đã chọn đều đã nộp bản scan Đề cương M03.',
+      );
+    }
+
+    await this.notifications.notify(notices);
+
+    await recordAudit(this.prisma, {
+      userId: user.id,
+      action: 'FACULTY_OUTLINE_REMINDER',
+      targetTable: 'registration_groups',
+      targetId: groups.map((g) => g.id).join(','),
+      newValue: {
+        remindedGroups,
+        recipientCount: notices.length,
+      },
+    }).catch(() => undefined);
+
+    return {
+      remindedGroups,
+      recipientCount: notices.length,
+    };
+  }
+
+  private async assertFacultyReader(user: { id: number; role: Role }) {
+    if (user.role === Role.LECTURER || user.role === Role.GVCN) {
+      const lecturer = await this.prisma.lecturerProfile.findUnique({
+        where: { userId: user.id },
+      });
+      if (
+        !lecturer ||
+        (!lecturer.isAcademicAssistant && !lecturer.isHeadOfDepartment)
+      ) {
+        throw new ForbiddenException(
+          'Chỉ Trợ lý Giáo vụ hoặc Tổ trưởng Bộ môn mới có quyền xem báo cáo này.',
+        );
+      }
+    }
+  }
+
+  private async getTopicOrderMap(
+    semesterIds: number[],
+  ): Promise<Map<number, number>> {
+    const orderMap = new Map<number, number>();
+    if (semesterIds.length === 0) return orderMap;
+
+    const topics = await this.prisma.topic.findMany({
+      where: { semesterId: { in: semesterIds } },
+      select: { id: true, semesterId: true },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    });
+
+    const perSemesterCount = new Map<number, number>();
+    for (const topic of topics) {
+      const next = (perSemesterCount.get(topic.semesterId) ?? 0) + 1;
+      perSemesterCount.set(topic.semesterId, next);
+      orderMap.set(topic.id, next);
+    }
+
+    return orderMap;
+  }
+
+  private isAllowedAttachmentUrl(rawUrl: string): boolean {
+    try {
+      const parsed = new URL(rawUrl);
+      if (parsed.protocol !== 'https:') return false;
+      return (
+        parsed.hostname === 'res.cloudinary.com' ||
+        parsed.hostname.endsWith('.cloudinary.com')
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  private async fetchAttachmentBuffer(url: string): Promise<Buffer> {
+    if (!this.isAllowedAttachmentUrl(url)) {
+      throw new BadRequestException('Đường dẫn tài liệu không hợp lệ.');
+    }
+
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!response.ok) {
+      this.logger.warn(`Failed to fetch outline attachment (${response.status}): ${url}`);
+      throw new BadRequestException(
+        'Không thể tải bản scan từ kho lưu trữ. Vui lòng thử lại.',
+      );
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    if (arrayBuffer.byteLength > 30 * 1024 * 1024) {
+      throw new BadRequestException('Tệp vượt quá giới hạn tải xuống.');
+    }
+
+    return Buffer.from(arrayBuffer);
+  }
+}
+
+function sanitizeZipEntryName(raw: string): string {
+  return (
+    raw
+      .replace(/[\\/:*?"<>|]/g, '_')
+      .replace(/\s+/g, '_')
+      .slice(0, 80) || 'De_cuong_M03'
+  );
 }
