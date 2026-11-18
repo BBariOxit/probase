@@ -71,25 +71,18 @@ import {
 const PAGE_SIZE = 20;
 
 const SUBMISSION_TYPES = [
-  { value: 'M03', label: 'Đề cương chi tiết (Mẫu M03)', ready: true },
+  { value: 'M03', label: 'Đề cương chi tiết', ready: true },
   { value: 'PROGRESS_1', label: 'Báo cáo Tiến độ 1', ready: false },
   { value: 'PROGRESS_2', label: 'Báo cáo Tiến độ 2', ready: false },
   {
     value: 'THESIS_FINAL',
-    label: 'Quyển Báo cáo Toàn văn & Slide',
+    label: 'Báo cáo Toàn văn & Slide',
     ready: false,
   },
   { value: 'ARCHIVE_PACKAGE', label: 'Gói Lưu trữ Số hóa', ready: false },
 ] as const;
 
 type SubmissionTypeKey = (typeof SUBMISSION_TYPES)[number]['value'];
-
-const OUTLINE_STATUS_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: 'ALL', label: 'Mọi trạng thái' },
-  { value: 'SUBMITTED', label: 'Đã nộp' },
-  { value: 'NEEDS_REVISION', label: 'Cần nộp lại' },
-  { value: 'NOT_SUBMITTED', label: 'Chưa nộp' },
-];
 
 function getOutlineStatusLabel(status?: OutlineStatus | null): StatusLabel {
   switch (status) {
@@ -131,9 +124,9 @@ function buildOutlineCsvRows(allItems: LecturerGroupOutlineItem[]) {
     const projectType = getTopicProjectType(group.topic);
     const supervisor = group.topic?.lecturer
       ? sanitizeLecturerName(
-          group.topic.lecturer.fullName,
-          group.topic.lecturer.academicTitle,
-        ).displayName
+        group.topic.lecturer.fullName,
+        group.topic.lecturer.academicTitle,
+      ).displayName
       : '';
     const submittedAt =
       group.outline?.submittedAt ?? group.outline?.approvedAt ?? null;
@@ -174,7 +167,6 @@ export default function AdminOutlinesPage() {
   const [submissionType, setSubmissionType] = useState<SubmissionTypeKey>('M03');
   const [roundId, setRoundId] = useState<string>('ALL');
   const [majorId, setMajorId] = useState<string>('ALL');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
@@ -199,7 +191,6 @@ export default function AdminOutlinesPage() {
       semesterId: currentSemesterId,
       roundId: parsedRoundId,
       majorId: parsedMajorId,
-      status: statusFilter === 'ALL' ? undefined : statusFilter,
       search: debouncedSearch.trim() || undefined,
       page,
       limit: PAGE_SIZE,
@@ -297,12 +288,7 @@ export default function AdminOutlinesPage() {
     if (!currentSemesterId || exporting) return;
     setExporting(true);
     try {
-      const targetStatus =
-        mode === 'SUBMITTED'
-          ? 'SUBMITTED'
-          : statusFilter === 'ALL'
-            ? undefined
-            : statusFilter;
+      const targetStatus = mode === 'SUBMITTED' ? 'SUBMITTED' : undefined;
 
       const allItems: LecturerGroupOutlineItem[] = [];
       let currentPage = 1;
@@ -431,7 +417,7 @@ export default function AdminOutlinesPage() {
               }}
             >
               <SelectTrigger
-                className="h-9.5 w-auto min-w-60 gap-2 text-base font-semibold bg-white dark:bg-[#1e1e1e] border-slate-300 dark:border-neutral-700"
+                className="h-9.5 w-auto min-w-48 gap-2 text-base font-semibold bg-white dark:bg-[#1e1e1e] border-slate-300 dark:border-neutral-700"
                 aria-label="Chọn loại bài nộp"
               >
                 <SelectValue>
@@ -631,31 +617,6 @@ export default function AdminOutlinesPage() {
               ))}
             </SelectContent>
           </Select>
-
-          <Select
-            value={statusFilter}
-            onValueChange={(val) => {
-              setStatusFilter(val ?? 'ALL');
-              setPage(1);
-            }}
-            disabled={!isOutlineTab}
-          >
-            <SelectTrigger className="w-44 h-9 text-sm" aria-label="Lọc theo trạng thái">
-              <SelectValue>
-                {(value) =>
-                  OUTLINE_STATUS_OPTIONS.find((opt) => opt.value === value)
-                    ?.label ?? 'Mọi trạng thái'
-                }
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {OUTLINE_STATUS_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         {/* Bulk Actions Bar */}
@@ -790,186 +751,186 @@ export default function AdminOutlinesPage() {
                   </TableRow>
                 ) : (
                   visibleItems.map((group) => {
-                  const outline = group.outline;
-                  const projectType = getTopicProjectType(group.topic);
-                  const majorShort = group.topic?.major
-                    ? formatMajorShort(group.topic.major)
-                    : null;
-                  const typeShort = projectType
-                    ? formatProjectTypeShort(projectType)
-                    : null;
-                  const supervisor = group.topic?.lecturer
-                    ? sanitizeLecturerName(
+                    const outline = group.outline;
+                    const projectType = getTopicProjectType(group.topic);
+                    const majorShort = group.topic?.major
+                      ? formatMajorShort(group.topic.major)
+                      : null;
+                    const typeShort = projectType
+                      ? formatProjectTypeShort(projectType)
+                      : null;
+                    const supervisor = group.topic?.lecturer
+                      ? sanitizeLecturerName(
                         group.topic.lecturer.fullName,
                         group.topic.lecturer.academicTitle,
                       )
-                    : null;
-                  const statusLabel = getOutlineStatusLabel(outline?.status);
-                  const submittedAt =
-                    outline?.submittedAt ?? outline?.approvedAt ?? null;
-                  const isChecked = Boolean(selectedById[group.id]);
+                      : null;
+                    const statusLabel = getOutlineStatusLabel(outline?.status);
+                    const submittedAt =
+                      outline?.submittedAt ?? outline?.approvedAt ?? null;
+                    const isChecked = Boolean(selectedById[group.id]);
 
-                  return (
-                    <TableRow
-                      key={group.id}
-                      data-state={isChecked ? 'selected' : undefined}
-                      className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
-                    >
-                      <TableCell className="align-top px-3 py-3.5 text-center">
-                        <Checkbox
-                          checked={isChecked}
-                          onCheckedChange={(val) => toggleRow(group, val)}
-                          aria-label={`Chọn ${formatGroupCode(group)}`}
-                        />
-                      </TableCell>
-
-                      <TableCell className="align-top px-3 py-3.5 whitespace-nowrap">
-                        <span className="font-semibold text-slate-900 dark:text-neutral-100 tabular-nums">
-                          {formatGroupCode(group)}
-                        </span>
-                      </TableCell>
-
-                      <TableCell className="align-top px-3 py-3.5 whitespace-normal">
-                        {group.members.length === 0 ? (
-                          <span className="text-slate-400 dark:text-neutral-500">
-                            —
-                          </span>
-                        ) : (
-                          <div className="space-y-1">
-                            {group.members.map((m) => (
-                              <div key={m.id} className="truncate text-sm">
-                                <span className="text-slate-800 dark:text-neutral-200">
-                                  {m.student.fullName}
-                                </span>
-                                <span className="text-slate-400 dark:text-neutral-500">
-                                  {' - '}
-                                </span>
-                                <span className="font-mono text-xs font-semibold text-primary">
-                                  {m.student.studentCode}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </TableCell>
-
-                      <TableCell className="align-top px-4 py-3.5 whitespace-normal">
-                        <Tooltip>
-                          <TooltipTrigger
-                            render={
-                              <p className="font-semibold text-slate-900 dark:text-neutral-100 line-clamp-2 leading-snug">
-                                {group.topic?.title ?? '—'}
-                              </p>
-                            }
+                    return (
+                      <TableRow
+                        key={group.id}
+                        data-state={isChecked ? 'selected' : undefined}
+                        className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
+                      >
+                        <TableCell className="align-top px-3 py-3.5 text-center">
+                          <Checkbox
+                            checked={isChecked}
+                            onCheckedChange={(val) => toggleRow(group, val)}
+                            aria-label={`Chọn ${formatGroupCode(group)}`}
                           />
-                          {group.topic?.title && (
-                            <TooltipContent className="max-w-sm">
-                              {group.topic.title}
-                            </TooltipContent>
+                        </TableCell>
+
+                        <TableCell className="align-top px-3 py-3.5 whitespace-nowrap">
+                          <span className="font-semibold text-slate-900 dark:text-neutral-100 tabular-nums">
+                            {formatGroupCode(group)}
+                          </span>
+                        </TableCell>
+
+                        <TableCell className="align-top px-3 py-3.5 whitespace-normal">
+                          {group.members.length === 0 ? (
+                            <span className="text-slate-400 dark:text-neutral-500">
+                              —
+                            </span>
+                          ) : (
+                            <div className="space-y-1">
+                              {group.members.map((m) => (
+                                <div key={m.id} className="truncate text-sm">
+                                  <span className="text-slate-800 dark:text-neutral-200">
+                                    {m.student.fullName}
+                                  </span>
+                                  <span className="text-slate-400 dark:text-neutral-500">
+                                    {' - '}
+                                  </span>
+                                  <span className="font-mono text-xs font-semibold text-primary">
+                                    {m.student.studentCode}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
                           )}
-                        </Tooltip>
-                        {(majorShort || typeShort) && (
-                          <p
-                            className="mt-1.5 text-xs font-medium text-slate-500 dark:text-neutral-400 truncate"
-                            title={[majorShort?.full, typeShort?.full]
-                              .filter(Boolean)
-                              .join(' · ')}
-                          >
-                            {[majorShort?.short, typeShort?.short]
-                              .filter(Boolean)
-                              .join(' · ')}
-                          </p>
-                        )}
-                      </TableCell>
+                        </TableCell>
 
-                      <TableCell className="align-top px-3 py-3.5 whitespace-normal">
-                        {supervisor ? (
-                          <div className="min-w-0">
+                        <TableCell className="align-top px-4 py-3.5 whitespace-normal">
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <p className="font-semibold text-slate-900 dark:text-neutral-100 line-clamp-2 leading-snug">
+                                  {group.topic?.title ?? '—'}
+                                </p>
+                              }
+                            />
+                            {group.topic?.title && (
+                              <TooltipContent className="max-w-sm">
+                                {group.topic.title}
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                          {(majorShort || typeShort) && (
                             <p
-                              className="font-medium text-slate-800 dark:text-neutral-200 truncate"
-                              title={supervisor.displayName}
+                              className="mt-1.5 text-xs font-medium text-slate-500 dark:text-neutral-400 truncate"
+                              title={[majorShort?.full, typeShort?.full]
+                                .filter(Boolean)
+                                .join(' · ')}
                             >
-                              {supervisor.displayName}
+                              {[majorShort?.short, typeShort?.short]
+                                .filter(Boolean)
+                                .join(' · ')}
                             </p>
-                            {supervisor.departmentRole && (
-                              <p className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400 truncate">
-                                {supervisor.departmentRole}
+                          )}
+                        </TableCell>
+
+                        <TableCell className="align-top px-3 py-3.5 whitespace-normal">
+                          {supervisor ? (
+                            <div className="min-w-0">
+                              <p
+                                className="font-medium text-slate-800 dark:text-neutral-200 truncate"
+                                title={supervisor.displayName}
+                              >
+                                {supervisor.displayName}
                               </p>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 dark:text-neutral-500">
-                            —
-                          </span>
-                        )}
-                      </TableCell>
+                              {supervisor.departmentRole && (
+                                <p className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400 truncate">
+                                  {supervisor.departmentRole}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 dark:text-neutral-500">
+                              —
+                            </span>
+                          )}
+                        </TableCell>
 
-                      <TableCell className="align-top px-3 py-3.5 whitespace-normal">
-                        <StatusPill
-                          variant="text"
-                          label={statusLabel.label}
-                          tone={statusLabel.tone}
-                        />
-                        {submittedAt && (
-                          <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400 tabular-nums">
-                            Nộp {formatDate(submittedAt)}
-                          </p>
-                        )}
-                      </TableCell>
-
-                      <TableCell className="align-top px-3 py-3.5 text-center whitespace-nowrap">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger
-                            render={
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                aria-label={`Thao tác cho ${formatGroupCode(group)}`}
-                                className="text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-neutral-100 cursor-pointer"
-                              >
-                                <MoreHorizontal className="size-4" />
-                              </Button>
-                            }
+                        <TableCell className="align-top px-3 py-3.5 whitespace-normal">
+                          <StatusPill
+                            variant="text"
+                            label={statusLabel.label}
+                            tone={statusLabel.tone}
                           />
-                          <DropdownMenuContent align="end" className="w-44">
-                            {outline?.attachmentUrl ? (
-                              <>
+                          {submittedAt && (
+                            <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400 tabular-nums">
+                              Nộp {formatDate(submittedAt)}
+                            </p>
+                          )}
+                        </TableCell>
+
+                        <TableCell className="align-top px-3 py-3.5 text-center whitespace-nowrap">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger
+                              render={
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  aria-label={`Thao tác cho ${formatGroupCode(group)}`}
+                                  className="text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-neutral-100 cursor-pointer"
+                                >
+                                  <MoreHorizontal className="size-4" />
+                                </Button>
+                              }
+                            />
+                            <DropdownMenuContent align="end" className="w-44">
+                              {outline?.attachmentUrl ? (
+                                <>
+                                  <DropdownMenuItem
+                                    className="text-sm cursor-pointer"
+                                    render={
+                                      <a
+                                        href={outline.attachmentUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      />
+                                    }
+                                  >
+                                    <ExternalLink className="size-4 text-slate-500 dark:text-neutral-400" />
+                                    <span>Xem bản scan</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-sm cursor-pointer"
+                                    onClick={() => handleDownloadSingle(group)}
+                                  >
+                                    <Download className="size-4 text-slate-500 dark:text-neutral-400" />
+                                    <span>Tải bản scan</span>
+                                  </DropdownMenuItem>
+                                </>
+                              ) : (
                                 <DropdownMenuItem
                                   className="text-sm cursor-pointer"
-                                  render={
-                                    <a
-                                      href={outline.attachmentUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                    />
-                                  }
+                                  onClick={() => handleRemind([group.id])}
                                 >
-                                  <ExternalLink className="size-4 text-slate-500 dark:text-neutral-400" />
-                                  <span>Xem bản scan</span>
+                                  <Bell className="size-4 text-slate-500 dark:text-neutral-400" />
+                                  <span>Nhắc nộp M03</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-sm cursor-pointer"
-                                  onClick={() => handleDownloadSingle(group)}
-                                >
-                                  <Download className="size-4 text-slate-500 dark:text-neutral-400" />
-                                  <span>Tải bản scan</span>
-                                </DropdownMenuItem>
-                              </>
-                            ) : (
-                              <DropdownMenuItem
-                                className="text-sm cursor-pointer"
-                                onClick={() => handleRemind([group.id])}
-                              >
-                                <Bell className="size-4 text-slate-500 dark:text-neutral-400" />
-                                <span>Nhắc nộp M03</span>
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
