@@ -458,10 +458,7 @@ export default function AdminTopicRegistryPage() {
             </TableHeader>
             <TableBody>
               {topics.map((topic) => (
-                <TableRow
-                  key={topic.id}
-                  className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
-                >
+                <TableRow key={topic.id} className="transition-colors">
                   <TableCell className="w-[236px] min-w-[220px] px-4 font-medium whitespace-normal">
                     <div className="w-full whitespace-normal">
                       <Tooltip>

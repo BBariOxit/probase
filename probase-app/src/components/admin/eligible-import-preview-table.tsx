@@ -156,7 +156,7 @@ export function EligibleImportPreviewTable({ preview }: Props) {
               <TableHead className="h-9.5 px-3">Email / Chi tiết</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody striped={false}>
             {filteredRows.length === 0 ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell
