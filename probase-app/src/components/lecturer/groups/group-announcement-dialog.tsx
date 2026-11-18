@@ -181,7 +181,7 @@ function GroupAnnouncementDialogContent({
     !sendAnnouncement.isPending;
 
   return (
-    <DialogContent className="max-w-[calc(100vw-4rem)] sm:max-w-[780px] p-6 gap-4 max-h-[86vh] overflow-y-auto">
+    <DialogContent className="max-w-[calc(100vw-4rem)] sm:max-w-[880px] p-6 gap-4 max-h-[86vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2 text-base font-bold">
           <Mail className="size-4 text-primary" />

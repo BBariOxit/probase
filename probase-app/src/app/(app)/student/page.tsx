@@ -63,6 +63,21 @@ import {
 const PAGE_SIZE = 12;
 const ANY = 0;
 
+function DisabledRegisterButton({ title }: { title?: string }) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      disabled
+      title={title}
+      className="h-8 px-3 text-xs font-medium disabled:opacity-100 cursor-not-allowed border-slate-300 bg-slate-100 text-slate-500 dark:border-neutral-700/80 dark:bg-neutral-800/70 dark:text-neutral-400 select-none"
+    >
+      Đăng ký
+    </Button>
+  );
+}
+
 function getProjectTypeAbbr(projectType: { name: string; code?: string }): {
   short: string;
   full: string;
@@ -547,11 +562,7 @@ function StudentTopicsContent() {
                         onClick={(e) => e.stopPropagation()}
                       >
                         {isHeldForOther || topic.status !== 'OPEN' ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled
+                          <DisabledRegisterButton
                             title={
                               isHeldForOther
                                 ? 'Đề tài do sinh viên khác đề xuất'
@@ -559,24 +570,11 @@ function StudentTopicsContent() {
                                   ? 'Đề tài đang thực hiện'
                                   : 'Đề tài đã đóng đăng ký'
                             }
-                            className="text-xs cursor-not-allowed opacity-50 border-slate-300 dark:border-neutral-700 bg-transparent text-slate-400 dark:text-neutral-500 select-none"
-                          >
-                            Đăng ký
-                          </Button>
+                          />
                         ) : (
                           <TopicRegisterButton
                             topic={topic}
-                            idle={
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                disabled
-                                className="text-xs cursor-not-allowed opacity-50 border-slate-300 dark:border-neutral-700 bg-transparent text-slate-400 dark:text-neutral-500 select-none"
-                              >
-                                Đăng ký
-                              </Button>
-                            }
+                            idle={<DisabledRegisterButton />}
                           />
                         )}
                         <DropdownMenu>
