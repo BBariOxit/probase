@@ -1,4 +1,4 @@
-﻿import 'dotenv/config';
+import 'dotenv/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
@@ -556,7 +556,7 @@ async function main() {
       majorId: majorIdByCode.get('KTPM'),
       roundId: datnRound.id,
       maxStudents: 3,
-      status: 'IN_PROGRESS' as const,
+      status: 'OPEN' as const,
     },
     {
       title: 'Ứng dụng Di động Hỗ trợ Học tập Cá nhân hóa Tích hợp Trí tuệ Nhân tạo (SmartStudy AI)',
@@ -582,7 +582,7 @@ async function main() {
       majorId: majorIdByCode.get('MMT'),
       roundId: datnRound.id,
       maxStudents: 3,
-      status: 'IN_PROGRESS' as const,
+      status: 'OPEN' as const,
     },
     {
       title: 'Xây dựng Hệ thống IoT Giám sát Vi khí hậu và Tưới tự động cho Vườn Dâu tây Đà Lạt',
@@ -608,7 +608,7 @@ async function main() {
       majorId: majorIdByCode.get('KTPM'),
       roundId: dacnRound?.id ?? datnRound.id,
       maxStudents: 2,
-      status: 'IN_PROGRESS' as const,
+      status: 'OPEN' as const,
     },
     {
       title: 'Xây dựng Ứng dụng Quản lý Thư viện Số Trường Đại học Đà Lạt',
@@ -621,7 +621,7 @@ async function main() {
       majorId: majorIdByCode.get('KTPM'),
       roundId: dacsRound?.id ?? datnRound.id,
       maxStudents: 2,
-      status: 'IN_PROGRESS' as const,
+      status: 'OPEN' as const,
     },
     {
       title: 'Nền tảng Khám và Tư vấn Y tế Từ xa (Telemedicine) Hỗ trợ Y tế Tuyến Cơ sở',
@@ -634,7 +634,7 @@ async function main() {
       majorId: majorIdByCode.get('KTPM'),
       roundId: datnRound.id,
       maxStudents: 3,
-      status: 'IN_PROGRESS' as const,
+      status: 'OPEN' as const,
     },
     {
       title: 'Ứng dụng Thị giác Máy tính và Học sâu trong Phân loại và Phát hiện Sâu bệnh trên Cây Cà phê',

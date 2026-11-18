@@ -11,12 +11,14 @@ import {
   Prisma,
   RegistrationGroupStatus,
   Role,
+  RoundPhase,
   TopicStatus,
 } from '../../../generated/prisma/client';
 import { recordAudit } from '../../core/audit/audit-entry';
 import { CloudinaryService } from '../../core/cloudinary/cloudinary.service';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { duePhase } from '../rounds/round-phase.service';
 import { QueryOutlinesDto } from './dto/query-outlines.dto';
 import {
   OutlineReviewAction,
@@ -203,6 +205,13 @@ export class OutlinesService {
         topic: {
           include: {
             lecturer: true,
+            round: {
+              select: {
+                phase: true,
+                registrationStart: true,
+                registrationEnd: true,
+              },
+            },
           },
         },
         outline: true,
@@ -399,6 +408,13 @@ export class OutlinesService {
         topic: {
           include: {
             lecturer: true,
+            round: {
+              select: {
+                phase: true,
+                registrationStart: true,
+                registrationEnd: true,
+              },
+            },
           },
         },
         group: {
@@ -460,8 +476,13 @@ export class OutlinesService {
         },
       });
 
-      // Nếu duyệt đề cương, cập nhật Topic sang IN_PROGRESS nếu đang là APPROVED/OPEN/ASSIGNED
-      if (isApproved) {
+      // Chỉ chuyển đề tài sang IN_PROGRESS khi đợt đã chốt phân bổ (FINALIZED).
+      // Nếu đợt vẫn đang mở đăng ký/điều chỉnh, giữ nguyên trạng thái OPEN để
+      // không khóa chỗ trống còn lại của nhóm hoặc hiển thị nhầm "Đang làm" sớm.
+      const roundPhase = outline.topic.round
+        ? duePhase(outline.topic.round)
+        : null;
+      if (isApproved && roundPhase === RoundPhase.FINALIZED) {
         await tx.topic.updateMany({
           where: {
             id: outline.topicId,

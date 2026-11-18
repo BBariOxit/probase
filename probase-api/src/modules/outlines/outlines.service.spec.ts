@@ -4,6 +4,7 @@ import {
   GroupMemberStatus,
   RegistrationGroupStatus,
   Role,
+  RoundPhase,
 } from '../../../generated/prisma/client';
 import { CloudinaryService } from '../../core/cloudinary/cloudinary.service';
 import { NotificationsService } from '../../core/notifications/notifications.service';
@@ -201,7 +202,81 @@ describe('OutlinesService', () => {
 
       expect(result.status).toBe('APPROVED_BY_LECTURER');
       expect(prisma.topicOutline.update).toHaveBeenCalled();
+      expect(prisma.topic.updateMany).not.toHaveBeenCalled();
       expect(notifications.notify).toHaveBeenCalled();
+    });
+
+    it('keeps topic OPEN when approving outline while round is still OPEN', async () => {
+      prisma.topicOutline.findUnique.mockResolvedValue({
+        id: 1,
+        topicId: 2,
+        groupId: 5,
+        status: 'SUBMITTED',
+        topic: {
+          id: 2,
+          title: 'Hệ thống Quản lý',
+          lecturer: { userId: 20 },
+          round: {
+            phase: RoundPhase.OPEN,
+            registrationStart: new Date(Date.now() - 86_400_000),
+            registrationEnd: new Date(Date.now() + 86_400_000),
+          },
+        },
+        group: {
+          members: [{ student: { user: { id: 10 } } }],
+        },
+      });
+      prisma.topicOutline.update.mockResolvedValue({
+        id: 1,
+        status: 'APPROVED_BY_LECTURER',
+      });
+
+      await service.reviewOutline(
+        1,
+        { action: OutlineReviewAction.APPROVE },
+        { id: 20, role: Role.LECTURER },
+      );
+
+      expect(prisma.topic.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('moves topic to IN_PROGRESS when approving outline after round is FINALIZED', async () => {
+      prisma.topicOutline.findUnique.mockResolvedValue({
+        id: 1,
+        topicId: 2,
+        groupId: 5,
+        status: 'SUBMITTED',
+        topic: {
+          id: 2,
+          title: 'Hệ thống Quản lý',
+          lecturer: { userId: 20 },
+          round: {
+            phase: RoundPhase.FINALIZED,
+            registrationStart: new Date(Date.now() - 86_400_000 * 10),
+            registrationEnd: new Date(Date.now() - 86_400_000),
+          },
+        },
+        group: {
+          members: [{ student: { user: { id: 10 } } }],
+        },
+      });
+      prisma.topicOutline.update.mockResolvedValue({
+        id: 1,
+        status: 'APPROVED_BY_LECTURER',
+      });
+
+      await service.reviewOutline(
+        1,
+        { action: OutlineReviewAction.APPROVE },
+        { id: 20, role: Role.LECTURER },
+      );
+
+      expect(prisma.topic.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ id: 2 }),
+          data: { status: 'IN_PROGRESS' },
+        }),
+      );
     });
   });
 
