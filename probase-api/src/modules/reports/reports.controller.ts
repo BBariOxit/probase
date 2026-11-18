@@ -14,7 +14,7 @@ export class ReportsController {
 
   @Get()
   summary(@Query() query: QueryReportDto) {
-    return this.reports.summary(query.semesterId);
+    return this.reports.summary(query.semesterId, query.roundId);
   }
 
   @Get('export')
@@ -24,6 +24,8 @@ export class ReportsController {
   )
   @Header('Content-Disposition', 'attachment; filename="bao-cao-thong-ke.xlsx"')
   async export(@Query() query: QueryReportDto) {
-    return new StreamableFile(await this.exports.workbook(query.semesterId));
+    return new StreamableFile(
+      await this.exports.workbook(query.semesterId, query.roundId),
+    );
   }
 }
