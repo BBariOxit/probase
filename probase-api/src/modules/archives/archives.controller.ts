@@ -21,10 +21,7 @@ export class ArchivesController {
   constructor(private readonly archivesService: ArchivesService) {}
 
   @Get('export')
-  async exportExcel(
-    @Query() query: QueryArchivesDto,
-    @Res() res: Response,
-  ) {
+  async exportExcel(@Query() query: QueryArchivesDto, @Res() res: Response) {
     const buffer = await this.archivesService.exportExcel(query);
     const filename = `danh-sach-luu-tru-do-an-${Date.now()}.xlsx`;
 
@@ -32,10 +29,7 @@ export class ArchivesController {
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     );
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="${filename}"`,
-    );
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send(buffer);
   }
 

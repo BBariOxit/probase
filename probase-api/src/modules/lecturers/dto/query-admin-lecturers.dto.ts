@@ -12,4 +12,3 @@ export const QueryAdminLecturersSchema = z.object({
 export class QueryAdminLecturersDto extends createZodDto(
   QueryAdminLecturersSchema,
 ) {}
-

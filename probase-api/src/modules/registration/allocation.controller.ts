@@ -8,7 +8,6 @@ import {
   Post,
 } from '@nestjs/common';
 import { GetUser } from '../auth/decorators/get-user.decorator';
-import { Roles } from '../auth/decorators/roles.decorator';
 import { RequirePermissions } from '../permissions/require-permissions.decorator';
 import { SystemPermission } from '../permissions/permissions.constants';
 import { AllocationService } from './allocation.service';

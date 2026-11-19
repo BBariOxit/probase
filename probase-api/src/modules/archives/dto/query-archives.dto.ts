@@ -9,7 +9,9 @@ export const QueryArchivesSchema = z.object({
   verified: z
     .enum(['true', 'false', 'all'])
     .optional()
-    .transform((val) => (val === 'true' ? true : val === 'false' ? false : undefined)),
+    .transform((val) =>
+      val === 'true' ? true : val === 'false' ? false : undefined,
+    ),
   q: z.string().trim().min(1).max(255).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),

@@ -190,7 +190,12 @@ export class ProposalsService {
   async findAll(query: QueryProposalsDto, userId: number, role: Role) {
     const statusFilter =
       query.status === TopicProposalStatus.PENDING
-        ? { in: [TopicProposalStatus.PENDING, TopicProposalStatus.NEEDS_REVISION] }
+        ? {
+            in: [
+              TopicProposalStatus.PENDING,
+              TopicProposalStatus.NEEDS_REVISION,
+            ],
+          }
         : query.status;
 
     const where: Prisma.TopicProposalWhereInput = {
@@ -779,8 +784,8 @@ export class ProposalsService {
       });
     }
 
-    const updatedReactions =
-      await this.prisma.proposalCommentReaction.findMany({
+    const updatedReactions = await this.prisma.proposalCommentReaction.findMany(
+      {
         where: { commentId },
         select: {
           id: true,
@@ -798,7 +803,8 @@ export class ProposalsService {
           },
         },
         orderBy: { createdAt: 'asc' },
-      });
+      },
+    );
 
     return updatedReactions.map((r) => ({
       id: r.id,

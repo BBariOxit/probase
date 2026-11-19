@@ -11,4 +11,3 @@ const BulkOutlineGroupIdsSchema = z.object({
 export class BulkOutlineGroupIdsDto extends createZodDto(
   BulkOutlineGroupIdsSchema,
 ) {}
-

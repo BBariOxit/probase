@@ -56,7 +56,9 @@ export class MajorsService {
     if (!major) throw new NotFoundException('Không tìm thấy chuyên ngành.');
 
     if (major._count.students > 0) {
-      throw new ConflictException('Không thể xóa chuyên ngành đã có sinh viên theo học.');
+      throw new ConflictException(
+        'Không thể xóa chuyên ngành đã có sinh viên theo học.',
+      );
     }
 
     return this.prisma.major.delete({ where: { id } });

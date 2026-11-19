@@ -741,7 +741,9 @@ export class OutlinesService {
       },
     });
 
-    const downloadable = groups.filter((g) => Boolean(g.outline?.attachmentUrl));
+    const downloadable = groups.filter((g) =>
+      Boolean(g.outline?.attachmentUrl),
+    );
     if (downloadable.length === 0) {
       throw new BadRequestException(
         'Các nhóm đã chọn chưa có bản scan Đề cương M03 nào để tải.',
@@ -930,7 +932,9 @@ export class OutlinesService {
       signal: AbortSignal.timeout(15_000),
     });
     if (!response.ok) {
-      this.logger.warn(`Failed to fetch outline attachment (${response.status}): ${url}`);
+      this.logger.warn(
+        `Failed to fetch outline attachment (${response.status}): ${url}`,
+      );
       throw new BadRequestException(
         'Không thể tải bản scan từ kho lưu trữ. Vui lòng thử lại.',
       );

@@ -28,4 +28,3 @@ export const NotifySupervisedGroupsSchema = z
 export class NotifySupervisedGroupsDto extends createZodDto(
   NotifySupervisedGroupsSchema,
 ) {}
-

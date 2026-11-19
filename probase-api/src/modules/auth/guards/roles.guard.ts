@@ -7,11 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Role } from '../../../../generated/prisma/client';
 import { PrismaService } from '../../../core/prisma/prisma.service';
-import {
-  AppActor,
-  ROLES_KEY,
-  RequiredRole,
-} from '../decorators/roles.decorator';
+import { ROLES_KEY, RequiredRole } from '../decorators/roles.decorator';
 import { PERMISSIONS_KEY } from '../../permissions/require-permissions.decorator';
 
 export interface RequestLecturerProfile {
@@ -113,9 +109,7 @@ export class RolesGuard implements CanActivate {
         select: { permission: true },
       });
       const userCustomPerms = new Set(userPerms.map((cp) => cp.permission));
-      const hasCustom = requiredPermissions.some((p) =>
-        userCustomPerms.has(p),
-      );
+      const hasCustom = requiredPermissions.some((p) => userCustomPerms.has(p));
 
       // 1.2. Khớp quyền được cấu hình cho vai trò/chức vụ
       const roles: string[] = [user.role];
@@ -160,48 +154,40 @@ export class RolesGuard implements CanActivate {
     // 2. Kiểm tra Role cơ bản nếu route yêu cầu
     if (requiredRoles && requiredRoles.length > 0) {
       const hasRole = requiredRoles.some((reqRole) => {
-        if (reqRole === 'ADMIN' || reqRole === Role.ADMIN) {
+        const roleKey = String(reqRole);
+        if (roleKey === 'ADMIN') {
           return user.role === Role.ADMIN;
         }
 
-        if (reqRole === 'LECTURER' || reqRole === Role.LECTURER) {
-          return (
-            user.role === Role.LECTURER ||
-            (user.role as string) === 'GVCN'
-          );
+        if (roleKey === 'LECTURER') {
+          return user.role === Role.LECTURER || user.role === Role.GVCN;
         }
 
-        if (reqRole === 'STUDENT' || reqRole === Role.STUDENT) {
+        if (roleKey === 'STUDENT') {
           return user.role === Role.STUDENT;
         }
 
-        if (
-          reqRole === 'GVCN' ||
-          reqRole === (Role as any).GVCN ||
-          reqRole === AppActor.GVCN
-        ) {
+        if (roleKey === 'GVCN') {
           return (
             user.role === Role.ADMIN ||
-            (user.role as string) === 'GVCN' ||
+            user.role === Role.GVCN ||
             (user.role === Role.LECTURER &&
               (!!user.lecturerProfile?.isHomeroomTeacher ||
                 !!user.lecturerProfile?.isAcademicAssistant))
           );
         }
 
-        if (reqRole === AppActor.TTBM || reqRole === 'TTBM') {
+        if (roleKey === 'TTBM') {
           return (
-            (user.role === Role.LECTURER ||
-              (user.role as string) === 'GVCN') &&
+            (user.role === Role.LECTURER || user.role === Role.GVCN) &&
             !!user.lecturerProfile?.isHeadOfDepartment
           );
         }
 
-        if (reqRole === AppActor.TLGV || reqRole === 'TLGV') {
+        if (roleKey === 'TLGV') {
           return (
             user.role === Role.ADMIN ||
-            ((user.role === Role.LECTURER ||
-              (user.role as string) === 'GVCN') &&
+            ((user.role === Role.LECTURER || user.role === Role.GVCN) &&
               !!user.lecturerProfile?.isAcademicAssistant)
           );
         }

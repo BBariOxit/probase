@@ -422,12 +422,10 @@ describe('OutlinesService', () => {
     });
 
     it('downloads allowed scans and packages them into a ZIP archive', async () => {
-      const fetchSpy = jest
-        .spyOn(global, 'fetch')
-        .mockResolvedValue({
-          ok: true,
-          arrayBuffer: async () => Buffer.from('%PDF-1.4 sample').buffer,
-        } as unknown as Response);
+      const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue({
+        ok: true,
+        arrayBuffer: async () => Buffer.from('%PDF-1.4 sample').buffer,
+      } as unknown as Response);
 
       prisma.registrationGroup.findMany.mockResolvedValue([
         {

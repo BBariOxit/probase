@@ -10,4 +10,3 @@ export const UpdateLecturerQuotaSchema = z.object({
 export class UpdateLecturerQuotaDto extends createZodDto(
   UpdateLecturerQuotaSchema,
 ) {}
-

@@ -1,6 +1,10 @@
 import { ConflictException, ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Role, RoundPhase, TopicStatus } from '../../../generated/prisma/client';
+import {
+  Role,
+  RoundPhase,
+  TopicStatus,
+} from '../../../generated/prisma/client';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { RoundPhaseService } from '../rounds/round-phase.service';
@@ -91,11 +95,15 @@ describe('TopicsService', () => {
         expect.objectContaining({
           where: {
             semesterId: 5,
-            status: { in: [TopicStatus.PENDING_DEPARTMENT, TopicStatus.PENDING] },
+            status: {
+              in: [TopicStatus.PENDING_DEPARTMENT, TopicStatus.PENDING],
+            },
             AND: [
               {
                 OR: [
-                  { title: { contains: 'Computer Vision', mode: 'insensitive' } },
+                  {
+                    title: { contains: 'Computer Vision', mode: 'insensitive' },
+                  },
                   {
                     description: {
                       contains: 'Computer Vision',
@@ -274,7 +282,11 @@ describe('TopicsService', () => {
         majorId: 1,
         major: { id: 1, name: 'Kỹ thuật phần mềm', code: 'CNPM' },
         departmentFeedback: 'Đạt chuẩn',
-        departmentReviewer: { id: 3, fullName: 'An Bình', academicTitle: 'TS.' },
+        departmentReviewer: {
+          id: 3,
+          fullName: 'An Bình',
+          academicTitle: 'TS.',
+        },
         round: {
           id: 8,
           phase: RoundPhase.PREP,
@@ -547,4 +559,3 @@ describe('TopicsService', () => {
     });
   });
 });
-

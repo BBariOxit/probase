@@ -98,7 +98,7 @@ type TopicWithGroups = {
   status: TopicStatus;
   maxStudents: number;
   round: TopicRound;
-  sourceProposal: { studentId: number } | null;
+  sourceProposal: { studentId: number; attachments?: unknown[] } | null;
   registrationGroups: {
     id: number;
     status: RegistrationGroupStatus;
@@ -298,7 +298,9 @@ export class TopicsService {
 
     if (query.mine) {
       if (!isLecturerRole(role)) {
-        throw new ForbiddenException('Chỉ giảng viên mới có quyền sở hữu đề tài.');
+        throw new ForbiddenException(
+          'Chỉ giảng viên mới có quyền sở hữu đề tài.',
+        );
       }
       where.lecturerId = await this.requireLecturerProfileId(userId);
       if (query.status) {
@@ -507,7 +509,7 @@ export class TopicsService {
 
     return {
       ...withActiveGroup(topic, phase, viewer(topic)),
-      attachments: (topic as any).sourceProposal?.attachments ?? [],
+      attachments: topic.sourceProposal?.attachments ?? [],
       roundPhase: phase,
       // Saves the client a second request to the round just to decide whether
       // the register button should be live. This one is about the topic and the
@@ -607,7 +609,9 @@ export class TopicsService {
       select: { id: true, majorId: true, isHeadOfDepartment: true },
     });
     if (!lecturerProfile) {
-      throw new ForbiddenException('Chỉ giảng viên mới có quyền nhân bản đề tài.');
+      throw new ForbiddenException(
+        'Chỉ giảng viên mới có quyền nhân bản đề tài.',
+      );
     }
 
     let targetSemesterId = dto.semesterId;
@@ -622,8 +626,7 @@ export class TopicsService {
       targetSemesterId = activeSem.id;
     }
 
-    const targetProjectTypeId =
-      dto.projectTypeId ?? source.round.projectTypeId;
+    const targetProjectTypeId = dto.projectTypeId ?? source.round.projectTypeId;
     const round = await this.rounds.requireRoundFor(
       targetSemesterId,
       targetProjectTypeId,
@@ -632,7 +635,7 @@ export class TopicsService {
     const targetMajorId =
       dto.majorId !== undefined
         ? dto.majorId
-        : source.majorId ?? lecturerProfile.majorId ?? null;
+        : (source.majorId ?? lecturerProfile.majorId ?? null);
     const targetMaxStudents =
       dto.maxStudents ?? source.maxStudents ?? round.maxStudentsPerTopic ?? 2;
 
@@ -925,7 +928,9 @@ export class TopicsService {
     const topic = await this.requireOwnTopic(id, userId, role);
 
     if (topic.status !== TopicStatus.OPEN) {
-      throw new ConflictException('Chỉ có thể đóng đề tài đang ở trạng thái mở đăng ký.');
+      throw new ConflictException(
+        'Chỉ có thể đóng đề tài đang ở trạng thái mở đăng ký.',
+      );
     }
 
     return this.setStatus(id, TopicStatus.APPROVED);
@@ -1125,13 +1130,15 @@ export class TopicsService {
       lecturerProfile?: {
         id: number;
         isHeadOfDepartment: boolean;
-        majorId: number | null;
+        majorId?: number | null;
       } | null;
+      customPermissions?: Array<{ permission: string }>;
     },
   ) {
-    const hasCustomPerm = (user as any).customPermissions?.some(
-      (cp: any) => cp.permission === 'TOPIC_REVIEW_DEPT',
-    );
+    const hasCustomPerm =
+      user.customPermissions?.some(
+        (cp) => cp.permission === 'TOPIC_REVIEW_DEPT',
+      ) ?? false;
     const isHead =
       user.role === Role.ADMIN ||
       (isLecturerRole(user.role) &&
@@ -1356,7 +1363,7 @@ export class TopicsService {
 
     return {
       ...presented,
-      attachments: (topic as any).sourceProposal?.attachments ?? [],
+      attachments: topic.sourceProposal?.attachments ?? [],
     };
   }
 
@@ -1393,7 +1400,9 @@ export class TopicsService {
     const lecturerId = await this.requireLecturerProfileId(userId);
 
     if (topic.lecturerId !== lecturerId) {
-      throw new ForbiddenException('Đề tài này thuộc quyền quản lý của giảng viên khác.');
+      throw new ForbiddenException(
+        'Đề tài này thuộc quyền quản lý của giảng viên khác.',
+      );
     }
 
     return topic;
@@ -1424,7 +1433,8 @@ export class TopicsService {
       select: { id: true },
     });
 
-    if (!semester) throw new NotFoundException(`Không tìm thấy học kỳ mã #${id}`);
+    if (!semester)
+      throw new NotFoundException(`Không tìm thấy học kỳ mã #${id}`);
   }
 }
 

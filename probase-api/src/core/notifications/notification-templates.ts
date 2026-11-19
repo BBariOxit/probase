@@ -14,7 +14,9 @@ export const NotificationTemplates = {
    */
   roundOpened(params: RoundNotificationParams) {
     const scope = params.projectTypeName ? ` (${params.projectTypeName})` : '';
-    const yearSuffix = params.academicYear ? ` năm học ${params.academicYear}` : '';
+    const yearSuffix = params.academicYear
+      ? ` năm học ${params.academicYear}`
+      : '';
     const deadlineNote = params.endDate
       ? ` Hạn đăng ký đến hết ngày ${params.endDate}.`
       : '';

@@ -10,7 +10,7 @@ export enum AppActor {
   ADMIN = 'ADMIN', // Quản trị viên
 }
 
-export type RequiredRole = Role | AppActor | string;
+export type RequiredRole = Role | AppActor | (string & {});
 
 export const ROLES_KEY = 'roles';
 export const Roles = (...roles: RequiredRole[]) =>

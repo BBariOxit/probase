@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Role, TopicProposalStatus, TopicStatus } from '../../../generated/prisma/client';
+import {
+  Role,
+  TopicProposalStatus,
+  TopicStatus,
+} from '../../../generated/prisma/client';
 import { CloudinaryService } from '../../core/cloudinary/cloudinary.service';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
@@ -53,7 +57,9 @@ describe('ProposalsService', () => {
         },
         {
           provide: MentoringLoadService,
-          useValue: { requireRoomForOneMore: jest.fn().mockResolvedValue(undefined) },
+          useValue: {
+            requireRoomForOneMore: jest.fn().mockResolvedValue(undefined),
+          },
         },
         {
           provide: CloudinaryService,
@@ -100,7 +106,11 @@ describe('ProposalsService', () => {
           userId: 100,
           user: { avatarUrl: null },
         },
-        requestedLecturer: { id: 5, fullName: 'Phan Bửu', academicTitle: 'ThS.' },
+        requestedLecturer: {
+          id: 5,
+          fullName: 'Phan Bửu',
+          academicTitle: 'ThS.',
+        },
         acceptedByLecturer: null,
         attachments: [],
         comments: [],
@@ -135,4 +145,3 @@ describe('ProposalsService', () => {
     });
   });
 });
-

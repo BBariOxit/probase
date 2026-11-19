@@ -106,4 +106,3 @@ export function buildZipArchive(entries: ZipEntryInput[]): Buffer {
 
   return Buffer.concat([...localParts, centralDirectory, endRecord]);
 }
-

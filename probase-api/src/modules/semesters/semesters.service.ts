@@ -90,8 +90,8 @@ export class SemestersService {
         data: {
           name: finalName,
           code: finalCode,
-          startDate: finalStartDate!,
-          endDate: finalEndDate!,
+          startDate: finalStartDate,
+          endDate: finalEndDate,
           gradeSubmissionDeadline: finalGradeDeadline,
         },
       });
@@ -150,7 +150,10 @@ export class SemestersService {
       updateData.gradeSubmissionDeadline = dto.gradeSubmissionDeadline;
 
     return this.prisma.$transaction(async (tx) => {
-      const updated = await tx.semester.update({ where: { id }, data: updateData });
+      const updated = await tx.semester.update({
+        where: { id },
+        data: updateData,
+      });
 
       await recordAudit(tx, {
         userId: actorId,

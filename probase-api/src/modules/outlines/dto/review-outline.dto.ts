@@ -7,7 +7,7 @@ export enum OutlineReviewAction {
 }
 
 export const ReviewOutlineSchema = z.object({
-  action: z.enum(['APPROVE', 'REQUEST_REVISION']),
+  action: z.nativeEnum(OutlineReviewAction),
   feedback: z.string().trim().max(2000).optional(),
 });
 

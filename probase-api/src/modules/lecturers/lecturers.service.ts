@@ -143,10 +143,7 @@ export class LecturersService {
       } else if (query.role === 'TTBM') {
         where.isHeadOfDepartment = true;
       } else if (query.role === 'GVCN') {
-        where.OR = [
-          { isHomeroomTeacher: true },
-          { user: { role: (Role as any).GVCN } },
-        ];
+        where.OR = [{ isHomeroomTeacher: true }, { user: { role: Role.GVCN } }];
       } else if (query.role === 'LECTURER') {
         where.isHeadOfDepartment = false;
         where.isAcademicAssistant = false;
@@ -348,9 +345,12 @@ export class LecturersService {
         targetId: updatedProfile.id,
         oldValue: {
           role: targetUser.role,
-          isHeadOfDepartment: targetUser.lecturerProfile?.isHeadOfDepartment ?? false,
-          isAcademicAssistant: targetUser.lecturerProfile?.isAcademicAssistant ?? false,
-          isHomeroomTeacher: targetUser.lecturerProfile?.isHomeroomTeacher ?? false,
+          isHeadOfDepartment:
+            targetUser.lecturerProfile?.isHeadOfDepartment ?? false,
+          isAcademicAssistant:
+            targetUser.lecturerProfile?.isAcademicAssistant ?? false,
+          isHomeroomTeacher:
+            targetUser.lecturerProfile?.isHomeroomTeacher ?? false,
           majorId: targetUser.lecturerProfile?.majorId ?? null,
         },
         newValue: {

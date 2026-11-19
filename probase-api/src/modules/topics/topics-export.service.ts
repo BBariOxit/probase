@@ -11,7 +11,10 @@ import {
 } from '../../common/utils/spreadsheet.util';
 import { recordAudit } from '../../core/audit/audit-entry';
 import { PrismaService } from '../../core/prisma/prisma.service';
-import { ExportTopicsDto, type ExportTopicsMode } from './dto/export-topics.dto';
+import {
+  ExportTopicsDto,
+  type ExportTopicsMode,
+} from './dto/export-topics.dto';
 
 const EXPORT_MAX_ROWS = 2000;
 const HEADER_ROW_INDEX = 5;
@@ -179,7 +182,9 @@ export class TopicsExportService {
     // Admin exports must never expose lecturer DRAFT topics.
     if (query.status) {
       where.status =
-        query.status === TopicStatus.DRAFT ? { in: [] } : { equals: query.status };
+        query.status === TopicStatus.DRAFT
+          ? { in: [] }
+          : { equals: query.status };
     } else {
       where.status = { not: TopicStatus.DRAFT };
     }
@@ -333,8 +338,7 @@ export class TopicsExportService {
   private writeTopicRows(sheet: ExcelJS.Worksheet, topics: ExportTopicRow[]) {
     topics.forEach((topic, index) => {
       const row = sheet.getRow(HEADER_ROW_INDEX + 1 + index);
-      const majorName =
-        topic.major?.name ?? topic.lecturer.major?.name ?? '—';
+      const majorName = topic.major?.name ?? topic.lecturer.major?.name ?? '—';
 
       row.values = [
         index + 1,
@@ -370,7 +374,10 @@ export class TopicsExportService {
         cell.alignment = {
           vertical: 'middle',
           horizontal:
-            colNumber === 1 || colNumber === 6 || colNumber === 7 || colNumber === 9
+            colNumber === 1 ||
+            colNumber === 6 ||
+            colNumber === 7 ||
+            colNumber === 9
               ? 'center'
               : 'left',
           wrapText: true,

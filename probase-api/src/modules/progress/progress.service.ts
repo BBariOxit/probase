@@ -786,13 +786,17 @@ export class ProgressService {
           progress2Grade: finalStageGrade,
           ...(finalGradeNum !== undefined && { finalGradeNum }),
           ...(finalGradeLetter !== undefined && { finalGradeLetter }),
-          ...(isPassed === false ? { note: 'Chưa đạt 50% khối lượng tối thiểu' } : {}),
+          ...(isPassed === false
+            ? { note: 'Chưa đạt 50% khối lượng tối thiểu' }
+            : {}),
         },
         update: {
           progress2Grade: finalStageGrade,
           ...(finalGradeNum !== undefined && { finalGradeNum }),
           ...(finalGradeLetter !== undefined && { finalGradeLetter }),
-          ...(isPassed === false ? { note: 'Chưa đạt 50% khối lượng tối thiểu' } : {}),
+          ...(isPassed === false
+            ? { note: 'Chưa đạt 50% khối lượng tối thiểu' }
+            : {}),
         },
       });
 

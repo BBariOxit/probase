@@ -8,7 +8,8 @@ function stripIllegalXmlControlChars(input: string): string {
   for (let i = 0; i < input.length; i += 1) {
     const code = input.charCodeAt(i);
     const allowedWhitespace = code === 0x09 || code === 0x0a || code === 0x0d;
-    const isIllegalControl = (code < 0x20 && !allowedWhitespace) || code === 0x7f;
+    const isIllegalControl =
+      (code < 0x20 && !allowedWhitespace) || code === 0x7f;
     if (!isIllegalControl) {
       result += input[i];
     }

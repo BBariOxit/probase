@@ -233,4 +233,3 @@ describe('SupervisedAnnouncementsService', () => {
     expect(summary.notificationsSent).toBe(1);
   });
 });
-
