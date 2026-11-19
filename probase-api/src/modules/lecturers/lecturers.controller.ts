@@ -37,8 +37,8 @@ export class LecturersController {
   }
 
   @Get()
-  findAll(@Query() query: QueryLecturersDto) {
-    return this.lecturersService.findAll(query);
+  findAll(@Query() query: QueryLecturersDto, @GetUser('role') role: Role) {
+    return this.lecturersService.findAll(query, role);
   }
 
   @Get(':id')

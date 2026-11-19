@@ -64,6 +64,12 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           icon: TrendingUp,
           ready: true,
         },
+        {
+          href: '/lecturers',
+          label: 'Giảng viên',
+          icon: GraduationCap,
+          ready: true,
+        },
       ],
     },
   ],
@@ -91,12 +97,6 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           href: '/lecturer/groups',
           label: 'Nhóm hướng dẫn',
           icon: Users,
-          ready: true,
-        },
-        {
-          href: '/lecturer/outlines',
-          label: 'Đề cương M03',
-          icon: FileCheck2,
           ready: true,
         },
         {
@@ -174,12 +174,6 @@ export const NAV_BY_ROLE: Record<Role, NavGroup[]> = {
           href: '/lecturer/groups',
           label: 'Nhóm hướng dẫn',
           icon: Users,
-          ready: true,
-        },
-        {
-          href: '/lecturer/outlines',
-          label: 'Đề cương M03',
-          icon: FileCheck2,
           ready: true,
         },
         {
@@ -324,6 +318,7 @@ const TITLE_BY_PREFIX: { prefix: string; label: string }[] = [
   // "/lecturers" (the list) and "/lecturers/42" (one person) both say
   // "Giảng viên" because the sub-page is the person, not a new section.
   { prefix: '/lecturers', label: 'Giảng viên' },
+  { prefix: '/lecturer/outlines', label: 'Đề cương M03' },
   { prefix: '/admin/topics', label: 'Chi tiết đề tài' },
 ];
 
