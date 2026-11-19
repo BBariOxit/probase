@@ -104,4 +104,3 @@ export class PermissionsController {
     return this.permissionsService.revokePermission(dto.userId, dto.permission);
   }
 }
-

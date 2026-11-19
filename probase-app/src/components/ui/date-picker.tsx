@@ -75,12 +75,17 @@ function MiniCalendar({
   onSelect: (date: Date) => void;
 }) {
   const [viewDate, setViewDate] = React.useState<Date>(() => selected || new Date());
+  const [prevSelectedTime, setPrevSelectedTime] = React.useState<number | undefined>(
+    () => selected?.getTime(),
+  );
 
-  React.useEffect(() => {
+  const selectedTime = selected?.getTime();
+  if (selectedTime !== prevSelectedTime) {
+    setPrevSelectedTime(selectedTime);
     if (selected && !isNaN(selected.getTime())) {
       setViewDate(selected);
     }
-  }, [selected]);
+  }
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -294,12 +299,14 @@ export function DatePicker({
   const [open, setOpen] = React.useState(false);
   const [text, setText] = React.useState(() => toDisplayDate(value));
   const [hasError, setHasError] = React.useState(false);
+  const [prevValue, setPrevValue] = React.useState(value);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
+  if (value !== prevValue) {
+    setPrevValue(value);
     setText(toDisplayDate(value));
     setHasError(false);
-  }, [value]);
+  }
 
   const calendarDate = React.useMemo(() => {
     if (text && text.length === 10) {

@@ -132,10 +132,9 @@ export default function SemestersPage() {
   const [editing, setEditing] = useState<Semester | 'new' | null>(null);
   const [deleting, setDeleting] = useState<Semester | null>(null);
   const [closing, setClosing] = useState<Semester | null>(null);
+  const [now] = useState(() => Date.now());
 
   if (!allowed) return null;
-
-  const now = Date.now();
 
   return (
     <div className="space-y-4">

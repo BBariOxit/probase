@@ -31,7 +31,8 @@ export function buildSemester(
   const code = `${codePrefix}-${academicYear.trim()}`;
 
   return {
-    name: customName && customName.trim() !== '' ? customName.trim() : defaultName,
+    name:
+      customName && customName.trim() !== '' ? customName.trim() : defaultName,
     code,
   };
 }
@@ -45,7 +46,7 @@ export function buildSemester(
  */
 export function getDefaultSemesterDates(
   academicYear: string,
-  term: SemesterTerm | string,
+  term: SemesterTerm | (string & {}),
 ): { startDate: string; endDate: string; gradeDeadline: string } {
   const match = academicYear.trim().match(/^(\d{4})\s*[-–]\s*(\d{4})$/);
   const startY = match ? parseInt(match[1], 10) : new Date().getFullYear();
@@ -82,7 +83,10 @@ export function parseSemesterCode(code: string): {
   academicYear: string;
   term: SemesterTerm;
 } | null {
-  const match = code.trim().toUpperCase().match(/^(HK1|HK2|HE)-(\d{4}-\d{4})$/);
+  const match = code
+    .trim()
+    .toUpperCase()
+    .match(/^(HK1|HK2|HE)-(\d{4}-\d{4})$/);
   if (!match) return null;
   const termMap: Record<string, SemesterTerm> = {
     HK1: '1',

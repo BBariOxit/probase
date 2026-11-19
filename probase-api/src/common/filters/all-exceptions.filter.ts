@@ -32,7 +32,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         if (resObj.message) {
           message = Array.isArray(resObj.message)
             ? resObj.message.join(', ')
-            : String(resObj.message);
+            : typeof resObj.message === 'string'
+              ? resObj.message
+              : JSON.stringify(resObj.message);
         }
         if (resObj.errors) {
           errors = resObj.errors;
@@ -88,4 +90,3 @@ export class AllExceptionsFilter implements ExceptionFilter {
     });
   }
 }
-

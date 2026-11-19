@@ -29,7 +29,7 @@ export class TopicSimilarityService {
     const normalized = text
       .toLowerCase()
       .normalize('NFC')
-      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'<>\[\]\\|]/g, ' ')
+      .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'<>[\]\\|]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
 
@@ -190,7 +190,9 @@ export class TopicSimilarityService {
         });
       } catch (err) {
         this.logger.warn(
-          `Could not persist similarity checks for topic ${topicId}: ${err}`,
+          `Could not persist similarity checks for topic ${topicId}: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
         );
       }
     }

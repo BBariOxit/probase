@@ -8,4 +8,3 @@ export const GrantPermissionSchema = z.object({
 });
 
 export class GrantPermissionDto extends createZodDto(GrantPermissionSchema) {}
-

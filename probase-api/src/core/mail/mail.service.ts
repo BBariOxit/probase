@@ -163,7 +163,10 @@ export class MailService {
     groupUrl?: string;
   }): Promise<boolean> {
     const url = payload.groupUrl ?? `${this.frontendUrl}/student/groups`;
-    const formattedMessage = escapeHtml(payload.message).replace(/\r?\n/g, '<br/>');
+    const formattedMessage = escapeHtml(payload.message).replace(
+      /\r?\n/g,
+      '<br/>',
+    );
 
     return this.send({
       to: payload.to,

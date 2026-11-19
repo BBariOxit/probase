@@ -9,4 +9,3 @@ export const UpdateUserPermissionsSchema = z.object({
 export class UpdateUserPermissionsDto extends createZodDto(
   UpdateUserPermissionsSchema,
 ) {}
-

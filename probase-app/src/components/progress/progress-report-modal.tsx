@@ -69,8 +69,10 @@ export function ProgressReportModal({
       });
       toast.success(`Đã nộp bài ${stageTitle} thành công.`);
       setOpen(false);
-    } catch (err: any) {
-      toast.error(err?.message || 'Có lỗi xảy ra khi nộp bài.');
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error ? err.message : 'Có lỗi xảy ra khi nộp bài.',
+      );
     }
   };
 

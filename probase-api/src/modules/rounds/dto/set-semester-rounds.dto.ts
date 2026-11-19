@@ -18,7 +18,13 @@ export const RoundPlanSchema = z
     officialEndDate: z.coerce.date().optional(),
 
     maxStudentsPerTopic: z.coerce.number().int().min(1).max(10).optional(),
-    minTopicsPerLecturer: z.coerce.number().int().min(1).max(50).nullable().optional(),
+    minTopicsPerLecturer: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(50)
+      .nullable()
+      .optional(),
 
     cohorts: z.array(CohortSchema).min(1).max(20),
     allocationMode: z.enum(AllocationMode).optional(),

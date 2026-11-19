@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, Role } from '../../../generated/prisma/client';
+import { Prisma, Role, TopicStatus } from '../../../generated/prisma/client';
 import { recordAudit } from '../../core/audit/audit-entry';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { QueryAdminLecturersDto } from './dto/query-admin-lecturers.dto';
@@ -15,12 +15,28 @@ import {
   type MentoringLoad,
 } from './mentoring-load.service';
 
+export interface LecturerTopicStats {
+  currentCount: number;
+  openCount: number;
+  pastCount: number;
+}
+
+const STUDENT_VISIBLE_TOPIC_STATUSES: TopicStatus[] = [
+  TopicStatus.OPEN,
+  TopicStatus.IN_PROGRESS,
+  TopicStatus.COMPLETED,
+];
+
 const DIRECTORY_SELECT = {
   id: true,
+  lecturerCode: true,
   fullName: true,
   academicTitle: true,
   researchInterests: true,
   maxMentoringQuota: true,
+  isHeadOfDepartment: true,
+  isHomeroomTeacher: true,
+  major: { select: { id: true, name: true, code: true } },
   user: { select: { avatarUrl: true } },
 } satisfies Prisma.LecturerProfileSelect;
 
@@ -35,39 +51,87 @@ export class LecturersService {
     private readonly mentoring: MentoringLoadService,
   ) {}
 
-  async findAll(query: QueryLecturersDto) {
+  async findAll(query: QueryLecturersDto, role: Role = Role.STUDENT) {
+    const academicTitleVariants = query.academicTitle
+      ? [
+          query.academicTitle.replace(/\.+$/, ''),
+          `${query.academicTitle.replace(/\.+$/, '')}.`,
+        ]
+      : undefined;
+
     const where: Prisma.LecturerProfileWhereInput = {
       // Chỉ lấy giảng viên thực thụ tham gia hướng dẫn (loại trừ tài khoản Giáo vụ / ADMIN và tài khoản bị khóa)
       user: { isActive: true, role: { in: [Role.LECTURER, Role.GVCN] } },
       isAcademicAssistant: false,
+      ...(query.majorId && { majorId: query.majorId }),
+      ...(academicTitleVariants && {
+        OR: academicTitleVariants.map((variant) => ({
+          academicTitle: { equals: variant, mode: 'insensitive' as const },
+        })),
+      }),
       ...(query.q && {
-        OR: [
-          { fullName: { contains: query.q, mode: 'insensitive' } },
-          { lecturerCode: { contains: query.q, mode: 'insensitive' } },
+        AND: [
+          {
+            OR: [
+              { fullName: { contains: query.q, mode: 'insensitive' } },
+              { lecturerCode: { contains: query.q, mode: 'insensitive' } },
+              { researchInterests: { contains: query.q, mode: 'insensitive' } },
+            ],
+          },
         ],
       }),
     };
 
-    const [rows, total, semesterId] = await Promise.all([
-      this.prisma.lecturerProfile.findMany({
+    const availability = query.availability ?? 'ALL';
+    const semesterId = await this.mentoring.activeSemesterId();
+
+    let pagedRows: DirectoryRow[];
+    let total: number;
+    let load: (lecturer: DirectoryRow) => MentoringLoad;
+
+    if (availability === 'ALL') {
+      const [rows, count] = await Promise.all([
+        this.prisma.lecturerProfile.findMany({
+          where,
+          select: DIRECTORY_SELECT,
+          orderBy: { fullName: 'asc' },
+          skip: (query.page - 1) * query.limit,
+          take: query.limit,
+        }),
+        this.prisma.lecturerProfile.count({ where }),
+      ]);
+      pagedRows = rows;
+      total = count;
+      load = await this.mentoring.loadFor(rows, semesterId);
+    } else {
+      const allRows = await this.prisma.lecturerProfile.findMany({
         where,
         select: DIRECTORY_SELECT,
         orderBy: { fullName: 'asc' },
-        skip: (query.page - 1) * query.limit,
-        take: query.limit,
-      }),
-      this.prisma.lecturerProfile.count({ where }),
-      this.mentoring.activeSemesterId(),
-    ]);
+      });
+      load = await this.mentoring.loadFor(allRows, semesterId);
+      const filtered = allRows.filter((row) =>
+        availability === 'AVAILABLE' ? !load(row).atQuota : load(row).atQuota,
+      );
+      total = filtered.length;
+      const start = (query.page - 1) * query.limit;
+      pagedRows = filtered.slice(start, start + query.limit);
+    }
 
-    const load = await this.mentoring.loadFor(rows, semesterId);
+    const topicStats = await this.topicStatsFor(
+      pagedRows.map((r) => r.id),
+      semesterId,
+      role,
+    );
 
     return {
-      items: rows.map((row) => render(row, load(row))),
+      items: pagedRows.map((row) =>
+        render(row, load(row), topicStats.get(row.id)),
+      ),
       total,
       page: query.page,
       limit: query.limit,
-      totalPages: Math.ceil(total / query.limit),
+      totalPages: Math.max(1, Math.ceil(total / query.limit)),
     };
   }
 
@@ -89,21 +153,68 @@ export class LecturersService {
       throw new NotFoundException('Không tìm thấy giảng viên');
     }
 
-    const [maySeeContact, load] = await Promise.all([
+    const semesterId = await this.mentoring.activeSemesterId();
+    const [maySeeContact, load, topicStats] = await Promise.all([
       this.maySeeContact(lecturerProfileId, viewer),
-      this.mentoring
-        .activeSemesterId()
-        .then((semesterId) => this.mentoring.loadForOne(lecturer, semesterId)),
+      this.mentoring.loadForOne(lecturer, semesterId),
+      this.topicStatsFor([lecturerProfileId], semesterId, viewer.role),
     ]);
 
     const { phone, bio, user } = lecturer;
 
     return {
-      ...render({ ...lecturer, user: { avatarUrl: user.avatarUrl } }, load),
+      ...render(
+        { ...lecturer, user: { avatarUrl: user.avatarUrl } },
+        load,
+        topicStats.get(lecturerProfileId),
+      ),
       bio,
       email: maySeeContact ? user.email : null,
       phone: maySeeContact ? phone : null,
     };
+  }
+
+  private async topicStatsFor(
+    lecturerIds: number[],
+    activeSemesterId: number | undefined,
+    role: Role,
+  ): Promise<Map<number, LecturerTopicStats>> {
+    const result = new Map<number, LecturerTopicStats>();
+    if (lecturerIds.length === 0) return result;
+
+    const statusFilter: Prisma.EnumTopicStatusFilter =
+      role === Role.STUDENT
+        ? { in: STUDENT_VISIBLE_TOPIC_STATUSES }
+        : { not: TopicStatus.DRAFT };
+
+    const grouped = await this.prisma.topic.groupBy({
+      by: ['lecturerId', 'semesterId', 'status'],
+      where: {
+        lecturerId: { in: lecturerIds },
+        status: statusFilter,
+      },
+      _count: { _all: true },
+    });
+
+    for (const id of lecturerIds) {
+      result.set(id, { currentCount: 0, openCount: 0, pastCount: 0 });
+    }
+
+    for (const row of grouped) {
+      const entry = result.get(row.lecturerId);
+      if (!entry) continue;
+      const count = row._count._all;
+      if (activeSemesterId !== undefined && row.semesterId === activeSemesterId) {
+        entry.currentCount += count;
+        if (row.status === TopicStatus.OPEN) {
+          entry.openCount += count;
+        }
+      } else {
+        entry.pastCount += count;
+      }
+    }
+
+    return result;
   }
 
   private async maySeeContact(
@@ -143,10 +254,7 @@ export class LecturersService {
       } else if (query.role === 'TTBM') {
         where.isHeadOfDepartment = true;
       } else if (query.role === 'GVCN') {
-        where.OR = [
-          { isHomeroomTeacher: true },
-          { user: { role: (Role as any).GVCN } },
-        ];
+        where.OR = [{ isHomeroomTeacher: true }, { user: { role: Role.GVCN } }];
       } else if (query.role === 'LECTURER') {
         where.isHeadOfDepartment = false;
         where.isAcademicAssistant = false;
@@ -348,9 +456,12 @@ export class LecturersService {
         targetId: updatedProfile.id,
         oldValue: {
           role: targetUser.role,
-          isHeadOfDepartment: targetUser.lecturerProfile?.isHeadOfDepartment ?? false,
-          isAcademicAssistant: targetUser.lecturerProfile?.isAcademicAssistant ?? false,
-          isHomeroomTeacher: targetUser.lecturerProfile?.isHomeroomTeacher ?? false,
+          isHeadOfDepartment:
+            targetUser.lecturerProfile?.isHeadOfDepartment ?? false,
+          isAcademicAssistant:
+            targetUser.lecturerProfile?.isAcademicAssistant ?? false,
+          isHomeroomTeacher:
+            targetUser.lecturerProfile?.isHomeroomTeacher ?? false,
           majorId: targetUser.lecturerProfile?.majorId ?? null,
         },
         newValue: {
@@ -374,13 +485,22 @@ export class LecturersService {
   }
 }
 
-function render(lecturer: DirectoryRow, mentoring: MentoringLoad) {
+function render(
+  lecturer: DirectoryRow,
+  mentoring: MentoringLoad,
+  topicStats: LecturerTopicStats = { currentCount: 0, openCount: 0, pastCount: 0 },
+) {
   return {
     id: lecturer.id,
+    lecturerCode: lecturer.lecturerCode,
     fullName: lecturer.fullName,
     academicTitle: lecturer.academicTitle,
     researchInterests: lecturer.researchInterests,
+    major: lecturer.major,
+    isHeadOfDepartment: lecturer.isHeadOfDepartment,
+    isHomeroomTeacher: lecturer.isHomeroomTeacher,
     avatarUrl: lecturer.user.avatarUrl,
     mentoring,
+    topicStats,
   };
 }

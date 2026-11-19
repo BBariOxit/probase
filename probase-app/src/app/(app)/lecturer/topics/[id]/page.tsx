@@ -16,6 +16,7 @@ import {
 import { toast } from 'sonner';
 import { useMyProfile } from '@/lib/api/me';
 import {
+  type TopicInput,
   useDepartmentReviewTopic,
   useTopic,
   useTopicTransition,
@@ -49,7 +50,9 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
   const departmentReview = useDepartmentReviewTopic();
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
   const [confirmApprovedEdit, setConfirmApprovedEdit] = useState(false);
-  const [pendingFormValues, setPendingFormValues] = useState<any>(null);
+  const [pendingFormValues, setPendingFormValues] = useState<TopicInput | null>(
+    null,
+  );
   const [draftFeedback, setDraftFeedback] = useState<{
     topicId: number | null;
     text: string;
@@ -129,7 +132,7 @@ function LecturerTopicDetailContent({ topicId }: { topicId: number }) {
   const canEditTopic = (isOwner || isAdmin) && canEditStatus;
 
   async function performUpdate(
-    values: any,
+    values: TopicInput,
     status?: 'DRAFT' | 'PENDING_DEPARTMENT',
   ) {
     await update.mutateAsync({

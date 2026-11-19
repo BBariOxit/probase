@@ -21,7 +21,6 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { GoogleLoginDto } from './dto/google-login.dto';
 import { LoginDto } from './dto/login.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
 const CREDENTIAL_IP_CEILING = { default: { limit: 60, ttl: 60_000 } };
@@ -65,7 +64,11 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const token = req.cookies?.refreshToken;
+    const cookies = req.cookies as Record<string, unknown> | undefined;
+    const token =
+      typeof cookies?.refreshToken === 'string'
+        ? cookies.refreshToken
+        : undefined;
     if (!token) {
       throw new UnauthorizedException('Không tìm thấy phiên đăng nhập');
     }
@@ -107,6 +110,7 @@ export class AuthController {
     @GetUser('id') userId: number,
     @Res({ passthrough: true }) res: Response,
   ) {
+    res.clearCookie('refreshToken', { path: '/' });
     res.clearCookie('refreshToken', { path: '/auth' });
     return this.authService.logout(userId);
   }
@@ -134,12 +138,19 @@ export class AuthController {
   }
 
   private setRefreshTokenCookie(res: Response, token: string) {
-    const isProd = process.env.NODE_ENV === 'production';
+    const secure =
+      process.env.COOKIE_SECURE === 'true'
+        ? true
+        : process.env.COOKIE_SECURE === 'false'
+          ? false
+          : process.env.NODE_ENV === 'production' &&
+            (process.env.FRONTEND_URL ?? '').startsWith('https://');
     res.cookie('refreshToken', token, {
       httpOnly: true,
-      secure: isProd,
+      secure,
       sameSite: 'lax',
-      path: '/auth',
+      // Root path works both directly (/auth/refresh) and behind Nginx (/api/auth/refresh)
+      path: '/',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days matches JWT_REFRESH_EXPIRES_IN default
     });
   }

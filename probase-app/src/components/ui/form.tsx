@@ -109,13 +109,16 @@ function FormControl({ ...props }: React.ComponentProps<'div'>) {
     useFormField();
 
   if (React.isValidElement(props.children)) {
-    return React.cloneElement(props.children as React.ReactElement<any>, {
-      id: formItemId,
-      'aria-describedby': !error
-        ? `${formDescriptionId}`
-        : `${formDescriptionId} ${formMessageId}`,
-      'aria-invalid': !!error,
-    });
+    return React.cloneElement(
+      props.children as React.ReactElement<Record<string, unknown>>,
+      {
+        id: formItemId,
+        'aria-describedby': !error
+          ? `${formDescriptionId}`
+          : `${formDescriptionId} ${formMessageId}`,
+        'aria-invalid': !!error,
+      },
+    );
   }
 
   return (

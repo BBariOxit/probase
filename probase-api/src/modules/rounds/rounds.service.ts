@@ -230,7 +230,11 @@ export class RoundsService {
   async requireRoundFor(semesterId: number, projectTypeId: number) {
     const round = await this.prisma.registrationRound.findUnique({
       where: { semesterId_projectTypeId: { semesterId, projectTypeId } },
-      select: { id: true, maxStudentsPerTopic: true, minTopicsPerLecturer: true },
+      select: {
+        id: true,
+        maxStudentsPerTopic: true,
+        minTopicsPerLecturer: true,
+      },
     });
 
     if (!round) {
@@ -462,7 +466,8 @@ export class RoundsService {
     const updated = await this.findOne(id);
     if (
       phase === RoundPhase.PREP &&
-      (updated.phase === RoundPhase.OPEN || updated.phase === RoundPhase.EXTENDED)
+      (updated.phase === RoundPhase.OPEN ||
+        updated.phase === RoundPhase.EXTENDED)
     ) {
       await this.announceRoundOpenedIfHasOpenTopics(updated.id);
     }
@@ -856,7 +861,8 @@ export class RoundsService {
           ? override.targetQuota!
           : targetQuota;
 
-      let status: 'MET' | 'IN_PROGRESS' | 'NOT_STARTED' | 'EXEMPT' = 'NOT_STARTED';
+      let status: 'MET' | 'IN_PROGRESS' | 'NOT_STARTED' | 'EXEMPT' =
+        'NOT_STARTED';
       if (isExempt) {
         status = 'EXEMPT';
       } else if (approved >= lecturerTargetQuota) {
@@ -922,7 +928,8 @@ export class RoundsService {
       lecturersCount: lecturers.length,
       activeLecturersCount: activeLecturers.length,
       exemptLecturersCount: exemptLecturers.length,
-      lecturersMetQuotaCount: activeLecturers.filter((l) => l.isMetQuota).length,
+      lecturersMetQuotaCount: activeLecturers.filter((l) => l.isMetQuota)
+        .length,
       lecturerProgress,
     };
   }

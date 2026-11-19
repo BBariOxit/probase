@@ -216,7 +216,9 @@ export class ReportsService {
         : allRounds;
 
     if (roundId !== undefined && scopedRounds.length === 0) {
-      throw new NotFoundException(`Không tìm thấy đợt #${roundId} trong học kỳ.`);
+      throw new NotFoundException(
+        `Không tìm thấy đợt #${roundId} trong học kỳ.`,
+      );
     }
 
     const roundIds = scopedRounds.map((r) => r.id);
@@ -392,7 +394,10 @@ export class ReportsService {
           t.effectiveMajorId === bucket.id &&
           USABLE_TOPIC_STATUSES.has(t.status),
       );
-      const seatCapacity = majorTopics.reduce((sum, t) => sum + t.maxStudents, 0);
+      const seatCapacity = majorTopics.reduce(
+        (sum, t) => sum + t.maxStudents,
+        0,
+      );
 
       const groupCount = groups.filter((g) => {
         if (g.majorId !== null) return g.majorId === bucket.id;
@@ -550,7 +555,11 @@ export class ReportsService {
       selfRegistered,
       assigned,
       groups: computeGroupSizes(groups),
-      topics: computeTopicFunnel(topics, takenTopicIds, eligibleStudents.length),
+      topics: computeTopicFunnel(
+        topics,
+        takenTopicIds,
+        eligibleStudents.length,
+      ),
       proposals,
       outlines: computeOutlines(groups),
       archives: computeArchives(groups),
@@ -788,7 +797,10 @@ export class ReportsService {
     };
 
     const semester = semesterId
-      ? await this.prisma.semester.findUnique({ where: { id: semesterId }, select })
+      ? await this.prisma.semester.findUnique({
+          where: { id: semesterId },
+          select,
+        })
       : await this.prisma.semester.findFirst({
           where: { isActive: true },
           select,

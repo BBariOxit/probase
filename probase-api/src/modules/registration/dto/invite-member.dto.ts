@@ -10,4 +10,3 @@ export const InviteMemberSchema = z.object({
 });
 
 export class InviteMemberDto extends createZodDto(InviteMemberSchema) {}
-

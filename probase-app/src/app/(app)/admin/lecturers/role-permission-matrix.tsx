@@ -1,11 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Loader2, Plus, ShieldCheck, X } from 'lucide-react';
 import {
-  type CustomAssignmentItem,
   type PermissionDefinition,
   usePermissionMatrix,
   useRevokePermission,
@@ -63,14 +62,14 @@ export function RolePermissionMatrix() {
 
   // Danh sách giảng viên để phục vụ chọn phân quyền
   const { data: rosterData } = useAdminLecturers({ limit: 100 });
-  const allLecturers = rosterData?.items ?? [];
 
   // Lọc giảng viên có thể cấp quyền (loại bỏ Giáo vụ Khoa)
   const eligibleLecturers = useMemo(() => {
+    const allLecturers = rosterData?.items ?? [];
     return allLecturers.filter(
       (l) => l.userRole !== 'ADMIN' && l.assignedRole !== 'ADMIN',
     );
-  }, [allLecturers]);
+  }, [rosterData?.items]);
 
   const lecturerComboboxOptions: ComboboxOption[] = useMemo(() => {
     return eligibleLecturers.map((l) => {
@@ -84,19 +83,20 @@ export function RolePermissionMatrix() {
     });
   }, [eligibleLecturers]);
 
-  const [matrixState, setMatrixState] = useState<Record<string, string[]>>({});
+  const [matrixOverrides, setMatrixOverrides] = useState<
+    Record<string, string[]>
+  >({});
+
+  const matrixState = useMemo(
+    () => ({ ...(data?.matrix ?? {}), ...matrixOverrides }),
+    [data?.matrix, matrixOverrides],
+  );
 
   // State cho Modal cấp/sửa quyền đặc biệt
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalUserId, setModalUserId] = useState<string>('');
   const [modalPerms, setModalPerms] = useState<string[]>([]);
   const [isSubmittingModal, setIsSubmittingModal] = useState(false);
-
-  useEffect(() => {
-    if (data?.matrix) {
-      setMatrixState(data.matrix);
-    }
-  }, [data]);
 
   // Chỉ hiển thị các quyền nghiệp vụ có thể cấu hình
   const permissions = useMemo(() => {
@@ -105,10 +105,9 @@ export function RolePermissionMatrix() {
     );
   }, [data]);
 
-  const customAssignments = data?.customAssignments ?? [];
-
   // Nhóm danh sách phân quyền đặc biệt theo từng Giảng viên
   const groupedDelegations = useMemo(() => {
+    const customAssignments = data?.customAssignments ?? [];
     const map = new Map<
       number,
       {
@@ -142,7 +141,7 @@ export function RolePermissionMatrix() {
     }
 
     return Array.from(map.values());
-  }, [customAssignments, permissions]);
+  }, [data?.customAssignments, permissions]);
 
   // Thao tác bật/tắt quyền của Vai trò mặc định
   const handleToggleRole = (
@@ -156,7 +155,7 @@ export function RolePermissionMatrix() {
       ? currentPerms.filter((p) => p !== perm.code)
       : [...currentPerms, perm.code];
 
-    setMatrixState((prev) => ({
+    setMatrixOverrides((prev) => ({
       ...prev,
       [roleCode]: nextPerms,
     }));
@@ -171,12 +170,17 @@ export function RolePermissionMatrix() {
               : `Đã cấp quyền "${perm.name}" cho ${roleLabel}.`,
           );
         },
-        onError: (err: any) => {
-          toast.error(err?.message || 'Không thể lưu quyền hạn vai trò.');
-          setMatrixState((prev) => ({
-            ...prev,
-            [roleCode]: currentPerms,
-          }));
+        onError: (err: unknown) => {
+          toast.error(
+            err instanceof Error
+              ? err.message
+              : 'Không thể lưu quyền hạn vai trò.',
+          );
+          setMatrixOverrides((prev) => {
+            const next = { ...prev };
+            delete next[roleCode];
+            return next;
+          });
         },
       },
     );
@@ -217,8 +221,12 @@ export function RolePermissionMatrix() {
       await refetch();
       toast.success(`Đã cập nhật quyền đặc biệt cho ${targetName}.`);
       setIsModalOpen(false);
-    } catch (err: any) {
-      toast.error(err?.message || 'Không thể lưu quyền cho giảng viên.');
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : 'Không thể lưu quyền cho giảng viên.',
+      );
     } finally {
       setIsSubmittingModal(false);
     }
@@ -235,8 +243,10 @@ export function RolePermissionMatrix() {
       await revokeMutation.mutateAsync({ userId, permission: permissionCode });
       await refetch();
       toast.success(`Đã thu hồi quyền "${permissionName}" từ ${fullName}.`);
-    } catch (err: any) {
-      toast.error(err?.message || 'Không thể thu hồi quyền.');
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error ? err.message : 'Không thể thu hồi quyền.',
+      );
     }
   };
 

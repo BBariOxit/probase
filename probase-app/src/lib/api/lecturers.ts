@@ -96,8 +96,13 @@ export function useLecturer(id: number | undefined) {
   });
 }
 
+export type LecturerAvailabilityFilter = 'ALL' | 'AVAILABLE' | 'FULL';
+
 export interface LecturerDirectoryQuery {
   q?: string;
+  majorId?: number;
+  academicTitle?: string;
+  availability?: LecturerAvailabilityFilter;
   page?: number;
   limit?: number;
 }
@@ -105,6 +110,11 @@ export interface LecturerDirectoryQuery {
 export function useLecturerDirectory(query: LecturerDirectoryQuery = {}) {
   const params = new URLSearchParams();
   if (query.q) params.set('q', query.q);
+  if (query.majorId) params.set('majorId', String(query.majorId));
+  if (query.academicTitle) params.set('academicTitle', query.academicTitle);
+  if (query.availability && query.availability !== 'ALL') {
+    params.set('availability', query.availability);
+  }
   if (query.page) params.set('page', String(query.page));
   if (query.limit) params.set('limit', String(query.limit));
   const search = params.toString();

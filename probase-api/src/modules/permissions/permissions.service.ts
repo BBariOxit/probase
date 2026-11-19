@@ -149,6 +149,7 @@ export class PermissionsService {
     permissions: SystemPermission[],
     _actorId: number,
   ) {
+    void _actorId;
     if (role === 'ADMIN') {
       throw new ForbiddenException(
         'Không thể điều chỉnh quyền của Quản trị viên (ADMIN)',
@@ -330,4 +331,3 @@ export class PermissionsService {
     return Array.from(permissionSet);
   }
 }
-

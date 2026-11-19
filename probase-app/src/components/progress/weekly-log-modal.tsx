@@ -95,8 +95,12 @@ export function WeeklyLogModal({
         toast.success(`Đã lưu tiến độ Tuần ${weekNumber}.`);
       }
       setOpen(false);
-    } catch (err: any) {
-      toast.error(err?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : 'Có lỗi xảy ra, vui lòng thử lại.',
+      );
     }
   };
 

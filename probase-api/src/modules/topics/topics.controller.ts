@@ -16,6 +16,7 @@ import { Throttle } from '@nestjs/throttler';
 import { Role } from '../../../generated/prisma/client';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import type { RequestUser } from '../auth/guards/roles.guard';
 import { RequirePermissions } from '../permissions/require-permissions.decorator';
 import { SystemPermission } from '../permissions/permissions.constants';
 import { CloneTopicDto } from './dto/clone-topic.dto';
@@ -189,7 +190,7 @@ export class TopicsController {
   reviewDepartment(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: DepartmentReviewDto,
-    @GetUser() user: any,
+    @GetUser() user: RequestUser,
   ) {
     return this.topicsService.reviewDepartment(id, dto, user);
   }

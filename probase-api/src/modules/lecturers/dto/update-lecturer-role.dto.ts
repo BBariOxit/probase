@@ -11,4 +11,3 @@ export const UpdateLecturerRoleSchema = z.object({
 export class UpdateLecturerRoleDto extends createZodDto(
   UpdateLecturerRoleSchema,
 ) {}
-

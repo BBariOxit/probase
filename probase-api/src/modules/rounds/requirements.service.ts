@@ -148,6 +148,7 @@ export class RequirementsService {
       select: { id: true },
     });
 
-    if (!round) throw new NotFoundException(`Không tìm thấy đợt đăng ký mã #${roundId}`);
+    if (!round)
+      throw new NotFoundException(`Không tìm thấy đợt đăng ký mã #${roundId}`);
   }
 }

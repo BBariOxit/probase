@@ -16,8 +16,7 @@ export const CreateSemesterSchema = z
     gradeSubmissionDeadline: z.coerce.date().optional().nullable(),
   })
   .refine(
-    (data) =>
-      !data.startDate || !data.endDate || data.endDate > data.startDate,
+    (data) => !data.startDate || !data.endDate || data.endDate > data.startDate,
     {
       message: 'Ngày kết thúc phải sau ngày bắt đầu',
       path: ['endDate'],

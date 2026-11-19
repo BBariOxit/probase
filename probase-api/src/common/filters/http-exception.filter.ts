@@ -27,14 +27,16 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
       if (resObj.message) {
         message = Array.isArray(resObj.message)
           ? resObj.message.join(', ')
-          : String(resObj.message);
+          : typeof resObj.message === 'string'
+            ? resObj.message
+            : JSON.stringify(resObj.message);
       }
       if (resObj.errors) {
         errors = resObj.errors;
       }
     }
 
-    if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
+    if (status >= Number(HttpStatus.INTERNAL_SERVER_ERROR)) {
       this.logger.error(
         `[${request.method}] ${request.url} - ${status} - ${message}`,
         exception.stack,

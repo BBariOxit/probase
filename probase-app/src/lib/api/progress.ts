@@ -163,7 +163,7 @@ export function useLecturerGroupProgressDetail(groupId: number) {
     queryKey: progressKeys.lecturerDetail(groupId),
     queryFn: () =>
       api<{
-        group: any;
+        group: Record<string, unknown>;
         isSupervisor: boolean;
         isReviewer: boolean;
         weeklyLogs: WeeklyLogItem[];

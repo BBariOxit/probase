@@ -225,18 +225,19 @@ export class RegistrationGroupsService {
     }
 
     // 4. Check if target student already has an active group in this semester
-    const existingMembership = await this.prisma.registrationGroupMember.findFirst({
-      where: {
-        studentId: targetStudent.id,
-        semesterId: group.semesterId,
-        status: GroupMemberStatus.ACCEPTED,
-        group: { status: { not: RegistrationGroupStatus.REJECTED } },
-      },
-      select: {
-        id: true,
-        groupId: true,
-      },
-    });
+    const existingMembership =
+      await this.prisma.registrationGroupMember.findFirst({
+        where: {
+          studentId: targetStudent.id,
+          semesterId: group.semesterId,
+          status: GroupMemberStatus.ACCEPTED,
+          group: { status: { not: RegistrationGroupStatus.REJECTED } },
+        },
+        select: {
+          id: true,
+          groupId: true,
+        },
+      });
 
     if (existingMembership && existingMembership.groupId === group.id) {
       throw new ConflictException('Sinh viên này đã ở trong nhóm của bạn.');
@@ -712,7 +713,9 @@ export class RegistrationGroupsService {
     const newTopic = await this.requireRegistrableTopic(newTopicId);
 
     if (newTopic.semesterId !== group.semesterId) {
-      throw new BadRequestException('Đề tài mới không thuộc cùng học kỳ với nhóm hiện tại');
+      throw new BadRequestException(
+        'Đề tài mới không thuộc cùng học kỳ với nhóm hiện tại',
+      );
     }
 
     // 1. Phải trong thời gian đợt đăng ký còn mở (cho phép rời đề tài cũ và tham gia đề tài mới)
@@ -790,7 +793,8 @@ export class RegistrationGroupsService {
       (candidate) => candidate.studentId === student.id,
     );
 
-    if (!member) throw new NotFoundException('Bạn không phải là thành viên của nhóm này.');
+    if (!member)
+      throw new NotFoundException('Bạn không phải là thành viên của nhóm này.');
 
     // Somebody has to answer for the group, and a group whose leader walked out
     // has nobody to hand it to, close it, or be asked about it.
@@ -876,19 +880,20 @@ export class RegistrationGroupsService {
     const targetTopic = await this.requireRegistrableTopic(targetGroup.topicId);
     await this.requireEligible(targetTopic, student);
 
-    const existingMembership = await this.prisma.registrationGroupMember.findFirst({
-      where: {
-        studentId: student.id,
-        semesterId: targetGroup.semesterId,
-        status: GroupMemberStatus.ACCEPTED,
-        group: { status: { not: RegistrationGroupStatus.REJECTED } },
-      },
-      include: {
-        group: {
-          select: GROUP_SELECT,
+    const existingMembership =
+      await this.prisma.registrationGroupMember.findFirst({
+        where: {
+          studentId: student.id,
+          semesterId: targetGroup.semesterId,
+          status: GroupMemberStatus.ACCEPTED,
+          group: { status: { not: RegistrationGroupStatus.REJECTED } },
         },
-      },
-    });
+        include: {
+          group: {
+            select: GROUP_SELECT,
+          },
+        },
+      });
 
     if (existingMembership) {
       await this.phases.requireCanLeave(existingMembership.group.topic.roundId);
@@ -931,7 +936,10 @@ export class RegistrationGroupsService {
         const oldGroup = existingMembership.group;
         const oldAcceptedMembers = oldGroup.members;
 
-        if (oldGroup.leaderId === student.id && oldAcceptedMembers.length <= 1) {
+        if (
+          oldGroup.leaderId === student.id &&
+          oldAcceptedMembers.length <= 1
+        ) {
           // Nhóm 1 người -> giải tán nhóm cũ để trả đề tài lại danh sách
           await tx.registrationGroupMember.updateMany({
             where: { groupId: oldGroup.id, status: GroupMemberStatus.ACCEPTED },
@@ -962,7 +970,9 @@ export class RegistrationGroupsService {
 
       await this.syncStatus(tx, groupId, seats.capacity);
 
-      const leaderMember = groupRow.members.find((m) => m.studentId === groupRow.leaderId);
+      const leaderMember = groupRow.members.find(
+        (m) => m.studentId === groupRow.leaderId,
+      );
       return {
         leaderUserId: leaderMember?.student.user.id ?? null,
         topicTitle: groupRow.topic.title,
@@ -1053,9 +1063,7 @@ export class RegistrationGroupsService {
         }
 
         if (!group.openForJoin) {
-          throw new ConflictException(
-            'Nhóm đã khóa nhận thành viên mới.',
-          );
+          throw new ConflictException('Nhóm đã khóa nhận thành viên mới.');
         }
 
         const seats = seatBreakdown(group);
@@ -1213,7 +1221,9 @@ export class RegistrationGroupsService {
     }
 
     if (group.leaderId !== studentId) {
-      throw new ForbiddenException('Chỉ nhóm trưởng mới có quyền thực hiện thao tác này.');
+      throw new ForbiddenException(
+        'Chỉ nhóm trưởng mới có quyền thực hiện thao tác này.',
+      );
     }
 
     return group;
@@ -1249,7 +1259,9 @@ export class RegistrationGroupsService {
     // either way, and distinguishing them would tell a stranger holding a stale
     // link that it was once real.
     if (!group || group.status === RegistrationGroupStatus.REJECTED) {
-      throw new NotFoundException('Liên kết mời tham gia nhóm không còn hiệu lực.');
+      throw new NotFoundException(
+        'Liên kết mời tham gia nhóm không còn hiệu lực.',
+      );
     }
 
     return group;
@@ -1267,9 +1279,7 @@ export class RegistrationGroupsService {
     await this.requireNoExistingGroup(student.id, group.semesterId);
 
     if (!group.openForJoin) {
-      throw new ConflictException(
-        'Nhóm đã khóa nhận thành viên mới.',
-      );
+      throw new ConflictException('Nhóm đã khóa nhận thành viên mới.');
     }
 
     const seats = seatBreakdown(group);
@@ -1319,9 +1329,7 @@ export class RegistrationGroupsService {
     if (!topic) throw new NotFoundException('Không tìm thấy đề tài.');
 
     if (topic.status !== TopicStatus.OPEN) {
-      throw new ConflictException(
-        'Đề tài hiện chưa mở đăng ký.',
-      );
+      throw new ConflictException('Đề tài hiện chưa mở đăng ký.');
     }
 
     return topic;

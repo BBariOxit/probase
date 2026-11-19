@@ -3,6 +3,9 @@ import { createZodDto } from 'nestjs-zod';
 
 export const QueryLecturersSchema = z.object({
   q: z.string().trim().min(1).max(100).optional(),
+  majorId: z.coerce.number().int().positive().optional(),
+  academicTitle: z.string().trim().min(1).max(50).optional(),
+  availability: z.enum(['ALL', 'AVAILABLE', 'FULL']).default('ALL'),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });

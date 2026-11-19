@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   RegistrationGroupStatus,
   RoundPhase,
@@ -61,13 +61,12 @@ export class MentoringLoadService {
     return lookup(lecturer);
   }
 
-  async requireRoomForOneMore(
-    lecturer: Quota,
-    semesterId: number,
-  ): Promise<void> {
+  requireRoomForOneMore(_lecturer: Quota, _semesterId: number): Promise<void> {
+    void _lecturer;
+    void _semesterId;
     // Không giới hạn cứng hạn mức hướng dẫn khi giảng viên nhận đề xuất từ sinh viên.
     // Số lượng nhóm hướng dẫn hoàn toàn phụ thuộc vào số lượng đề tài do Bộ môn phê duyệt.
-    return;
+    return Promise.resolve();
   }
 
   async activeSemesterId(): Promise<number | undefined> {

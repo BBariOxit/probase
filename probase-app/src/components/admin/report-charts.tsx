@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import {
   Bar,
   BarChart,
@@ -160,6 +160,16 @@ export function ReportKpiGrid({ data }: { data: FacultyReport }) {
   );
 }
 
+const emptySubscribe = () => () => {};
+
+function useIsMounted() {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
+}
+
 /* ── 2A. Biểu đồ Cân đối Cung – Cầu ── */
 export function SupplyDemandChart({
   rounds,
@@ -170,8 +180,7 @@ export function SupplyDemandChart({
   majors: MajorReportRow[];
   isFilteredRound: boolean;
 }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useIsMounted();
 
   const data = useMemo(() => {
     if (isFilteredRound) {

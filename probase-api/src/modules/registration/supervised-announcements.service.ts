@@ -244,4 +244,3 @@ function formatLecturerDisplay(
   }
   return `${cleanTitle} ${cleanName}`;
 }
-

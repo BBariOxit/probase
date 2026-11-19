@@ -260,7 +260,8 @@ export class UsersService {
       },
     });
 
-    if (!user) throw new NotFoundException(`Không tìm thấy người dùng mã #${id}`);
+    if (!user)
+      throw new NotFoundException(`Không tìm thấy người dùng mã #${id}`);
 
     return user;
   }
@@ -807,7 +808,9 @@ export class UsersService {
     const user = await this.findOne(id);
 
     if (!user.isActive) {
-      throw new ConflictException(`Tài khoản #${id} đã bị vô hiệu hóa trước đó.`);
+      throw new ConflictException(
+        `Tài khoản #${id} đã bị vô hiệu hóa trước đó.`,
+      );
     }
 
     await this.prisma.$transaction(async (tx) => {

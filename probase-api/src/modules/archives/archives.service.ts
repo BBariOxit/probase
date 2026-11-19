@@ -9,7 +9,16 @@ export class ArchivesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(query: QueryArchivesDto) {
-    const { semesterId, projectTypeId, majorId, status, verified, q, page = 1, limit = 20 } = query;
+    const {
+      semesterId,
+      projectTypeId,
+      majorId,
+      status,
+      verified,
+      q,
+      page = 1,
+      limit = 20,
+    } = query;
     const skip = (page - 1) * limit;
 
     const andConditions: Prisma.TopicWhereInput[] = [];
@@ -317,7 +326,10 @@ export class ArchivesService {
       const activeGroup = topic.registrationGroups[0];
       const members = activeGroup?.members ?? [];
       const studentTexts = members
-        .map((m) => `${m.student.fullName} (${m.student.studentCode} - ${m.student.class || 'N/A'})`)
+        .map(
+          (m) =>
+            `${m.student.fullName} (${m.student.studentCode} - ${m.student.class || 'N/A'})`,
+        )
         .join('\n');
 
       const gradesMap = new Map(
@@ -329,7 +341,9 @@ export class ArchivesService {
           const g = gradesMap.get(m.student.id);
           return g?.finalGradeNum !== null && g?.finalGradeNum !== undefined
             ? `${g.finalGradeNum}`
-            : (m.mentorGrade ? `${m.mentorGrade}` : 'Chưa có');
+            : m.mentorGrade
+              ? `${m.mentorGrade}`
+              : 'Chưa có';
         })
         .join('\n');
 
@@ -362,11 +376,15 @@ export class ArchivesService {
         students: studentTexts || 'Chưa có sinh viên',
         grades: gradeTexts || '-',
         letters: letterTexts || '-',
-        outline: activeGroup?.outline?.attachmentUrl ? 'Đã nộp M03' : 'Chưa nộp',
+        outline: activeGroup?.outline?.attachmentUrl
+          ? 'Đã nộp M03'
+          : 'Chưa nộp',
         thesis: archive?.thesisUrl || 'Chưa nộp',
         source: archive?.sourceUrl || 'Chưa nộp',
         db: archive?.databaseUrl || 'Chưa nộp',
-        verified: archive?.isVerifiedByAcademic ? 'Đã nghiệm thu' : 'Chưa nghiệm thu',
+        verified: archive?.isVerifiedByAcademic
+          ? 'Đã nghiệm thu'
+          : 'Chưa nghiệm thu',
       });
 
       row.alignment = { vertical: 'middle', wrapText: true };

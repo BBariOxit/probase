@@ -262,6 +262,11 @@ export interface TopicDetail extends TopicAvailability {
   roundPhase: RoundPhase;
 
   isRegistrationOpen: boolean;
+  attachments?: ProposalAttachment[];
+  sourceProposal?: {
+    studentId?: number;
+    attachments?: ProposalAttachment[];
+  } | null;
 }
 
 export interface DepartmentReviewInput {
@@ -437,6 +442,12 @@ export interface UpdateMyProfileInput {
   researchInterests?: string | null;
 }
 
+export interface LecturerTopicStats {
+  currentCount: number;
+  openCount: number;
+  pastCount: number;
+}
+
 export interface PublicLecturer extends LecturerDirectoryEntry {
   bio: string | null;
   email: string | null;
@@ -445,11 +456,16 @@ export interface PublicLecturer extends LecturerDirectoryEntry {
 
 export interface LecturerDirectoryEntry {
   id: number;
+  lecturerCode?: string | null;
   fullName: string;
   academicTitle: string | null;
   researchInterests: string | null;
+  major?: { id: number; name: string; code: string } | null;
+  isHeadOfDepartment?: boolean;
+  isHomeroomTeacher?: boolean;
   avatarUrl: string | null;
   mentoring: MentoringLoad;
+  topicStats?: LecturerTopicStats;
 }
 
 export interface AllocationDesk {
