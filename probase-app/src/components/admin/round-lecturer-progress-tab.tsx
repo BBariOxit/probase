@@ -193,9 +193,10 @@ export function RoundLecturerProgressTab({
     }
   }
 
+  const lecturerProgress = capacity?.lecturerProgress;
   const filteredLecturers = useMemo(() => {
-    if (!capacity?.lecturerProgress) return [];
-    return capacity.lecturerProgress.filter((lecturer) => {
+    if (!lecturerProgress) return [];
+    return lecturerProgress.filter((lecturer) => {
       if (
         search.trim() &&
         !lecturer.fullName.toLowerCase().includes(search.toLowerCase().trim()) &&
@@ -214,7 +215,7 @@ export function RoundLecturerProgressTab({
       }
       return true;
     });
-  }, [capacity?.lecturerProgress, search, majorFilter, statusFilter]);
+  }, [lecturerProgress, search, majorFilter, statusFilter]);
 
   if (isRoundsPending) {
     return (

@@ -185,9 +185,15 @@ export default function LecturerTopicReviewsPage() {
 
             <Select
               value={filterStatus}
-              onValueChange={(val: any) => {
-                setFilterStatus(val);
-                setPage(1);
+              onValueChange={(val) => {
+                if (
+                  val === 'PENDING_DEPARTMENT' ||
+                  val === 'APPROVED' ||
+                  val === 'ALL'
+                ) {
+                  setFilterStatus(val);
+                  setPage(1);
+                }
               }}
             >
               <SelectTrigger className="w-44">

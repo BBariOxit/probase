@@ -16,7 +16,7 @@ import {
   Target,
   Users,
 } from 'lucide-react';
-import type { TopicDetail } from '@/lib/api/types';
+import type { ProposalAttachment, TopicDetail } from '@/lib/api/types';
 import { useSession } from '@/lib/auth/session';
 import { useMyProfile } from '@/lib/api/me';
 import { sanitizeLecturerName } from '@/lib/utils';
@@ -76,10 +76,8 @@ export function TopicDetailView({
     !topic.alreadyInAGroup &&
     (topic.canRegister || topic.canJoin);
 
-  const attachments: any[] =
-    (topic as any).attachments ||
-    (topic as any).sourceProposal?.attachments ||
-    [];
+  const attachments: Array<ProposalAttachment & { name?: string }> =
+    topic.attachments || topic.sourceProposal?.attachments || [];
 
   return (
     <article className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#1e1e1e] shadow-xs overflow-hidden min-w-0 max-w-full break-words">
@@ -202,7 +200,7 @@ export function TopicDetailView({
                 <span>Tài liệu & Hình ảnh đính kèm ({attachments.length})</span>
               </h2>
               <div className="grid gap-2.5 sm:grid-cols-2">
-                {attachments.map((file: any, idx: number) => {
+                {attachments.map((file, idx: number) => {
                   const isImg =
                     file.fileType?.toLowerCase().includes('image') ||
                     /\.(jpg|jpeg|png|webp|gif)$/i.test(

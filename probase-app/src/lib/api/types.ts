@@ -262,6 +262,11 @@ export interface TopicDetail extends TopicAvailability {
   roundPhase: RoundPhase;
 
   isRegistrationOpen: boolean;
+  attachments?: ProposalAttachment[];
+  sourceProposal?: {
+    studentId?: number;
+    attachments?: ProposalAttachment[];
+  } | null;
 }
 
 export interface DepartmentReviewInput {

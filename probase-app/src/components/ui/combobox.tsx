@@ -109,17 +109,17 @@ export function Combobox({
 
   // Khi mở popup: focus vào ô search & reset highlight
   React.useEffect(() => {
-    if (open) {
+    if (!open) return;
+    const timer = setTimeout(() => {
       setSearchQuery('');
       const selectedIdx = filteredOptions.findIndex(
         (opt) => String(opt.value) === String(value),
       );
       setHighlightedIndex(selectedIdx >= 0 ? selectedIdx : 0);
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 50);
-      return () => clearTimeout(timer);
-    }
+      inputRef.current?.focus();
+    }, 0);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   // Cuộn item được highlight vào tầm nhìn khi dùng phím mũi tên

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Loader2, Lock } from 'lucide-react';
 import { ApiError } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
@@ -51,6 +51,7 @@ export function CreateUserDialog({ onClose }: { onClose: () => void }) {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [code, setCode] = useState('');
+  const [isCodeEdited, setIsCodeEdited] = useState(false);
   const [className, setClassName] = useState('');
   const [majorId, setMajorId] = useState<number | null>(null);
   const [academicTitle, setAcademicTitle] = useState('');
@@ -64,32 +65,27 @@ export function CreateUserDialog({ onClose }: { onClose: () => void }) {
   // Track if user manually modified class name
   const isClassManuallyEdited = useRef(false);
 
-  // When role changes to LECTURER, auto-fill next lecturer code
-  useEffect(() => {
-    if (role === 'LECTURER') {
-      refetchNextCode().then((res) => {
+  const effectiveCode =
+    role === 'LECTURER' && !isCodeEdited
+      ? code || nextLecturerCodeData?.nextCode || ''
+      : code;
+
+  function handleRoleChange(nextRole: Role) {
+    setRole(nextRole);
+    setCode('');
+    setIsCodeEdited(false);
+    setEmail('');
+    if (nextRole === 'STUDENT') {
+      setClassName('');
+      isClassManuallyEdited.current = false;
+    } else if (nextRole === 'LECTURER') {
+      void refetchNextCode().then((res) => {
         if (res.data?.nextCode) {
           setCode(res.data.nextCode);
         }
       });
-      setEmail('');
-    } else if (role === 'STUDENT') {
-      setCode('');
-      setEmail('');
-      setClassName('');
-      isClassManuallyEdited.current = false;
-    } else {
-      setCode('');
-      setEmail('');
     }
-  }, [role, refetchNextCode]);
-
-  // Sync lecturer code whenever fetched data arrives
-  useEffect(() => {
-    if (role === 'LECTURER' && nextLecturerCodeData?.nextCode && !code) {
-      setCode(nextLecturerCodeData.nextCode);
-    }
-  }, [role, nextLecturerCodeData, code]);
+  }
 
   // Handle student code change: auto-derive email and class prefix
   function handleStudentCodeChange(val: string) {
@@ -107,7 +103,7 @@ export function CreateUserDialog({ onClose }: { onClose: () => void }) {
   const needsProfile = role !== 'ADMIN';
   const ready =
     email.trim() !== '' &&
-    (!needsProfile || (fullName.trim() !== '' && code.trim() !== ''));
+    (!needsProfile || (fullName.trim() !== '' && effectiveCode.trim() !== ''));
 
   async function submit() {
     setError(null);
@@ -117,7 +113,7 @@ export function CreateUserDialog({ onClose }: { onClose: () => void }) {
           ? {
               role: 'STUDENT',
               email: email.trim(),
-              studentCode: code.trim(),
+              studentCode: effectiveCode.trim(),
               fullName: normalizeFullName(fullName),
               ...(className.trim() && { class: className.trim() }),
               ...(majorId !== null && { majorId }),
@@ -126,7 +122,7 @@ export function CreateUserDialog({ onClose }: { onClose: () => void }) {
             ? {
                 role: 'LECTURER',
                 email: email.trim(),
-                lecturerCode: code.trim(),
+                lecturerCode: effectiveCode.trim(),
                 fullName: normalizeFullName(fullName),
                 ...(academicTitle.trim() && {
                   academicTitle: academicTitle.trim(),
@@ -160,7 +156,7 @@ export function CreateUserDialog({ onClose }: { onClose: () => void }) {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="new-role">Vai trò</Label>
-              <Select value={role} onValueChange={(val) => setRole(val as Role)}>
+              <Select value={role} onValueChange={(val) => handleRoleChange(val as Role)}>
                 <SelectTrigger id="new-role" className={`w-full ${inputStyle}`}>
                   <SelectValue>{(val) => ROLE_LABEL[val as Role]}</SelectValue>
                 </SelectTrigger>
@@ -194,8 +190,11 @@ export function CreateUserDialog({ onClose }: { onClose: () => void }) {
                 <Input
                   id="new-code"
                   placeholder="GV001"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
+                  value={effectiveCode}
+                  onChange={(e) => {
+                    setIsCodeEdited(true);
+                    setCode(e.target.value);
+                  }}
                   className={inputStyle}
                 />
               </div>

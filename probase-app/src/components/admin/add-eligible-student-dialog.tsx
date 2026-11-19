@@ -63,7 +63,9 @@ export function AddEligibleStudentDialog({
   const isClassManuallyEdited = useRef(false);
   const isEmailManuallyEdited = useRef(false);
 
-  useEffect(() => {
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) {
       const initialRound =
         defaultRoundId && defaultRoundId > 0
@@ -77,10 +79,15 @@ export function AddEligibleStudentDialog({
       setMajorId(null);
       setNote('');
       setError(null);
+    }
+  }
+
+  useEffect(() => {
+    if (open) {
       isClassManuallyEdited.current = false;
       isEmailManuallyEdited.current = false;
     }
-  }, [open, defaultRoundId, rounds]);
+  }, [open]);
 
   function handleStudentCodeChange(val: string) {
     const cleanCode = val.trim();

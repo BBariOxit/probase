@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Copy, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -53,15 +53,18 @@ export function CloneTopicDialog({
   const [projectTypeId, setProjectTypeId] = useState<number>(0);
   const [majorId, setMajorId] = useState<number>(0);
   const [maxStudents, setMaxStudents] = useState<number>(2);
+  const [prevSyncKey, setPrevSyncKey] = useState('');
 
-  useEffect(() => {
-    if (topic && open) {
+  const syncKey = open && topic ? String(topic.id) : '';
+  if (syncKey !== prevSyncKey) {
+    setPrevSyncKey(syncKey);
+    if (open && topic) {
       setTitle(topic.title || '');
       setProjectTypeId(topic.projectType?.id ?? 0);
       setMajorId(topic.majorId ?? topic.major?.id ?? 0);
       setMaxStudents(topic.maxStudents ?? 2);
     }
-  }, [topic, open]);
+  }
 
   if (!topic) return null;
 

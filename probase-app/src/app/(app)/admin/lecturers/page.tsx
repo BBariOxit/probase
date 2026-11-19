@@ -179,8 +179,10 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
       });
       toast.success(`Đã cập nhật vai trò và quyền hạn cho ${lecturer.fullName}.`);
       setOpen(false);
-    } catch (err: any) {
-      toast.error(err?.message || 'Không thể cập nhật vai trò.');
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error ? err.message : 'Không thể cập nhật vai trò.',
+      );
     }
   };
 
