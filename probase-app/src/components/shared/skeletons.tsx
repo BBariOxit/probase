@@ -86,9 +86,8 @@ export function ProfileSkeleton() {
             <Skeleton className="h-8 w-28" />
           </div>
         </div>
-        <div className="flex items-center justify-between border-t border-border/60 pt-3.5">
+        <div className="flex items-center gap-2 border-t border-border/60 pt-3.5">
           <Skeleton className="h-8 w-24" />
-          <Skeleton className="h-3 w-36" />
         </div>
       </div>
 
@@ -102,10 +101,7 @@ export function ProfileSkeleton() {
           </div>
         </div>
         <div className="pt-4 border-t space-y-4">
-          <div className="space-y-1.5">
-            <Skeleton className="h-4 w-40" />
-            <Skeleton className="h-3 w-72" />
-          </div>
+          <Skeleton className="h-4 w-32" />
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Skeleton className="h-3 w-24" />

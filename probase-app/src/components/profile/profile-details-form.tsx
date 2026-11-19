@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { useUpdateMyProfile } from '@/lib/api/me';
 import type { MyProfile, UpdateMyProfileInput } from '@/lib/api/types';
 import { extractErrorMessage } from '@/lib/api/error';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +18,7 @@ interface Draft {
   researchInterests: string;
 }
 
-const ACADEMIC_TITLE_PRESETS = ['ThS.', 'TS.', 'PGS.TS.', 'GS.TS.'] as const;
+const ACADEMIC_TITLE_OPTIONS = ['ThS.', 'TS.', 'PGS.TS.', 'GS.TS.'] as const;
 const MAX_RESEARCH_LEN = 1000;
 const MAX_BIO_LEN = 2000;
 
@@ -96,25 +95,10 @@ export function ProfileDetailsForm({ profile }: { profile: MyProfile }) {
 
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
-      <div className="space-y-1">
-        <h2 className="text-sm font-medium">Hồ sơ công khai & liên hệ</h2>
-        <p className="text-xs text-muted-foreground">
-          {isLecturer
-            ? 'Thông tin dưới đây giúp sinh viên tìm hiểu hướng dẫn và liên hệ khi thực hiện đề tài.'
-            : 'Thông tin giúp giảng viên hướng dẫn và thành viên trong nhóm liên hệ với bạn.'}
-        </p>
-      </div>
+      <h2 className="text-sm font-medium">Hồ sơ & liên hệ</h2>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field
-          label="Số điện thoại"
-          htmlFor="phone"
-          hint={
-            isLecturer
-              ? 'Chỉ hiển thị với sinh viên thuộc nhóm bạn hướng dẫn.'
-              : 'Hiển thị với giảng viên hướng dẫn và thành viên trong nhóm.'
-          }
-        >
+        <Field label="Số điện thoại" htmlFor="phone">
           <Input
             id="phone"
             value={draft.phone}
@@ -129,42 +113,23 @@ export function ProfileDetailsForm({ profile }: { profile: MyProfile }) {
           <Field label="Học vị" htmlFor="academicTitle">
             <Input
               id="academicTitle"
+              list="academic-title-options"
               value={draft.academicTitle}
               onChange={(event) => set('academicTitle', event.target.value)}
               placeholder="TS., PGS.TS., ThS."
               maxLength={100}
             />
-            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-              {ACADEMIC_TITLE_PRESETS.map((preset) => {
-                const active = draft.academicTitle.trim() === preset;
-                return (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => set('academicTitle', preset)}
-                    className={cn(
-                      'cursor-pointer rounded-md border px-2 py-0.5 text-xs transition-colors',
-                      active
-                        ? 'border-primary/40 bg-primary/10 font-medium text-primary'
-                        : 'border-border bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground',
-                    )}
-                  >
-                    {preset}
-                  </button>
-                );
-              })}
-            </div>
+            <datalist id="academic-title-options">
+              {ACADEMIC_TITLE_OPTIONS.map((title) => (
+                <option key={title} value={title} />
+              ))}
+            </datalist>
           </Field>
         )}
       </div>
 
       {isLecturer && (
-        <Field
-          label="Hướng nghiên cứu"
-          htmlFor="researchInterests"
-          counter={`${draft.researchInterests.length}/${MAX_RESEARCH_LEN}`}
-          hint="Ngăn cách các chủ đề bằng dấu phẩy hoặc xuống dòng."
-        >
+        <Field label="Hướng nghiên cứu" htmlFor="researchInterests">
           <Textarea
             id="researchInterests"
             value={draft.researchInterests}
@@ -176,11 +141,7 @@ export function ProfileDetailsForm({ profile }: { profile: MyProfile }) {
         </Field>
       )}
 
-      <Field
-        label="Giới thiệu"
-        htmlFor="bio"
-        counter={`${draft.bio.length}/${MAX_BIO_LEN}`}
-      >
+      <Field label="Giới thiệu" htmlFor="bio">
         <Textarea
           id="bio"
           value={draft.bio}
@@ -219,28 +180,16 @@ export function ProfileDetailsForm({ profile }: { profile: MyProfile }) {
 function Field({
   label,
   htmlFor,
-  counter,
-  hint,
   children,
 }: {
   label: string;
   htmlFor: string;
-  counter?: string;
-  hint?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between gap-2">
-        <Label htmlFor={htmlFor}>{label}</Label>
-        {counter && (
-          <span className="font-mono text-[11px] text-muted-foreground">
-            {counter}
-          </span>
-        )}
-      </div>
+      <Label htmlFor={htmlFor}>{label}</Label>
       {children}
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }

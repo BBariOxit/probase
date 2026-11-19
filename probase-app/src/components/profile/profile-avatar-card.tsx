@@ -38,9 +38,6 @@ export function ProfileAvatarCard({ profile }: { profile: MyProfile }) {
   const code =
     profile.student?.studentCode ?? profile.lecturer?.lecturerCode ?? null;
 
-  const departmentOrMajor =
-    profile.lecturer?.major?.name ?? profile.student?.major?.name ?? null;
-
   function choose(file: File | undefined) {
     if (!file) return;
 
@@ -99,19 +96,9 @@ export function ProfileAvatarCard({ profile }: { profile: MyProfile }) {
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-muted-foreground">
-              <span className="truncate">{profile.email}</span>
-              {departmentOrMajor && (
-                <>
-                  <span aria-hidden="true">·</span>
-                  <span className="truncate">
-                    {profile.lecturer
-                      ? `Bộ môn ${departmentOrMajor}`
-                      : departmentOrMajor}
-                  </span>
-                </>
-              )}
-            </div>
+            <p className="truncate text-sm text-muted-foreground">
+              {profile.email}
+            </p>
           </div>
         </div>
 
@@ -139,49 +126,43 @@ export function ProfileAvatarCard({ profile }: { profile: MyProfile }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3.5">
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            ref={fileInput}
-            type="file"
-            accept={ACCEPTED}
-            className="sr-only"
-            onChange={(event) => {
-              choose(event.target.files?.[0]);
-              event.target.value = '';
-            }}
-          />
+      <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-3.5">
+        <input
+          ref={fileInput}
+          type="file"
+          accept={ACCEPTED}
+          className="sr-only"
+          onChange={(event) => {
+            choose(event.target.files?.[0]);
+            event.target.value = '';
+          }}
+        />
 
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={busy}
+          onClick={() => fileInput.current?.click()}
+        >
+          <Camera className="size-3.5" />
+          {profile.avatarUrl ? 'Đổi ảnh' : 'Tải ảnh lên'}
+        </Button>
+
+        {profile.avatarUrl && (
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             disabled={busy}
-            onClick={() => fileInput.current?.click()}
+            onClick={() => {
+              setRejected(null);
+              remove.mutate(undefined);
+            }}
+            className="text-muted-foreground hover:text-destructive"
           >
-            <Camera className="size-3.5" />
-            {profile.avatarUrl ? 'Đổi ảnh' : 'Tải ảnh lên'}
+            <Trash2 className="size-3.5" />
+            Xoá ảnh
           </Button>
-
-          {profile.avatarUrl && (
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={busy}
-              onClick={() => {
-                setRejected(null);
-                remove.mutate(undefined);
-              }}
-              className="text-muted-foreground hover:text-destructive"
-            >
-              <Trash2 className="size-3.5" />
-              Xoá ảnh
-            </Button>
-          )}
-        </div>
-
-        <span className="text-xs text-muted-foreground">
-          PNG, JPG, WebP · Tối đa 2MB
-        </span>
+        )}
       </div>
 
       {error && <p className="text-xs text-destructive">{error}</p>}
