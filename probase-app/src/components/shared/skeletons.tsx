@@ -71,44 +71,58 @@ export function ListSkeleton({
 
 export function ProfileSkeleton() {
   return (
-    <div className="mx-auto grid max-w-5xl items-start gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
-      <div className="space-y-4">
-        <div className="rounded-xl border bg-card p-5 space-y-4">
-          <div className="flex items-center gap-4">
-            <Skeleton className="size-16 rounded-full shrink-0" />
+    <div className="mx-auto max-w-3xl space-y-5">
+      <div className="rounded-xl border bg-card p-5 space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-center gap-4 flex-1">
+            <Skeleton className="size-16 rounded-full shrink-0 sm:size-[4.5rem]" />
             <div className="space-y-2 flex-1">
-              <Skeleton className="h-5 w-2/3" />
-              <Skeleton className="h-3 w-1/2" />
+              <Skeleton className="h-5 w-48" />
+              <Skeleton className="h-3.5 w-64" />
             </div>
           </div>
           <div className="flex gap-2">
-            <Skeleton className="h-8 w-24" />
-            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-8 w-28" />
           </div>
         </div>
-        <div className="rounded-xl border bg-card p-5 space-y-3">
-          <Skeleton className="h-4 w-1/4" />
-          <Skeleton className="h-9 w-32" />
+        <div className="flex items-center justify-between border-t border-border/60 pt-3.5">
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-3 w-36" />
         </div>
       </div>
-      <div className="rounded-xl border bg-card p-5 space-y-4">
-        <Skeleton className="h-4 w-1/3" />
-        <Skeleton className="h-3 w-2/3" />
-        <Skeleton className="h-3 w-1/2" />
-        <div className="pt-2 border-t space-y-4">
+
+      <div className="rounded-xl border bg-card p-5 space-y-5">
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-32" />
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+        <div className="pt-4 border-t space-y-4">
+          <div className="space-y-1.5">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-3 w-72" />
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Skeleton className="h-3 w-1/3" />
+              <Skeleton className="h-3 w-24" />
               <Skeleton className="h-9 w-full" />
             </div>
             <div className="space-y-2">
-              <Skeleton className="h-3 w-1/3" />
+              <Skeleton className="h-3 w-20" />
               <Skeleton className="h-9 w-full" />
             </div>
           </div>
           <div className="space-y-2">
-            <Skeleton className="h-3 w-1/4" />
-            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-3 w-28" />
+            <Skeleton className="h-16 w-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-24 w-full" />
           </div>
           <Skeleton className="h-9 w-28" />
         </div>
