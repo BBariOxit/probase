@@ -5,7 +5,7 @@ RUN apk add --no-cache libc6-compat
 # Development
 FROM base AS development
 ENV NODE_ENV=development \
-    PORT=3000 \
+    PORT=3002 \
     HOSTNAME="0.0.0.0" \
     WATCHPACK_POLLING=true
 
@@ -13,7 +13,7 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 
-EXPOSE 3000
+EXPOSE 3002
 CMD ["npm", "run", "dev"]
 
 # Build
@@ -28,7 +28,7 @@ RUN npm run build
 FROM node:22-alpine AS production
 WORKDIR /app
 ENV NODE_ENV=production \
-    PORT=3000 \
+    PORT=3002 \
     HOSTNAME="0.0.0.0" \
     NEXT_TELEMETRY_DISABLED=1
 
@@ -39,5 +39,5 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
-EXPOSE 3000
+EXPOSE 3002
 CMD ["node", "server.js"]
