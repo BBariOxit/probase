@@ -31,10 +31,10 @@ const CONFIGURABLE_ROLES: Array<{
   code: 'TTBM' | 'GVCN' | 'LECTURER';
   label: string;
 }> = [
-  { code: 'TTBM', label: 'Tổ trưởng Bộ môn' },
-  { code: 'GVCN', label: 'GV Chủ nhiệm' },
-  { code: 'LECTURER', label: 'Giảng viên' },
-];
+    { code: 'TTBM', label: 'Tổ trưởng Bộ môn' },
+    { code: 'GVCN', label: 'GV Chủ nhiệm' },
+    { code: 'LECTURER', label: 'Giảng viên' },
+  ];
 
 function getMajorAbbreviation(major?: {
   name?: string | null;
@@ -213,8 +213,8 @@ export function RolePermissionMatrix() {
     const existing = groupedDelegations.find((g) => String(g.userId) === uid);
     return existing
       ? existing.permissions
-          .map((p) => p.code)
-          .filter((code) => !inherited.has(code))
+        .map((p) => p.code)
+        .filter((code) => !inherited.has(code))
       : [];
   };
 
@@ -548,11 +548,10 @@ export function RolePermissionMatrix() {
                   return (
                     <label
                       key={p.code}
-                      className={`flex items-start gap-3 text-sm text-slate-900 dark:text-zinc-100 p-2 rounded-md select-none transition-colors ${
-                        isFromRole
+                      className={`flex items-start gap-3 text-sm text-slate-900 dark:text-zinc-100 p-2 rounded-md select-none transition-colors ${isFromRole
                           ? 'opacity-75 cursor-not-allowed'
                           : 'cursor-pointer hover:bg-slate-100/70 dark:hover:bg-muted/40'
-                      }`}
+                        }`}
                     >
                       <Checkbox
                         checked={isChecked}
