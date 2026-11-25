@@ -77,7 +77,7 @@ export function AutoAllocationDialog({
     [preview, checkedIds],
   );
 
-  if (!desk.canPlace || desk.students.length === 0) return null;
+  if (desk.students.length === 0) return null;
 
   function openDialog() {
     setError(null);
@@ -405,31 +405,40 @@ export function AutoAllocationDialog({
             )}
           </div>
 
-          <DialogFooter className="pt-2 border-t border-slate-200 dark:border-neutral-800">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={busy}
-              onClick={() => setOpen(false)}
-              className="cursor-pointer"
-            >
-              Đóng
-            </Button>
-            {preview && (
+          <DialogFooter className="pt-2 border-t border-slate-200 dark:border-neutral-800 sm:items-center sm:justify-between">
+            {!desk.canPlace && desk.blockedReason ? (
+              <p className="text-xs text-muted-foreground flex-1">
+                {desk.blockedReason}
+              </p>
+            ) : (
+              <span />
+            )}
+            <div className="flex items-center gap-2">
               <Button
                 type="button"
-                disabled={selectedMatches.length === 0 || busy}
-                onClick={commit}
-                className="gap-1.5 cursor-pointer"
+                variant="outline"
+                disabled={busy}
+                onClick={() => setOpen(false)}
+                className="cursor-pointer"
               >
-                {batchPlace.isPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="size-4" />
-                )}
-                <span>Áp dụng phân bổ ({selectedMatches.length} SV)</span>
+                Đóng
               </Button>
-            )}
+              {preview && (
+                <Button
+                  type="button"
+                  disabled={!desk.canPlace || selectedMatches.length === 0 || busy}
+                  onClick={commit}
+                  className="gap-1.5 cursor-pointer"
+                >
+                  {batchPlace.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="size-4" />
+                  )}
+                  <span>Áp dụng phân bổ ({selectedMatches.length} SV)</span>
+                </Button>
+              )}
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

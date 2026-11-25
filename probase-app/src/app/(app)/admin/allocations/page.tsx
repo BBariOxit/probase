@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import {
   ArrowRight,
   CheckCircle2,
-  Info,
   Loader2,
   Search,
   TriangleAlert,
@@ -318,13 +317,6 @@ function Desk({
     <div className="space-y-4">
       <Summary desk={desk} />
 
-      {desk.blockedReason && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-amber-300/60 dark:border-amber-700/60 bg-amber-50/70 dark:bg-amber-950/25 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
-          <Info className="size-4 shrink-0 mt-0.5" />
-          <span>{desk.blockedReason}</span>
-        </div>
-      )}
-
       {batchPlace.error && (
         <p className="rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-3 text-sm text-destructive font-medium">
           {batchPlace.error.message}
@@ -358,19 +350,19 @@ function Desk({
                           setStudentMajorFilter(value ?? 'ALL')
                         }
                       >
-                        <SelectTrigger className="w-28 h-8 text-xs">
+                        <SelectTrigger className="w-36 h-8 text-xs">
                           <SelectValue>
                             {(value) =>
                               value === 'ALL'
-                                ? 'Ngành'
+                                ? 'Chuyên ngành'
                                 : (majorOptions.find(
                                     (m) => String(m.id) === value,
-                                  )?.code ?? 'Ngành')
+                                  )?.code ?? 'Chuyên ngành')
                             }
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="ALL">Mọi ngành</SelectItem>
+                          <SelectItem value="ALL">Mọi chuyên ngành</SelectItem>
                           {majorOptions.map((major) => (
                             <SelectItem key={major.id} value={String(major.id)}>
                               {major.code}
@@ -501,19 +493,19 @@ function Desk({
                           setTopicMajorFilter(value ?? 'ALL')
                         }
                       >
-                        <SelectTrigger className="w-32 h-8 text-xs">
+                        <SelectTrigger className="w-40 h-8 text-xs">
                           <SelectValue>
                             {(value) =>
                               value === 'ALL'
-                                ? 'Mọi ngành'
+                                ? 'Mọi chuyên ngành'
                                 : (majorOptions.find(
                                     (m) => String(m.id) === value,
-                                  )?.code ?? 'Ngành')
+                                  )?.code ?? 'Chuyên ngành')
                             }
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="ALL">Mọi ngành</SelectItem>
+                          <SelectItem value="ALL">Mọi chuyên ngành</SelectItem>
                           {majorOptions.map((major) => (
                             <SelectItem key={major.id} value={String(major.id)}>
                               {major.code}
@@ -641,41 +633,62 @@ function Desk({
                       </span>
                     </div>
 
-                    {/* Nút Xếp vào */}
-                    <Button
-                      size="sm"
-                      variant={
-                        selectedCount > 0 && enoughSeats && !majorFits
-                          ? 'outline'
-                          : 'default'
-                      }
-                      className={cn(
-                        'shrink-0 h-8 font-semibold gap-1.5 cursor-pointer shadow-2xs disabled:opacity-50',
-                        selectedCount > 0 && enoughSeats && !majorFits
-                          ? 'border-amber-400 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30'
-                          : 'bg-primary text-white hover:bg-primary/90',
-                      )}
-                      disabled={
-                        !desk.canPlace ||
-                        selectedCount === 0 ||
-                        !enoughSeats ||
-                        batchPlace.isPending
-                      }
-                      onClick={() => assign(topic)}
-                    >
-                      {batchPlace.isPending && pendingTopicId === topic.id ? (
-                        <Loader2 className="size-3.5 animate-spin" />
-                      ) : (
-                        <ArrowRight className="size-3.5" />
-                      )}
-                      <span>
-                        {selectedCount > 0 && !enoughSeats
-                          ? `Còn ${topic.freeSeats} chỗ`
-                          : selectedCount > 1
-                            ? `Xếp (${selectedCount})`
-                            : 'Xếp vào'}
-                      </span>
-                    </Button>
+                    {/* Nút Xếp vào (tooltip nhắc lý do khi đợt chưa mở phân bổ) */}
+                    {desk.blockedReason ? (
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={<span className="inline-flex shrink-0" />}
+                        >
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="shrink-0 h-8 font-semibold gap-1.5 shadow-2xs bg-primary text-white disabled:opacity-50"
+                            disabled
+                          >
+                            <ArrowRight className="size-3.5" />
+                            <span>Xếp vào</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" align="end" className="max-w-xs text-xs">
+                          {desk.blockedReason}
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant={
+                          selectedCount > 0 && enoughSeats && !majorFits
+                            ? 'outline'
+                            : 'default'
+                        }
+                        className={cn(
+                          'shrink-0 h-8 font-semibold gap-1.5 cursor-pointer shadow-2xs disabled:opacity-50',
+                          selectedCount > 0 && enoughSeats && !majorFits
+                            ? 'border-amber-400 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+                            : 'bg-primary text-white hover:bg-primary/90',
+                        )}
+                        disabled={
+                          !desk.canPlace ||
+                          selectedCount === 0 ||
+                          !enoughSeats ||
+                          batchPlace.isPending
+                        }
+                        onClick={() => assign(topic)}
+                      >
+                        {batchPlace.isPending && pendingTopicId === topic.id ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <ArrowRight className="size-3.5" />
+                        )}
+                        <span>
+                          {selectedCount > 0 && !enoughSeats
+                            ? `Còn ${topic.freeSeats} chỗ`
+                            : selectedCount > 1
+                              ? `Xếp (${selectedCount})`
+                              : 'Xếp vào'}
+                        </span>
+                      </Button>
+                    )}
                   </li>
                 );
               })}
