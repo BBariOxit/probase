@@ -24,6 +24,7 @@ import { GetUser } from '../auth/decorators/get-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CreateUserSchema } from './dto/create-user.dto';
 import type { CreateUserDto } from './dto/create-user.dto';
+import { BulkUserIdsDto } from './dto/bulk-users.dto';
 import { QueryUsersDto } from './dto/query-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpsertLecturerProfileDto } from './dto/upsert-lecturer-profile.dto';
@@ -171,6 +172,30 @@ export class UsersController {
     file: Express.Multer.File,
   ) {
     return this.usersService.bulkImport(file);
+  }
+
+  @Post('bulk-deactivate')
+  @HttpCode(HttpStatus.OK)
+  bulkDeactivate(
+    @Body() dto: BulkUserIdsDto,
+    @GetUser('id') actorId: number,
+  ) {
+    return this.usersService.bulkDeactivate(dto.userIds, actorId);
+  }
+
+  @Post('bulk-reset-password')
+  @HttpCode(HttpStatus.OK)
+  bulkResetPassword(
+    @Body() dto: BulkUserIdsDto,
+    @GetUser('id') actorId: number,
+  ) {
+    return this.usersService.bulkResetPassword(dto.userIds, actorId);
+  }
+
+  @Post('bulk-delete')
+  @HttpCode(HttpStatus.OK)
+  bulkDelete(@Body() dto: BulkUserIdsDto, @GetUser('id') actorId: number) {
+    return this.usersService.bulkDelete(dto.userIds, actorId);
   }
 
   @Patch(':id')

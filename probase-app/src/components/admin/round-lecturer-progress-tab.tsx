@@ -287,43 +287,35 @@ export function RoundLecturerProgressTab({
         </div>
 
         {capacity && (
-          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-neutral-400">
-            <span>
-              Đề tài đã duyệt:{' '}
+          <div className="flex flex-wrap items-center gap-2.5 text-sm text-slate-600 dark:text-neutral-400">
+            <span title="Số đề tài đã duyệt / ước tính cần thiết">
+              Đã duyệt:{' '}
               <strong className="text-slate-900 dark:text-neutral-100 font-semibold font-mono">
                 {capacity.approvedTopicsCount}
-              </strong>{' '}
-              / ~{capacity.estimatedGroupsNeeded} cần thiết
+              </strong>
+              /~{capacity.estimatedGroupsNeeded}
               {capacity.deficit > 0 ? (
                 <span className="ml-1 text-amber-600 dark:text-amber-400 font-semibold">
-                  (Còn thiếu {capacity.deficit})
+                  (Thiếu {capacity.deficit})
                 </span>
               ) : (
                 <span className="ml-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                  (Đủ mở đợt)
+                  (Đủ mở)
                 </span>
               )}
             </span>
             <span className="text-slate-300 dark:text-neutral-700">•</span>
-            <span>
-              Giảng viên đạt chỉ tiêu:{' '}
+            <span title="Số giảng viên đã đạt chỉ tiêu đề tài của đợt">
+              Đạt chỉ tiêu:{' '}
               <strong className="text-slate-900 dark:text-neutral-100 font-semibold font-mono">
                 {capacity.lecturersMetQuotaCount}
               </strong>
               /{capacity.activeLecturersCount ?? capacity.lecturersCount} GV
               {Boolean(capacity.exemptLecturersCount) && (
                 <span className="ml-1 text-slate-500 dark:text-neutral-400">
-                  ({capacity.exemptLecturersCount} miễn trừ)
+                  ({capacity.exemptLecturersCount} miễn)
                 </span>
               )}
-            </span>
-            <span className="text-slate-300 dark:text-neutral-700">•</span>
-            <span>
-              Chỉ tiêu chung:{' '}
-              <strong className="text-slate-900 dark:text-neutral-100 font-semibold font-mono">
-                {capacity.targetQuota}
-              </strong>{' '}
-              đề tài / GV
             </span>
           </div>
         )}
@@ -645,24 +637,24 @@ export function RoundLecturerProgressTab({
               <div className="rounded-lg border border-slate-300 dark:border-neutral-800 bg-slate-100/80 dark:bg-[#1e1e1e] p-3 text-xs">
                 <div className="grid grid-cols-3 gap-2 text-center divide-x divide-slate-200 dark:divide-neutral-800">
                   <div className="space-y-0.5">
-                    <span className="text-xs text-slate-500 dark:text-neutral-400 block">
-                      SV dự kiến tham gia
+                    <span className="text-xs text-slate-500 dark:text-neutral-400 block whitespace-nowrap">
+                      SV dự kiến
                     </span>
                     <p className="text-sm font-bold text-slate-900 dark:text-neutral-100 font-mono">
                       {capacity.eligibleStudentCount} SV
                     </p>
                   </div>
                   <div className="space-y-0.5 pl-2">
-                    <span className="text-xs text-slate-500 dark:text-neutral-400 block">
-                      Nhu cầu tối thiểu
+                    <span className="text-xs text-slate-500 dark:text-neutral-400 block whitespace-nowrap">
+                      Cần tối thiểu
                     </span>
                     <p className="text-sm font-bold text-slate-900 dark:text-neutral-100 font-mono">
                       ~{calculatedGroupsNeeded} đề tài
                     </p>
                   </div>
                   <div className="space-y-0.5 pl-2">
-                    <span className="text-xs text-slate-500 dark:text-neutral-400 block">
-                      Tổng chỉ tiêu huy động
+                    <span className="text-xs text-slate-500 dark:text-neutral-400 block whitespace-nowrap">
+                      Tổng chỉ tiêu
                     </span>
                     <p className="text-sm font-bold text-slate-900 dark:text-neutral-100 font-mono">
                       ~{capacity.totalTargetQuota ?? totalFromLecturers} đề tài

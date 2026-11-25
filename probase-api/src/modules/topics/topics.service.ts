@@ -25,6 +25,7 @@ import { CloneTopicDto } from './dto/clone-topic.dto';
 import { CreateTopicDto } from './dto/create-topic.dto';
 import { QueryTopicsDto } from './dto/query-topics.dto';
 import { UpdateTopicDto } from './dto/update-topic.dto';
+import { BulkDepartmentReviewDto } from './dto/bulk-topics.dto';
 import { DepartmentReviewDto } from './dto/review-topic.dto';
 import { TopicSimilarityService } from './topic-similarity.service';
 
@@ -833,7 +834,11 @@ export class TopicsService {
     return { message: 'Đã xóa đề tài thành công.' };
   }
 
-  async bulkOpen(semesterId?: number, actorUserId?: number) {
+  async bulkOpen(
+    semesterId?: number,
+    actorUserId?: number,
+    topicIds?: number[],
+  ) {
     // Guard: if a specific semester is provided, it must exist — an invalid id
     // would otherwise silently update zero rows, which is hard to debug.
     if (semesterId !== undefined) {
@@ -843,6 +848,7 @@ export class TopicsService {
     const approvedTopics = await this.prisma.topic.findMany({
       where: {
         ...(semesterId !== undefined && { semesterId }),
+        ...(topicIds?.length && { id: { in: topicIds } }),
         status: TopicStatus.APPROVED,
       },
       select: {
@@ -879,9 +885,270 @@ export class TopicsService {
 
     if (result.count > 0) {
       await this.announceTopicsOpened(approvedTopics, actorUserId);
+      if (actorUserId) {
+        await recordAudit(this.prisma, {
+          userId: actorUserId,
+          action: 'TOPIC_BULK_OPENED',
+          targetTable: 'topics',
+          targetId: semesterId ?? approvedTopics[0].id,
+          newValue: {
+            topicIds: approvedTopics.map((t) => t.id),
+            updated: result.count,
+          },
+        }).catch(() => undefined);
+      }
     }
 
     return { updated: result.count };
+  }
+
+  async bulkClose(topicIds: number[], actorUserId: number) {
+    const openTopics = await this.prisma.topic.findMany({
+      where: {
+        id: { in: topicIds },
+        status: TopicStatus.OPEN,
+      },
+      select: { id: true },
+    });
+
+    if (openTopics.length === 0) {
+      return { updated: 0 };
+    }
+
+    const ids = openTopics.map((t) => t.id);
+    const result = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.topic.updateMany({
+        where: { id: { in: ids }, status: TopicStatus.OPEN },
+        data: { status: TopicStatus.APPROVED },
+      });
+
+      await recordAudit(tx, {
+        userId: actorUserId,
+        action: 'TOPIC_BULK_CLOSED',
+        targetTable: 'topics',
+        targetId: ids[0],
+        newValue: { topicIds: ids, updated: updated.count },
+      });
+
+      return updated;
+    });
+
+    return { updated: result.count };
+  }
+
+  async bulkWithdraw(topicIds: number[], userId: number, role: Role) {
+    const isAdmin = role === Role.ADMIN;
+    const lecturerId = isAdmin
+      ? undefined
+      : await this.requireLecturerProfileId(userId);
+
+    const targets = await this.prisma.topic.findMany({
+      where: {
+        id: { in: topicIds },
+        ...(lecturerId !== undefined && { lecturerId }),
+        status: { in: [TopicStatus.PENDING_DEPARTMENT, TopicStatus.PENDING] },
+        registrationGroups: {
+          none: { status: { not: RegistrationGroupStatus.REJECTED } },
+        },
+      },
+      select: { id: true, status: true },
+    });
+
+    if (targets.length === 0) {
+      return { updated: 0 };
+    }
+
+    const ids = targets.map((t) => t.id);
+    const result = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.topic.updateMany({
+        where: { id: { in: ids } },
+        data: { status: TopicStatus.DRAFT },
+      });
+
+      await recordAudit(tx, {
+        userId,
+        action: 'TOPIC_BULK_WITHDRAWN',
+        targetTable: 'topics',
+        targetId: ids[0],
+        newValue: { topicIds: ids, updated: updated.count },
+      });
+
+      return updated;
+    });
+
+    return { updated: result.count };
+  }
+
+  async bulkDelete(topicIds: number[], userId: number, role: Role) {
+    const isAdmin = role === Role.ADMIN;
+    const lecturerId = isAdmin
+      ? undefined
+      : await this.requireLecturerProfileId(userId);
+
+    const targets = await this.prisma.topic.findMany({
+      where: {
+        id: { in: topicIds },
+        ...(lecturerId !== undefined && { lecturerId }),
+        status: { notIn: [TopicStatus.IN_PROGRESS, TopicStatus.COMPLETED] },
+        registrationGroups: {
+          none: { status: { not: RegistrationGroupStatus.REJECTED } },
+        },
+      },
+      select: { id: true },
+    });
+
+    if (targets.length === 0) {
+      return { deleted: 0 };
+    }
+
+    const ids = targets.map((t) => t.id);
+    const result = await this.prisma.$transaction(async (tx) => {
+      await recordAudit(tx, {
+        userId,
+        action: 'TOPIC_BULK_DELETED',
+        targetTable: 'topics',
+        targetId: ids[0],
+        oldValue: { topicIds: ids },
+      });
+
+      return tx.topic.deleteMany({
+        where: { id: { in: ids } },
+      });
+    });
+
+    return { deleted: result.count };
+  }
+
+  async bulkReviewDepartment(
+    dto: BulkDepartmentReviewDto,
+    user: {
+      id: number;
+      role: Role;
+      lecturerProfile?: {
+        id: number;
+        isHeadOfDepartment: boolean;
+        majorId?: number | null;
+      } | null;
+      customPermissions?: Array<{ permission: string }>;
+    },
+  ) {
+    const hasCustomPerm =
+      user.customPermissions?.some(
+        (cp) => cp.permission === 'TOPIC_REVIEW_DEPT',
+      ) ?? false;
+    const isHead =
+      user.role === Role.ADMIN ||
+      (isLecturerRole(user.role) &&
+        ((user.lecturerProfile?.isHeadOfDepartment ?? false) || hasCustomPerm));
+    if (!isHead) {
+      throw new ForbiddenException(
+        'Bạn không có quyền thẩm định đề tài cấp Bộ môn.',
+      );
+    }
+
+    const topics = await this.prisma.topic.findMany({
+      where: { id: { in: dto.topicIds } },
+      include: {
+        lecturer: {
+          select: { id: true, userId: true, fullName: true, majorId: true },
+        },
+        _count: {
+          select: {
+            registrationGroups: {
+              where: { status: { not: RegistrationGroupStatus.REJECTED } },
+            },
+          },
+        },
+      },
+    });
+
+    const userMajorId = user.lecturerProfile?.majorId;
+    const eligible = topics.filter((topic) => {
+      const effectiveMajorId = topic.majorId ?? topic.lecturer.majorId;
+      if (userMajorId && effectiveMajorId && effectiveMajorId !== userMajorId) {
+        return false;
+      }
+      const isPending =
+        topic.status === TopicStatus.PENDING_DEPARTMENT ||
+        topic.status === TopicStatus.PENDING;
+      const isApproved =
+        topic.status === TopicStatus.APPROVED ||
+        topic.status === TopicStatus.APPROVED_OPEN ||
+        topic.status === TopicStatus.OPEN;
+
+      if (dto.action === 'APPROVE') return isPending;
+      if (dto.action === 'REJECT') return isPending;
+      // REQUEST_REVISION applies to pending or approved topics without active groups
+      return isPending || (isApproved && topic._count.registrationGroups === 0);
+    });
+
+    if (eligible.length === 0) {
+      throw new ConflictException(
+        'Không có đề tài hợp lệ nào trong tổ chuyên môn của bạn để thực hiện thao tác này.',
+      );
+    }
+
+    const reviewerId =
+      dto.action === 'APPROVE' ? (user.lecturerProfile?.id ?? null) : null;
+    const nextStatus =
+      dto.action === 'APPROVE'
+        ? TopicStatus.APPROVED
+        : dto.action === 'REQUEST_REVISION'
+          ? TopicStatus.DRAFT
+          : TopicStatus.REJECTED;
+    const auditAction =
+      dto.action === 'APPROVE'
+        ? 'TOPIC_DEPARTMENT_APPROVED'
+        : dto.action === 'REQUEST_REVISION'
+          ? 'TOPIC_DEPARTMENT_REVISION_REQUESTED'
+          : 'TOPIC_DEPARTMENT_REJECTED';
+
+    const ids = eligible.map((t) => t.id);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.topic.updateMany({
+        where: { id: { in: ids } },
+        data: {
+          status: nextStatus,
+          departmentReviewerId: reviewerId,
+          departmentFeedback: dto.feedback ?? null,
+        },
+      });
+
+      await recordAudit(tx, {
+        userId: user.id,
+        action: `${auditAction}_BULK`,
+        targetTable: 'topics',
+        targetId: ids[0],
+        newValue: {
+          topicIds: ids,
+          status: nextStatus,
+          feedback: dto.feedback,
+        },
+      });
+    });
+
+    await this.notifications.notify(
+      eligible.map((topic) => ({
+        userId: topic.lecturer.userId,
+        type: NotificationType.SUBMISSION_FEEDBACK,
+        title:
+          dto.action === 'APPROVE'
+            ? 'Đề tài đã được Bộ môn phê duyệt'
+            : dto.action === 'REQUEST_REVISION'
+              ? 'Yêu cầu chỉnh sửa đề tài'
+              : 'Đề tài bị từ chối',
+        content:
+          dto.action === 'APPROVE'
+            ? `Đề tài "${topic.title}" đã được Tổ trưởng Bộ môn phê duyệt và sẵn sàng chờ Giáo vụ mở đăng ký.`
+            : dto.action === 'REQUEST_REVISION'
+              ? `Tổ trưởng Bộ môn yêu cầu chỉnh sửa đề tài "${topic.title}".\n\nNội dung: ${dto.feedback}`
+              : `Đề tài "${topic.title}" đã bị Tổ trưởng Bộ môn từ chối.\n\nNội dung: ${dto.feedback}`,
+        targetId: topic.id,
+      })),
+    );
+
+    return { updated: ids.length };
   }
 
   async open(id: number, userId: number, role: Role) {

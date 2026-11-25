@@ -97,6 +97,7 @@ export class StudentsService {
       lecturerId: query.lecturerId,
       hasGroup: query.hasGroup,
       q: query.q,
+      studentIds: query.studentIds,
     };
   }
 

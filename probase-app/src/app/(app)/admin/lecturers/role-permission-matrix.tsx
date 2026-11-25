@@ -5,6 +5,8 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Loader2, Plus, ShieldCheck, X } from 'lucide-react';
 import {
+  getRoleInheritedPermissions,
+  PERMISSION_ROLE_LABELS,
   type PermissionDefinition,
   usePermissionMatrix,
   useRevokePermission,
@@ -29,10 +31,10 @@ const CONFIGURABLE_ROLES: Array<{
   code: 'TTBM' | 'GVCN' | 'LECTURER';
   label: string;
 }> = [
-  { code: 'TTBM', label: 'Tổ trưởng Bộ môn' },
-  { code: 'GVCN', label: 'GV Chủ nhiệm' },
-  { code: 'LECTURER', label: 'Giảng viên' },
-];
+    { code: 'TTBM', label: 'Tổ trưởng Bộ môn' },
+    { code: 'GVCN', label: 'GV Chủ nhiệm' },
+    { code: 'LECTURER', label: 'Giảng viên' },
+  ];
 
 function getMajorAbbreviation(major?: {
   name?: string | null;
@@ -97,6 +99,20 @@ export function RolePermissionMatrix() {
   const [modalUserId, setModalUserId] = useState<string>('');
   const [modalPerms, setModalPerms] = useState<string[]>([]);
   const [isSubmittingModal, setIsSubmittingModal] = useState(false);
+
+  const selectedModalLecturer = useMemo(
+    () => eligibleLecturers.find((l) => String(l.userId) === modalUserId),
+    [eligibleLecturers, modalUserId],
+  );
+
+  const modalRoleInheritedPerms = useMemo(
+    () =>
+      getRoleInheritedPermissions(
+        matrixState,
+        selectedModalLecturer?.assignedRole,
+      ),
+    [matrixState, selectedModalLecturer?.assignedRole],
+  );
 
   // Chỉ hiển thị các quyền nghiệp vụ có thể cấu hình
   const permissions = useMemo(() => {
@@ -186,14 +202,28 @@ export function RolePermissionMatrix() {
     );
   };
 
+  const getInitialModalPerms = (uid: string) => {
+    const targetLecturer = eligibleLecturers.find(
+      (l) => String(l.userId) === uid,
+    );
+    const inherited = getRoleInheritedPermissions(
+      matrixState,
+      targetLecturer?.assignedRole,
+    );
+    const existing = groupedDelegations.find((g) => String(g.userId) === uid);
+    return existing
+      ? existing.permissions
+        .map((p) => p.code)
+        .filter((code) => !inherited.has(code))
+      : [];
+  };
+
   // Mở modal cấp/sửa quyền đặc biệt
   const handleOpenModal = (presetUserId?: number) => {
     if (presetUserId) {
-      setModalUserId(String(presetUserId));
-      const existing = groupedDelegations.find(
-        (g) => g.userId === presetUserId,
-      );
-      setModalPerms(existing ? existing.permissions.map((p) => p.code) : []);
+      const uid = String(presetUserId);
+      setModalUserId(uid);
+      setModalPerms(getInitialModalPerms(uid));
     } else {
       setModalUserId('');
       setModalPerms([]);
@@ -211,12 +241,15 @@ export function RolePermissionMatrix() {
     const targetId = Number(modalUserId);
     const targetLecturer = eligibleLecturers.find((l) => l.userId === targetId);
     const targetName = targetLecturer?.fullName ?? `Giảng viên ID ${targetId}`;
+    const customOnlyPerms = modalPerms.filter(
+      (code) => !modalRoleInheritedPerms.has(code),
+    );
 
     try {
       setIsSubmittingModal(true);
       await updateUserPermsMutation.mutateAsync({
         userId: targetId,
-        permissions: modalPerms,
+        permissions: customOnlyPerms,
       });
       await refetch();
       toast.success(`Đã cập nhật quyền đặc biệt cho ${targetName}.`);
@@ -473,20 +506,25 @@ export function RolePermissionMatrix() {
           <div className="space-y-4 pt-1">
             {/* Chọn giảng viên */}
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
-                Giảng viên <span className="text-destructive">*</span>
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
+                  Giảng viên <span className="text-destructive">*</span>
+                </label>
+                {selectedModalLecturer && (
+                  <span className="text-xs font-medium text-slate-600 dark:text-zinc-400">
+                    Vai trò:{' '}
+                    <strong className="text-slate-900 dark:text-zinc-200">
+                      {PERMISSION_ROLE_LABELS[selectedModalLecturer.assignedRole]}
+                    </strong>
+                  </span>
+                )}
+              </div>
               <Combobox
                 options={lecturerComboboxOptions}
                 value={modalUserId}
                 onChange={(uid) => {
                   setModalUserId(uid);
-                  const existing = groupedDelegations.find(
-                    (g) => String(g.userId) === uid,
-                  );
-                  setModalPerms(
-                    existing ? existing.permissions.map((p) => p.code) : [],
-                  );
+                  setModalPerms(getInitialModalPerms(uid));
                 }}
                 placeholder="Chọn giảng viên..."
                 searchPlaceholder="Tìm theo tên hoặc bộ môn..."
@@ -499,21 +537,31 @@ export function RolePermissionMatrix() {
             {/* Chọn quyền */}
             <div className="space-y-2 pt-1">
               <label className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
-                Quyền hạn ủy quyền <span className="text-destructive">*</span>
+                Quyền hạn ủy quyền bổ sung
               </label>
               <div className="space-y-2.5 rounded-lg border border-slate-200 dark:border-neutral-800 bg-slate-50/50 dark:bg-muted/20 p-3.5 max-h-60 overflow-y-auto">
                 {permissions.map((p) => {
-                  const isChecked = modalPerms.includes(p.code);
+                  const isFromRole =
+                    Boolean(selectedModalLecturer) &&
+                    modalRoleInheritedPerms.has(p.code);
+                  const isChecked = isFromRole || modalPerms.includes(p.code);
                   return (
                     <label
                       key={p.code}
-                      className="flex items-start gap-3 text-sm text-slate-900 dark:text-zinc-100 cursor-pointer hover:bg-slate-100/70 dark:hover:bg-muted/40 p-2 rounded-md select-none transition-colors"
+                      className={`flex items-start gap-3 text-sm text-slate-900 dark:text-zinc-100 p-2 rounded-md select-none transition-colors ${isFromRole
+                        ? 'opacity-75 cursor-not-allowed'
+                        : 'cursor-pointer hover:bg-slate-100/70 dark:hover:bg-muted/40'
+                        }`}
                     >
                       <Checkbox
                         checked={isChecked}
+                        disabled={isFromRole || isSubmittingModal}
                         onCheckedChange={(checked) => {
+                          if (isFromRole) return;
                           if (checked) {
-                            setModalPerms((prev) => [...prev, p.code]);
+                            setModalPerms((prev) =>
+                              prev.includes(p.code) ? prev : [...prev, p.code],
+                            );
                           } else {
                             setModalPerms((prev) =>
                               prev.filter((c) => c !== p.code),
@@ -522,10 +570,17 @@ export function RolePermissionMatrix() {
                         }}
                         className="mt-0.5"
                       />
-                      <div className="space-y-0.5">
-                        <span className="font-semibold text-slate-900 dark:text-zinc-100 block text-sm">
-                          {p.name}
-                        </span>
+                      <div className="space-y-0.5 min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-slate-900 dark:text-zinc-100 text-sm">
+                            {p.name}
+                          </span>
+                          {isFromRole && (
+                            <span className="rounded bg-slate-200/80 dark:bg-neutral-800 px-1.5 py-0.5 text-[11px] font-medium text-slate-600 dark:text-zinc-400">
+                              Mặc định theo vai trò
+                            </span>
+                          )}
+                        </div>
                         <span className="text-xs text-slate-500 dark:text-zinc-400 block leading-relaxed">
                           {p.description}
                         </span>

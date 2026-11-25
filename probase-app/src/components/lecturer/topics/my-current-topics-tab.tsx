@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   BookOpen,
@@ -23,16 +23,23 @@ import type {
 } from '@/lib/api/types';
 import { formatMajorShort, formatProjectTypeShort } from '@/lib/utils';
 import {
+  useBulkDeleteTopics,
+  useBulkWithdrawTopics,
   useDeleteTopic,
   useSubmitDraftTopics,
   useTopicTransition,
   useTopics,
 } from '@/lib/api/topics';
+import {
+  BulkActionBar,
+  BulkIconAction,
+} from '@/components/shared/bulk-action-bar';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { TopicOwnerBadge } from '@/components/topics/topic-status-badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,7 +56,12 @@ import {
 } from '@/components/ui/table';
 import { TOPIC_PAGE_SIZE } from '@/constants/pagination.constant';
 import { TOPIC_STATUS_FILTERS } from '@/constants/status.constant';
-import { useDebounce, useDisclosure, usePagination } from '@/hooks';
+import {
+  useDebounce,
+  useDisclosure,
+  usePagination,
+  useTableSelection,
+} from '@/hooks';
 import { TopicFilterBar } from './topic-filter-bar';
 
 function RowActions({
@@ -201,6 +213,7 @@ function RowActions({
         title="Thu hồi gửi duyệt đề tài?"
         description={`Đề tài "${topic.title}" sẽ được chuyển về trạng thái Bản nháp để bạn có thể chỉnh sửa và gửi duyệt lại sau.`}
         confirmLabel="Thu hồi về bản nháp"
+        confirmVariant="default"
         onConfirm={async () => {
           try {
             await transition.mutateAsync({ id: topic.id, to: 'withdraw' });
@@ -270,9 +283,51 @@ export function MyCurrentTopicsTab({
   });
 
   const submitDrafts = useSubmitDraftTopics();
+  const bulkWithdraw = useBulkWithdrawTopics();
+  const bulkDelete = useBulkDeleteTopics();
+  const bulkWithdrawDialog = useDisclosure();
+  const bulkDeleteDialog = useDisclosure();
   const draftCount = draftsData?.total ?? 0;
 
-  const topics = data?.items ?? [];
+  const topics = useMemo(() => data?.items ?? [], [data?.items]);
+  const {
+    selectedItems,
+    selectedCount,
+    allOnPageSelected,
+    isSelected,
+    toggleRow,
+    toggleAllOnPage,
+    clearSelection,
+    removeSelectedIds,
+  } = useTableSelection(topics);
+
+  const selectedDraftIds = useMemo(
+    () => selectedItems.filter((t) => t.status === 'DRAFT').map((t) => t.id),
+    [selectedItems],
+  );
+  const selectedPendingIds = useMemo(
+    () =>
+      selectedItems
+        .filter(
+          (t) =>
+            (t.status === 'PENDING_DEPARTMENT' || t.status === 'PENDING') &&
+            t.activeGroup === null,
+        )
+        .map((t) => t.id),
+    [selectedItems],
+  );
+  const selectedDeletableIds = useMemo(
+    () =>
+      selectedItems
+        .filter(
+          (t) =>
+            t.activeGroup === null &&
+            t.status !== 'IN_PROGRESS' &&
+            t.status !== 'COMPLETED',
+        )
+        .map((t) => t.id),
+    [selectedItems],
+  );
   const filtering =
     debouncedSearch !== '' ||
     projectTypeId > 0 ||
@@ -356,12 +411,71 @@ export function MyCurrentTopicsTab({
         </p>
       )}
 
+      <BulkActionBar
+        variant="floating"
+        count={selectedCount}
+        itemName="đề tài"
+        onClear={clearSelection}
+      >
+        {selectedDraftIds.length > 0 && (
+          <BulkIconAction
+            tone="primary"
+            label={
+              isHeadOfDepartment
+                ? `Gửi & duyệt (${selectedDraftIds.length})`
+                : `Gửi duyệt (${selectedDraftIds.length})`
+            }
+            icon={<Send className="size-4" />}
+            loading={submitDrafts.isPending}
+            onClick={() => {
+              submitDrafts
+                .mutateAsync(selectedDraftIds)
+                .then((res) => {
+                  toast.success(res.message);
+                  removeSelectedIds(selectedDraftIds);
+                })
+                .catch(() =>
+                  toast.error('Không thể gửi duyệt các đề tài đã chọn.'),
+                );
+            }}
+          />
+        )}
+
+        {selectedPendingIds.length > 0 && (
+          <BulkIconAction
+            tone="warning"
+            label={`Thu hồi (${selectedPendingIds.length})`}
+            icon={<Undo2 className="size-4" />}
+            disabled={bulkWithdraw.isPending}
+            onClick={bulkWithdrawDialog.onOpen}
+          />
+        )}
+
+        {selectedDeletableIds.length > 0 && (
+          <BulkIconAction
+            tone="danger"
+            label={`Xóa (${selectedDeletableIds.length})`}
+            icon={<Trash2 className="size-4" />}
+            disabled={bulkDelete.isPending}
+            onClick={bulkDeleteDialog.onOpen}
+          />
+        )}
+      </BulkActionBar>
+
       {/* Bảng dữ liệu dùng chuẩn TableHeader của ứng dụng */}
       <div className="isolate overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#18181b] shadow-2xs">
         <div className="overflow-x-auto">
           <Table className="w-full table-fixed text-left text-sm">
             <TableHeader sticky>
               <TableRow className="hover:bg-transparent">
+                <TableHead className="w-11 px-3 py-3 text-center">
+                  <Checkbox
+                    checked={allOnPageSelected}
+                    onCheckedChange={toggleAllOnPage}
+                    disabled={topics.length === 0}
+                    aria-label="Chọn tất cả đề tài trên trang"
+                  />
+                </TableHead>
                 <TableHead className="w-[380px] max-w-[440px] min-w-[260px] px-5 py-3">
                   Tiêu đề đề tài
                 </TableHead>
@@ -373,11 +487,21 @@ export function MyCurrentTopicsTab({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {topics.map((topic) => (
+              {topics.map((topic) => {
+                const checked = isSelected(topic.id);
+                return (
                 <TableRow
                   key={topic.id}
+                  data-state={checked ? 'selected' : undefined}
                   className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                 >
+                  <TableCell className="w-11 px-3 py-3.5 text-center align-middle">
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(val) => toggleRow(topic, val)}
+                      aria-label={`Chọn đề tài ${topic.title}`}
+                    />
+                  </TableCell>
                   <TableCell className="w-[380px] max-w-[440px] min-w-[260px] px-5 py-3.5 align-middle whitespace-normal">
                     <div className="w-full max-w-[440px] whitespace-normal">
                       <Link
@@ -430,7 +554,8 @@ export function MyCurrentTopicsTab({
                     />
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </div>
@@ -473,6 +598,33 @@ export function MyCurrentTopicsTab({
           onPageChange={setPage}
         />
       )}
+
+      <ConfirmDialog
+        open={bulkWithdrawDialog.isOpen}
+        onOpenChange={bulkWithdrawDialog.setIsOpen}
+        title={`Thu hồi ${selectedPendingIds.length} đề tài?`}
+        description="Các đề tài đang chờ Bộ môn thẩm định sẽ được chuyển về trạng thái Bản nháp để bạn chỉnh sửa."
+        confirmLabel="Thu hồi về bản nháp"
+        confirmVariant="default"
+        onConfirm={async () => {
+          const res = await bulkWithdraw.mutateAsync(selectedPendingIds);
+          toast.success(`Đã thu hồi ${res.updated} đề tài về bản nháp.`);
+          removeSelectedIds(selectedPendingIds);
+        }}
+      />
+
+      <ConfirmDialog
+        open={bulkDeleteDialog.isOpen}
+        onOpenChange={bulkDeleteDialog.setIsOpen}
+        title={`Xóa ${selectedDeletableIds.length} đề tài đã chọn?`}
+        description="Các đề tài chưa có sinh viên đăng ký sẽ bị xóa vĩnh viễn và không thể hoàn tác."
+        confirmLabel="Xóa hàng loạt"
+        onConfirm={async () => {
+          const res = await bulkDelete.mutateAsync(selectedDeletableIds);
+          toast.success(`Đã xóa ${res.deleted} đề tài.`);
+          removeSelectedIds(selectedDeletableIds);
+        }}
+      />
     </div>
   );
 }

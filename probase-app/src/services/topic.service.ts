@@ -19,6 +19,7 @@ export interface TopicExportQuery {
   majorId?: number;
   status?: TopicStatus;
   q?: string;
+  topicIds?: number[];
   semesterCode?: string;
 }
 
@@ -151,10 +152,46 @@ export const topicService = {
     });
   },
 
-  bulkOpen(semesterId?: number) {
+  bulkOpen(input?: number | { semesterId?: number; topicIds?: number[] }) {
+    const body =
+      typeof input === 'number'
+        ? { semesterId: input }
+        : input !== undefined
+          ? input
+          : {};
     return api<BulkOpenResult>('/topics/bulk-open', {
       method: 'PATCH',
-      body: semesterId !== undefined ? { semesterId } : {},
+      body,
+    });
+  },
+
+  bulkClose(topicIds: number[]) {
+    return api<{ updated: number }>('/topics/bulk-close', {
+      method: 'PATCH',
+      body: { topicIds },
+    });
+  },
+
+  bulkWithdraw(topicIds: number[]) {
+    return api<{ updated: number }>('/topics/bulk-withdraw', {
+      method: 'POST',
+      body: { topicIds },
+    });
+  },
+
+  bulkDelete(topicIds: number[]) {
+    return api<{ deleted: number }>('/topics/bulk-delete', {
+      method: 'POST',
+      body: { topicIds },
+    });
+  },
+
+  bulkReviewDepartment(
+    input: DepartmentReviewInput & { topicIds: number[] },
+  ) {
+    return api<{ updated: number }>('/topics/bulk-department-review', {
+      method: 'PATCH',
+      body: input,
     });
   },
 
@@ -187,6 +224,9 @@ export const topicService = {
       }
       if (query.q) {
         params.set('q', query.q);
+      }
+      if (query.topicIds?.length) {
+        params.set('topicIds', query.topicIds.join(','));
       }
     }
 

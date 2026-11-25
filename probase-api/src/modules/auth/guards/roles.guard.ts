@@ -8,6 +8,7 @@ import { Reflector } from '@nestjs/core';
 import { Role } from '../../../../generated/prisma/client';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { ROLES_KEY, RequiredRole } from '../decorators/roles.decorator';
+import { resolveUserPermissionRoles } from '../../permissions/permissions.constants';
 import { PERMISSIONS_KEY } from '../../permissions/require-permissions.decorator';
 
 export interface RequestLecturerProfile {
@@ -112,16 +113,7 @@ export class RolesGuard implements CanActivate {
       const hasCustom = requiredPermissions.some((p) => userCustomPerms.has(p));
 
       // 1.2. Khớp quyền được cấu hình cho vai trò/chức vụ
-      const roles: string[] = [user.role];
-      if (user.lecturerProfile?.isHeadOfDepartment) {
-        roles.push('TTBM');
-      }
-      if (user.lecturerProfile?.isHomeroomTeacher) {
-        roles.push('GVCN');
-      }
-      if (user.lecturerProfile?.isAcademicAssistant) {
-        roles.push('TLGV');
-      }
+      const roles = resolveUserPermissionRoles(user);
 
       const rolePerms = await this.getRolePermissions();
       const resolvedPerms = new Set<string>(userCustomPerms);

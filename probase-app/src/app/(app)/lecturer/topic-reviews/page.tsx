@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Check,
@@ -11,18 +11,37 @@ import {
   Search,
   X,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useMyProfile } from '@/lib/api/me';
 import { useMyPermissions } from '@/lib/api/permissions';
-import { useTopics } from '@/lib/api/topics';
+import {
+  useBulkDepartmentReviewTopics,
+  useTopics,
+} from '@/lib/api/topics';
 import { useSemesters } from '@/lib/api/master-data';
 import { useRequireRole } from '@/lib/auth/use-require-role';
+import {
+  BulkActionBar,
+  BulkIconAction,
+} from '@/components/shared/bulk-action-bar';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { TopicReviewSheet } from '@/components/topics/topic-review-sheet';
 import { TopicStatusBadge } from '@/components/topics/topic-status-badge';
 import { RoundLecturerProgressTab } from '@/components/admin/round-lecturer-progress-tab';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -40,7 +59,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { TOPIC_PAGE_SIZE } from '@/constants/pagination.constant';
-import { useDebounce } from '@/hooks';
+import { useDebounce, useTableSelection } from '@/hooks';
 
 const dateFormat = new Intl.DateTimeFormat('vi-VN', {
   day: '2-digit',
@@ -72,6 +91,9 @@ export default function LecturerTopicReviewsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
+  const [bulkApproveOpen, setBulkApproveOpen] = useState(false);
+  const [bulkReviseOpen, setBulkReviseOpen] = useState(false);
+  const [bulkFeedback, setBulkFeedback] = useState('');
   const debouncedSearch = useDebounce(search);
 
   const { data: semesters } = useSemesters();
@@ -94,6 +116,43 @@ export default function LecturerTopicReviewsPage() {
     },
   );
 
+  const topics = useMemo(() => data?.items ?? [], [data?.items]);
+  const {
+    selectedItems,
+    selectedCount,
+    allOnPageSelected,
+    isSelected,
+    toggleRow,
+    toggleAllOnPage,
+    clearSelection,
+    removeSelectedIds,
+  } = useTableSelection(topics);
+
+  const bulkReview = useBulkDepartmentReviewTopics();
+
+  const selectedPendingIds = useMemo(
+    () =>
+      selectedItems
+        .filter(
+          (t) => t.status === 'PENDING_DEPARTMENT' || t.status === 'PENDING',
+        )
+        .map((t) => t.id),
+    [selectedItems],
+  );
+
+  const selectedRevisableIds = useMemo(
+    () =>
+      selectedItems
+        .filter(
+          (t) =>
+            t.status === 'PENDING_DEPARTMENT' ||
+            t.status === 'PENDING' ||
+            (t.status === 'APPROVED' && t.activeGroup === null),
+        )
+        .map((t) => t.id),
+    [selectedItems],
+  );
+
   if (!allowed) return null;
 
   if (isProfilePending || isPermsPending) {
@@ -114,8 +173,6 @@ export default function LecturerTopicReviewsPage() {
       </div>
     );
   }
-
-  const topics = data?.items ?? [];
 
   return (
     <div className="w-full min-w-0 space-y-4">
@@ -237,13 +294,51 @@ export default function LecturerTopicReviewsPage() {
             <p className="text-sm text-destructive">Không tải được hàng chờ.</p>
           )}
 
+          <BulkActionBar
+            variant="floating"
+            count={selectedCount}
+            itemName="đề tài"
+            onClear={clearSelection}
+          >
+            {selectedPendingIds.length > 0 && (
+              <BulkIconAction
+                tone="primary"
+                label={`Duyệt (${selectedPendingIds.length})`}
+                icon={<Check className="size-4" />}
+                disabled={bulkReview.isPending}
+                onClick={() => setBulkApproveOpen(true)}
+              />
+            )}
+
+            {selectedRevisableIds.length > 0 && (
+              <BulkIconAction
+                tone="warning"
+                label={`Yêu cầu sửa (${selectedRevisableIds.length})`}
+                icon={<RotateCcw className="size-4" />}
+                disabled={bulkReview.isPending}
+                onClick={() => {
+                  setBulkFeedback('');
+                  setBulkReviseOpen(true);
+                }}
+              />
+            )}
+          </BulkActionBar>
+
           <div className="isolate w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
             <Table
               containerClassName="w-full overflow-x-auto"
-              className="w-full min-w-[850px] table-fixed text-left text-sm"
+              className="w-full min-w-[890px] table-fixed text-left text-sm"
             >
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-11 px-3 py-3.5 text-center">
+                    <Checkbox
+                      checked={allOnPageSelected}
+                      onCheckedChange={toggleAllOnPage}
+                      disabled={topics.length === 0}
+                      aria-label="Chọn tất cả đề tài trên trang"
+                    />
+                  </TableHead>
                   <TableHead className="w-[320px] max-w-[360px] min-w-[260px] px-5 py-3.5 whitespace-nowrap">
                     Tiêu đề
                   </TableHead>
@@ -265,11 +360,21 @@ export default function LecturerTopicReviewsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {topics.map((topic) => (
+                {topics.map((topic) => {
+                  const checked = isSelected(topic.id);
+                  return (
                   <TableRow
                     key={topic.id}
+                    data-state={checked ? 'selected' : undefined}
                     className="transition-colors hover:bg-slate-50/70 dark:hover:bg-neutral-800/40"
                   >
+                    <TableCell className="w-11 px-3 py-3.5 text-center align-middle">
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(val) => toggleRow(topic, val)}
+                        aria-label={`Chọn đề tài ${topic.title}`}
+                      />
+                    </TableCell>
                     <TableCell className="w-[320px] max-w-[360px] min-w-[260px] px-5 py-3.5 align-middle font-medium whitespace-normal">
                       <div className="w-full max-w-[360px] whitespace-normal">
                         <Link
@@ -327,7 +432,8 @@ export default function LecturerTopicReviewsPage() {
                       )}
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
 
@@ -367,6 +473,83 @@ export default function LecturerTopicReviewsPage() {
         stage="DEPARTMENT"
         isHeadOfDepartment={isHeadOfDepartment}
       />
+
+      <ConfirmDialog
+        open={bulkApproveOpen}
+        onOpenChange={setBulkApproveOpen}
+        title={`Phê duyệt ${selectedPendingIds.length} đề tài đã chọn?`}
+        description="Các đề tài đạt chuẩn sẽ chuyển sang trạng thái Đã duyệt, sẵn sàng chờ Giáo vụ mở đăng ký cho sinh viên."
+        confirmLabel="Phê duyệt hàng loạt"
+        confirmVariant="default"
+        onConfirm={async () => {
+          const res = await bulkReview.mutateAsync({
+            topicIds: selectedPendingIds,
+            action: 'APPROVE',
+          });
+          toast.success(`Đã phê duyệt ${res.updated} đề tài.`);
+          removeSelectedIds(selectedPendingIds);
+          setBulkApproveOpen(false);
+        }}
+      />
+
+      <Dialog open={bulkReviseOpen} onOpenChange={setBulkReviseOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Yêu cầu chỉnh sửa {selectedRevisableIds.length} đề tài
+            </DialogTitle>
+            <DialogDescription>
+              Các đề tài được chọn sẽ chuyển về Bản nháp và gửi kèm nhận xét tới giảng viên ra đề.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={bulkFeedback}
+            onChange={(e) => setBulkFeedback(e.target.value)}
+            placeholder="Nhập nội dung cần giảng viên chỉnh sửa..."
+            rows={4}
+            className="text-sm"
+          />
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setBulkReviseOpen(false)}
+              disabled={bulkReview.isPending}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="button"
+              disabled={!bulkFeedback.trim() || bulkReview.isPending}
+              onClick={async () => {
+                try {
+                  const res = await bulkReview.mutateAsync({
+                    topicIds: selectedRevisableIds,
+                    action: 'REQUEST_REVISION',
+                    feedback: bulkFeedback.trim(),
+                  });
+                  toast.success(
+                    `Đã gửi yêu cầu chỉnh sửa cho ${res.updated} đề tài.`,
+                  );
+                  removeSelectedIds(selectedRevisableIds);
+                  setBulkReviseOpen(false);
+                } catch (err: unknown) {
+                  toast.error(
+                    err instanceof Error
+                      ? err.message
+                      : 'Không thực hiện được thao tác hàng loạt.',
+                  );
+                }
+              }}
+            >
+              {bulkReview.isPending && (
+                <Loader2 className="mr-1.5 size-4 animate-spin" />
+              )}
+              Gửi yêu cầu
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

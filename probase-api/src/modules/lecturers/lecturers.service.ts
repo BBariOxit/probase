@@ -7,6 +7,8 @@ import {
 import { Prisma, Role, TopicStatus } from '../../../generated/prisma/client';
 import { recordAudit } from '../../core/audit/audit-entry';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { resolveUserPermissionRoles } from '../permissions/permissions.constants';
+import { PermissionsService } from '../permissions/permissions.service';
 import { QueryAdminLecturersDto } from './dto/query-admin-lecturers.dto';
 import { QueryLecturersDto } from './dto/query-lecturers.dto';
 import { UpdateLecturerRoleDto } from './dto/update-lecturer-role.dto';
@@ -49,6 +51,7 @@ export class LecturersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mentoring: MentoringLoadService,
+    private readonly permissionsService: PermissionsService,
   ) {}
 
   async findAll(query: QueryLecturersDto, role: Role = Role.STUDENT) {
@@ -301,10 +304,24 @@ export class LecturersService {
     ]);
 
     const userIds = rows.map((r) => r.userId);
-    const userPerms = await this.prisma.userPermission.findMany({
-      where: { userId: { in: userIds } },
-      select: { userId: true, permission: true },
-    });
+    const [userPerms, rolePerms] = await Promise.all([
+      this.prisma.userPermission.findMany({
+        where: { userId: { in: userIds } },
+        select: { userId: true, permission: true },
+      }),
+      this.prisma.rolePermission.findMany({
+        select: { role: true, permission: true },
+      }),
+    ]);
+
+    const rolePermMap = new Map<string, Set<string>>();
+    for (const rp of rolePerms) {
+      if (!rolePermMap.has(rp.role)) {
+        rolePermMap.set(rp.role, new Set());
+      }
+      rolePermMap.get(rp.role)!.add(rp.permission);
+    }
+
     const permMap = new Map<number, string[]>();
     for (const up of userPerms) {
       if (!permMap.has(up.userId)) {
@@ -324,6 +341,24 @@ export class LecturersService {
           assignedRole = 'GVCN';
         }
 
+        const subjectRoles = resolveUserPermissionRoles({
+          role: r.user.role,
+          lecturerProfile: {
+            isHeadOfDepartment: r.isHeadOfDepartment,
+            isHomeroomTeacher: r.isHomeroomTeacher,
+            isAcademicAssistant: r.isAcademicAssistant,
+          },
+        });
+        const inherited = new Set<string>();
+        for (const roleKey of subjectRoles) {
+          for (const perm of rolePermMap.get(roleKey) ?? []) {
+            inherited.add(perm);
+          }
+        }
+        const customPermissions = (permMap.get(r.userId) ?? []).filter(
+          (perm) => !inherited.has(perm),
+        );
+
         return {
           id: r.id,
           userId: r.userId,
@@ -340,7 +375,7 @@ export class LecturersService {
           isHeadOfDepartment: r.isHeadOfDepartment,
           isAcademicAssistant: r.isAcademicAssistant,
           isHomeroomTeacher: r.isHomeroomTeacher,
-          customPermissions: permMap.get(r.userId) ?? [],
+          customPermissions,
         };
       }),
       total,
@@ -424,30 +459,29 @@ export class LecturersService {
         data: { role: Role.LECTURER },
       });
 
-      // 3. Cập nhật quyền tùy biến nếu có truyền lên
-      let updatedCustomPermissions: string[] = [];
-      if (dto.customPermissions !== undefined) {
-        await tx.userPermission.deleteMany({
-          where: { userId: targetUserId },
-        });
-
-        if (dto.customPermissions.length > 0) {
-          await tx.userPermission.createMany({
-            data: dto.customPermissions.map((permission) => ({
-              userId: targetUserId,
-              permission,
-              grantedById: currentAdminId,
-            })),
-          });
-        }
-        updatedCustomPermissions = dto.customPermissions;
-      } else {
-        const existing = await tx.userPermission.findMany({
-          where: { userId: targetUserId },
-          select: { permission: true },
-        });
-        updatedCustomPermissions = existing.map((e) => e.permission);
-      }
+      // 3. Cập nhật & loại bỏ quyền bổ sung đã có sẵn trong vai trò mới
+      const updatedSubject = {
+        role: Role.LECTURER,
+        lecturerProfile: {
+          isHeadOfDepartment,
+          isHomeroomTeacher,
+          isAcademicAssistant: false,
+        },
+      };
+      const updatedCustomPermissions =
+        dto.customPermissions !== undefined
+          ? await this.permissionsService.syncUserCustomPermissions(
+              tx,
+              targetUserId,
+              updatedSubject,
+              dto.customPermissions,
+              currentAdminId,
+            )
+          : await this.permissionsService.pruneRedundantUserPermissionsForUser(
+              tx,
+              targetUserId,
+              updatedSubject,
+            );
 
       await recordAudit(tx, {
         userId: currentAdminId,

@@ -21,6 +21,10 @@ import {
   useAdminLecturers,
   useUpdateLecturerRole,
 } from '@/lib/api/lecturers';
+import {
+  getRoleInheritedPermissions,
+  usePermissionMatrix,
+} from '@/lib/api/permissions';
 import { Checkbox } from '@/components/ui/checkbox';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
@@ -117,9 +121,15 @@ interface LecturerRoleCellProps {
   lecturer: AdminLecturerItem;
   isSelf: boolean;
   majors?: Array<{ id: number; name: string }>;
+  matrix?: Record<string, string[]>;
 }
 
-function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
+function LecturerRoleCell({
+  lecturer,
+  isSelf,
+  majors,
+  matrix,
+}: LecturerRoleCellProps) {
   const [open, setOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<AssignableLecturerRole>(
     lecturer.assignedRole === 'ADMIN' ? 'LECTURER' : lecturer.assignedRole,
@@ -145,12 +155,19 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
     );
   }
 
+  const roleInheritedPerms = getRoleInheritedPermissions(matrix, selectedRole);
+  const currentInheritedPerms = getRoleInheritedPermissions(
+    matrix,
+    lecturer.assignedRole,
+  );
+
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
     if (next) {
-      setSelectedRole(
-        lecturer.assignedRole === 'ADMIN' ? 'LECTURER' : lecturer.assignedRole,
-      );
+      const initialRole: AssignableLecturerRole =
+        lecturer.assignedRole === 'ADMIN' ? 'LECTURER' : lecturer.assignedRole;
+      const initialInherited = getRoleInheritedPermissions(matrix, initialRole);
+      setSelectedRole(initialRole);
       setSelectedMajorId(
         lecturer.major?.id
           ? String(lecturer.major.id)
@@ -158,7 +175,11 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
             ? String(majors[0].id)
             : '',
       );
-      setSelectedCustomPerms(lecturer.customPermissions ?? []);
+      setSelectedCustomPerms(
+        (lecturer.customPermissions ?? []).filter(
+          (c) => !initialInherited.has(c),
+        ),
+      );
     }
   };
 
@@ -168,6 +189,10 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
       return;
     }
 
+    const customOnlyPerms = selectedCustomPerms.filter(
+      (c) => !roleInheritedPerms.has(c),
+    );
+
     try {
       await updateMutation.mutateAsync({
         userId: lecturer.userId,
@@ -175,7 +200,7 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
         majorId: selectedMajorId
           ? Number(selectedMajorId)
           : (lecturer.major?.id ?? null),
-        customPermissions: selectedCustomPerms,
+        customPermissions: customOnlyPerms,
       });
       toast.success(`Đã cập nhật vai trò và quyền hạn cho ${lecturer.fullName}.`);
       setOpen(false);
@@ -186,7 +211,9 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
     }
   };
 
-  const customCount = lecturer.customPermissions?.length ?? 0;
+  const customCount = (lecturer.customPermissions ?? []).filter(
+    (c) => !currentInheritedPerms.has(c),
+  ).length;
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
@@ -233,7 +260,16 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
               <button
                 key={r.value}
                 type="button"
-                onClick={() => setSelectedRole(r.value)}
+                onClick={() => {
+                  setSelectedRole(r.value);
+                  const nextInherited = getRoleInheritedPermissions(
+                    matrix,
+                    r.value,
+                  );
+                  setSelectedCustomPerms((prev) =>
+                    prev.filter((c) => !nextInherited.has(c)),
+                  );
+                }}
                 className={cn(
                   'flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors text-left cursor-pointer',
                   active
@@ -299,26 +335,46 @@ function LecturerRoleCell({ lecturer, isSelf, majors }: LecturerRoleCellProps) {
           </div>
           <div className="space-y-1">
             {AVAILABLE_CUSTOM_PERMISSIONS.map((perm) => {
-              const isChecked = selectedCustomPerms.includes(perm.code);
+              const isFromRole = roleInheritedPerms.has(perm.code);
+              const isChecked =
+                isFromRole || selectedCustomPerms.includes(perm.code);
               return (
                 <label
                   key={perm.code}
-                  className="flex items-center gap-3 text-sm text-foreground cursor-pointer hover:bg-muted/50 py-1.5 px-2 rounded-lg select-none transition-colors"
+                  className={cn(
+                    'flex items-center justify-between gap-2 text-sm text-foreground py-1.5 px-2 rounded-lg select-none transition-colors',
+                    isFromRole
+                      ? 'opacity-75 cursor-not-allowed'
+                      : 'cursor-pointer hover:bg-muted/50',
+                  )}
                 >
-                  <Checkbox
-                    id={`override-${lecturer.id}-${perm.code}`}
-                    checked={isChecked}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setSelectedCustomPerms((prev) => [...prev, perm.code]);
-                      } else {
-                        setSelectedCustomPerms((prev) =>
-                          prev.filter((c) => c !== perm.code),
-                        );
-                      }
-                    }}
-                  />
-                  <span className="truncate font-medium">{perm.label}</span>
+                  <span className="flex items-center gap-3 min-w-0">
+                    <Checkbox
+                      id={`override-${lecturer.id}-${perm.code}`}
+                      checked={isChecked}
+                      disabled={isFromRole}
+                      onCheckedChange={(checked) => {
+                        if (isFromRole) return;
+                        if (checked) {
+                          setSelectedCustomPerms((prev) =>
+                            prev.includes(perm.code)
+                              ? prev
+                              : [...prev, perm.code],
+                          );
+                        } else {
+                          setSelectedCustomPerms((prev) =>
+                            prev.filter((c) => c !== perm.code),
+                          );
+                        }
+                      }}
+                    />
+                    <span className="truncate font-medium">{perm.label}</span>
+                  </span>
+                  {isFromRole && (
+                    <span className="shrink-0 rounded bg-slate-200/80 dark:bg-neutral-800 px-1.5 py-0.5 text-[11px] font-medium text-slate-600 dark:text-neutral-400">
+                      Từ vai trò
+                    </span>
+                  )}
                 </label>
               );
             })}
@@ -372,6 +428,7 @@ export default function AdminLecturersRolePage() {
   const pageSize = 15;
 
   const { data: majors } = useMajors();
+  const { data: permissionMatrix } = usePermissionMatrix();
   const { data, isPending } = useAdminLecturers({
     q: debouncedSearch || undefined,
     role: selectedRole !== 'ALL' ? selectedRole : undefined,
@@ -660,6 +717,7 @@ export default function AdminLecturersRolePage() {
                               lecturer={lecturer}
                               isSelf={isSelf}
                               majors={majors}
+                              matrix={permissionMatrix?.matrix}
                             />
                           </TableCell>
                         </TableRow>

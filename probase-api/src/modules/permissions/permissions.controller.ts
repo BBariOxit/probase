@@ -100,7 +100,14 @@ export class PermissionsController {
    */
   @Roles('ADMIN')
   @Post('revoke')
-  revokePermission(@Body() dto: RevokePermissionDto) {
-    return this.permissionsService.revokePermission(dto.userId, dto.permission);
+  revokePermission(
+    @Body() dto: RevokePermissionDto,
+    @GetUser('id') actorId: number,
+  ) {
+    return this.permissionsService.revokePermission(
+      dto.userId,
+      dto.permission,
+      actorId,
+    );
   }
 }

@@ -19,6 +19,7 @@ export interface RosterFilters {
   hasGroup?: boolean;
 
   q?: string;
+  studentIds?: number[];
 
   activeOnly?: boolean;
 }
@@ -46,6 +47,7 @@ export function rosterWhere(
     ...(filters.roundId && {
       roundEligibilities: { some: { roundId: filters.roundId } },
     }),
+    ...(filters.studentIds?.length && { id: { in: filters.studentIds } }),
     ...(filters.cohorts?.length && { cohort: { in: filters.cohorts } }),
     ...(filters.cohort && { cohort: filters.cohort }),
     ...(filters.majorId && { majorId: filters.majorId }),

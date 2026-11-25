@@ -3,7 +3,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 import { topicKeys } from '@/lib/api/topics';
-import type { AllocationDesk } from '@/lib/api/types';
+import type {
+  AllocationDesk,
+  AutoAllocateStrategy,
+  AutoAllocationPreview,
+} from '@/lib/api/types';
 
 export const allocationKeys = {
   all: ['allocation'] as const,
@@ -50,6 +54,28 @@ export function usePlaceStudent() {
   });
 }
 
+export interface BatchPlacementInput {
+  roundId: number;
+  placements: { studentId: number; topicId: number }[];
+}
+
+export function useBatchPlaceStudents() {
+  const invalidate = useInvalidateAllocation();
+
+  return useMutation({
+    mutationFn: ({ roundId, placements }: BatchPlacementInput) =>
+      api<{
+        placedCount: number;
+        groupIds: number[];
+        message: string;
+      }>(`/rounds/${roundId}/allocation/placements/batch`, {
+        method: 'POST',
+        body: { placements },
+      }),
+    onSuccess: invalidate,
+  });
+}
+
 export function useUnplaceStudent() {
   const invalidate = useInvalidateAllocation();
 
@@ -66,6 +92,43 @@ export function useUnplaceStudent() {
         { method: 'DELETE' },
       ),
     onSuccess: invalidate,
+  });
+}
+
+export function useBatchUnplaceStudents() {
+  const invalidate = useInvalidateAllocation();
+
+  return useMutation({
+    mutationFn: ({
+      roundId,
+      studentIds,
+    }: {
+      roundId: number;
+      studentIds: number[];
+    }) =>
+      api<{ removedCount: number; message: string }>(
+        `/rounds/${roundId}/allocation/placements/batch-unplace`,
+        { method: 'POST', body: { studentIds } },
+      ),
+    onSuccess: invalidate,
+  });
+}
+
+export interface AutoPreviewInput {
+  roundId: number;
+  strategy: AutoAllocateStrategy;
+  allowCrossMajor: boolean;
+  studentIds?: number[];
+  topicIds?: number[];
+}
+
+export function useAutoAllocationPreview() {
+  return useMutation({
+    mutationFn: ({ roundId, ...body }: AutoPreviewInput) =>
+      api<AutoAllocationPreview>(
+        `/rounds/${roundId}/allocation/auto-preview`,
+        { method: 'POST', body },
+      ),
   });
 }
 

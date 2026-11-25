@@ -26,6 +26,10 @@ import { QueryTopicLecturersDto } from './dto/query-topic-lecturers.dto';
 import { QueryTopicsDto } from './dto/query-topics.dto';
 import { UpdateTopicDto } from './dto/update-topic.dto';
 import { BulkOpenTopicsDto } from './dto/bulk-open-topics.dto';
+import {
+  BulkDepartmentReviewDto,
+  BulkTopicIdsDto,
+} from './dto/bulk-topics.dto';
 import { SubmitTopicsDto } from './dto/submit-topics.dto';
 import { DepartmentReviewDto } from './dto/review-topic.dto';
 import { TopicSimilarityService } from './topic-similarity.service';
@@ -119,13 +123,52 @@ export class TopicsController {
   )
   @Patch('bulk-open')
   bulkOpen(@Body() dto: BulkOpenTopicsDto, @GetUser('id') userId: number) {
-    return this.topicsService.bulkOpen(dto.semesterId, userId);
+    return this.topicsService.bulkOpen(dto.semesterId, userId, dto.topicIds);
+  }
+
+  @Roles('ADMIN', 'GVCN')
+  @RequirePermissions(
+    SystemPermission.TOPIC_SIGN_OFF,
+    SystemPermission.TOPIC_REGISTRY,
+  )
+  @Patch('bulk-close')
+  bulkClose(@Body() dto: BulkTopicIdsDto, @GetUser('id') userId: number) {
+    return this.topicsService.bulkClose(dto.topicIds, userId);
   }
 
   @Roles('LECTURER')
   @Post('submit-drafts')
   submitDrafts(@Body() dto: SubmitTopicsDto, @GetUser('id') userId: number) {
     return this.topicsService.submitDrafts(userId, dto.topicIds);
+  }
+
+  @Roles('LECTURER', 'GVCN', 'ADMIN')
+  @Post('bulk-withdraw')
+  bulkWithdraw(
+    @Body() dto: BulkTopicIdsDto,
+    @GetUser('id') userId: number,
+    @GetUser('role') role: Role,
+  ) {
+    return this.topicsService.bulkWithdraw(dto.topicIds, userId, role);
+  }
+
+  @Roles('LECTURER', 'GVCN', 'ADMIN')
+  @Post('bulk-delete')
+  bulkDelete(
+    @Body() dto: BulkTopicIdsDto,
+    @GetUser('id') userId: number,
+    @GetUser('role') role: Role,
+  ) {
+    return this.topicsService.bulkDelete(dto.topicIds, userId, role);
+  }
+
+  @RequirePermissions(SystemPermission.TOPIC_REVIEW_DEPT)
+  @Patch('bulk-department-review')
+  bulkReviewDepartment(
+    @Body() dto: BulkDepartmentReviewDto,
+    @GetUser() user: RequestUser,
+  ) {
+    return this.topicsService.bulkReviewDepartment(dto, user);
   }
 
   @Roles('LECTURER', 'GVCN', 'ADMIN')

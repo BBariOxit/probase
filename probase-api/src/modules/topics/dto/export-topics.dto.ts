@@ -12,6 +12,18 @@ export const ExportTopicsSchema = z.object({
   majorId: z.coerce.number().int().positive().optional(),
   status: z.enum(TopicStatus).optional(),
   q: z.string().trim().min(1).max(255).optional(),
+  topicIds: z
+    .preprocess(
+      (value) =>
+        typeof value === 'string'
+          ? value
+              .split(',')
+              .map((v) => v.trim())
+              .filter(Boolean)
+          : value,
+      z.array(z.coerce.number().int().positive()).max(500),
+    )
+    .optional(),
 });
 
 export type ExportTopicsMode = z.infer<typeof ExportTopicsModeSchema>;

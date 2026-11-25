@@ -3,6 +3,7 @@ export * from './use-debounce';
 export * from './use-pagination';
 export * from './use-disclosure';
 export * from './use-copy-to-clipboard';
+export * from './use-table-selection';
 export { useRequireRole } from '@/lib/auth/use-require-role';
 export { useSession } from '@/lib/auth/session';
 export { useBreadcrumbLabel } from '@/lib/breadcrumb-context';

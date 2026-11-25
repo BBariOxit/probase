@@ -212,6 +212,10 @@ export class TopicsExportService {
       ];
     }
 
+    if (query.topicIds?.length) {
+      where.id = { in: query.topicIds };
+    }
+
     return where;
   }
 

@@ -145,6 +145,48 @@ export function useResetUserPassword() {
   });
 }
 
+export function useBulkDeactivateUsers() {
+  const invalidate = useInvalidateUsers();
+
+  return useMutation({
+    mutationFn: (userIds: number[]) =>
+      api<{ count: number; skippedSelf: boolean }>('/users/bulk-deactivate', {
+        method: 'POST',
+        body: { userIds },
+      }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useBulkResetUsersPassword() {
+  const invalidate = useInvalidateUsers();
+
+  return useMutation({
+    mutationFn: (userIds: number[]) =>
+      api<{ count: number; skippedSelf: boolean }>(
+        '/users/bulk-reset-password',
+        {
+          method: 'POST',
+          body: { userIds },
+        },
+      ),
+    onSuccess: invalidate,
+  });
+}
+
+export function useBulkDeleteUsers() {
+  const invalidate = useInvalidateUsers();
+
+  return useMutation({
+    mutationFn: (userIds: number[]) =>
+      api<{ count: number; skippedSelf: boolean }>('/users/bulk-delete', {
+        method: 'POST',
+        body: { userIds },
+      }),
+    onSuccess: invalidate,
+  });
+}
+
 export function useBulkImportUsers() {
   const invalidate = useInvalidateUsers();
 

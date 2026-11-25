@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   BookMarked,
   CalendarRange,
   Check,
   Eye,
+  FileSpreadsheet,
   Loader2,
   Lock,
   LockOpen,
@@ -29,10 +30,19 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import {
+  useBulkCloseTopics,
+  useBulkOpenTopics,
+  useExportTopics,
   useTopicLecturers,
   useTopicTransition,
   useTopics,
 } from '@/lib/api/topics';
+import { useTableSelection } from '@/hooks';
+import {
+  BulkActionBar,
+  BulkIconAction,
+} from '@/components/shared/bulk-action-bar';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useRequireGvcnOrAdmin } from '@/lib/auth/use-require-role';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
 import type { TopicListItem, TopicStatus } from '@/lib/api/types';
@@ -261,6 +271,32 @@ export default function AdminTopicRegistryPage() {
     debouncedSearch || statusFilter !== 'ALL' || lecturerId !== 0,
   );
 
+  const topics = useMemo(() => data?.items ?? [], [data?.items]);
+  const {
+    selectedItems,
+    selectedIds,
+    selectedCount,
+    allOnPageSelected,
+    isSelected,
+    toggleRow,
+    toggleAllOnPage,
+    clearSelection,
+    removeSelectedIds,
+  } = useTableSelection(topics);
+
+  const bulkOpenSelected = useBulkOpenTopics();
+  const bulkCloseSelected = useBulkCloseTopics();
+  const exportTopics = useExportTopics();
+
+  const selectedApprovedIds = useMemo(
+    () => selectedItems.filter((t) => t.status === 'APPROVED').map((t) => t.id),
+    [selectedItems],
+  );
+  const selectedOpenIds = useMemo(
+    () => selectedItems.filter((t) => t.status === 'OPEN').map((t) => t.id),
+    [selectedItems],
+  );
+
   if (!allowed) return null;
 
   if (!isSemestersPending && !semestersError && !activeSemester) {
@@ -283,8 +319,6 @@ export default function AdminTopicRegistryPage() {
       </div>
     );
   }
-
-  const topics = data?.items ?? [];
 
   return (
     <TooltipProvider delay={200}>
@@ -422,14 +456,88 @@ export default function AdminTopicRegistryPage() {
           <p className="text-sm text-destructive">Không tải được danh sách.</p>
         )}
 
+        <BulkActionBar
+          variant="floating"
+          count={selectedCount}
+          itemName="đề tài"
+          onClear={clearSelection}
+        >
+          {selectedApprovedIds.length > 0 && (
+            <BulkIconAction
+              tone="primary"
+              label={`Mở đăng ký (${selectedApprovedIds.length})`}
+              icon={<LockOpen className="size-4" />}
+              loading={bulkOpenSelected.isPending}
+              onClick={async () => {
+                try {
+                  const res = await bulkOpenSelected.mutateAsync({
+                    semesterId: activeSemesterId,
+                    topicIds: selectedApprovedIds,
+                  });
+                  toast.success(`Đã mở đăng ký ${res.updated} đề tài.`);
+                  removeSelectedIds(selectedApprovedIds);
+                } catch {
+                  toast.error('Không mở đăng ký được các đề tài đã chọn.');
+                }
+              }}
+            />
+          )}
+
+          {selectedOpenIds.length > 0 && (
+            <BulkIconAction
+              tone="danger"
+              label={`Đóng đăng ký (${selectedOpenIds.length})`}
+              icon={<Lock className="size-4" />}
+              loading={bulkCloseSelected.isPending}
+              onClick={async () => {
+                try {
+                  const res = await bulkCloseSelected.mutateAsync(selectedOpenIds);
+                  toast.success(`Đã đóng đăng ký ${res.updated} đề tài.`);
+                  removeSelectedIds(selectedOpenIds);
+                } catch {
+                  toast.error('Không đóng đăng ký được các đề tài đã chọn.');
+                }
+              }}
+            />
+          )}
+
+          <BulkIconAction
+            label={`Xuất Excel (${selectedCount})`}
+            icon={<FileSpreadsheet className="size-4" />}
+            loading={exportTopics.isPending}
+            disabled={!hasActiveSemester}
+            onClick={async () => {
+              try {
+                await exportTopics.mutateAsync({
+                  mode: 'FILTERED',
+                  semesterId: activeSemesterId,
+                  semesterCode: activeSemester?.code,
+                  topicIds: selectedIds,
+                });
+                toast.success(`Đã xuất Excel ${selectedCount} đề tài đã chọn.`);
+              } catch {
+                toast.error('Không xuất được tệp Excel.');
+              }
+            }}
+          />
+        </BulkActionBar>
+
         {/* ── Table ── */}
         <div className="isolate w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs">
           <Table
             containerClassName="w-full overflow-x-auto"
-            className="w-full min-w-[1040px] table-fixed text-left text-sm"
+            className="w-full min-w-[1080px] table-fixed text-left text-sm"
           >
             <TableHeader>
               <TableRow>
+                <TableHead className="w-11 px-3 text-center">
+                  <Checkbox
+                    checked={allOnPageSelected}
+                    onCheckedChange={toggleAllOnPage}
+                    disabled={topics.length === 0}
+                    aria-label="Chọn tất cả đề tài trên trang"
+                  />
+                </TableHead>
                 <TableHead className="w-[236px] min-w-[220px] px-4">
                   Tiêu đề
                 </TableHead>
@@ -457,9 +565,22 @@ export default function AdminTopicRegistryPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {topics.map((topic) => (
-                <TableRow key={topic.id} className="transition-colors">
-                  <TableCell className="w-[236px] min-w-[220px] px-4 font-medium whitespace-normal">
+              {topics.map((topic) => {
+                const checked = isSelected(topic.id);
+                return (
+                  <TableRow
+                    key={topic.id}
+                    data-state={checked ? 'selected' : undefined}
+                    className="transition-colors"
+                  >
+                    <TableCell className="w-11 px-3 text-center">
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(val) => toggleRow(topic, val)}
+                        aria-label={`Chọn đề tài ${topic.title}`}
+                      />
+                    </TableCell>
+                    <TableCell className="w-[236px] min-w-[220px] px-4 font-medium whitespace-normal">
                     <div className="w-full whitespace-normal">
                       <Tooltip>
                         <TooltipTrigger
@@ -515,7 +636,8 @@ export default function AdminTopicRegistryPage() {
                     <TopicActionsDropdown topic={topic} />
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
 

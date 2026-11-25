@@ -17,6 +17,18 @@ export const QueryStudentsSchema = z.object({
     .optional()
     .transform((value) => (value === undefined ? undefined : value === 'true')),
   q: z.string().trim().min(1).max(100).optional(),
+  studentIds: z
+    .preprocess(
+      (value) =>
+        typeof value === 'string'
+          ? value
+              .split(',')
+              .map((v) => v.trim())
+              .filter(Boolean)
+          : value,
+      z.array(z.coerce.number().int().positive()).max(500),
+    )
+    .optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(25),
 });

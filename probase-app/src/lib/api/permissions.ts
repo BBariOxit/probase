@@ -167,3 +167,34 @@ export function useMyPermissions() {
   });
 }
 
+export const PERMISSION_ROLE_LABELS: Record<
+  'ADMIN' | 'TTBM' | 'GVCN' | 'LECTURER',
+  string
+> = {
+  ADMIN: 'Giáo vụ Khoa',
+  TTBM: 'Tổ trưởng Bộ môn',
+  GVCN: 'Giáo viên chủ nhiệm',
+  LECTURER: 'Giảng viên',
+};
+
+/**
+ * Trả về tập quyền mặc định mà giảng viên được thừa hưởng từ vai trò hiện tại
+ * (bao gồm quyền chung của LECTURER và quyền của chức danh TTBM/GVCN nếu có).
+ */
+export function getRoleInheritedPermissions(
+  matrix: Record<string, string[]> | undefined,
+  assignedRole?: string,
+): Set<string> {
+  if (!matrix) return new Set();
+  if (assignedRole === 'ADMIN') {
+    return new Set(matrix.ADMIN ?? []);
+  }
+  const inherited = new Set<string>(matrix.LECTURER ?? []);
+  if (assignedRole && assignedRole !== 'LECTURER') {
+    for (const perm of matrix[assignedRole] ?? []) {
+      inherited.add(perm);
+    }
+  }
+  return inherited;
+}
+

@@ -900,6 +900,162 @@ export class UsersService {
     return { message: 'Password reset successfully' };
   }
 
+  async bulkDeactivate(userIds: number[], actorId: number) {
+    const uniqueIds = Array.from(new Set(userIds));
+    const skippedSelf = uniqueIds.includes(actorId);
+    const targetIds = uniqueIds.filter((id) => id !== actorId);
+
+    if (targetIds.length === 0) {
+      throw new ConflictException(
+        'Không thể tự khóa tài khoản của chính mình.',
+      );
+    }
+
+    const targets = await this.prisma.user.findMany({
+      where: { id: { in: targetIds }, isActive: true },
+      select: { id: true, email: true, role: true },
+    });
+
+    if (targets.length === 0) {
+      return { count: 0, skippedSelf };
+    }
+
+    const ids = targets.map((t) => t.id);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.updateMany({
+        where: { id: { in: ids } },
+        data: { isActive: false },
+      });
+
+      await tx.refreshToken.deleteMany({
+        where: { userId: { in: ids } },
+      });
+
+      for (const t of targets) {
+        await recordAudit(tx, {
+          userId: actorId,
+          action: 'DEACTIVATE_USER',
+          targetTable: 'users',
+          targetId: t.id,
+          oldValue: { email: t.email, role: t.role, isActive: true },
+          newValue: { isActive: false, bulk: true },
+        });
+      }
+    });
+
+    return { count: targets.length, skippedSelf };
+  }
+
+  async bulkResetPassword(userIds: number[], actorId: number) {
+    const uniqueIds = Array.from(new Set(userIds));
+    const skippedSelf = uniqueIds.includes(actorId);
+    const targetIds = uniqueIds.filter((id) => id !== actorId);
+
+    if (targetIds.length === 0) {
+      throw new ConflictException(
+        'Vui lòng dùng chức năng Đổi mật khẩu cho tài khoản của chính mình.',
+      );
+    }
+
+    const targets = await this.prisma.user.findMany({
+      where: { id: { in: targetIds } },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        studentProfile: { select: { fullName: true } },
+        lecturerProfile: { select: { fullName: true } },
+      },
+    });
+
+    if (targets.length === 0) {
+      return { count: 0, skippedSelf };
+    }
+
+    const updates = await Promise.all(
+      targets.map(async (target) => {
+        const tempPassword = this.generateTempPassword();
+        const passwordHash = await bcrypt.hash(tempPassword, 10);
+        return { target, tempPassword, passwordHash };
+      }),
+    );
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const { target, passwordHash } of updates) {
+        await tx.user.update({
+          where: { id: target.id },
+          data: { password: passwordHash, mustChangePassword: false },
+        });
+
+        await recordAudit(tx, {
+          userId: actorId,
+          action: 'RESET_USER_PASSWORD',
+          targetTable: 'users',
+          targetId: target.id,
+          newValue: { email: target.email, mustChangePassword: false, bulk: true },
+        });
+      }
+
+      await tx.refreshToken.deleteMany({
+        where: { userId: { in: targets.map((t) => t.id) } },
+      });
+    });
+
+    await Promise.allSettled(
+      updates.map(({ target, tempPassword }) =>
+        this.mailService.sendPasswordReset({
+          to: target.email,
+          fullName:
+            target.studentProfile?.fullName ?? target.lecturerProfile?.fullName,
+          tempPassword,
+          role: target.role,
+        }),
+      ),
+    );
+
+    return { count: targets.length, skippedSelf };
+  }
+
+  async bulkDelete(userIds: number[], actorId: number) {
+    const uniqueIds = Array.from(new Set(userIds));
+    const skippedSelf = uniqueIds.includes(actorId);
+    const targetIds = uniqueIds.filter((id) => id !== actorId);
+
+    if (targetIds.length === 0) {
+      throw new ConflictException('Bạn không thể tự xóa tài khoản của mình');
+    }
+
+    const targets = await this.prisma.user.findMany({
+      where: { id: { in: targetIds } },
+      select: { id: true, email: true, role: true },
+    });
+
+    if (targets.length === 0) {
+      return { count: 0, skippedSelf };
+    }
+
+    const ids = targets.map((t) => t.id);
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const t of targets) {
+        await recordAudit(tx, {
+          userId: actorId,
+          action: 'DELETE_USER',
+          targetTable: 'users',
+          targetId: t.id,
+          oldValue: { email: t.email, role: t.role, bulk: true },
+        });
+      }
+
+      await tx.user.deleteMany({
+        where: { id: { in: ids } },
+      });
+    });
+
+    return { count: targets.length, skippedSelf };
+  }
+
   // ── upsertStudentProfile ──────────────────────────────────
 
   async upsertStudentProfile(

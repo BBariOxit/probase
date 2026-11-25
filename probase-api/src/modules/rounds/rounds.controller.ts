@@ -29,6 +29,7 @@ import {
   ReanalyzeEligibleImportDto,
 } from './dto/eligible-import.dto';
 import { AddEligibleStudentDto } from './dto/add-eligible-student.dto';
+import { BulkRemoveEligibleDto } from './dto/bulk-remove-eligible.dto';
 import { ExtendRoundDto } from './dto/extend-round.dto';
 import { QueryEligibleStudentsDto } from './dto/query-eligible-students.dto';
 import { QueryRoundsDto } from './dto/query-rounds.dto';
@@ -241,6 +242,17 @@ export class RoundsController {
     @Query() query: QueryEligibleStudentsDto,
   ) {
     return this.eligibleStudents.listEligible(id, query);
+  }
+
+  @RequirePermissions(SystemPermission.TOPIC_REGISTRY)
+  @Post(':id/eligible-students/bulk-delete')
+  @HttpCode(HttpStatus.OK)
+  bulkRemoveEligibleStudents(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: BulkRemoveEligibleDto,
+    @GetUser('id') userId: number,
+  ) {
+    return this.eligibleStudents.bulkRemoveEligible(id, dto.studentIds, userId);
   }
 
   @RequirePermissions(SystemPermission.TOPIC_REGISTRY)
