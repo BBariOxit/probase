@@ -645,24 +645,24 @@ export function RoundLecturerProgressTab({
               <div className="rounded-lg border border-slate-300 dark:border-neutral-800 bg-slate-100/80 dark:bg-[#1e1e1e] p-3 text-xs">
                 <div className="grid grid-cols-3 gap-2 text-center divide-x divide-slate-200 dark:divide-neutral-800">
                   <div className="space-y-0.5">
-                    <span className="text-xs text-slate-500 dark:text-neutral-400 block">
-                      SV dự kiến tham gia
+                    <span className="text-xs text-slate-500 dark:text-neutral-400 block whitespace-nowrap">
+                      SV dự kiến
                     </span>
                     <p className="text-sm font-bold text-slate-900 dark:text-neutral-100 font-mono">
                       {capacity.eligibleStudentCount} SV
                     </p>
                   </div>
                   <div className="space-y-0.5 pl-2">
-                    <span className="text-xs text-slate-500 dark:text-neutral-400 block">
-                      Nhu cầu tối thiểu
+                    <span className="text-xs text-slate-500 dark:text-neutral-400 block whitespace-nowrap">
+                      Cần tối thiểu
                     </span>
                     <p className="text-sm font-bold text-slate-900 dark:text-neutral-100 font-mono">
                       ~{calculatedGroupsNeeded} đề tài
                     </p>
                   </div>
                   <div className="space-y-0.5 pl-2">
-                    <span className="text-xs text-slate-500 dark:text-neutral-400 block">
-                      Tổng chỉ tiêu huy động
+                    <span className="text-xs text-slate-500 dark:text-neutral-400 block whitespace-nowrap">
+                      Tổng chỉ tiêu
                     </span>
                     <p className="text-sm font-bold text-slate-900 dark:text-neutral-100 font-mono">
                       ~{capacity.totalTargetQuota ?? totalFromLecturers} đề tài
