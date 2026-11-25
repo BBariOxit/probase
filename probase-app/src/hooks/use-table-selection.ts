@@ -80,3 +80,4 @@ export function useTableSelection<T extends { id: number }>(visibleItems: T[]) {
     removeSelectedIds,
   };
 }
+

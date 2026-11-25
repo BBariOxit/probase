@@ -549,8 +549,8 @@ export function RolePermissionMatrix() {
                     <label
                       key={p.code}
                       className={`flex items-start gap-3 text-sm text-slate-900 dark:text-zinc-100 p-2 rounded-md select-none transition-colors ${isFromRole
-                          ? 'opacity-75 cursor-not-allowed'
-                          : 'cursor-pointer hover:bg-slate-100/70 dark:hover:bg-muted/40'
+                        ? 'opacity-75 cursor-not-allowed'
+                        : 'cursor-pointer hover:bg-slate-100/70 dark:hover:bg-muted/40'
                         }`}
                     >
                       <Checkbox
