@@ -30,7 +30,10 @@ import {
   useTopicTransition,
   useTopics,
 } from '@/lib/api/topics';
-import { BulkActionBar } from '@/components/shared/bulk-action-bar';
+import {
+  BulkActionBar,
+  BulkIconAction,
+} from '@/components/shared/bulk-action-bar';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
@@ -409,15 +412,21 @@ export function MyCurrentTopicsTab({
       )}
 
       <BulkActionBar
+        variant="floating"
         count={selectedCount}
         itemName="đề tài"
         onClear={clearSelection}
       >
         {selectedDraftIds.length > 0 && (
-          <Button
-            type="button"
-            size="sm"
-            disabled={submitDrafts.isPending}
+          <BulkIconAction
+            tone="primary"
+            label={
+              isHeadOfDepartment
+                ? `Gửi & duyệt (${selectedDraftIds.length})`
+                : `Gửi duyệt (${selectedDraftIds.length})`
+            }
+            icon={<Send className="size-4" />}
+            loading={submitDrafts.isPending}
             onClick={() => {
               submitDrafts
                 .mutateAsync(selectedDraftIds)
@@ -425,49 +434,31 @@ export function MyCurrentTopicsTab({
                   toast.success(res.message);
                   removeSelectedIds(selectedDraftIds);
                 })
-                .catch(() => toast.error('Không thể gửi duyệt các đề tài đã chọn.'));
+                .catch(() =>
+                  toast.error('Không thể gửi duyệt các đề tài đã chọn.'),
+                );
             }}
-            className="h-8 gap-1.5 text-xs font-semibold cursor-pointer"
-          >
-            {submitDrafts.isPending ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <Send className="size-3.5" />
-            )}
-            <span>
-              {isHeadOfDepartment
-                ? `Gửi & duyệt (${selectedDraftIds.length})`
-                : `Gửi duyệt (${selectedDraftIds.length})`}
-            </span>
-          </Button>
+          />
         )}
 
         {selectedPendingIds.length > 0 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
+          <BulkIconAction
+            tone="warning"
+            label={`Thu hồi (${selectedPendingIds.length})`}
+            icon={<Undo2 className="size-4" />}
             disabled={bulkWithdraw.isPending}
             onClick={bulkWithdrawDialog.onOpen}
-            className="h-8 gap-1.5 text-xs font-medium text-amber-700 border-amber-300 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-700 dark:hover:bg-amber-950/30 cursor-pointer"
-          >
-            <Undo2 className="size-3.5" />
-            <span>Thu hồi ({selectedPendingIds.length})</span>
-          </Button>
+          />
         )}
 
         {selectedDeletableIds.length > 0 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
+          <BulkIconAction
+            tone="danger"
+            label={`Xóa (${selectedDeletableIds.length})`}
+            icon={<Trash2 className="size-4" />}
             disabled={bulkDelete.isPending}
             onClick={bulkDeleteDialog.onOpen}
-            className="h-8 gap-1.5 text-xs font-medium text-destructive border-destructive/30 hover:bg-destructive/10 cursor-pointer"
-          >
-            <Trash2 className="size-3.5" />
-            <span>Xóa ({selectedDeletableIds.length})</span>
-          </Button>
+          />
         )}
       </BulkActionBar>
 

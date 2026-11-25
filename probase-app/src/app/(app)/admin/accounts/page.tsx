@@ -30,7 +30,10 @@ import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
 import { extractErrorMessage } from '@/lib/api/error';
 import { toast } from 'sonner';
-import { BulkActionBar } from '@/components/shared/bulk-action-bar';
+import {
+  BulkActionBar,
+  BulkIconAction,
+} from '@/components/shared/bulk-action-bar';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { FormError } from '@/components/shared/form-error';
@@ -261,47 +264,35 @@ export default function AccountsPage() {
       )}
 
       <BulkActionBar
+        variant="floating"
         count={selectedCount}
         itemName="tài khoản"
         onClear={clearSelection}
       >
         {selectedActiveIds.length > 0 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
+          <BulkIconAction
+            tone="warning"
+            label={`Khoá tài khoản (${selectedActiveIds.length})`}
+            icon={<Lock className="size-4" />}
             disabled={bulkLock.isPending}
             onClick={() => setBulkLockOpen(true)}
-            className="h-8 gap-1.5 text-xs font-medium text-amber-700 border-amber-300 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-700 dark:hover:bg-amber-950/30 cursor-pointer"
-          >
-            <Lock className="size-3.5" />
-            <span>Khoá tài khoản ({selectedActiveIds.length})</span>
-          </Button>
+          />
         )}
 
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
+        <BulkIconAction
+          label={`Cấp lại mật khẩu (${selectedCount})`}
+          icon={<KeyRound className="size-4" />}
           disabled={bulkReset.isPending}
           onClick={() => setBulkResetOpen(true)}
-          className="h-8 gap-1.5 text-xs font-medium cursor-pointer"
-        >
-          <KeyRound className="size-3.5" />
-          <span>Cấp lại mật khẩu ({selectedCount})</span>
-        </Button>
+        />
 
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
+        <BulkIconAction
+          tone="danger"
+          label={`Xóa tài khoản (${selectedCount})`}
+          icon={<Trash2 className="size-4" />}
           disabled={bulkDelete.isPending}
           onClick={() => setBulkDeleteOpen(true)}
-          className="h-8 gap-1.5 text-xs font-medium text-destructive border-destructive/30 hover:bg-destructive/10 cursor-pointer"
-        >
-          <Trash2 className="size-3.5" />
-          <span>Xóa tài khoản ({selectedCount})</span>
-        </Button>
+        />
       </BulkActionBar>
 
       <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs overflow-hidden">

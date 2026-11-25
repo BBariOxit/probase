@@ -34,7 +34,10 @@ import { useDebouncedValue } from '@/lib/use-debounced-value';
 import { AddEligibleStudentDialog } from '@/components/admin/add-eligible-student-dialog';
 import { EligibleStudentsImportDialog } from '@/components/admin/eligible-students-import-dialog';
 import { AdvancedFilterPopover } from '@/components/shared/advanced-filter-popover';
-import { BulkActionBar } from '@/components/shared/bulk-action-bar';
+import {
+  BulkActionBar,
+  BulkIconAction,
+} from '@/components/shared/bulk-action-bar';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
@@ -570,40 +573,28 @@ export default function StudentRosterPage() {
 
 
         <BulkActionBar
+          variant="floating"
           count={selectedCount}
           itemName="sinh viên"
           onClear={clearSelection}
         >
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={exportRoster.isPending}
+          <BulkIconAction
+            label={`Xuất Excel (${selectedCount})`}
+            icon={<FileSpreadsheet className="size-4" />}
+            loading={exportRoster.isPending}
             onClick={() =>
               exportRoster.mutate({ ...query, studentIds: selectedIds })
             }
-            className="h-8 gap-1.5 text-xs font-medium cursor-pointer"
-          >
-            {exportRoster.isPending ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <FileSpreadsheet className="size-3.5" />
-            )}
-            <span>Xuất Excel ({selectedCount})</span>
-          </Button>
+          />
 
           {hasImportedRoundRoster && selectedRemovableIds.length > 0 && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
+            <BulkIconAction
+              tone="danger"
+              label={`Xóa khỏi đợt (${selectedRemovableIds.length})`}
+              icon={<Trash2 className="size-4" />}
               disabled={bulkRemoveEligibleMutation.isPending}
               onClick={() => setBulkRemoveOpen(true)}
-              className="h-8 gap-1.5 text-xs font-medium text-destructive border-destructive/30 hover:bg-destructive/10 cursor-pointer"
-            >
-              <Trash2 className="size-3.5" />
-              <span>Xóa khỏi đợt ({selectedRemovableIds.length})</span>
-            </Button>
+            />
           )}
         </BulkActionBar>
 

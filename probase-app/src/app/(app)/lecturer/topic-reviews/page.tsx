@@ -20,7 +20,10 @@ import {
 } from '@/lib/api/topics';
 import { useSemesters } from '@/lib/api/master-data';
 import { useRequireRole } from '@/lib/auth/use-require-role';
-import { BulkActionBar } from '@/components/shared/bulk-action-bar';
+import {
+  BulkActionBar,
+  BulkIconAction,
+} from '@/components/shared/bulk-action-bar';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
@@ -292,38 +295,32 @@ export default function LecturerTopicReviewsPage() {
           )}
 
           <BulkActionBar
+            variant="floating"
             count={selectedCount}
             itemName="đề tài"
             onClear={clearSelection}
           >
             {selectedPendingIds.length > 0 && (
-              <Button
-                type="button"
-                size="sm"
+              <BulkIconAction
+                tone="primary"
+                label={`Duyệt (${selectedPendingIds.length})`}
+                icon={<Check className="size-4" />}
                 disabled={bulkReview.isPending}
                 onClick={() => setBulkApproveOpen(true)}
-                className="h-8 gap-1.5 text-xs font-semibold cursor-pointer"
-              >
-                <Check className="size-3.5" />
-                <span>Duyệt ({selectedPendingIds.length})</span>
-              </Button>
+              />
             )}
 
             {selectedRevisableIds.length > 0 && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
+              <BulkIconAction
+                tone="warning"
+                label={`Yêu cầu sửa (${selectedRevisableIds.length})`}
+                icon={<RotateCcw className="size-4" />}
                 disabled={bulkReview.isPending}
                 onClick={() => {
                   setBulkFeedback('');
                   setBulkReviseOpen(true);
                 }}
-                className="h-8 gap-1.5 text-xs font-medium text-amber-700 border-amber-300 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-700 dark:hover:bg-amber-950/30 cursor-pointer"
-              >
-                <RotateCcw className="size-3.5" />
-                <span>Yêu cầu sửa ({selectedRevisableIds.length})</span>
-              </Button>
+              />
             )}
           </BulkActionBar>
 

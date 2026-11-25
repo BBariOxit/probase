@@ -34,6 +34,10 @@ import {
   sanitizeLecturerName,
 } from '@/lib/utils';
 import { outlineService } from '@/services/outline.service';
+import {
+  BulkActionBar,
+  BulkIconAction,
+} from '@/components/shared/bulk-action-bar';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
 import { StatusPill, type StatusLabel } from '@/components/shared/status-pill';
@@ -620,72 +624,36 @@ export default function AdminOutlinesPage() {
         </div>
 
         {/* Bulk Actions Bar */}
-        {selectedItems.length > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 dark:bg-primary/10 px-4 py-2.5">
-            <div className="flex items-center gap-3 text-sm">
-              <span className="font-semibold text-slate-900 dark:text-neutral-100">
-                Đã chọn{' '}
-                <span className="text-primary tabular-nums">
-                  {selectedItems.length}
-                </span>{' '}
-                nhóm
-              </span>
-              <button
-                type="button"
-                onClick={() => setSelectedById({})}
-                className="text-xs font-medium text-slate-600 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-neutral-100 underline underline-offset-2 cursor-pointer"
-              >
-                Bỏ chọn
-              </button>
-            </div>
+        <BulkActionBar
+          variant="floating"
+          count={selectedItems.length}
+          itemName="nhóm"
+          onClear={() => setSelectedById({})}
+        >
+          <BulkIconAction
+            label={`Tải bản scan (.zip · ${downloadableSelectedIds.length})`}
+            icon={<FileArchive className="size-4" />}
+            loading={downloadingZip}
+            disabled={downloadableSelectedIds.length === 0}
+            onClick={handleDownloadZip}
+          />
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadZip}
-                disabled={downloadableSelectedIds.length === 0 || downloadingZip}
-                className="h-8 gap-1.5 text-xs font-medium cursor-pointer"
-              >
-                {downloadingZip ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <FileArchive className="size-3.5" />
-                )}
-                <span>Tải bản scan (.zip · {downloadableSelectedIds.length})</span>
-              </Button>
+          <BulkIconAction
+            label={`Xuất CSV (${selectedItems.length})`}
+            icon={<FileSpreadsheet className="size-4" />}
+            onClick={handleExportSelected}
+          />
 
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleExportSelected}
-                className="h-8 gap-1.5 text-xs font-medium cursor-pointer"
-              >
-                <FileSpreadsheet className="size-3.5" />
-                <span>Xuất CSV</span>
-              </Button>
-
-              {remindableSelectedIds.length > 0 && (
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => handleRemind(remindableSelectedIds)}
-                  disabled={remindMutation.isPending}
-                  className="h-8 gap-1.5 text-xs font-semibold cursor-pointer"
-                >
-                  {remindMutation.isPending ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : (
-                    <Bell className="size-3.5" />
-                  )}
-                  <span>Nhắc nộp M03 ({remindableSelectedIds.length})</span>
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
+          {remindableSelectedIds.length > 0 && (
+            <BulkIconAction
+              tone="primary"
+              label={`Nhắc nộp M03 (${remindableSelectedIds.length})`}
+              icon={<Bell className="size-4" />}
+              loading={remindMutation.isPending}
+              onClick={() => handleRemind(remindableSelectedIds)}
+            />
+          )}
+        </BulkActionBar>
 
         {(semestersError || error) && (
           <p className="text-sm text-destructive">
