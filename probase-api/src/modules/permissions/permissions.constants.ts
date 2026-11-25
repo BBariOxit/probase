@@ -58,3 +58,28 @@ export const ROLE_LABELS: Record<SystemRole, string> = {
   GVCN: 'Giáo viên chủ nhiệm',
   LECTURER: 'Giảng viên',
 };
+
+export interface PermissionSubjectUser {
+  role: string;
+  lecturerProfile?: {
+    isHeadOfDepartment?: boolean;
+    isHomeroomTeacher?: boolean;
+    isAcademicAssistant?: boolean;
+  } | null;
+}
+
+export function resolveUserPermissionRoles(
+  user: PermissionSubjectUser,
+): string[] {
+  const roles: string[] = [user.role];
+  if (user.lecturerProfile?.isHeadOfDepartment) {
+    roles.push('TTBM');
+  }
+  if (user.lecturerProfile?.isHomeroomTeacher) {
+    roles.push('GVCN');
+  }
+  if (user.lecturerProfile?.isAcademicAssistant) {
+    roles.push('TLGV');
+  }
+  return Array.from(new Set(roles));
+}
