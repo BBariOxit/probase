@@ -1681,6 +1681,63 @@ export class EligibleStudentsService {
     return { message: 'Đã xóa sinh viên khỏi danh sách đủ điều kiện' };
   }
 
+  async bulkRemoveEligible(
+    roundId: number,
+    studentIds: number[],
+    actorId?: number,
+  ) {
+    const round = await this.prisma.registrationRound.findUnique({
+      where: { id: roundId },
+    });
+    if (!round) throw new NotFoundException('Không tìm thấy đợt đăng ký');
+
+    const uniqueIds = Array.from(new Set(studentIds));
+
+    const memberships = await this.prisma.registrationGroupMember.findMany({
+      where: {
+        studentId: { in: uniqueIds },
+        semesterId: round.semesterId,
+        status: GroupMemberStatus.ACCEPTED,
+        group: {
+          topic: { roundId },
+          status: { not: RegistrationGroupStatus.REJECTED },
+        },
+      },
+      select: { studentId: true },
+    });
+
+    const inGroupIds = new Set(memberships.map((m) => m.studentId));
+    const removableIds = uniqueIds.filter((id) => !inGroupIds.has(id));
+
+    if (removableIds.length === 0) {
+      throw new ConflictException(
+        'Tất cả sinh viên được chọn đã tham gia nhóm đề tài trong đợt này nên không thể xóa.',
+      );
+    }
+
+    const res = await this.prisma.roundStudentEligibility.deleteMany({
+      where: {
+        roundId,
+        studentId: { in: removableIds },
+      },
+    });
+
+    if (actorId && res.count > 0) {
+      await recordAudit(this.prisma, {
+        userId: actorId,
+        action: 'ELIGIBLE_STUDENTS_BULK_REMOVED',
+        targetTable: 'round_student_eligibilities',
+        targetId: roundId,
+        oldValue: { studentIds: removableIds, count: res.count },
+      }).catch(() => undefined);
+    }
+
+    return {
+      removedCount: res.count,
+      skippedInGroupCount: inGroupIds.size,
+    };
+  }
+
   /**
    * Retrieves per-round eligibility status and banners for a logged-in student.
    */
