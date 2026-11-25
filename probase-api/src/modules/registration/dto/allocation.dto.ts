@@ -8,6 +8,42 @@ export const PlaceStudentSchema = z.object({
 
 export class PlaceStudentDto extends createZodDto(PlaceStudentSchema) {}
 
+export const BatchPlaceSchema = z.object({
+  placements: z
+    .array(PlaceStudentSchema)
+    .min(1, 'Vui lòng chọn ít nhất 1 sinh viên để xếp')
+    .max(200, 'Chỉ xếp tối đa 200 sinh viên mỗi lượt'),
+});
+
+export class BatchPlaceDto extends createZodDto(BatchPlaceSchema) {}
+
+export const BatchUnplaceSchema = z.object({
+  studentIds: z
+    .array(z.coerce.number('Mã sinh viên không hợp lệ').int().positive())
+    .min(1, 'Vui lòng chọn ít nhất 1 sinh viên để bỏ xếp')
+    .max(200, 'Chỉ bỏ xếp tối đa 200 sinh viên mỗi lượt'),
+});
+
+export class BatchUnplaceDto extends createZodDto(BatchUnplaceSchema) {}
+
+export const AutoAllocateStrategySchema = z
+  .enum(['FILL_EXISTING', 'BALANCE_LECTURER'])
+  .default('FILL_EXISTING');
+
+export type AutoAllocateStrategy = z.infer<typeof AutoAllocateStrategySchema>;
+
+export const AutoPreviewSchema = z.object({
+  strategy: AutoAllocateStrategySchema,
+  allowCrossMajor: z.coerce.boolean().default(false),
+  studentIds: z
+    .array(z.coerce.number().int().positive())
+    .max(200)
+    .optional(),
+  topicIds: z.array(z.coerce.number().int().positive()).max(200).optional(),
+});
+
+export class AutoPreviewDto extends createZodDto(AutoPreviewSchema) {}
+
 export const FinalizeRoundSchema = z
   .object({
     acknowledgeUnplaced: z.coerce.boolean().default(false),

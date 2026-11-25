@@ -23,6 +23,12 @@ import { RoundPhaseService } from '../rounds/round-phase.service';
 import { markTopicsUnderway } from '../rounds/topic-lifecycle';
 import { StudentRosterService } from '../students/student-roster.service';
 import { FinalizeRoundDto, PlaceStudentDto } from './dto/allocation.dto';
+import {
+  AutoAllocateStrategy,
+  AutoPreviewDto,
+  BatchPlaceDto,
+  BatchUnplaceDto,
+} from './dto/allocation.dto';
 import { statusForSeats } from './group-seats';
 
 @Injectable()
@@ -79,195 +85,400 @@ export class AllocationService {
   }
 
   async place(roundId: number, dto: PlaceStudentDto, adminUserId: number) {
-    const round = await this.requirePlaceableRound(roundId);
-    const student = await this.requirePlaceableStudent(dto.studentId, round);
-    const topic = await this.requirePlaceableTopic(dto.topicId, roundId);
+    const result = await this.executeBatchPlace(roundId, [dto], adminUserId);
+    const placed = result.placements[0];
 
-    const placement = await this.prisma
-      .$transaction(async (tx) => {
-        /*
-          The topic row rather than the group row, because at this moment there
-          may be no group to lock: two placements onto the same empty topic would
-          both find nothing, both create one, and only the unique index would
-          stop the second — after the first had already notified everybody.
-          Locking the topic serialises both shapes of the operation.
-        */
-        await tx.$queryRaw`SELECT 1 FROM "topics" WHERE "id" = ${topic.id} FOR UPDATE`;
+    return {
+      groupId: placed.groupId,
+      topicId: placed.topicId,
+      studentId: placed.studentId,
+      message: `Đã xếp ${placed.studentName} vào đề tài "${placed.topicTitle}".`,
+    };
+  }
 
-        const group = await tx.registrationGroup.findFirst({
-          where: {
-            topicId: topic.id,
-            status: { not: RegistrationGroupStatus.REJECTED },
+  async batchPlace(roundId: number, dto: BatchPlaceDto, adminUserId: number) {
+    const seen = new Set<number>();
+    for (const item of dto.placements) {
+      if (seen.has(item.studentId)) {
+        throw new ConflictException(
+          'Danh sách xếp có sinh viên bị trùng lặp — vui lòng kiểm tra lại.',
+        );
+      }
+      seen.add(item.studentId);
+    }
+
+    const result = await this.executeBatchPlace(
+      roundId,
+      dto.placements,
+      adminUserId,
+    );
+
+    return {
+      placedCount: result.placements.length,
+      groupIds: [...new Set(result.placements.map((item) => item.groupId))],
+      placements: result.placements.map((item) => ({
+        groupId: item.groupId,
+        topicId: item.topicId,
+        studentId: item.studentId,
+      })),
+      message: `Đã xếp ${result.placements.length} sinh viên vào đề tài.`,
+    };
+  }
+
+  async unplace(roundId: number, studentId: number, adminUserId: number) {
+    const result = await this.executeBatchUnplace(
+      roundId,
+      [studentId],
+      adminUserId,
+    );
+    const removed = result[0];
+
+    return {
+      studentId,
+      message: `Đã bỏ ${removed.studentName} khỏi đề tài "${removed.topicTitle}".`,
+    };
+  }
+
+  async batchUnplace(
+    roundId: number,
+    dto: BatchUnplaceDto,
+    adminUserId: number,
+  ) {
+    const uniqueStudentIds = [...new Set(dto.studentIds)];
+    const removed = await this.executeBatchUnplace(
+      roundId,
+      uniqueStudentIds,
+      adminUserId,
+    );
+
+    return {
+      removedCount: removed.length,
+      message: `Đã bỏ xếp ${removed.length} sinh viên.`,
+    };
+  }
+
+  async autoPreview(roundId: number, dto: AutoPreviewDto) {
+    const round = await this.requireRound(roundId);
+    const phase = await this.phases.resolve(roundId);
+
+    const [allStudents, allTopics, liveGroups] = await Promise.all([
+      this.unplacedStudents(round),
+      this.topicsWithSeats(roundId),
+      this.prisma.registrationGroup.findMany({
+        where: {
+          status: { not: RegistrationGroupStatus.REJECTED },
+          topic: { roundId },
+        },
+        select: {
+          topic: { select: { lecturerId: true } },
+          _count: {
+            select: {
+              members: { where: { status: GroupMemberStatus.ACCEPTED } },
+            },
           },
-          select: {
-            id: true,
-            leaderId: true,
-            members: {
-              where: { status: GroupMemberStatus.ACCEPTED },
-              select: {
-                studentId: true,
-                student: { select: { userId: true } },
+        },
+      }),
+    ]);
+
+    const openTopics = allTopics.filter(
+      (topic) => topic.status === TopicStatus.OPEN,
+    );
+    const unopenedTopics = allTopics.filter(
+      (topic) => topic.status === TopicStatus.APPROVED,
+    );
+
+    const studentFilter = dto.studentIds?.length
+      ? new Set(dto.studentIds)
+      : null;
+    const topicFilter = dto.topicIds?.length ? new Set(dto.topicIds) : null;
+
+    const candidateStudents = studentFilter
+      ? allStudents.filter((student) => studentFilter.has(student.id))
+      : allStudents;
+    const candidateTopics = topicFilter
+      ? openTopics.filter((topic) => topicFilter.has(topic.id))
+      : openTopics;
+
+    const lecturerStudentCounts = new Map<number, number>();
+    for (const group of liveGroups) {
+      const prev = lecturerStudentCounts.get(group.topic.lecturerId) ?? 0;
+      lecturerStudentCounts.set(
+        group.topic.lecturerId,
+        prev + group._count.members,
+      );
+    }
+
+    const plan = buildAutoAllocationPlan({
+      students: candidateStudents,
+      topics: candidateTopics,
+      lecturerStudentCounts,
+      strategy: dto.strategy,
+      allowCrossMajor: dto.allowCrossMajor,
+    });
+
+    const crossMajorCount = plan.matched.filter(
+      (item) => item.matchType === 'CROSS_MAJOR',
+    ).length;
+
+    return {
+      canPlace: phase === RoundPhase.RECONCILING,
+      blockedReason:
+        phase === RoundPhase.RECONCILING ? null : PLACEMENT_CLOSED[phase],
+      strategy: dto.strategy,
+      allowCrossMajor: dto.allowCrossMajor,
+      matched: plan.matched,
+      unmatched: plan.unmatched,
+      summary: {
+        matchedCount: plan.matched.length,
+        unmatchedCount: plan.unmatched.length,
+        crossMajorCount,
+        unopenedTopics: unopenedTopics.length,
+        unopenedSeats: sumSeats(unopenedTopics),
+      },
+    };
+  }
+
+  private async executeBatchPlace(
+    roundId: number,
+    items: PlaceStudentDto[],
+    adminUserId: number,
+  ) {
+    const round = await this.requirePlaceableRound(roundId);
+    const uniqueTopicIds = [...new Set(items.map((item) => item.topicId))].sort(
+      (a, b) => a - b,
+    );
+    const studentIds = items.map((item) => item.studentId);
+
+    const [studentsMap, topicsMap] = await Promise.all([
+      this.requirePlaceableStudents(studentIds, round),
+      this.requirePlaceableTopics(uniqueTopicIds, roundId),
+    ]);
+
+    const itemsByTopic = new Map<number, PlaceStudentDto[]>();
+    for (const item of items) {
+      const list = itemsByTopic.get(item.topicId) ?? [];
+      list.push(item);
+      itemsByTopic.set(item.topicId, list);
+    }
+
+    const committed = await this.prisma
+      .$transaction(async (tx) => {
+        const results: {
+          groupId: number;
+          topicId: number;
+          topicTitle: string;
+          lecturerUserId: number;
+          studentId: number;
+          studentName: string;
+          studentUserId: number;
+          existingMemberUserIds: number[];
+        }[] = [];
+
+        // Lock in ascending topicId order so concurrent batch operations cannot deadlock.
+        for (const topicId of uniqueTopicIds) {
+          const topic = topicsMap.get(topicId)!;
+          const incoming = itemsByTopic.get(topicId)!;
+
+          await tx.$queryRaw`SELECT 1 FROM "topics" WHERE "id" = ${topic.id} FOR UPDATE`;
+
+          const group = await tx.registrationGroup.findFirst({
+            where: {
+              topicId: topic.id,
+              status: { not: RegistrationGroupStatus.REJECTED },
+            },
+            select: {
+              id: true,
+              leaderId: true,
+              members: {
+                where: { status: GroupMemberStatus.ACCEPTED },
+                select: {
+                  studentId: true,
+                  student: { select: { userId: true } },
+                },
               },
             },
-          },
-        });
+          });
 
-        const occupied = group?.members.length ?? 0;
+          const occupied = group?.members.length ?? 0;
 
-        if (occupied >= topic.maxStudents) {
-          throw new ConflictException(
-            `Đề tài "${topic.title}" đã đủ ${topic.maxStudents} sinh viên.`,
+          if (occupied + incoming.length > topic.maxStudents) {
+            throw new ConflictException(
+              `Đề tài "${topic.title}" chỉ còn ${Math.max(0, topic.maxStudents - occupied)} chỗ trống, không thể xếp thêm ${incoming.length} sinh viên.`,
+            );
+          }
+
+          const firstStudent = studentsMap.get(incoming[0].studentId)!;
+          const groupId = group
+            ? group.id
+            : await this.openGroupFor(tx, topic, firstStudent.id);
+          const existingMemberUserIds = (group?.members ?? []).map(
+            (member) => member.student.userId,
           );
+          const now = new Date();
+
+          for (let idx = 0; idx < incoming.length; idx++) {
+            const student = studentsMap.get(incoming[idx].studentId)!;
+
+            await tx.registrationGroupMember.create({
+              data: {
+                groupId,
+                semesterId: topic.semesterId,
+                studentId: student.id,
+                status: GroupMemberStatus.ACCEPTED,
+                joinSource: GroupJoinSource.ASSIGNED,
+                assignedById: adminUserId,
+                assignedAt: now,
+                joinedAt: now,
+              },
+            });
+
+            await tx.auditLog.create({
+              data: {
+                userId: adminUserId,
+                action: 'ASSIGN_GROUP_MEMBER',
+                targetTable: 'registration_group_members',
+                targetId: `${groupId}:${student.id}`,
+                newValue: {
+                  roundId,
+                  topicId: topic.id,
+                  groupId,
+                  studentId: student.id,
+                  studentCode: student.studentCode,
+                  createdGroup: group === null && idx === 0,
+                },
+              },
+            });
+
+            results.push({
+              groupId,
+              topicId: topic.id,
+              topicTitle: topic.title,
+              lecturerUserId: topic.lecturer.userId,
+              studentId: student.id,
+              studentName: student.fullName,
+              studentUserId: student.userId,
+              existingMemberUserIds,
+            });
+          }
+
+          await tx.registrationGroup.update({
+            where: { id: groupId },
+            data: {
+              status: statusForSeats(
+                occupied + incoming.length,
+                topic.maxStudents,
+              ),
+            },
+          });
         }
 
-        const groupId = group
-          ? group.id
-          : await this.openGroupFor(tx, topic, student.id);
-
-        await tx.registrationGroupMember.create({
-          data: {
-            groupId,
-            semesterId: topic.semesterId,
-            studentId: student.id,
-            status: GroupMemberStatus.ACCEPTED,
-            joinSource: GroupJoinSource.ASSIGNED,
-            assignedById: adminUserId,
-            assignedAt: new Date(),
-            joinedAt: new Date(),
-          },
-        });
-
-        await tx.registrationGroup.update({
-          where: { id: groupId },
-          data: { status: statusForSeats(occupied + 1, topic.maxStudents) },
-        });
-
-        await tx.auditLog.create({
-          data: {
-            userId: adminUserId,
-            action: 'ASSIGN_GROUP_MEMBER',
-            targetTable: 'registration_group_members',
-            targetId: `${groupId}:${student.id}`,
-            newValue: {
-              roundId,
-              topicId: topic.id,
-              groupId,
-              studentId: student.id,
-              studentCode: student.studentCode,
-              createdGroup: group === null,
-            },
-          },
-        });
-
-        // Gathered inside the lock, so it is exactly who was in the group at the
-        // moment this student was put into it.
-        return {
-          groupId,
-          existingMemberUserIds: (group?.members ?? []).map(
-            (member) => member.student.userId,
-          ),
-        };
+        return results;
       })
       .catch((err: unknown) => {
         throw translatePlacementConflict(err);
       });
 
-    await this.announcePlacement(placement, student, topic);
+    await this.announceBatchPlacements(committed);
 
-    return {
-      groupId: placement.groupId,
-      topicId: topic.id,
-      studentId: student.id,
-      message: `Đã xếp ${student.fullName} vào đề tài "${topic.title}".`,
-    };
+    return { placements: committed };
   }
 
-  async unplace(roundId: number, studentId: number, adminUserId: number) {
+  private async executeBatchUnplace(
+    roundId: number,
+    studentIds: number[],
+    adminUserId: number,
+  ) {
     await this.requirePlaceableRound(roundId);
-    const member = await this.requireOwnPlacement(roundId, studentId);
+    const members = await this.requireOwnPlacements(roundId, studentIds);
+
+    const byGroup = new Map<number, typeof members>();
+    for (const member of members) {
+      const list = byGroup.get(member.groupId) ?? [];
+      list.push(member);
+      byGroup.set(member.groupId, list);
+    }
+
+    const sortedGroups = [...byGroup.values()].sort(
+      (a, b) => a[0].group.topicId - b[0].group.topicId,
+    );
 
     await this.prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT 1 FROM "topics" WHERE "id" = ${member.group.topicId} FOR UPDATE`;
+      for (const groupMembers of sortedGroups) {
+        const first = groupMembers[0];
+        const topicId = first.group.topicId;
 
-      await tx.registrationGroupMember.delete({ where: { id: member.id } });
+        await tx.$queryRaw`SELECT 1 FROM "topics" WHERE "id" = ${topicId} FOR UPDATE`;
 
-      const remaining = await tx.registrationGroupMember.findMany({
-        where: {
-          groupId: member.groupId,
-          status: GroupMemberStatus.ACCEPTED,
-        },
-        select: { studentId: true, joinedAt: true },
-        // Whoever has been in it longest takes it over, which for a group the
-        // office built is the first person it put there.
-        orderBy: [{ joinedAt: 'asc' }, { id: 'asc' }],
-      });
-
-      if (remaining.length === 0) {
-        /*
-          Marked rather than deleted, which is what disbanding a group does and
-          for the same reason: the partial index that keeps one live group per
-          topic ignores REJECTED rows, so the topic goes back on the desk while
-          the fact that a group briefly existed stays on the table.
-        */
-        await tx.registrationGroup.update({
-          where: { id: member.groupId },
-          data: { status: RegistrationGroupStatus.REJECTED },
+        await tx.registrationGroupMember.deleteMany({
+          where: { id: { in: groupMembers.map((member) => member.id) } },
         });
-      } else {
-        await tx.registrationGroup.update({
-          where: { id: member.groupId },
-          data: {
-            status: statusForSeats(
-              remaining.length,
-              member.group.topic.maxStudents,
-            ),
-            // A group whose leader has been taken out of it has nobody to
-            // answer for it, and nothing else in the system would notice.
-            ...(member.group.leaderId === studentId && {
-              leaderId: remaining[0].studentId,
-            }),
+
+        const remaining = await tx.registrationGroupMember.findMany({
+          where: {
+            groupId: first.groupId,
+            status: GroupMemberStatus.ACCEPTED,
           },
+          select: { studentId: true, joinedAt: true },
+          orderBy: [{ joinedAt: 'asc' }, { id: 'asc' }],
         });
+
+        const removedIds = new Set(groupMembers.map((m) => m.student.id));
+
+        if (remaining.length === 0) {
+          await tx.registrationGroup.update({
+            where: { id: first.groupId },
+            data: { status: RegistrationGroupStatus.REJECTED },
+          });
+        } else {
+          await tx.registrationGroup.update({
+            where: { id: first.groupId },
+            data: {
+              status: statusForSeats(
+                remaining.length,
+                first.group.topic.maxStudents,
+              ),
+              ...(removedIds.has(first.group.leaderId) && {
+                leaderId: remaining[0].studentId,
+              }),
+            },
+          });
+        }
+
+        for (const member of groupMembers) {
+          await tx.auditLog.create({
+            data: {
+              userId: adminUserId,
+              action: 'UNASSIGN_GROUP_MEMBER',
+              targetTable: 'registration_group_members',
+              targetId: `${member.groupId}:${member.student.id}`,
+              oldValue: {
+                roundId,
+                topicId: member.group.topicId,
+                groupId: member.groupId,
+                studentId: member.student.id,
+                studentCode: member.student.studentCode,
+              },
+            },
+          });
+        }
       }
-
-      await tx.auditLog.create({
-        data: {
-          userId: adminUserId,
-          action: 'UNASSIGN_GROUP_MEMBER',
-          targetTable: 'registration_group_members',
-          targetId: `${member.groupId}:${studentId}`,
-          oldValue: {
-            roundId,
-            topicId: member.group.topicId,
-            groupId: member.groupId,
-            studentId,
-            studentCode: member.student.studentCode,
-          },
-        },
-      });
     });
 
-    /*
-      The placement notice is left where it is rather than deleted. Withdrawing a
-      proposal removes the notice it raised, because nobody had acted on it and
-      the record is of something that never happened — here somebody was told a
-      true thing that has since been undone, and two notices in order read as
-      what actually occurred.
-    */
-    await this.notifications.notify([
-      {
+    await this.notifications.notify(
+      members.map((member) => ({
         userId: member.student.userId,
         type: NotificationType.GROUP_MEMBER_REMOVED,
         title: 'Bạn đã được chuyển khỏi đề tài',
         content: `Khoa đã chuyển bạn khỏi đề tài "${member.group.topic.title}" trong lúc sắp xếp. Bạn sẽ được xếp vào một đề tài khác trước khi khoa chốt danh sách.`,
         targetId: member.group.topicId,
-      },
-    ]);
+      })),
+    );
 
-    return {
-      studentId,
-      message: `Đã bỏ ${member.student.fullName} khỏi đề tài "${member.group.topic.title}".`,
-    };
+    return members.map((member) => ({
+      studentId: member.student.id,
+      studentName: member.student.fullName,
+      topicTitle: member.group.topic.title,
+    }));
   }
 
   async finalize(roundId: number, dto: FinalizeRoundDto, adminUserId: number) {
@@ -382,13 +593,29 @@ export class AllocationService {
       select: {
         assignedAt: true,
         student: {
-          select: { id: true, studentCode: true, fullName: true, class: true },
+          select: {
+            id: true,
+            studentCode: true,
+            fullName: true,
+            class: true,
+            major: { select: { id: true, name: true, code: true } },
+          },
         },
         group: {
           select: {
             id: true,
             topicId: true,
-            topic: { select: { title: true } },
+            topic: {
+              select: {
+                title: true,
+                major: { select: { id: true, name: true, code: true } },
+                lecturer: {
+                  select: {
+                    major: { select: { id: true, name: true, code: true } },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -400,6 +627,8 @@ export class AllocationService {
       groupId: member.group.id,
       topicId: member.group.topicId,
       topicTitle: member.group.topic.title,
+      topicMajor:
+        member.group.topic.major ?? member.group.topic.lecturer.major ?? null,
       assignedAt: member.assignedAt,
     }));
   }
@@ -415,18 +644,34 @@ export class AllocationService {
         title: true,
         maxStudents: true,
         status: true,
+        major: { select: { id: true, name: true, code: true } },
         lecturer: {
-          select: { id: true, fullName: true, academicTitle: true },
+          select: {
+            id: true,
+            fullName: true,
+            academicTitle: true,
+            major: { select: { id: true, name: true, code: true } },
+          },
         },
         registrationGroups: {
           where: { status: { not: RegistrationGroupStatus.REJECTED } },
           select: {
             id: true,
             name: true,
-            _count: {
+            members: {
+              where: { status: GroupMemberStatus.ACCEPTED },
               select: {
-                members: { where: { status: GroupMemberStatus.ACCEPTED } },
+                student: {
+                  select: {
+                    id: true,
+                    studentCode: true,
+                    fullName: true,
+                    class: true,
+                    major: { select: { id: true, name: true, code: true } },
+                  },
+                },
               },
+              orderBy: [{ joinedAt: 'asc' }, { id: 'asc' }],
             },
           },
           take: 1,
@@ -436,15 +681,24 @@ export class AllocationService {
     });
 
     return topics
-      .map(({ registrationGroups, ...topic }) => {
+      .map(({ registrationGroups, major, lecturer, ...topic }) => {
         const group = registrationGroups[0];
-        const occupiedSeats = group?._count.members ?? 0;
+        const existingMembers =
+          group?.members.map((member) => member.student) ?? [];
+        const occupiedSeats = existingMembers.length;
 
         return {
           ...topic,
+          major: major ?? lecturer.major ?? null,
+          lecturer: {
+            id: lecturer.id,
+            fullName: lecturer.fullName,
+            academicTitle: lecturer.academicTitle,
+          },
           occupiedSeats,
           freeSeats: Math.max(0, topic.maxStudents - occupiedSeats),
           group: group ? { id: group.id, name: group.name } : null,
+          existingMembers,
         };
       })
       .filter((topic) => topic.freeSeats > 0);
@@ -481,9 +735,12 @@ export class AllocationService {
     return round;
   }
 
-  private async requirePlaceableStudent(studentId: number, round: RoundRow) {
-    const student = await this.prisma.studentProfile.findUnique({
-      where: { id: studentId },
+  private async requirePlaceableStudents(
+    studentIds: number[],
+    round: RoundRow,
+  ) {
+    const students = await this.prisma.studentProfile.findMany({
+      where: { id: { in: studentIds } },
       select: {
         id: true,
         studentCode: true,
@@ -494,60 +751,72 @@ export class AllocationService {
       },
     });
 
-    if (!student || !student.user.isActive) {
-      throw new NotFoundException('Không tìm thấy sinh viên này');
+    const studentMap = new Map(students.map((student) => [student.id, student]));
+
+    for (const studentId of studentIds) {
+      const student = studentMap.get(studentId);
+      if (!student || !student.user.isActive) {
+        throw new NotFoundException('Không tìm thấy sinh viên này');
+      }
     }
 
     if ((round._count?.eligibleStudents ?? 0) > 0) {
-      const match = await this.prisma.roundStudentEligibility.findUnique({
+      const matches = await this.prisma.roundStudentEligibility.findMany({
         where: {
-          roundId_studentId: {
-            roundId: round.id,
-            studentId,
-          },
+          roundId: round.id,
+          studentId: { in: studentIds },
         },
-        select: { id: true },
+        select: { studentId: true },
       });
+      const eligibleIds = new Set(matches.map((match) => match.studentId));
 
-      if (!match) {
-        throw new ForbiddenException(
-          `${student.fullName} không nằm trong danh sách đủ điều kiện của đợt này, nên không xếp vào đây được.`,
-        );
+      for (const studentId of studentIds) {
+        if (!eligibleIds.has(studentId)) {
+          const student = studentMap.get(studentId)!;
+          throw new ForbiddenException(
+            `${student.fullName} không nằm trong danh sách đủ điều kiện của đợt này, nên không xếp vào đây được.`,
+          );
+        }
       }
     } else {
       const cohorts = round.eligibilities.map((rule) => rule.cohort);
-
-      if (student.cohort === null || !cohorts.includes(student.cohort)) {
-        throw new ForbiddenException(
-          `Khóa ${student.cohort ?? 'chưa rõ'} không thuộc đợt này, nên không xếp ${student.fullName} vào đây được.`,
-        );
+      for (const studentId of studentIds) {
+        const student = studentMap.get(studentId)!;
+        if (student.cohort === null || !cohorts.includes(student.cohort)) {
+          throw new ForbiddenException(
+            `Khóa ${student.cohort ?? 'chưa rõ'} không thuộc đợt này, nên không xếp ${student.fullName} vào đây được.`,
+          );
+        }
       }
     }
 
-    // Checked before the write as well as by the index behind it, so the common
-    // case answers with a sentence naming the student rather than a collision.
-    const existing = await this.prisma.registrationGroupMember.findFirst({
+    const existingList = await this.prisma.registrationGroupMember.findMany({
       where: {
-        studentId,
+        studentId: { in: studentIds },
         semesterId: round.semesterId,
         status: GroupMemberStatus.ACCEPTED,
         group: { status: { not: RegistrationGroupStatus.REJECTED } },
       },
-      select: { group: { select: { topic: { select: { title: true } } } } },
+      select: {
+        studentId: true,
+        group: { select: { topic: { select: { title: true } } } },
+      },
     });
 
-    if (existing) {
+    if (existingList.length > 0) {
+      const first = existingList[0];
+      const student = studentMap.get(first.studentId)!;
       throw new ConflictException(
-        `${student.fullName} đã có đề tài trong học kỳ này ("${existing.group.topic.title}").`,
+        `${student.fullName} đã có đề tài trong học kỳ này ("${first.group.topic.title}").`,
       );
     }
 
-    return student;
+    return studentMap;
   }
 
-  private async requirePlaceableTopic(topicId: number, roundId: number) {
-    const topic = await this.prisma.topic.findUnique({
-      where: { id: topicId },
+  private async requirePlaceableTopics(topicIds: number[], roundId: number) {
+    const topics = await this.prisma.topic.findMany({
+      where: { id: { in: topicIds } },
       select: {
         id: true,
         title: true,
@@ -559,23 +828,28 @@ export class AllocationService {
       },
     });
 
-    if (!topic || topic.roundId !== roundId) {
-      throw new NotFoundException('Không tìm thấy đề tài này trong đợt');
+    const topicMap = new Map(topics.map((topic) => [topic.id, topic]));
+
+    for (const topicId of topicIds) {
+      const topic = topicMap.get(topicId);
+      if (!topic || topic.roundId !== roundId) {
+        throw new NotFoundException('Không tìm thấy đề tài này trong đợt');
+      }
+
+      if (topic.status !== TopicStatus.OPEN) {
+        throw new ConflictException(
+          `Đề tài "${topic.title}" chưa mở đăng ký, nên chưa xếp ai vào được. Đề nghị giảng viên mở đề tài trước.`,
+        );
+      }
     }
 
-    if (topic.status !== TopicStatus.OPEN) {
-      throw new ConflictException(
-        `Đề tài "${topic.title}" chưa mở đăng ký, nên chưa xếp ai vào được. Đề nghị giảng viên mở đề tài trước.`,
-      );
-    }
-
-    return topic;
+    return topicMap;
   }
 
-  private async requireOwnPlacement(roundId: number, studentId: number) {
-    const member = await this.prisma.registrationGroupMember.findFirst({
+  private async requireOwnPlacements(roundId: number, studentIds: number[]) {
+    const members = await this.prisma.registrationGroupMember.findMany({
       where: {
-        studentId,
+        studentId: { in: studentIds },
         status: GroupMemberStatus.ACCEPTED,
         group: {
           status: { not: RegistrationGroupStatus.REJECTED },
@@ -599,19 +873,26 @@ export class AllocationService {
       },
     });
 
-    if (!member) {
-      throw new NotFoundException(
-        'Sinh viên này chưa được xếp vào đề tài nào trong đợt',
-      );
+    const foundByStudent = new Map(
+      members.map((member) => [member.student.id, member]),
+    );
+
+    for (const studentId of studentIds) {
+      const member = foundByStudent.get(studentId);
+      if (!member) {
+        throw new NotFoundException(
+          'Sinh viên này chưa được xếp vào đề tài nào trong đợt',
+        );
+      }
+
+      if (member.joinSource !== GroupJoinSource.ASSIGNED) {
+        throw new ConflictException(
+          `${member.student.fullName} tự đăng ký đề tài "${member.group.topic.title}", không phải khoa xếp — nên không bỏ ở đây được.`,
+        );
+      }
     }
 
-    if (member.joinSource !== GroupJoinSource.ASSIGNED) {
-      throw new ConflictException(
-        `${member.student.fullName} tự đăng ký đề tài "${member.group.topic.title}", không phải khoa xếp — nên không bỏ ở đây được.`,
-      );
-    }
-
-    return member;
+    return studentIds.map((studentId) => foundByStudent.get(studentId)!);
   }
 
   // ── writes and notices ────────────────────────────────────
@@ -636,34 +917,60 @@ export class AllocationService {
     return group.id;
   }
 
-  private async announcePlacement(
-    placement: { groupId: number; existingMemberUserIds: number[] },
-    student: { fullName: string; userId: number },
-    topic: { id: number; title: string; lecturer: { userId: number } },
+  private async announceBatchPlacements(
+    placements: {
+      groupId: number;
+      topicId: number;
+      topicTitle: string;
+      lecturerUserId: number;
+      studentName: string;
+      studentUserId: number;
+      existingMemberUserIds: number[];
+    }[],
   ) {
-    await this.notifications.notify([
-      {
-        userId: student.userId,
+    if (placements.length === 0) return;
+
+    const notifications: Parameters<NotificationsService['notify']>[0] = [];
+    const byTopic = new Map<number, typeof placements>();
+
+    for (const item of placements) {
+      notifications.push({
+        userId: item.studentUserId,
         type: NotificationType.GROUP_MEMBER_ASSIGNED,
         title: 'Khoa đã xếp bạn vào một đề tài',
-        content: `Bạn được xếp vào đề tài "${topic.title}". Mở trang nhóm để xem đề tài và những bạn cùng nhóm.`,
-        targetId: placement.groupId,
-      },
-      ...placement.existingMemberUserIds.map((userId) => ({
-        userId,
-        type: NotificationType.GROUP_MEMBER_ASSIGNED,
-        title: 'Nhóm của bạn có thêm thành viên',
-        content: `Khoa đã xếp ${student.fullName} vào nhóm đề tài "${topic.title}".`,
-        targetId: placement.groupId,
-      })),
-      {
-        userId: topic.lecturer.userId,
+        content: `Bạn được xếp vào đề tài "${item.topicTitle}". Mở trang nhóm để xem đề tài và những bạn cùng nhóm.`,
+        targetId: item.groupId,
+      });
+
+      const list = byTopic.get(item.topicId) ?? [];
+      list.push(item);
+      byTopic.set(item.topicId, list);
+    }
+
+    for (const groupPlacements of byTopic.values()) {
+      const first = groupPlacements[0];
+      const names = groupPlacements.map((item) => item.studentName).join(', ');
+
+      for (const existingUserId of first.existingMemberUserIds) {
+        notifications.push({
+          userId: existingUserId,
+          type: NotificationType.GROUP_MEMBER_ASSIGNED,
+          title: 'Nhóm của bạn có thêm thành viên',
+          content: `Khoa đã xếp ${names} vào nhóm đề tài "${first.topicTitle}".`,
+          targetId: first.groupId,
+        });
+      }
+
+      notifications.push({
+        userId: first.lecturerUserId,
         type: NotificationType.TOPIC_STUDENT_ASSIGNED,
         title: 'Khoa xếp sinh viên vào đề tài của bạn',
-        content: `${student.fullName} được khoa xếp vào đề tài "${topic.title}" của bạn.`,
-        targetId: topic.id,
-      },
-    ]);
+        content: `${names} được khoa xếp vào đề tài "${first.topicTitle}" của bạn.`,
+        targetId: first.topicId,
+      });
+    }
+
+    await this.notifications.notify(notifications);
   }
 
   private async announceOutcome(
@@ -709,6 +1016,211 @@ type RoundRow = {
   _count?: { eligibleStudents: number };
 };
 
+type AutoPlanStudent = {
+  id: number;
+  studentCode: string;
+  fullName: string;
+  class: string | null;
+  cohort: string | null;
+  major: { id: number; name: string; code: string } | null;
+};
+
+type AutoPlanTopic = {
+  id: number;
+  title: string;
+  maxStudents: number;
+  major: { id: number; name: string; code: string } | null;
+  lecturer: { id: number; fullName: string; academicTitle: string | null };
+  occupiedSeats: number;
+  freeSeats: number;
+  existingMembers: { class: string | null }[];
+};
+
+export type AutoMatchType = 'SAME_MAJOR' | 'FLEXIBLE' | 'CROSS_MAJOR';
+
+export function buildAutoAllocationPlan<
+  S extends AutoPlanStudent,
+  T extends AutoPlanTopic,
+>({
+  students,
+  topics,
+  lecturerStudentCounts,
+  strategy,
+  allowCrossMajor,
+}: {
+  students: S[];
+  topics: T[];
+  lecturerStudentCounts: Map<number, number>;
+  strategy: AutoAllocateStrategy;
+  allowCrossMajor: boolean;
+}) {
+  const slots = topics.map((topic) => ({
+    topic,
+    freeSeats: topic.freeSeats,
+    occupiedSeats: topic.occupiedSeats,
+    existingClasses: new Set(
+      topic.existingMembers
+        .map((member) => member.class)
+        .filter((cls): cls is string => Boolean(cls)),
+    ),
+    lecturerLoad: lecturerStudentCounts.get(topic.lecturer.id) ?? 0,
+  }));
+
+  // Group classmates together so multi-seat empty topics naturally pair students from the same class.
+  const orderedStudents = [...students].sort((a, b) => {
+    const majorDiff =
+      (a.major?.id ?? Number.MAX_SAFE_INTEGER) -
+      (b.major?.id ?? Number.MAX_SAFE_INTEGER);
+    if (majorDiff !== 0) return majorDiff;
+    const classDiff = (a.class ?? '').localeCompare(b.class ?? '');
+    if (classDiff !== 0) return classDiff;
+    return a.studentCode.localeCompare(b.studentCode);
+  });
+
+  const matched: {
+    student: S;
+    topic: T;
+    matchType: AutoMatchType;
+    reason: string;
+  }[] = [];
+  const placedIds = new Set<number>();
+
+  const pickBestSlot = (
+    student: S,
+    predicate: (slot: (typeof slots)[number]) => boolean,
+  ) => {
+    const candidates = slots.filter(
+      (slot) => slot.freeSeats > 0 && predicate(slot),
+    );
+    if (candidates.length === 0) return null;
+
+    candidates.sort((a, b) => {
+      const aSameClass =
+        student.class && a.existingClasses.has(student.class) ? 1 : 0;
+      const bSameClass =
+        student.class && b.existingClasses.has(student.class) ? 1 : 0;
+
+      if (strategy === 'BALANCE_LECTURER') {
+        if (a.lecturerLoad !== b.lecturerLoad) {
+          return a.lecturerLoad - b.lecturerLoad;
+        }
+        const aStarted = a.occupiedSeats > 0 ? 1 : 0;
+        const bStarted = b.occupiedSeats > 0 ? 1 : 0;
+        if (aStarted !== bStarted) return bStarted - aStarted;
+        if (aSameClass !== bSameClass) return bSameClass - aSameClass;
+      } else {
+        const aStarted = a.occupiedSeats > 0 ? 1 : 0;
+        const bStarted = b.occupiedSeats > 0 ? 1 : 0;
+        if (aStarted !== bStarted) return bStarted - aStarted;
+        if (aSameClass !== bSameClass) return bSameClass - aSameClass;
+        if (a.occupiedSeats !== b.occupiedSeats) {
+          return b.occupiedSeats - a.occupiedSeats;
+        }
+        if (a.lecturerLoad !== b.lecturerLoad) {
+          return a.lecturerLoad - b.lecturerLoad;
+        }
+      }
+
+      return a.topic.title.localeCompare(b.topic.title, 'vi');
+    });
+
+    return candidates[0];
+  };
+
+  const assignToSlot = (
+    student: S,
+    slot: (typeof slots)[number],
+    matchType: AutoMatchType,
+  ) => {
+    const sharedClass =
+      Boolean(student.class) && slot.existingClasses.has(student.class!);
+    const hadMembers = slot.occupiedSeats > 0;
+
+    slot.freeSeats -= 1;
+    slot.occupiedSeats += 1;
+    slot.lecturerLoad += 1;
+    if (student.class) slot.existingClasses.add(student.class);
+    placedIds.add(student.id);
+
+    const reasons: string[] = [];
+    if (matchType === 'SAME_MAJOR' && student.major) {
+      reasons.push(`Khớp chuyên ngành ${student.major.code}`);
+    } else if (matchType === 'FLEXIBLE') {
+      reasons.push('Đề tài dùng chung chuyên ngành');
+    } else {
+      reasons.push(
+        `Khác chuyên ngành (${student.major?.code ?? 'N/A'} → ${slot.topic.major?.code ?? 'N/A'})`,
+      );
+    }
+
+    if (sharedClass) {
+      reasons.push(`cùng lớp ${student.class}`);
+    } else if (hadMembers) {
+      reasons.push('lấp đầy nhóm sẵn có');
+    } else if (strategy === 'BALANCE_LECTURER') {
+      reasons.push('cân bằng tải GVHD');
+    }
+
+    matched.push({
+      student,
+      topic: slot.topic,
+      matchType,
+      reason: reasons.join(' · '),
+    });
+  };
+
+  // Pass 1: Strict same-major matches first.
+  for (const student of orderedStudents) {
+    if (placedIds.has(student.id) || !student.major) continue;
+    const slot = pickBestSlot(
+      student,
+      (candidate) => candidate.topic.major?.id === student.major!.id,
+    );
+    if (slot) assignToSlot(student, slot, 'SAME_MAJOR');
+  }
+
+  // Pass 2: Flexible matches when either the student or topic has no major.
+  for (const student of orderedStudents) {
+    if (placedIds.has(student.id)) continue;
+    const slot = pickBestSlot(
+      student,
+      (candidate) => !student.major || !candidate.topic.major,
+    );
+    if (slot) assignToSlot(student, slot, 'FLEXIBLE');
+  }
+
+  // Pass 3: Cross-major fallback (only when explicitly enabled).
+  if (allowCrossMajor) {
+    for (const student of orderedStudents) {
+      if (placedIds.has(student.id)) continue;
+      const slot = pickBestSlot(student, () => true);
+      if (slot) assignToSlot(student, slot, 'CROSS_MAJOR');
+    }
+  }
+
+  const remainingSeats = slots.reduce(
+    (total, slot) => total + slot.freeSeats,
+    0,
+  );
+
+  const unmatched = orderedStudents
+    .filter((student) => !placedIds.has(student.id))
+    .map((student) => {
+      const noSeats = remainingSeats === 0;
+      return {
+        student,
+        reasonCode: (noSeats ? 'NO_OPEN_SEATS' : 'NO_COMPATIBLE_MAJOR') as
+          | 'NO_OPEN_SEATS'
+          | 'NO_COMPATIBLE_MAJOR',
+        reason: noSeats
+          ? 'Không còn đề tài nào trống chỗ trong đợt.'
+          : `Không còn đề tài trống chỗ thuộc chuyên ngành ${student.major?.code ?? ''}.`.trim(),
+      };
+    });
+
+  return { matched, unmatched };
+}
+
 const PLACEMENT_CLOSED: Record<Exclude<RoundPhase, 'RECONCILING'>, string> = {
   [RoundPhase.PREP]:
     'Cổng đăng ký chưa mở, nên chưa có ai để xếp — sinh viên vẫn đang chờ đến lượt chọn đề tài.',
@@ -725,7 +1237,11 @@ function sumSeats(topics: { freeSeats: number }[]): number {
 }
 
 function translatePlacementConflict(err: unknown): unknown {
-  if (err instanceof ConflictException || err instanceof NotFoundException) {
+  if (
+    err instanceof ConflictException ||
+    err instanceof NotFoundException ||
+    err instanceof ForbiddenException
+  ) {
     return err;
   }
 

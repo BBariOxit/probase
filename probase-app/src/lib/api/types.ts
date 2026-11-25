@@ -507,16 +507,26 @@ export interface UnplacedStudent {
   avatarUrl: string | null;
 }
 
+export interface AllocationTopicMember {
+  id: number;
+  studentCode: string;
+  fullName: string;
+  class: string | null;
+  major: { id: number; name: string; code: string } | null;
+}
+
 export interface AllocationTopic {
   id: number;
   title: string;
   maxStudents: number;
   status: TopicStatus;
+  major: { id: number; name: string; code: string } | null;
   lecturer: { id: number; fullName: string; academicTitle: string | null };
   occupiedSeats: number;
   freeSeats: number;
 
   group: { id: number; name: string | null } | null;
+  existingMembers: AllocationTopicMember[];
 }
 
 export interface Placement {
@@ -525,11 +535,46 @@ export interface Placement {
     studentCode: string;
     fullName: string;
     class: string | null;
+    major: { id: number; name: string; code: string } | null;
   };
   groupId: number;
   topicId: number;
   topicTitle: string;
+  topicMajor: { id: number; name: string; code: string } | null;
   assignedAt: string | null;
+}
+
+export type AutoAllocateStrategy = 'FILL_EXISTING' | 'BALANCE_LECTURER';
+
+export type AutoMatchType = 'SAME_MAJOR' | 'FLEXIBLE' | 'CROSS_MAJOR';
+
+export interface AutoAllocationMatch {
+  student: UnplacedStudent;
+  topic: AllocationTopic;
+  matchType: AutoMatchType;
+  reason: string;
+}
+
+export interface AutoAllocationUnmatched {
+  student: UnplacedStudent;
+  reasonCode: 'NO_OPEN_SEATS' | 'NO_COMPATIBLE_MAJOR';
+  reason: string;
+}
+
+export interface AutoAllocationPreview {
+  canPlace: boolean;
+  blockedReason: string | null;
+  strategy: AutoAllocateStrategy;
+  allowCrossMajor: boolean;
+  matched: AutoAllocationMatch[];
+  unmatched: AutoAllocationUnmatched[];
+  summary: {
+    matchedCount: number;
+    unmatchedCount: number;
+    crossMajorCount: number;
+    unopenedTopics: number;
+    unopenedSeats: number;
+  };
 }
 
 export interface Major {
