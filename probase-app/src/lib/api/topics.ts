@@ -164,7 +164,52 @@ export function useBulkOpenTopics() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (semesterId?: number) => topicService.bulkOpen(semesterId),
+    mutationFn: (input?: number | { semesterId?: number; topicIds?: number[] }) =>
+      topicService.bulkOpen(input),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: topicKeys.all }),
+  });
+}
+
+export function useBulkCloseTopics() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (topicIds: number[]) => topicService.bulkClose(topicIds),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: topicKeys.all }),
+  });
+}
+
+export function useBulkWithdrawTopics() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (topicIds: number[]) => topicService.bulkWithdraw(topicIds),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: topicKeys.all }),
+  });
+}
+
+export function useBulkDeleteTopics() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (topicIds: number[]) => topicService.bulkDelete(topicIds),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: topicKeys.all }),
+  });
+}
+
+export function useBulkDepartmentReviewTopics() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (
+      input: import('@/lib/api/types').DepartmentReviewInput & {
+        topicIds: number[];
+      },
+    ) => topicService.bulkReviewDepartment(input),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: topicKeys.all }),
   });

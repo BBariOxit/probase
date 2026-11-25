@@ -14,6 +14,7 @@ export interface StudentQuery {
 
   hasGroup?: boolean;
   q?: string;
+  studentIds?: number[];
   page?: number;
   limit?: number;
 }
@@ -23,6 +24,10 @@ function toSearch(query: StudentQuery): string {
 
   for (const [key, value] of Object.entries(query)) {
     if (value === undefined || value === '') continue;
+    if (Array.isArray(value)) {
+      if (value.length > 0) params.set(key, value.join(','));
+      continue;
+    }
     params.set(key, String(value));
   }
 

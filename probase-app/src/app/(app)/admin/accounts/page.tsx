@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   IdCard,
   KeyRound,
@@ -15,6 +15,9 @@ import {
 } from 'lucide-react';
 import { ApiError } from '@/lib/api/client';
 import {
+  useBulkDeactivateUsers,
+  useBulkDeleteUsers,
+  useBulkResetUsersPassword,
   useDeactivateUser,
   useHardDeleteUser,
   useResetUserPassword,
@@ -22,10 +25,12 @@ import {
   useUsers,
 } from '@/lib/api/users';
 import type { Role, UserAccount } from '@/lib/api/types';
+import { useSession } from '@/lib/auth/session';
 import { useRequireRole } from '@/lib/auth/use-require-role';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
 import { extractErrorMessage } from '@/lib/api/error';
 import { toast } from 'sonner';
+import { BulkActionBar } from '@/components/shared/bulk-action-bar';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { FormError } from '@/components/shared/form-error';
@@ -34,6 +39,7 @@ import { UserImportDialog } from '@/components/admin/user-import-dialog';
 import { UserProfileDialog } from '@/components/admin/user-profile-dialog';
 import { CreateUserDialog } from '@/components/admin/create-user-dialog';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -51,6 +57,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PaginationBar } from '@/components/shared/pagination-bar';
+import { useTableSelection } from '@/hooks';
 import { usePagination } from '@/hooks/use-pagination';
 import {
   Select,
@@ -109,6 +116,7 @@ function codeOf(user: UserAccount): string | null {
 
 export default function AccountsPage() {
   const allowed = useRequireRole('ADMIN');
+  const currentUserId = useSession((s) => s.user?.id);
   const { page, setPage, pageSize, setPageSize } = usePagination();
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('ALL');
@@ -135,10 +143,38 @@ export default function AccountsPage() {
   const lock = useDeactivateUser();
   const reset = useResetUserPassword();
   const hardDelete = useHardDeleteUser();
+  const bulkLock = useBulkDeactivateUsers();
+  const bulkReset = useBulkResetUsersPassword();
+  const bulkDelete = useBulkDeleteUsers();
+
+  const [bulkLockOpen, setBulkLockOpen] = useState(false);
+  const [bulkResetOpen, setBulkResetOpen] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+
+  const users = useMemo(() => data?.data ?? [], [data?.data]);
+  const selectableUsers = useMemo(
+    () => users.filter((u) => u.id !== currentUserId),
+    [users, currentUserId],
+  );
+  const {
+    selectedItems,
+    selectedIds,
+    selectedCount,
+    allOnPageSelected,
+    isSelected,
+    toggleRow,
+    toggleAllOnPage,
+    clearSelection,
+    removeSelectedIds,
+  } = useTableSelection(selectableUsers);
+
+  const selectedActiveIds = useMemo(
+    () => selectedItems.filter((u) => u.isActive).map((u) => u.id),
+    [selectedItems],
+  );
 
   if (!allowed) return null;
 
-  const users = data?.data ?? [];
   const filtering =
     debouncedSearch !== '' || role !== 'ALL' || status !== 'ALL';
 
@@ -224,11 +260,63 @@ export default function AccountsPage() {
         </p>
       )}
 
+      <BulkActionBar
+        count={selectedCount}
+        itemName="tài khoản"
+        onClear={clearSelection}
+      >
+        {selectedActiveIds.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={bulkLock.isPending}
+            onClick={() => setBulkLockOpen(true)}
+            className="h-8 gap-1.5 text-xs font-medium text-amber-700 border-amber-300 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-700 dark:hover:bg-amber-950/30 cursor-pointer"
+          >
+            <Lock className="size-3.5" />
+            <span>Khoá tài khoản ({selectedActiveIds.length})</span>
+          </Button>
+        )}
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={bulkReset.isPending}
+          onClick={() => setBulkResetOpen(true)}
+          className="h-8 gap-1.5 text-xs font-medium cursor-pointer"
+        >
+          <KeyRound className="size-3.5" />
+          <span>Cấp lại mật khẩu ({selectedCount})</span>
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={bulkDelete.isPending}
+          onClick={() => setBulkDeleteOpen(true)}
+          className="h-8 gap-1.5 text-xs font-medium text-destructive border-destructive/30 hover:bg-destructive/10 cursor-pointer"
+        >
+          <Trash2 className="size-3.5" />
+          <span>Xóa tài khoản ({selectedCount})</span>
+        </Button>
+      </BulkActionBar>
+
       <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs overflow-hidden">
         <div className="flex-auto min-h-0 overflow-auto">
           <Table containerClassName="overflow-visible">
             <TableHeader sticky>
               <TableRow>
+                <TableHead className="w-11 px-3 text-center">
+                  <Checkbox
+                    checked={allOnPageSelected}
+                    onCheckedChange={toggleAllOnPage}
+                    disabled={selectableUsers.length === 0}
+                    aria-label="Chọn tất cả tài khoản trên trang"
+                  />
+                </TableHead>
                 <TableHead className="min-w-56">Người dùng</TableHead>
                 <TableHead className="w-32">Mã</TableHead>
                 <TableHead className="w-32">Vai trò</TableHead>
@@ -237,8 +325,24 @@ export default function AccountsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
+              {users.map((user) => {
+                const isSelf = user.id === currentUserId;
+                const checked = isSelected(user.id);
+                return (
+                <TableRow
+                  key={user.id}
+                  data-state={checked ? 'selected' : undefined}
+                >
+                  <TableCell className="w-11 px-3 text-center">
+                    <Checkbox
+                      checked={checked}
+                      disabled={isSelf}
+                      onCheckedChange={(val) => {
+                        if (!isSelf) toggleRow(user, val);
+                      }}
+                      aria-label={`Chọn tài khoản ${nameOf(user)}`}
+                    />
+                  </TableCell>
                   <TableCell className="font-medium">
                     <span
                       onClick={() => setEditing(user)}
@@ -331,7 +435,8 @@ export default function AccountsPage() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </div>
@@ -418,6 +523,49 @@ export default function AccountsPage() {
           await hardDelete.mutateAsync(deleting!.id);
           toast.success(`Đã xóa tài khoản ${deleting!.email}.`);
           setDeleting(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={bulkLockOpen}
+        onOpenChange={setBulkLockOpen}
+        title={`Khoá ${selectedActiveIds.length} tài khoản đã chọn?`}
+        description="Các tài khoản này sẽ bị chặn đăng nhập ngay lập tức. Dữ liệu vẫn được giữ nguyên."
+        confirmLabel="Khoá hàng loạt"
+        onConfirm={async () => {
+          const res = await bulkLock.mutateAsync(selectedActiveIds);
+          toast.success(`Đã khoá ${res.count} tài khoản.`);
+          removeSelectedIds(selectedActiveIds);
+          setBulkLockOpen(false);
+        }}
+      />
+
+      <ConfirmDialog
+        open={bulkResetOpen}
+        onOpenChange={setBulkResetOpen}
+        title={`Cấp lại mật khẩu cho ${selectedCount} tài khoản?`}
+        description="Hệ thống sẽ tạo mật khẩu tạm mới cho từng tài khoản và gửi qua email."
+        confirmLabel="Cấp lại hàng loạt"
+        confirmVariant="default"
+        onConfirm={async () => {
+          const res = await bulkReset.mutateAsync(selectedIds);
+          toast.success(`Đã gửi mật khẩu mới đến ${res.count} tài khoản.`);
+          clearSelection();
+          setBulkResetOpen(false);
+        }}
+      />
+
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        title={`Xóa vĩnh viễn ${selectedCount} tài khoản?`}
+        description="Toàn bộ các tài khoản được chọn và dữ liệu liên quan sẽ bị xóa hoàn toàn khỏi hệ thống và KHÔNG THỂ khôi phục."
+        confirmLabel="Xóa vĩnh viễn"
+        onConfirm={async () => {
+          const res = await bulkDelete.mutateAsync(selectedIds);
+          toast.success(`Đã xóa ${res.count} tài khoản.`);
+          removeSelectedIds(selectedIds);
+          setBulkDeleteOpen(false);
         }}
       />
     </div>

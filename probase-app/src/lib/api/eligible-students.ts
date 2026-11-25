@@ -240,3 +240,31 @@ export function useAddEligibleStudent() {
     },
   });
 }
+
+export function useBulkRemoveEligibleStudents() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      roundId,
+      studentIds,
+    }: {
+      roundId: number;
+      studentIds: number[];
+    }) =>
+      api<{ removedCount: number; skippedInGroupCount: number }>(
+        `/rounds/${roundId}/eligible-students/bulk-delete`,
+        {
+          method: 'POST',
+          body: { studentIds },
+        },
+      ),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({
+        queryKey: ['eligible-students', variables.roundId],
+      });
+      qc.invalidateQueries({ queryKey: ['students'] });
+      qc.invalidateQueries({ queryKey: ['rounds'] });
+      qc.invalidateQueries({ queryKey: ['my-eligibility-status'] });
+    },
+  });
+}

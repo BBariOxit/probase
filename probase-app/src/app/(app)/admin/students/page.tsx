@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Download,
+  FileSpreadsheet,
   FileUp,
   Loader2,
   RotateCcw,
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
+  useBulkRemoveEligibleStudents,
   useEligibleStudents,
   useRemoveEligibleStudent,
 } from '@/lib/api/eligible-students';
@@ -32,12 +34,15 @@ import { useDebouncedValue } from '@/lib/use-debounced-value';
 import { AddEligibleStudentDialog } from '@/components/admin/add-eligible-student-dialog';
 import { EligibleStudentsImportDialog } from '@/components/admin/eligible-students-import-dialog';
 import { AdvancedFilterPopover } from '@/components/shared/advanced-filter-popover';
+import { BulkActionBar } from '@/components/shared/bulk-action-bar';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PaginationBar } from '@/components/shared/pagination-bar';
+import { useTableSelection } from '@/hooks';
 import { usePagination } from '@/hooks/use-pagination';
 import { sanitizeLecturerName } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Combobox } from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -144,11 +149,30 @@ export default function StudentRosterPage() {
     { page: 1, limit: 1 },
   );
   const removeEligibleMutation = useRemoveEligibleStudent();
+  const bulkRemoveEligibleMutation = useBulkRemoveEligibleStudents();
   const exportRoster = useExportStudents();
+  const [bulkRemoveOpen, setBulkRemoveOpen] = useState(false);
+
+  const students = useMemo(() => data?.items ?? [], [data?.items]);
+  const {
+    selectedItems,
+    selectedIds,
+    selectedCount,
+    allOnPageSelected,
+    isSelected,
+    toggleRow,
+    toggleAllOnPage,
+    clearSelection,
+    removeSelectedIds,
+  } = useTableSelection(students);
+
+  const selectedRemovableIds = useMemo(
+    () => selectedItems.filter((s) => s.group === null).map((s) => s.id),
+    [selectedItems],
+  );
 
   if (!allowed) return null;
 
-  const students = data?.items ?? [];
   const hasImportedRoundRoster =
     roundId !== ANY && (eligibleMeta?.totalEligible ?? 0) > 0;
 
@@ -545,12 +569,58 @@ export default function StudentRosterPage() {
 
 
 
+        <BulkActionBar
+          count={selectedCount}
+          itemName="sinh viên"
+          onClear={clearSelection}
+        >
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={exportRoster.isPending}
+            onClick={() =>
+              exportRoster.mutate({ ...query, studentIds: selectedIds })
+            }
+            className="h-8 gap-1.5 text-xs font-medium cursor-pointer"
+          >
+            {exportRoster.isPending ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="size-3.5" />
+            )}
+            <span>Xuất Excel ({selectedCount})</span>
+          </Button>
+
+          {hasImportedRoundRoster && selectedRemovableIds.length > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={bulkRemoveEligibleMutation.isPending}
+              onClick={() => setBulkRemoveOpen(true)}
+              className="h-8 gap-1.5 text-xs font-medium text-destructive border-destructive/30 hover:bg-destructive/10 cursor-pointer"
+            >
+              <Trash2 className="size-3.5" />
+              <span>Xóa khỏi đợt ({selectedRemovableIds.length})</span>
+            </Button>
+          )}
+        </BulkActionBar>
+
         {/* BẢNG DỮ LIỆU: VÙNG BẢNG (flex-1 min-h-0 overflow-auto), STICKY HEADER z-10 */}
         <div className="flex-auto min-h-0 flex flex-col rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-[#1e1e1e] shadow-2xs overflow-hidden">
           <div className="flex-auto min-h-0 overflow-auto">
-            <Table containerClassName="overflow-visible" className="relative w-full min-w-[960px] text-left text-sm">
+            <Table containerClassName="overflow-visible" className="relative w-full min-w-[1000px] text-left text-sm">
               <TableHeader sticky>
                 <TableRow>
+                  <TableHead className="w-11 px-3 text-center">
+                    <Checkbox
+                      checked={allOnPageSelected}
+                      onCheckedChange={toggleAllOnPage}
+                      disabled={students.length === 0}
+                      aria-label="Chọn tất cả sinh viên trên trang"
+                    />
+                  </TableHead>
                   <TableHead className="min-w-44 px-5">
                     Sinh viên
                   </TableHead>
@@ -585,6 +655,8 @@ export default function StudentRosterPage() {
                   <StudentRow
                     key={student.id}
                     student={student}
+                    checked={isSelected(student.id)}
+                    onToggle={(val) => toggleRow(student, val)}
                     canManageRound={hasImportedRoundRoster}
                     onRemoveFromRound={setStudentToRemove}
                   />
@@ -668,6 +740,28 @@ export default function StudentRosterPage() {
             setStudentToRemove(null);
           }}
         />
+
+        <ConfirmDialog
+          open={bulkRemoveOpen}
+          onOpenChange={setBulkRemoveOpen}
+          title={`Xóa ${selectedRemovableIds.length} sinh viên khỏi danh sách đủ điều kiện?`}
+          description="Các sinh viên được chọn (chưa tham gia nhóm đề tài) sẽ bị xóa khỏi danh sách đủ điều kiện của đợt đang chọn."
+          confirmLabel="Xóa khỏi đợt"
+          onConfirm={async () => {
+            if (roundId === ANY || selectedRemovableIds.length === 0) return;
+            const res = await bulkRemoveEligibleMutation.mutateAsync({
+              roundId,
+              studentIds: selectedRemovableIds,
+            });
+            toast.success(
+              res.skippedInGroupCount > 0
+                ? `Đã xóa ${res.removedCount} sinh viên (bỏ qua ${res.skippedInGroupCount} sinh viên đã có nhóm).`
+                : `Đã xóa ${res.removedCount} sinh viên khỏi danh sách đủ điều kiện.`,
+            );
+            removeSelectedIds(selectedRemovableIds);
+            setBulkRemoveOpen(false);
+          }}
+        />
       </div>
     </TooltipProvider>
   );
@@ -675,15 +769,29 @@ export default function StudentRosterPage() {
 
 function StudentRow({
   student,
+  checked,
+  onToggle,
   canManageRound,
   onRemoveFromRound,
 }: {
   student: StudentRosterRow;
+  checked: boolean;
+  onToggle: (checked: boolean) => void;
   canManageRound: boolean;
   onRemoveFromRound: (student: StudentRosterRow) => void;
 }) {
   return (
-    <TableRow className="hover:bg-slate-50/70 dark:hover:bg-white/4 transition-colors">
+    <TableRow
+      data-state={checked ? 'selected' : undefined}
+      className="hover:bg-slate-50/70 dark:hover:bg-white/4 transition-colors"
+    >
+      <TableCell className="w-11 px-3 py-3.5 text-center align-middle">
+        <Checkbox
+          checked={checked}
+          onCheckedChange={onToggle}
+          aria-label={`Chọn sinh viên ${student.fullName}`}
+        />
+      </TableCell>
       {/* 1. Sinh viên */}
       <TableCell className="px-5 py-3.5 align-middle">
         <p className="font-semibold text-slate-900 dark:text-neutral-100">
