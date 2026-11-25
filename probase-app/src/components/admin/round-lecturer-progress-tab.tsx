@@ -287,43 +287,35 @@ export function RoundLecturerProgressTab({
         </div>
 
         {capacity && (
-          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-neutral-400">
-            <span>
-              Đề tài đã duyệt:{' '}
+          <div className="flex flex-wrap items-center gap-2.5 text-sm text-slate-600 dark:text-neutral-400">
+            <span title="Số đề tài đã duyệt / ước tính cần thiết">
+              Đã duyệt:{' '}
               <strong className="text-slate-900 dark:text-neutral-100 font-semibold font-mono">
                 {capacity.approvedTopicsCount}
-              </strong>{' '}
-              / ~{capacity.estimatedGroupsNeeded} cần thiết
+              </strong>
+              /~{capacity.estimatedGroupsNeeded}
               {capacity.deficit > 0 ? (
                 <span className="ml-1 text-amber-600 dark:text-amber-400 font-semibold">
-                  (Còn thiếu {capacity.deficit})
+                  (Thiếu {capacity.deficit})
                 </span>
               ) : (
                 <span className="ml-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                  (Đủ mở đợt)
+                  (Đủ mở)
                 </span>
               )}
             </span>
             <span className="text-slate-300 dark:text-neutral-700">•</span>
-            <span>
-              Giảng viên đạt chỉ tiêu:{' '}
+            <span title="Số giảng viên đã đạt chỉ tiêu đề tài của đợt">
+              Đạt chỉ tiêu:{' '}
               <strong className="text-slate-900 dark:text-neutral-100 font-semibold font-mono">
                 {capacity.lecturersMetQuotaCount}
               </strong>
               /{capacity.activeLecturersCount ?? capacity.lecturersCount} GV
               {Boolean(capacity.exemptLecturersCount) && (
                 <span className="ml-1 text-slate-500 dark:text-neutral-400">
-                  ({capacity.exemptLecturersCount} miễn trừ)
+                  ({capacity.exemptLecturersCount} miễn)
                 </span>
               )}
-            </span>
-            <span className="text-slate-300 dark:text-neutral-700">•</span>
-            <span>
-              Chỉ tiêu chung:{' '}
-              <strong className="text-slate-900 dark:text-neutral-100 font-semibold font-mono">
-                {capacity.targetQuota}
-              </strong>{' '}
-              đề tài / GV
             </span>
           </div>
         )}
