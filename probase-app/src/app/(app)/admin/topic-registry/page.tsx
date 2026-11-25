@@ -38,7 +38,10 @@ import {
   useTopics,
 } from '@/lib/api/topics';
 import { useTableSelection } from '@/hooks';
-import { BulkActionBar } from '@/components/shared/bulk-action-bar';
+import {
+  BulkActionBar,
+  BulkIconAction,
+} from '@/components/shared/bulk-action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useRequireGvcnOrAdmin } from '@/lib/auth/use-require-role';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
@@ -454,15 +457,17 @@ export default function AdminTopicRegistryPage() {
         )}
 
         <BulkActionBar
+          variant="floating"
           count={selectedCount}
           itemName="đề tài"
           onClear={clearSelection}
         >
           {selectedApprovedIds.length > 0 && (
-            <Button
-              type="button"
-              size="sm"
-              disabled={bulkOpenSelected.isPending}
+            <BulkIconAction
+              tone="primary"
+              label={`Mở đăng ký (${selectedApprovedIds.length})`}
+              icon={<LockOpen className="size-4" />}
+              loading={bulkOpenSelected.isPending}
               onClick={async () => {
                 try {
                   const res = await bulkOpenSelected.mutateAsync({
@@ -475,23 +480,15 @@ export default function AdminTopicRegistryPage() {
                   toast.error('Không mở đăng ký được các đề tài đã chọn.');
                 }
               }}
-              className="h-8 gap-1.5 text-xs font-semibold cursor-pointer"
-            >
-              {bulkOpenSelected.isPending ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <LockOpen className="size-3.5" />
-              )}
-              <span>Mở đăng ký ({selectedApprovedIds.length})</span>
-            </Button>
+            />
           )}
 
           {selectedOpenIds.length > 0 && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={bulkCloseSelected.isPending}
+            <BulkIconAction
+              tone="danger"
+              label={`Đóng đăng ký (${selectedOpenIds.length})`}
+              icon={<Lock className="size-4" />}
+              loading={bulkCloseSelected.isPending}
               onClick={async () => {
                 try {
                   const res = await bulkCloseSelected.mutateAsync(selectedOpenIds);
@@ -501,22 +498,14 @@ export default function AdminTopicRegistryPage() {
                   toast.error('Không đóng đăng ký được các đề tài đã chọn.');
                 }
               }}
-              className="h-8 gap-1.5 text-xs font-medium text-rose-600 border-rose-200 hover:bg-rose-50 dark:text-rose-400 dark:border-rose-900/50 dark:hover:bg-rose-950/30 cursor-pointer"
-            >
-              {bulkCloseSelected.isPending ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <Lock className="size-3.5" />
-              )}
-              <span>Đóng đăng ký ({selectedOpenIds.length})</span>
-            </Button>
+            />
           )}
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={exportTopics.isPending || !hasActiveSemester}
+          <BulkIconAction
+            label={`Xuất Excel (${selectedCount})`}
+            icon={<FileSpreadsheet className="size-4" />}
+            loading={exportTopics.isPending}
+            disabled={!hasActiveSemester}
             onClick={async () => {
               try {
                 await exportTopics.mutateAsync({
@@ -530,15 +519,7 @@ export default function AdminTopicRegistryPage() {
                 toast.error('Không xuất được tệp Excel.');
               }
             }}
-            className="h-8 gap-1.5 text-xs font-medium cursor-pointer"
-          >
-            {exportTopics.isPending ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <FileSpreadsheet className="size-3.5" />
-            )}
-            <span>Xuất Excel ({selectedCount})</span>
-          </Button>
+          />
         </BulkActionBar>
 
         {/* ── Table ── */}
