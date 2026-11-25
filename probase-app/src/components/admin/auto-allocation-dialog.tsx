@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import {
   CheckCircle2,
   Loader2,
-  Sparkles,
+  Shuffle,
   TriangleAlert,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -143,12 +143,12 @@ export function AutoAllocationDialog({
   return (
     <>
       <Button
-        variant="outline"
-        className="h-9.5 px-3.5 border-[1.5px] border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary font-semibold shadow-2xs gap-2 cursor-pointer"
+        variant="default"
+        className="h-9.5 px-4 bg-primary text-white hover:bg-primary/90 font-semibold shadow-xs gap-2 cursor-pointer"
         disabled={desk.topics.length === 0}
         onClick={openDialog}
       >
-        <Sparkles className="size-4" />
+        <Shuffle className="size-4" />
         <span>Phân bổ tự động</span>
       </Button>
 
@@ -161,7 +161,7 @@ export function AutoAllocationDialog({
         <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="size-4 text-primary" />
+              <Shuffle className="size-4 text-primary" />
               <span>Phân bổ tự động (Xem trước trước khi lưu)</span>
             </DialogTitle>
             <DialogDescription>
@@ -211,7 +211,7 @@ export function AutoAllocationDialog({
                   {previewMutation.isPending ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : (
-                    <Sparkles className="size-4" />
+                    <Shuffle className="size-4" />
                   )}
                   <span>{preview ? 'Tính lại gợi ý' : 'Xem trước gợi ý'}</span>
                 </Button>
