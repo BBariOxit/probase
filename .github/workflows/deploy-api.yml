@@ -3,6 +3,7 @@ name: Build & Deploy ProBase API
 on:
   push:
     branches:
+      - master
       - main
     paths:
       - 'probase-api/**'
