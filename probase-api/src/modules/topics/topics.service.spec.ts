@@ -31,7 +31,7 @@ describe('TopicsService', () => {
         findUnique: jest.fn(),
       },
       auditLog: {
-        create: jest.fn(),
+        create: jest.fn().mockResolvedValue(undefined),
       },
       $transaction: jest.fn(async (arg: any) => {
         if (typeof arg === 'function') {

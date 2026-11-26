@@ -110,8 +110,9 @@ export class AuthController {
     @GetUser('id') userId: number,
     @Res({ passthrough: true }) res: Response,
   ) {
-    res.clearCookie('refreshToken', { path: '/' });
-    res.clearCookie('refreshToken', { path: '/auth' });
+    const cookieOptions = this.refreshCookieOptions();
+    res.clearCookie('refreshToken', { ...cookieOptions, path: '/' });
+    res.clearCookie('refreshToken', { ...cookieOptions, path: '/auth' });
     return this.authService.logout(userId);
   }
 
@@ -137,7 +138,7 @@ export class AuthController {
     return result;
   }
 
-  private setRefreshTokenCookie(res: Response, token: string) {
+  private refreshCookieOptions() {
     const secure =
       process.env.COOKIE_SECURE === 'true'
         ? true
@@ -145,10 +146,17 @@ export class AuthController {
           ? false
           : process.env.NODE_ENV === 'production' &&
             (process.env.FRONTEND_URL ?? '').startsWith('https://');
-    res.cookie('refreshToken', token, {
+
+    return {
       httpOnly: true,
       secure,
-      sameSite: 'lax',
+      sameSite: 'lax' as const,
+    };
+  }
+
+  private setRefreshTokenCookie(res: Response, token: string) {
+    res.cookie('refreshToken', token, {
+      ...this.refreshCookieOptions(),
       // Root path works both directly (/auth/refresh) and behind Nginx (/api/auth/refresh)
       path: '/',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days matches JWT_REFRESH_EXPIRES_IN default

@@ -118,7 +118,7 @@ export function AcceptProposalDialog({
                 <Label htmlFor="officialTitle" className="text-sm font-medium">
                   Tên đề tài chính thức
                 </Label>
-                <InfoTooltip text="Bạn có thể chỉnh sửa lại tên đề tài cho chuẩn văn phong học thuật trước khi gửi Tổ trưởng Bộ môn thẩm định." />
+                <InfoTooltip text="Có thể chỉnh tên đề tài trước khi gửi TTBM thẩm định." />
               </div>
               <span className="text-[11px] text-muted-foreground tabular-nums">
                 {officialTitle.length}/200
@@ -147,7 +147,7 @@ export function AcceptProposalDialog({
               <Label htmlFor="maxStudents" className="text-sm font-medium">
                 Số sinh viên tối đa
               </Label>
-              <InfoTooltip text="Số lượng sinh viên tối đa được phép đăng ký đề tài này (thường từ 1 - 3 sinh viên)." />
+              <InfoTooltip text="Số sinh viên tối đa cho đề tài (1–10)." />
             </div>
             <div className="flex items-center gap-2.5">
               <Input

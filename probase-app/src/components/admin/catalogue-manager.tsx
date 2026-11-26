@@ -119,7 +119,7 @@ export function CatalogueManager<T extends CatalogueItem>({
                           <button
                             type="button"
                             aria-label={`Mã ${noun} dùng để làm gì?`}
-                            className="rounded-full text-muted-foreground/70 transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            className="cursor-help rounded-full text-slate-300 transition-colors hover:text-white dark:text-neutral-500 dark:hover:text-neutral-950 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                           />
                         }
                       >
@@ -129,8 +129,7 @@ export function CatalogueManager<T extends CatalogueItem>({
                         side="top"
                         className="max-w-xs text-pretty"
                       >
-                        {codeHint} Dùng để đối chiếu khi nhập danh sách, nên đặt
-                        ngắn và không đổi về sau.
+                        {codeHint}
                       </TooltipContent>
                     </Tooltip>
                   </span>
@@ -299,7 +298,7 @@ function CatalogueDialog({
                   <button
                     type="button"
                     aria-label="Ghi chú"
-                    className="rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    className="cursor-help rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   />
                 }
               >
@@ -307,8 +306,8 @@ function CatalogueDialog({
               </TooltipTrigger>
               <TooltipContent className="max-w-xs text-pretty">
                 {item
-                  ? 'Đổi mã sẽ ảnh hưởng tới các file nhập danh sách đang dùng mã cũ.'
-                  : 'Mã sẽ được viết hoa tự động.'}
+                  ? 'Đổi mã có thể lệch dữ liệu đang dùng mã cũ.'
+                  : 'Tự động viết hoa khi lưu.'}
               </TooltipContent>
             </Tooltip>
           </DialogTitle>
