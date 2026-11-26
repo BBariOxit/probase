@@ -1,6 +1,6 @@
 FROM node:22-alpine AS base
 WORKDIR /app
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat openssl
 
 # Development
 FROM base AS development
@@ -30,7 +30,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY package*.json ./
-RUN npm ci --omit=dev && npm install --no-save prisma@7.9.1 && npm cache clean --force
+RUN npm ci --omit=dev --ignore-scripts \
+    && npm install --no-save --ignore-scripts prisma@7.9.1 \
+    && node node_modules/@prisma/engines/scripts/postinstall.js \
+    && npm cache clean --force
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/generated ./generated
