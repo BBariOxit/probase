@@ -294,18 +294,17 @@ export default function SemesterRoundsPage({
           <Tooltip>
             <TooltipTrigger
               render={
-                <span
-                  tabIndex={0}
-                  className="cursor-default text-primary hover:opacity-80 transition"
+                <button
+                  type="button"
+                  aria-label="Thông tin đợt đăng ký"
+                  className="cursor-help rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   <Info className="size-4" />
-                </span>
+                </button>
               }
             />
             <TooltipContent>
-              Mỗi loại đồ án là một đợt riêng, mở và đóng theo lịch của nó.
-              <br />
-              Chỉ loại nào được kích hoạt mới mở đợt trong học kỳ này.
+              Mỗi loại đồ án chạy theo đợt riêng khi được kích hoạt.
             </TooltipContent>
           </Tooltip>
         </div>

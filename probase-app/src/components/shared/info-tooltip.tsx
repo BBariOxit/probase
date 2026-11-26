@@ -21,7 +21,7 @@ export function InfoTooltip({
       <Tooltip>
         <TooltipTrigger
           type="button"
-          className={`cursor-help text-muted-foreground hover:text-foreground ${className || ''}`}
+          className={`cursor-help rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${className || ''}`}
         >
           <Info className="h-4 w-4" />
           <span className="sr-only">Thông tin thêm</span>

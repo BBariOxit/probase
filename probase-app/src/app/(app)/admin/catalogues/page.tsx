@@ -43,7 +43,7 @@ export default function CataloguesPage() {
         icon={GraduationCap}
         title="Chuyên ngành"
         noun="chuyên ngành"
-        codeHint="Mã trong file nhập danh sách sinh viên, ví dụ CNTT, KTPM."
+        codeHint="Mã đối chiếu khi nhập danh sách (VD: CNTT, KTPM)."
         items={majors.data}
         isPending={majors.isPending}
         error={majors.error}
@@ -60,7 +60,7 @@ export default function CataloguesPage() {
         icon={Layers}
         title="Loại đồ án"
         noun="loại đồ án"
-        codeHint="Mã ngắn dùng trong hệ thống, ví dụ DACS, DATN."
+        codeHint="Mã viết tắt trong hệ thống (VD: DACS, DATN)."
         items={types.data}
         isPending={types.isPending}
         error={types.error}

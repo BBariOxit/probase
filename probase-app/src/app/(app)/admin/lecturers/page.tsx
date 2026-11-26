@@ -250,38 +250,40 @@ function LecturerRoleCell({
         </div>
 
         {/* Danh sách vai trò chính */}
-        <div className="space-y-1.5">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="space-y-2">
+          <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Vai trò chính
           </span>
-          {ASSIGNABLE_ROLES.map((r) => {
-            const active = selectedRole === r.value;
-            return (
-              <button
-                key={r.value}
-                type="button"
-                onClick={() => {
-                  setSelectedRole(r.value);
-                  const nextInherited = getRoleInheritedPermissions(
-                    matrix,
-                    r.value,
-                  );
-                  setSelectedCustomPerms((prev) =>
-                    prev.filter((c) => !nextInherited.has(c)),
-                  );
-                }}
-                className={cn(
-                  'flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors text-left cursor-pointer',
-                  active
-                    ? 'bg-primary/10 text-primary font-semibold dark:bg-primary/20'
-                    : 'text-foreground hover:bg-muted/60',
-                )}
-              >
-                <span>{r.label}</span>
-                {active && <Check className="size-4 text-primary shrink-0" />}
-              </button>
-            );
-          })}
+          <div className="overflow-hidden rounded-xl border border-border/70 divide-y divide-border/60 bg-slate-50/60 dark:bg-neutral-900/50">
+            {ASSIGNABLE_ROLES.map((r) => {
+              const active = selectedRole === r.value;
+              return (
+                <button
+                  key={r.value}
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole(r.value);
+                    const nextInherited = getRoleInheritedPermissions(
+                      matrix,
+                      r.value,
+                    );
+                    setSelectedCustomPerms((prev) =>
+                      prev.filter((c) => !nextInherited.has(c)),
+                    );
+                  }}
+                  className={cn(
+                    'flex w-full items-center justify-between px-3 py-2.5 text-sm font-medium transition-colors text-left cursor-pointer',
+                    active
+                      ? 'bg-primary/12 text-primary font-semibold dark:bg-primary/20'
+                      : 'text-foreground hover:bg-muted/70 dark:hover:bg-white/[0.05]',
+                  )}
+                >
+                  <span>{r.label}</span>
+                  {active && <Check className="size-4 text-primary shrink-0" />}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Chọn bộ môn trực thuộc / phụ trách */}

@@ -280,12 +280,16 @@ export function UserImportDialog() {
               Nhập danh sách tài khoản
               <TooltipProvider>
                 <Tooltip>
-                  <TooltipTrigger>
-                    <AlertCircle className="size-4 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                  <TooltipTrigger
+                    type="button"
+                    className="cursor-help rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  >
+                    <AlertCircle className="size-4" />
+                    <span className="sr-only">Lưu ý nhập danh sách</span>
                   </TooltipTrigger>
-                  <TooltipContent className="max-w-[300px] text-xs font-normal">
-                    Hệ thống sẽ tự động gửi mật khẩu tạm thời qua email cho các
-                    tài khoản hợp lệ. Các dòng lỗi sẽ bị bỏ qua.
+                  <TooltipContent className="max-w-[280px] text-xs font-normal">
+                    Tài khoản hợp lệ tự nhận mật khẩu tạm qua email; dòng lỗi
+                    được bỏ qua.
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
