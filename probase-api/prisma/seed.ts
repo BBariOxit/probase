@@ -106,7 +106,19 @@ const DEMO_STAFF = [
     researchInterests: 'Kỹ thuật phần mềm, Quản lý dự án CNTT, Cố vấn học tập & Chủ nhiệm CTK46',
     isAcademicAssistant: false,
     isHeadOfDepartment: false,
-    isHomeroomTeacher: true, // Giáo viên chủ nhiệm (GVCN)
+    isHomeroomTeacher: true, // Giáo viên chủ nhiệm (GVCN KTPM)
+  },
+  {
+    email: 'gvcn.mmt@dlu.edu.vn',
+    role: 'LECTURER' as const,
+    lecturerCode: 'GV0007',
+    fullName: 'Nguyễn Minh Tâm',
+    academicTitle: 'ThS.',
+    majorCode: 'MMT',
+    researchInterests: 'An toàn mạng, Quản trị hạ tầng Cloud, Cố vấn học tập & Chủ nhiệm MMT',
+    isAcademicAssistant: false,
+    isHeadOfDepartment: false,
+    isHomeroomTeacher: true, // Giáo viên chủ nhiệm (GVCN MMT)
   },
 ];
 
@@ -187,6 +199,49 @@ const DEMO_STUDENTS = [
     name: 'Vũ Hoàng Nam',
     class: 'CTK46PM',
     majorCode: 'KTPM',
+  },
+  // Sinh viên chưa có nhóm / mở nhóm ghép (để test đăng ký, Join Code & Phân bổ SV)
+  {
+    code: '2266007',
+    email: '2266007@dlu.edu.vn',
+    name: 'Trần Quang Khải',
+    class: 'CTK46PM',
+    majorCode: 'KTPM',
+  },
+  {
+    code: '2266008',
+    email: '2266008@dlu.edu.vn',
+    name: 'Nguyễn Ngọc Anh',
+    class: 'CTK46PM',
+    majorCode: 'KTPM',
+  },
+  {
+    code: '2288009',
+    email: '2288009@dlu.edu.vn',
+    name: 'Phạm Quốc Đạt',
+    class: 'CTK46MMT',
+    majorCode: 'MMT',
+  },
+  {
+    code: '2388003',
+    email: '2388003@dlu.edu.vn',
+    name: 'Lê Thảo Vy',
+    class: 'CTK47PM',
+    majorCode: 'KTPM',
+  },
+  {
+    code: '2388004',
+    email: '2388004@dlu.edu.vn',
+    name: 'Huỳnh Đức Thịnh',
+    class: 'CTK47MMT',
+    majorCode: 'MMT',
+  },
+  {
+    code: '2499003',
+    email: '2499003@dlu.edu.vn',
+    name: 'Võ Thanh Tú',
+    class: 'CTK48MMT',
+    majorCode: 'MMT',
   },
 ];
 
@@ -456,6 +511,8 @@ async function main() {
   console.log(`[✓] 6. Cán bộ & Giảng viên: ${DEMO_STAFF.length} tài khoản`);
 
   // 7. Seed Sinh viên Demo
+  const dacnRound = roundByCode.get('DACN');
+  const dacsRound = roundByCode.get('DACS');
   const studentProfileByEmail = new Map<string, any>();
   for (const student of DEMO_STUDENTS) {
     const user = await prisma.user.upsert({
@@ -497,19 +554,29 @@ async function main() {
 
     studentProfileByEmail.set(student.email, { user, profile });
 
-    // Đánh dấu đủ điều kiện cho sinh viên CTK46 tham gia DATN
-    if (student.class.includes('CTK46') && datnRound) {
+    // Đánh dấu đủ điều kiện theo từng đợt (CTK46 -> DATN, CTK47 -> DACN, CTK48 -> DACS)
+    const targetRound = student.class.includes('CTK46')
+      ? datnRound
+      : student.class.includes('CTK47')
+        ? dacnRound
+        : student.class.includes('CTK48')
+          ? dacsRound
+          : null;
+
+    if (targetRound) {
       await prisma.roundStudentEligibility.upsert({
         where: {
           roundId_studentId: {
-            roundId: datnRound.id,
+            roundId: targetRound.id,
             studentId: profile.id,
           },
         },
         create: {
-          roundId: datnRound.id,
+          roundId: targetRound.id,
           studentId: profile.id,
-          note: 'Đủ điều kiện làm Khóa luận tốt nghiệp (Tích lũy >= 120 tín chỉ, CPA >= 2.8)',
+          note: student.class.includes('CTK46')
+            ? 'Đủ điều kiện làm Khóa luận tốt nghiệp (Tích lũy >= 120 tín chỉ, CPA >= 2.8)'
+            : 'Đủ điều kiện đăng ký đồ án học kỳ hiện tại',
         },
         update: {},
       });
@@ -524,9 +591,7 @@ async function main() {
   const lnProfile = staffProfileByEmail.get('gvln@dlu.edu.vn')?.profile;
   const gvcnEmail = process.env.SEED_GVCN_EMAIL || 'gvcn@dlu.edu.vn';
   const cnProfile = staffProfileByEmail.get(gvcnEmail)?.profile;
-
-  const dacnRound = roundByCode.get('DACN');
-  const dacsRound = roundByCode.get('DACS');
+  const cnMmtProfile = staffProfileByEmail.get('gvcn.mmt@dlu.edu.vn')?.profile;
 
   // Dọn dẹp dữ liệu phụ thuộc của học kỳ hiện tại trước khi tạo mới
   await prisma.councilTopicGrade.deleteMany({ where: { councilTopic: { council: { semesterId: semester.id } } } });
@@ -711,10 +776,114 @@ async function main() {
           },
         ]
       : []),
+    // Đề tài ở các trạng thái quy trình (DRAFT, PENDING_DEPARTMENT, APPROVED, REJECTED)
+    {
+      title: 'Trợ lý Ảo Tra cứu Quy chế Đào tạo Tín chỉ bằng RAG & GraphQL',
+      titleEn: 'Credit-based Academic Regulation Assistant with RAG & GraphQL',
+      description:
+        'Bản nháp đề tài xây dựng trợ lý hỏi đáp quy chế đào tạo Đại học Đà Lạt dựa trên tài liệu PDF chính thức, hỗ trợ trích dẫn điều khoản và tra cứu nhanh cho sinh viên.',
+      objectives:
+        '- Chuẩn hóa văn bản quy chế, lập chỉ mục vector.\n- Xây dựng giao diện chat trích dẫn nguồn chính xác.',
+      expectedOutcomes:
+        '- Web chatbot và API tra cứu quy chế.\n- Bộ câu hỏi đánh giá độ chính xác câu trả lời.',
+      techStack: 'Next.js, NestJS, GraphQL, PostgreSQL, pgvector, Gemini API',
+      lecturerId: pbProfile.id,
+      majorId: majorIdByCode.get('KTPM'),
+      roundId: datnRound.id,
+      maxStudents: 2,
+      status: 'DRAFT' as const,
+    },
+    {
+      title: 'Hệ thống Giám sát Hiệu năng Kubernetes Cluster Đa Vùng bằng Prometheus & eBPF',
+      titleEn: 'Multi-region Kubernetes Performance Monitoring with Prometheus and eBPF',
+      description:
+        'Đề tài nghiên cứu thu thập metric mức kernel bằng eBPF (Cilium Hubble) kết hợp Prometheus/Grafana để phát hiện nghẽn cổ chai mạng và bất thường giữa các microservice.',
+      objectives:
+        '- Triển khai eBPF collector ít tốn tài nguyên.\n- Xây dựng dashboard trực quan lưu lượng pod-to-pod và cảnh báo tự động.',
+      expectedOutcomes:
+        '- Cụm Kubernetes lab với bộ exporter eBPF.\n- Tài liệu benchmark chi phí CPU/RAM so với sidecar proxy.',
+      techStack: 'Kubernetes, eBPF, Cilium, Prometheus, Grafana, Go, Docker',
+      lecturerId: cnMmtProfile?.id ?? cdProfile.id,
+      majorId: majorIdByCode.get('MMT'),
+      roundId: datnRound.id,
+      maxStudents: 2,
+      status: 'PENDING_DEPARTMENT' as const,
+    },
+    {
+      title: 'Nền tảng Quản lý Lịch thực hành Phòng máy Khoa CNTT tích hợp Check-in QR',
+      titleEn: 'IT Lab Scheduling and QR Attendance Platform',
+      description:
+        'Xây dựng công cụ xếp lịch phòng máy tự động tránh trùng ca, theo dõi tình trạng thiết bị từng máy và điểm danh nhanh bằng mã QR động theo tiết học.',
+      objectives:
+        '- Thiết kế thuật toán phát hiện xung đột lịch phòng.\n- Hỗ trợ báo hỏng thiết bị theo số thứ tự máy.',
+      expectedOutcomes:
+        '- Ứng dụng web quản lý lịch phòng máy hoàn chỉnh.\n- Báo cáo thống kê tần suất sử dụng phòng máy theo học kỳ.',
+      techStack: 'React, TypeScript, NestJS, PostgreSQL, TailwindCSS',
+      lecturerId: pbProfile.id,
+      majorId: majorIdByCode.get('KTPM'),
+      roundId: dacnRound?.id ?? datnRound.id,
+      maxStudents: 2,
+      status: 'PENDING_DEPARTMENT' as const,
+    },
+    {
+      title: 'Hệ thống Tự động Chấm bài Thực hành Lập trình trong Container Sandbox',
+      titleEn: 'Automated Programming Lab Grader using Isolated Container Sandboxes',
+      description:
+        'Xây dựng hệ thống nộp và chấm mã nguồn C++/Java/Python tự động trong sandbox Docker giới hạn CPU/RAM và thời gian thực thi, phục vụ các học phần lập trình cơ sở.',
+      objectives:
+        '- Cách ly tiến trình biên dịch và chạy test case bằng cgroups.\n- Hỗ trợ so sánh kết quả và phát hiện sao chép mã nguồn cơ bản.',
+      expectedOutcomes:
+        '- Judge engine chạy ổn định qua hàng đợi.\n- Giao diện tạo bài tập và xem kết quả test tức thì.',
+      techStack: 'Go, Docker, PostgreSQL, Next.js, TypeScript',
+      lecturerId: lnProfile.id,
+      majorId: majorIdByCode.get('KTPM'),
+      roundId: datnRound.id,
+      maxStudents: 2,
+      status: 'APPROVED' as const,
+      departmentReviewerId: abProfile.id,
+      departmentFeedback: 'Đề tài thiết thực, phạm vi phù hợp chuẩn đầu ra KTPM. Đồng ý thông qua.',
+    },
+    {
+      title: 'Triển khai Mạng Riêng Ảo Zero-Trust với WireGuard và Keycloak SSO cho Phòng Lab',
+      titleEn: 'Zero-Trust VPN Access with WireGuard and Keycloak SSO for University Labs',
+      description:
+        'Thiết kế giải pháp truy cập từ xa an toàn vào tài nguyên phòng lab dựa trên WireGuard kết hợp xác thực tập trung Keycloak OIDC và phân quyền theo lớp học phần.',
+      objectives:
+        '- Tự động cấp phát cấu hình peer WireGuard theo phiên đăng nhập.\n- Ghi nhận nhật ký phiên truy cập và thu hồi quyền tức thời.',
+      expectedOutcomes:
+        '- Cổng cấp VPN tự động cho sinh viên và giảng viên.\n- Báo cáo kiểm thử bảo mật và hiệu năng thông lượng.',
+      techStack: 'WireGuard, Keycloak, Linux, Go, Docker, PostgreSQL',
+      lecturerId: cnMmtProfile?.id ?? cdProfile.id,
+      majorId: majorIdByCode.get('MMT'),
+      roundId: dacnRound?.id ?? datnRound.id,
+      maxStudents: 2,
+      status: 'APPROVED' as const,
+      departmentReviewerId: cdProfile.id,
+      departmentFeedback: 'Nội dung rõ ràng, tính ứng dụng cao cho hạ tầng MMT. Thông qua để Khoa mở đăng ký.',
+    },
+    {
+      title: 'Xây dựng Hệ thống Thương mại Điện tử Đa Kênh Tích hợp Blockchain và AI Gợi ý',
+      titleEn: 'Omnichannel E-Commerce with Blockchain Payment and AI Recommendations',
+      description:
+        'Đề xuất xây dựng sàn thương mại điện tử hoàn chỉnh tích hợp thanh toán tiền mã hóa, chatbot AI và gợi ý sản phẩm theo thời gian thực.',
+      objectives:
+        '- Xây dựng toàn bộ sàn TMĐT, cổng thanh toán Web3 và mô hình gợi ý.',
+      expectedOutcomes:
+        '- Hệ thống TMĐT đa kênh hoàn chỉnh.',
+      techStack: 'Next.js, NestJS, Solidity, PyTorch, PostgreSQL',
+      lecturerId: pbProfile.id,
+      majorId: majorIdByCode.get('KTPM'),
+      roundId: dacsRound?.id ?? datnRound.id,
+      maxStudents: 2,
+      status: 'REJECTED' as const,
+      departmentReviewerId: abProfile.id,
+      departmentFeedback:
+        'Phạm vi quá rộng so với khối lượng Đồ án cơ sở năm 2; đề nghị tách nhỏ và thu hẹp bài toán cốt lõi.',
+    },
   ];
 
   const createdTopics: any[] = [];
-  for (const t of topicsData) {
+  for (const t of topicsData as Array<Record<string, any>>) {
     const topic = await prisma.topic.create({
       data: {
         title: t.title,
@@ -729,6 +898,8 @@ async function main() {
         roundId: t.roundId,
         lecturerId: t.lecturerId,
         majorId: t.majorId,
+        ...(t.departmentReviewerId && { departmentReviewerId: t.departmentReviewerId }),
+        ...(t.departmentFeedback && { departmentFeedback: t.departmentFeedback }),
       },
     });
     createdTopics.push(topic);
@@ -766,11 +937,91 @@ async function main() {
           studentId: studentCProfile.id,
           projectTypeId: datnType.id,
           requestedLecturerId: cdProfile.id,
+          acceptedByLecturerId: cdProfile.id,
           status: 'ACCEPTED',
         },
       });
     }
-    console.log(`[✓] 9. Đề xuất từ sinh viên: Đã tạo 2 đề xuất mẫu (1 PENDING, 1 ACCEPTED)`);
+
+    const studentNgocAnh = studentProfileByEmail.get('2266008@dlu.edu.vn')?.profile;
+    const studentDat = studentProfileByEmail.get('2288009@dlu.edu.vn')?.profile;
+    const studentVy = studentProfileByEmail.get('2388003@dlu.edu.vn')?.profile;
+    const userDat = studentProfileByEmail.get('2288009@dlu.edu.vn')?.user;
+    const dacnType = await prisma.projectType.findUnique({ where: { code: 'DACN' } });
+
+    if (studentNgocAnh && cnProfile) {
+      await prisma.topicProposal.create({
+        data: {
+          title: 'Cổng Thông tin Cảnh báo Học vụ và Theo dõi Tín chỉ Tốt nghiệp DLU',
+          description:
+            'Xây dựng công cụ giúp sinh viên theo dõi tiến độ tích lũy tín chỉ theo từng học phần bắt buộc/tự chọn và cảnh báo sớm khi có nguy cơ thiếu điều kiện làm đồ án.',
+          expectedOutcomes: 'Web dashboard cho sinh viên & GVCN, chức năng xuất bảng đối soát tín chỉ Excel.',
+          maxStudents: 2,
+          semesterId: semester.id,
+          studentId: studentNgocAnh.id,
+          projectTypeId: datnType.id,
+          requestedLecturerId: cnProfile.id,
+          status: 'PENDING',
+        },
+      });
+    }
+
+    if (studentDat && cnMmtProfile) {
+      const revProposal = await prisma.topicProposal.create({
+        data: {
+          title: 'Xây dựng Hệ thống Honeypot Phát hiện Tấn công Dò quét Cổng Nội bộ',
+          description:
+            'Triển khai các bẫy mạng Cowrie & Dionaea trong phân vùng DMZ để ghi nhận hành vi dò quét và tấn công thử nghiệm SSH/HTTP.',
+          expectedOutcomes: 'Hệ thống Honeypot chạy Docker và báo cáo thống kê IP tấn công.',
+          maxStudents: 2,
+          semesterId: semester.id,
+          studentId: studentDat.id,
+          projectTypeId: datnType.id,
+          requestedLecturerId: cnMmtProfile.id,
+          status: 'NEEDS_REVISION',
+          lecturerFeedback:
+            'Hướng đi tốt, em bổ sung thêm kịch bản cô lập mạng DMZ và chỉ rõ cách trực quan hóa log lên dashboard.',
+        },
+      });
+
+      if (userDat) {
+        await prisma.proposalComment.createMany({
+          data: [
+            {
+              proposalId: revProposal.id,
+              authorId: cnMmtProfile.userId,
+              content:
+                'Em làm rõ thêm phần kiến trúc tách biệt mạng lab để đảm bảo không ảnh hưởng máy chủ thật khi chạy Honeypot nhé.',
+            },
+            {
+              proposalId: revProposal.id,
+              authorId: userDat.id,
+              content:
+                'Dạ em cảm ơn thầy, em sẽ vẽ thêm sơ đồ VLAN cô lập DMZ và tích hợp ELK để hiển thị biểu đồ ạ.',
+            },
+          ],
+        });
+      }
+    }
+
+    if (studentVy && lnProfile && dacnType) {
+      await prisma.topicProposal.create({
+        data: {
+          title: 'Ứng dụng Mạng xã hội Chia sẻ Ghi chú Học tập Đại học Đà Lạt',
+          description: 'Mạng xã hội cho phép sinh viên đăng bài, bình luận và chia sẻ tài liệu ôn tập.',
+          expectedOutcomes: 'Ứng dụng web mạng xã hội cơ bản.',
+          maxStudents: 2,
+          semesterId: semester.id,
+          studentId: studentVy.id,
+          projectTypeId: dacnType.id,
+          requestedLecturerId: lnProfile.id,
+          status: 'REJECTED',
+          lecturerFeedback:
+            'Nội dung đề xuất còn sơ sài và trùng lặp với nhiều hệ thống có sẵn, cần bài toán chuyên sâu hơn.',
+        },
+      });
+    }
+    console.log(`[✓] 9. Đề xuất từ sinh viên: Đã tạo 5 đề xuất mẫu đủ trạng thái + bình luận trao đổi`);
   }
 
   // 10. Seed Nhóm làm đồ án & Thành viên (RegistrationGroup & Member)
@@ -1454,6 +1705,19 @@ async function main() {
       },
     });
 
+    // Yêu cầu đổi tên đề tài mẫu (TopicChangeRequest) trên Nhóm 4
+    await prisma.topicChangeRequest.create({
+      data: {
+        groupId: group4.id,
+        topicId: topicLibrary.id,
+        requestType: 'CHANGE_TITLE',
+        reason: 'Nhóm muốn điều chỉnh tên đề tài phản ánh đúng phạm vi đọc tài liệu số trực tuyến.',
+        oldValue: topicLibrary.title,
+        newValue: 'Xây dựng Hệ thống Tra cứu và Đọc Tài liệu Số Hóa Thư viện DLU',
+        status: 'PENDING',
+      },
+    });
+
     console.log(`[✓] 11c. Nhóm 04 (DACS Thư viện số - GVHD TS. Phan Bửu): Đã tạo nhóm và nộp đề cương M03`);
   }
 
@@ -1521,24 +1785,106 @@ async function main() {
     console.log(`[✓] 11d. Nhóm 05 (DACN Du lịch thông minh - GVHD TS. Phan Bửu): Đã tạo nhóm và nộp đề cương M03`);
   }
 
-  // 15. Seed Thông báo (Notifications)
-  const notifUsers = [
-    studentAProfile?.userId,
-    pbProfile?.userId,
-    abProfile?.userId,
-  ].filter(Boolean) as number[];
-
-  for (const userId of notifUsers) {
-    await prisma.notification.create({
+  // Nhóm 6: Đang FORMING (openForJoin: true) để test ghép nhóm bằng Join Code / Phân bổ SV
+  const topicSmartStudy = createdTopics[1];
+  const studentKhai = studentProfileByEmail.get('2266007@dlu.edu.vn')?.profile;
+  if (topicSmartStudy && studentKhai) {
+    const group6 = await prisma.registrationGroup.create({
       data: {
-        userId,
-        type: 'REGISTRATION_CLOSING_SOON',
-        title: 'Mở đăng ký đề tài',
-        content: `Học kỳ 1 năm học ${currentYear}–${currentYear + 1} đã chính thức mở đợt đăng ký đề tài.\n\nSinh viên đủ điều kiện vui lòng nhanh tay theo dõi danh sách đề tài và đăng ký trước thời hạn quy định của Khoa.`,
+        topicId: topicSmartStudy.id,
+        semesterId: semester.id,
+        leaderId: studentKhai.id,
+        name: 'Nhóm 06 - SmartStudy AI (Đang tuyển)',
+        status: 'FORMING',
+        openForJoin: true,
+        declaredSize: 3,
+        joinCode: 'DLU-DATN-4606',
       },
     });
+
+    await prisma.registrationGroupMember.create({
+      data: {
+        groupId: group6.id,
+        semesterId: semester.id,
+        studentId: studentKhai.id,
+        status: 'ACCEPTED',
+        joinSource: 'SELF',
+      },
+    });
+    console.log(`[✓] 11e. Nhóm 06 (FORMING · Join Code DLU-DATN-4606): Sẵn sàng test ghép nhóm`);
   }
-  console.log(`[✓] 12. Thông báo: Đã tạo thông báo hệ thống cho sinh viên và giảng viên`);
+
+  // 12. Seed Thông báo (Notifications) - dọn sạch thông báo cũ của tài khoản demo để seed lại không trùng
+  const allDemoUserIds = [
+    ...Array.from(staffProfileByEmail.values()).map((v: any) => v.user.id as number),
+    ...Array.from(studentProfileByEmail.values()).map((v: any) => v.user.id as number),
+  ];
+
+  await prisma.notification.deleteMany({
+    where: { userId: { in: allDemoUserIds } },
+  });
+
+  const gvkUserId = staffProfileByEmail.get('gvgvk@dlu.edu.vn')?.user?.id as number | undefined;
+  const cdUserId = cdProfile?.userId as number | undefined;
+  const lnUserId = lnProfile?.userId as number | undefined;
+  const cnUserId = cnProfile?.userId as number | undefined;
+  const cnMmtUserId = cnMmtProfile?.userId as number | undefined;
+  const ngocAnhUserId = studentProfileByEmail.get('2266008@dlu.edu.vn')?.user?.id as number | undefined;
+  const datUserId = studentProfileByEmail.get('2288009@dlu.edu.vn')?.user?.id as number | undefined;
+
+  const notificationRecords: Array<{
+    userId: number;
+    type: any;
+    title: string;
+    content: string;
+    targetId?: number;
+  }> = [];
+
+  for (const uid of [
+    studentAProfile?.userId,
+    ngocAnhUserId,
+    datUserId,
+    pbProfile?.userId,
+    abProfile?.userId,
+    cdUserId,
+    lnUserId,
+    cnUserId,
+    cnMmtUserId,
+    gvkUserId,
+  ]) {
+    if (uid) {
+      notificationRecords.push({
+        userId: uid,
+        type: 'REGISTRATION_CLOSING_SOON',
+        title: 'Mở đăng ký đề tài',
+        content: `Học kỳ 1 năm học ${currentYear}–${currentYear + 1} đã mở đợt đăng ký đề tài. Vui lòng theo dõi và hoàn tất trước thời hạn của Khoa.`,
+        targetId: datnRound?.id,
+      });
+    }
+  }
+
+  if (cnUserId) {
+    notificationRecords.push({
+      userId: cnUserId,
+      type: 'PROPOSAL_SUBMITTED',
+      title: 'Sinh viên gửi đề xuất đề tài mới',
+      content: 'Sinh viên Nguyễn Ngọc Anh (2266008) vừa gửi đề xuất "Cổng Thông tin Cảnh báo Học vụ..." chờ bạn xem xét.',
+    });
+  }
+
+  if (datUserId) {
+    notificationRecords.push({
+      userId: datUserId,
+      type: 'PROPOSAL_REVISION_REQUESTED',
+      title: 'Giảng viên yêu cầu chỉnh sửa đề xuất',
+      content: 'ThS. Nguyễn Minh Tâm đã góp ý chỉnh sửa đề xuất Honeypot của bạn.',
+    });
+  }
+
+  if (notificationRecords.length > 0) {
+    await prisma.notification.createMany({ data: notificationRecords });
+  }
+  console.log(`[✓] 12. Thông báo: Đã tạo ${notificationRecords.length} thông báo mẫu theo vai trò`);
 
   // ─────────────────────────────────────────────────────────
   // 13. SEED KHO LƯU TRỮ ĐỒ ÁN (20 ĐỀ TÀI ĐÃ HOÀN THÀNH - ĐỦ LOẠI ĐỒ ÁN, ĐẦY ĐỦ SINH VIÊN VÀ ĐIỂM SỐ)
@@ -2085,27 +2431,58 @@ async function main() {
   console.log(`[✓] 13. Kho lưu trữ: Đã tạo 20 đề tài hoàn chỉnh (status COMPLETED, đợt FINALIZED) cho các học kỳ trước kèm sinh viên và điểm số`);
 
   // 14. SEED CHỈ TIÊU RIÊNG & MIỄN TRỪ ĐỀ TÀI THEO ĐỢT (RoundLecturerQuota)
-  if (datnRound && lnProfile) {
+  const quotaSeedItems: Array<{
+    roundId?: number;
+    lecturerId?: number;
+    targetQuota: number | null;
+    isExempt: boolean;
+    exemptReason?: string;
+  }> = [
+    {
+      roundId: datnRound?.id,
+      lecturerId: lnProfile?.id,
+      targetQuota: 3,
+      isExempt: false,
+    },
+    {
+      roundId: datnRound?.id,
+      lecturerId: cdProfile?.id,
+      targetQuota: 4,
+      isExempt: false,
+    },
+    {
+      roundId: dacnRound?.id,
+      lecturerId: cnProfile?.id,
+      targetQuota: null,
+      isExempt: true,
+      exemptReason: 'Miễn giảm chỉ tiêu ra đề tài ĐACN do kiêm nhiệm GVCN CTK46',
+    },
+  ];
+
+  for (const q of quotaSeedItems) {
+    if (!q.roundId || !q.lecturerId) continue;
     await prisma.roundLecturerQuota.upsert({
       where: {
         roundId_lecturerId: {
-          roundId: datnRound.id,
-          lecturerId: lnProfile.id,
+          roundId: q.roundId,
+          lecturerId: q.lecturerId,
         },
       },
       create: {
-        roundId: datnRound.id,
-        lecturerId: lnProfile.id,
-        targetQuota: 3,
-        isExempt: false,
+        roundId: q.roundId,
+        lecturerId: q.lecturerId,
+        targetQuota: q.targetQuota,
+        isExempt: q.isExempt,
+        ...(q.exemptReason && { exemptReason: q.exemptReason }),
       },
       update: {
-        targetQuota: 3,
-        isExempt: false,
+        targetQuota: q.targetQuota,
+        isExempt: q.isExempt,
+        exemptReason: q.exemptReason ?? null,
       },
     });
   }
-  console.log(`[✓] 14. Chỉ tiêu giảng viên theo đợt: Đã thiết lập chỉ tiêu tùy biến cho đợt`);
+  console.log(`[✓] 14. Chỉ tiêu giảng viên theo đợt: Đã thiết lập chỉ tiêu & miễn trừ mẫu`);
 
   // 15. SEED ROLE PERMISSIONS
   const defaultRolePermissions = [
@@ -2173,6 +2550,68 @@ async function main() {
   }
   console.log(`[✓] 16. Quyền đặc biệt: Đã cấu hình danh sách giảng viên được cấp quyền riêng biệt`);
 
+  // 17. SEED AUDIT LOGS (Nhật ký hoạt động)
+  await prisma.auditLog.deleteMany({
+    where: { userId: { in: allDemoUserIds } },
+  });
+
+  const auditEntries: Array<{
+    userId: number;
+    action: string;
+    targetTable: string;
+    targetId: string;
+    oldValue?: Record<string, any>;
+    newValue?: Record<string, any>;
+  }> = [];
+
+  if (abProfile && createdTopics[14]) {
+    auditEntries.push({
+      userId: abProfile.userId,
+      action: 'TOPIC_DEPARTMENT_APPROVED',
+      targetTable: 'topics',
+      targetId: String(createdTopics[14].id),
+      oldValue: { status: 'PENDING_DEPARTMENT' },
+      newValue: { status: 'APPROVED', title: createdTopics[14].title },
+    });
+  }
+
+  if (abProfile && createdTopics[16]) {
+    auditEntries.push({
+      userId: abProfile.userId,
+      action: 'TOPIC_DEPARTMENT_REJECTED',
+      targetTable: 'topics',
+      targetId: String(createdTopics[16].id),
+      oldValue: { status: 'PENDING_DEPARTMENT' },
+      newValue: { status: 'REJECTED', title: createdTopics[16].title },
+    });
+  }
+
+  if (cdProfile && createdTopics[15]) {
+    auditEntries.push({
+      userId: cdProfile.userId,
+      action: 'TOPIC_DEPARTMENT_APPROVED',
+      targetTable: 'topics',
+      targetId: String(createdTopics[15].id),
+      oldValue: { status: 'PENDING_DEPARTMENT' },
+      newValue: { status: 'APPROVED', title: createdTopics[15].title },
+    });
+  }
+
+  if (gvkUser && datnRound) {
+    auditEntries.push({
+      userId: gvkUser.id,
+      action: 'EXTEND_REGISTRATION_ROUND',
+      targetTable: 'registration_rounds',
+      targetId: String(datnRound.id),
+      newValue: { projectType: 'DATN', targetCohort: 'CTK46' },
+    });
+  }
+
+  if (auditEntries.length > 0) {
+    await prisma.auditLog.createMany({ data: auditEntries });
+  }
+  console.log(`[✓] 17. Nhật ký hoạt động: Đã tạo ${auditEntries.length} bản ghi AuditLog`);
+
   console.log('\n============================================================');
   console.log('🎉 SEED DỮ LIỆU ĐẦY ĐỦ CHO TẤT CẢ CÁC BẢNG THÀNH CÔNG RỰC RỠ!');
   console.log('============================================================');
@@ -2183,10 +2622,13 @@ async function main() {
   console.log('  3. TTBM Mạng máy tính   : gvcd@dlu.edu.vn');
   console.log('  4. Giảng viên HD & PB   : gvpb@dlu.edu.vn');
   console.log('  5. Giảng viên (GVLN)    : gvln@dlu.edu.vn');
-  console.log(`  6. GV Chủ nhiệm (GVCN)  : ${gvcnEmail}`);
-  console.log('  7. Sinh viên trưởng nhóm: 2266666@dlu.edu.vn (Nhóm 1 làm KLTN)');
-  console.log('  8. Sinh viên thành viên : 2277777@dlu.edu.vn (Nhóm 1)');
-  console.log('  9. Sinh viên Mạng MT    : 2288888@dlu.edu.vn (Nhóm 2)');
+  console.log(`  6. GV Chủ nhiệm (KTPM)  : ${gvcnEmail}`);
+  console.log('  7. GV Chủ nhiệm (MMT)   : gvcn.mmt@dlu.edu.vn');
+  console.log('  8. SV trưởng nhóm (KLTN): 2266666@dlu.edu.vn (Nhóm 01)');
+  console.log('  9. SV thành viên (KLTN) : 2277777@dlu.edu.vn (Nhóm 01)');
+  console.log(' 10. SV Mạng MT (KLTN)    : 2288888@dlu.edu.vn (Nhóm 02)');
+  console.log(' 11. SV mở nhóm ghép      : 2266007@dlu.edu.vn (Join Code: DLU-DATN-4606)');
+  console.log(' 12. SV chưa có nhóm      : 2266008@dlu.edu.vn (KTPM), 2288009@dlu.edu.vn (MMT), 2388003@dlu.edu.vn (ĐACN), 2499003@dlu.edu.vn (ĐACS)');
   console.log('============================================================\n');
 }
 
