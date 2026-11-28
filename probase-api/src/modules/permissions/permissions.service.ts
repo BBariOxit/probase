@@ -36,9 +36,7 @@ export class PermissionsService {
   constructor(private readonly prisma: PrismaService) {}
 
   private assertAssignableSubject(
-    user:
-      | (PermissionSubjectUser & { id: number })
-      | null,
+    user: (PermissionSubjectUser & { id: number }) | null,
   ): asserts user is PermissionSubjectUser & { id: number } {
     if (!user) {
       throw new NotFoundException('Không tìm thấy người dùng');
@@ -225,9 +223,7 @@ export class PermissionsService {
     const customAssignments = userPerms
       .filter((up) => {
         const subjectRoles = resolveUserPermissionRoles(up.user);
-        const inherited = new Set(
-          subjectRoles.flatMap((r) => matrix[r] ?? []),
-        );
+        const inherited = new Set(subjectRoles.flatMap((r) => matrix[r] ?? []));
         return !inherited.has(up.permission);
       })
       .map((up) => ({
@@ -448,31 +444,33 @@ export class PermissionsService {
 
     this.assertAssignableSubject(user);
 
-    const savedCustomPermissions = await this.prisma.$transaction(async (tx) => {
-      const previous = await tx.userPermission.findMany({
-        where: { userId },
-        select: { permission: true },
-      });
+    const savedCustomPermissions = await this.prisma.$transaction(
+      async (tx) => {
+        const previous = await tx.userPermission.findMany({
+          where: { userId },
+          select: { permission: true },
+        });
 
-      const next = await this.syncUserCustomPermissions(
-        tx,
-        userId,
-        user,
-        permissions,
-        actorId,
-      );
+        const next = await this.syncUserCustomPermissions(
+          tx,
+          userId,
+          user,
+          permissions,
+          actorId,
+        );
 
-      await recordAudit(tx, {
-        userId: actorId,
-        action: 'UPDATE_USER_PERMISSIONS',
-        targetTable: 'user_permissions',
-        targetId: userId,
-        oldValue: { customPermissions: previous.map((p) => p.permission) },
-        newValue: { customPermissions: next },
-      });
+        await recordAudit(tx, {
+          userId: actorId,
+          action: 'UPDATE_USER_PERMISSIONS',
+          targetTable: 'user_permissions',
+          targetId: userId,
+          oldValue: { customPermissions: previous.map((p) => p.permission) },
+          newValue: { customPermissions: next },
+        });
 
-      return next;
-    });
+        return next;
+      },
+    );
 
     const effective = await this.getUserEffectivePermissions(userId);
 

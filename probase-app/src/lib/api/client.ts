@@ -2,7 +2,9 @@
 
 import { useSession } from '@/lib/auth/session';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+).replace(/\/+$/, '');
 
 export class ApiError extends Error {
   constructor(

@@ -8,4 +8,3 @@ export const BulkRemoveEligibleSchema = z.object({
 export class BulkRemoveEligibleDto extends createZodDto(
   BulkRemoveEligibleSchema,
 ) {}
-

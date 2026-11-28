@@ -751,7 +751,9 @@ export class AllocationService {
       },
     });
 
-    const studentMap = new Map(students.map((student) => [student.id, student]));
+    const studentMap = new Map(
+      students.map((student) => [student.id, student]),
+    );
 
     for (const studentId of studentIds) {
       const student = studentMap.get(studentId);
@@ -1209,9 +1211,7 @@ export function buildAutoAllocationPlan<
       const noSeats = remainingSeats === 0;
       return {
         student,
-        reasonCode: (noSeats ? 'NO_OPEN_SEATS' : 'NO_COMPATIBLE_MAJOR') as
-          | 'NO_OPEN_SEATS'
-          | 'NO_COMPATIBLE_MAJOR',
+        reasonCode: noSeats ? 'NO_OPEN_SEATS' : 'NO_COMPATIBLE_MAJOR',
         reason: noSeats
           ? 'Không còn đề tài nào trống chỗ trong đợt.'
           : `Không còn đề tài trống chỗ thuộc chuyên ngành ${student.major?.code ?? ''}.`.trim(),

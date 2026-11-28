@@ -27,4 +27,3 @@ export const BulkDepartmentReviewSchema = z
 export class BulkDepartmentReviewDto extends createZodDto(
   BulkDepartmentReviewSchema,
 ) {}
-

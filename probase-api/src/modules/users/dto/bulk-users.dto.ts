@@ -6,4 +6,3 @@ export const BulkUserIdsSchema = z.object({
 });
 
 export class BulkUserIdsDto extends createZodDto(BulkUserIdsSchema) {}
-

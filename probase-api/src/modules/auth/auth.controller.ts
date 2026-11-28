@@ -139,18 +139,28 @@ export class AuthController {
   }
 
   private refreshCookieOptions() {
+    const rawSameSite = process.env.COOKIE_SAME_SITE?.trim().toLowerCase();
+    const sameSite: 'lax' | 'strict' | 'none' =
+      rawSameSite === 'none' || rawSameSite === 'strict' ? rawSameSite : 'lax';
+
+    const frontendUrl = (process.env.FRONTEND_URL ?? '')
+      .trim()
+      .replace(/^['"]|['"]$/g, '');
+
     const secure =
-      process.env.COOKIE_SECURE === 'true'
+      sameSite === 'none'
         ? true
-        : process.env.COOKIE_SECURE === 'false'
-          ? false
-          : process.env.NODE_ENV === 'production' &&
-            (process.env.FRONTEND_URL ?? '').startsWith('https://');
+        : process.env.COOKIE_SECURE === 'true'
+          ? true
+          : process.env.COOKIE_SECURE === 'false'
+            ? false
+            : process.env.NODE_ENV === 'production' &&
+              frontendUrl.startsWith('https://');
 
     return {
       httpOnly: true,
       secure,
-      sameSite: 'lax' as const,
+      sameSite,
     };
   }
 

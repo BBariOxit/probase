@@ -19,6 +19,38 @@ function trustedProxyHops(): number {
   return hops;
 }
 
+function normalizeOrigin(raw: string): string {
+  return raw
+    .trim()
+    .replace(/^['"]|['"]$/g, '')
+    .replace(/\/+$/, '');
+}
+
+function toOriginMatcher(entry: string): string | RegExp {
+  if (!entry.includes('*')) return entry;
+  const escaped = entry
+    .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*/g, '[^/]+');
+  return new RegExp(`^${escaped}$`);
+}
+
+function configuredCorsOrigins(): (string | RegExp)[] {
+  const raw = [
+    process.env.FRONTEND_URL ?? 'http://localhost:3000',
+    process.env.CORS_ORIGINS ?? '',
+  ].join(',');
+
+  const seen = new Set<string>();
+  const matchers: (string | RegExp)[] = [];
+  for (const part of raw.split(',')) {
+    const normalized = normalizeOrigin(part);
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    matchers.push(toOriginMatcher(normalized));
+  }
+  return matchers;
+}
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
@@ -26,9 +58,8 @@ async function bootstrap() {
   if (hops > 0) app.set('trust proxy', hops);
 
   app.use(cookieParser());
-  const configuredOrigin = process.env.FRONTEND_URL ?? 'http://localhost:3000';
   const allowedOrigins: (string | RegExp)[] = [
-    configuredOrigin,
+    ...configuredCorsOrigins(),
     'http://localhost',
     'http://localhost:3000',
     'http://localhost:3002',

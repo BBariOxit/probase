@@ -35,10 +35,7 @@ export type AutoAllocateStrategy = z.infer<typeof AutoAllocateStrategySchema>;
 export const AutoPreviewSchema = z.object({
   strategy: AutoAllocateStrategySchema,
   allowCrossMajor: z.coerce.boolean().default(false),
-  studentIds: z
-    .array(z.coerce.number().int().positive())
-    .max(200)
-    .optional(),
+  studentIds: z.array(z.coerce.number().int().positive()).max(200).optional(),
   topicIds: z.array(z.coerce.number().int().positive()).max(200).optional(),
 });
 

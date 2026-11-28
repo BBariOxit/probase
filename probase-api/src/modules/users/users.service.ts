@@ -993,7 +993,11 @@ export class UsersService {
           action: 'RESET_USER_PASSWORD',
           targetTable: 'users',
           targetId: target.id,
-          newValue: { email: target.email, mustChangePassword: false, bulk: true },
+          newValue: {
+            email: target.email,
+            mustChangePassword: false,
+            bulk: true,
+          },
         });
       }
 

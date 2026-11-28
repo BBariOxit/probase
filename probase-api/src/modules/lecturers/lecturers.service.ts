@@ -207,7 +207,10 @@ export class LecturersService {
       const entry = result.get(row.lecturerId);
       if (!entry) continue;
       const count = row._count._all;
-      if (activeSemesterId !== undefined && row.semesterId === activeSemesterId) {
+      if (
+        activeSemesterId !== undefined &&
+        row.semesterId === activeSemesterId
+      ) {
         entry.currentCount += count;
         if (row.status === TopicStatus.OPEN) {
           entry.openCount += count;
@@ -522,7 +525,11 @@ export class LecturersService {
 function render(
   lecturer: DirectoryRow,
   mentoring: MentoringLoad,
-  topicStats: LecturerTopicStats = { currentCount: 0, openCount: 0, pastCount: 0 },
+  topicStats: LecturerTopicStats = {
+    currentCount: 0,
+    openCount: 0,
+    pastCount: 0,
+  },
 ) {
   return {
     id: lecturer.id,

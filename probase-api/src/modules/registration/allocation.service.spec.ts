@@ -49,7 +49,11 @@ function makeTopic(
     title,
     maxStudents,
     major,
-    lecturer: { id: lecturerId, fullName: `GV ${lecturerId}`, academicTitle: 'ThS.' },
+    lecturer: {
+      id: lecturerId,
+      fullName: `GV ${lecturerId}`,
+      academicTitle: 'ThS.',
+    },
     occupiedSeats,
     freeSeats: maxStudents - occupiedSeats,
     existingMembers: existingClasses.map((cls) => ({ class: cls })),
@@ -305,7 +309,12 @@ describe('AllocationService batch operations', () => {
         id: 1,
         groupId: 900,
         joinSource: GroupJoinSource.SELF,
-        student: { id: 101, fullName: 'SV Một', studentCode: '2288001', userId: 1001 },
+        student: {
+          id: 101,
+          fullName: 'SV Một',
+          studentCode: '2288001',
+          userId: 1001,
+        },
         group: {
           topicId: 50,
           leaderId: 101,

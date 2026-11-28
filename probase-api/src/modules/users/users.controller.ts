@@ -176,10 +176,7 @@ export class UsersController {
 
   @Post('bulk-deactivate')
   @HttpCode(HttpStatus.OK)
-  bulkDeactivate(
-    @Body() dto: BulkUserIdsDto,
-    @GetUser('id') actorId: number,
-  ) {
+  bulkDeactivate(@Body() dto: BulkUserIdsDto, @GetUser('id') actorId: number) {
     return this.usersService.bulkDeactivate(dto.userIds, actorId);
   }
 
